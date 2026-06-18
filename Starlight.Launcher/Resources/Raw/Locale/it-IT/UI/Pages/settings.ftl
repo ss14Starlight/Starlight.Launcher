@@ -25,6 +25,9 @@ settings-menu-multiple-clients-option-description = Impedisce il gioco di avviar
 settings-menu-data-folder-option = Cartella dati
 settings-menu-data-folder-option-description = Seleziona la cartella che verrà usata per salvare i dati.
 
+settings-menu-deauth-onchange-option = Disconnetti su cambio
+settings-menu-deauth-onchange-option-description = Vuoi essere disconesso dall'account attuale quando cambi server di autenticazione?
+
 # Servers		 
 
 settings-menu-hub-list-option = Lista Hub
