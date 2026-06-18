@@ -120,7 +120,7 @@ public partial class Home : ComponentBase, IDisposable
         }
     }
 
-    private void HandleInfoNeeded(ServerStatusData server)
+    private void HandleInfoNeeded(ServerStatusData server) 
         => ((IServerSource)_fetcher).UpdateInfoFor(server);
 
     private async Task OpenDirectConnect()
