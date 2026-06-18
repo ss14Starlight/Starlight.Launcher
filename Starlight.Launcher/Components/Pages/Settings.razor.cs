@@ -56,7 +56,12 @@ public partial class Settings : ComponentBase, IDisposable
         _navigation.NavigateTo("/settings", forceLoad: true);
     }
 
-    private void OnStateChanged() 
+    private async Task CheckUpdate()
+    {
+
+    }
+
+    private void OnStateChanged()
         => StateHasChanged();
 
     private async void OnActivePanelIndexChanged(int value)
