@@ -28,7 +28,9 @@ settings-menu-data-folder-option-description = Select folder which will be used 
 settings-menu-deauth-onchange-option = Deauth On Change
 settings-menu-deauth-onchange-option-description = Should we deauth launcher after changing auth server?
 
-settings-menu-checkupdate = Check for update
+settings-menu-update-option = Check for update
+settings-menu-update-latest = You are already on the latest version.
+settings-menu-update-found = version { $latest } is now available!
 
 # Servers
 

@@ -120,7 +120,7 @@ public partial class Home : ComponentBase, IDisposable
         }
     }
 
-    private void HandleInfoNeeded(ServerStatusData server) 
+    private void HandleInfoNeeded(ServerStatusData server)
         => ((IServerSource)_fetcher).UpdateInfoFor(server);
 
     private async Task OpenDirectConnect()
@@ -137,7 +137,7 @@ public partial class Home : ComponentBase, IDisposable
         if (result.AddToFavorites)
             await AddDirectFavorite(result.Address);
 
-        await ShowConnecting(p => { p.Add(x => x.Address, result.Address); p.Add(x => x.Title, null); } );
+        await ShowConnecting(p => { p.Add(x => x.Address, result.Address); p.Add(x => x.Title, null); });
     }
 
     private async Task LoadReplay()

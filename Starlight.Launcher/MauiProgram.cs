@@ -92,6 +92,7 @@ public static class MauiProgram
             //builder.Services.AddSingleton<ILoginKeyProvider, FileKeyProvider>(); Linux
 
             builder.Services.AddSingleton<SettingsService>();
+            builder.Services.AddSingleton<LauncherUpdater>();
 
             builder.Services.AddSingleton<DiscordRichPresence>();
 
@@ -128,6 +129,7 @@ public static class MauiProgram
             builder.Services.AddSingleton<DiscordAuthService>();
             builder.Services.AddTransient<Connector>();
             builder.Services.AddSingleton<UiTicker>();
+            builder.Services.AddSingleton<LauncherUpdater>();
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddMudServices();
 

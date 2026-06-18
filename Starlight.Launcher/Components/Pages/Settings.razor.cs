@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Diagnostics;
+using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using Starlight.Launcher.Components.Atoms.Settings;
@@ -18,6 +19,8 @@ public partial class Settings : ComponentBase, IDisposable
     [Inject] private IDialogService _dialog { get; set; } = default!;
     [Inject] private IFileDialogService _fileDialog { get; set; } = default!;
     [Inject] private NavigationManager _navigation { get; set; } = default!;
+    [Inject] private LauncherUpdater _launcherUpdater { get; set; } = default!;
+    [Inject] private ISnackbar _snackbar { get; set; } = default!;
     private List<string> _availableLanguages = [];
 
     private MudTabs _tabs = null!;
@@ -58,7 +61,26 @@ public partial class Settings : ComponentBase, IDisposable
 
     private async Task CheckUpdate()
     {
-
+        var (isUpdateAvailable, currentVersion, latestVersion, latestUrl) = await _launcherUpdater.IsUpdateAvailable();
+        if (isUpdateAvailable)
+        {
+            _snackbar.Add(_localization.GetString("settings-menu-update-found", ("latest", latestVersion)), Severity.Warning, config =>
+            {
+                config.Action = "Download";
+                config.ActionColor = MudBlazor.Color.Primary;
+                config.OnClick = _snackbar =>
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = latestUrl,
+                        UseShellExecute = true
+                    });
+                    return Task.CompletedTask;
+                };
+            });
+        }
+        else
+            _snackbar.Add(_localization["settings-menu-update-latest"], Severity.Success);
     }
 
     private void OnStateChanged()
