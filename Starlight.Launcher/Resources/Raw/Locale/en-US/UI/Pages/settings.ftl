@@ -31,6 +31,7 @@ settings-menu-deauth-onchange-option-description = Should we deauth launcher aft
 settings-menu-update-option = Check for update
 settings-menu-update-latest = You are already on the latest version.
 settings-menu-update-found = version { $latest } is now available!
+settings-menu-update-download = Download
 
 # Servers
 

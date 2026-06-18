@@ -77,7 +77,7 @@ public partial class MainLayout : LayoutComponentBase, IAsyncDisposable, IBrowse
         {
             _snackbar.Add(_localization.GetString("settings-menu-update-found", ("latest", latestVersion)), Severity.Warning, config =>
             {
-                config.Action = "Download";
+                config.Action = _localization["settings-menu-update-download"];
                 config.ActionColor = MudBlazor.Color.Primary;
                 config.OnClick = _snackbar =>
                 {
