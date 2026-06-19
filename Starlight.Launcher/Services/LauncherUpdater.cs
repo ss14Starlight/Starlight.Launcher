@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using Starlight.Launcher.Components.Layout;
@@ -6,20 +7,20 @@ namespace Starlight.Launcher.Services;
 
 public partial class LauncherUpdater
 {
-    public static string GetVersion() => MainLayout.GetVersion();
+    public static string GetVersion() => Environment.ProcessPath == null ? "" : FileVersionInfo.GetVersionInfo(Environment.ProcessPath).ProductVersion?.Split('+')[0] ?? "";
 
     // Man... I remember why i hate async sometimes... i mean they are good, but this has given so many issues.
     // But this... WORKS... VERY WELL... I am happy.
     public async Task<(bool IsUpdateAvailable, string CurrentVersion, string LatestVersion, string LatestUrl)> IsUpdateAvailable()
     {
-        var latestRelease = await GetLatestRelease();
+        var (tagName, htmlUrl) = await GetLatestRelease();
         var currentVersion = NormalizeVersion(GetVersion());
-        var latestVersion = NormalizeVersion(latestRelease.TagName);
+        var latestVersion = NormalizeVersion(tagName);
 
         Console.WriteLine($"Current version: {currentVersion}");
         Console.WriteLine($"Latest version: {latestVersion}");
 
-        return (!string.Equals(currentVersion, latestVersion, StringComparison.OrdinalIgnoreCase), currentVersion, latestVersion, latestRelease.HtmlUrl);
+        return (!string.Equals(currentVersion, latestVersion, StringComparison.OrdinalIgnoreCase), currentVersion, latestVersion, htmlUrl);
     }
 
     private static string NormalizeVersion(string? version)

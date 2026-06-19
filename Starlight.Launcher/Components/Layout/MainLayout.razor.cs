@@ -33,7 +33,7 @@ public partial class MainLayout : LayoutComponentBase, IAsyncDisposable, IBrowse
 
     private bool _isSmallScreen = false;
 
-    public static string GetVersion() => Environment.ProcessPath == null ? "" : FileVersionInfo.GetVersionInfo(Environment.ProcessPath).ProductVersion?.Split('+')[0] ?? "";
+    public static string GetVersion() => LauncherUpdater.GetVersion();
 
     private static string ToDataTheme(AppTheme t, bool systemPrefersDark) => t switch
     {
