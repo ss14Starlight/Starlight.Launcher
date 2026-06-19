@@ -20,7 +20,7 @@ public partial class LauncherUpdater
         Console.WriteLine($"Current version: {currentVersion}");
         Console.WriteLine($"Latest version: {latestVersion}");
 
-        return (!string.Equals(currentVersion, latestVersion, StringComparison.OrdinalIgnoreCase), currentVersion, latestVersion, htmlUrl);
+        return (!string.Equals(currentVersion, latestVersion, StringComparison.OrdinalIgnoreCase), currentVersion, latestVersion, htmlUrl ?? string.Empty);
     }
 
     private static string NormalizeVersion(string? version)
