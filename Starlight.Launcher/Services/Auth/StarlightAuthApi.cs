@@ -51,7 +51,7 @@ public sealed class StarlightAuthApi(HttpClient http, SettingsService settings)
     public async Task<StarlightRefreshResult?> RefreshTokenAsync(
         string sessionId, string refreshToken, CancellationToken cancel = default)
     {
-        using var resp = await http.PostAsJsonAsync(new Uri(apiUrl, "/token/refresh"), new { sessionId, refreshToken }, cancel);
+        using var resp = await http.PostAsJsonAsync(new Uri(apiUrl, "api/token/refresh"), new { sessionId, refreshToken }, cancel);
 
         if (resp.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.BadRequest)
             return null; // expired / revoked / reuse_detected -> re-login

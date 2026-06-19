@@ -70,7 +70,7 @@ public sealed class DiscordAuthService(StarlightAuthApi api, LoginManager loginM
         var newLoginInfo = new LoginInfo
         {
             UserId = info.UserId,
-            Username = info.Username,
+            Username = account.LoginInfo.Username,
             Token = account.LoginInfo.Token,
             DiscordToken = new LoginToken { Token = handoff.Token, ExpireTime = DateTime.UtcNow.AddDays(2) },
             DiscordRefreshToken = handoff.RefreshToken,

@@ -280,6 +280,10 @@ h1:focus {
     overflow: hidden;
 }
 
+.mud-main-content.has-bottom-nav .server-page {
+    height: calc(100% - var(--bottom-nav-height));
+}
+
     .mud-main-content:has(.settings-page) > .settings-page {
         flex: 1 1 auto;
         min-height: 0;

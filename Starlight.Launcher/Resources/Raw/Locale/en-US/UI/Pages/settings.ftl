@@ -109,3 +109,11 @@ settings-menu-development-max-versions-option-description = Set the maximum numb
 
 settings-menu-development-max-fork-versions-option = Max Fork Versions
 settings-menu-development-max-fork-versions-option-description = Set the maximum number of fork versions to keep in the version history. Older fork versions will be removed when this limit is exceeded.
+
+# Development tab alert
+
+settings-development-tab-alert-title = Development tab alert
+settings-development-tab-alert-description = 
+    You're trying to access the tab created only for advanced users or development. 
+    To proceed, you must agree to the condition that after changing any settings, 
+    STARLIGHT does not guarantee that the software will function properly, nor does it guarantee that it will not cause damage to your equipment.

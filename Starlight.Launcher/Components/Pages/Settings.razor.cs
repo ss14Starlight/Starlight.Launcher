@@ -103,7 +103,7 @@ public partial class Settings : ComponentBase, IDisposable
             var settings = await _settings.GetSettingsAsync();
             if (!settings.DevPolicyAccepted)
             {
-                var dialog = await _dialog.ShowAsync<AlertDialog>("Development tab alert", options);
+                var dialog = await _dialog.ShowAsync<AlertDialog>(_localization["settings-development-tab-alert-title"], options);
                 if (dialog.Dialog is AlertDialog alert)
                 {
                     alert.OnSuccess += async () => await _settings.WriteSettingsAsync(await _settings.GetSettingsAsync() with { DevPolicyAccepted = true });

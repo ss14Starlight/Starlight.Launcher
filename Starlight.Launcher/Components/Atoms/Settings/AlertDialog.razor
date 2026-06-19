@@ -1,9 +1,10 @@
+@using Starlight.Launcher.Services.Localization
+@inject LocalizationManager Localization
+
 <MudDialog>
     <DialogContent>
         <MudText Typo="Typo.body1">
-            You're trying to access the tab created only for advanced users or development. 
-            To proceed, you must agree to the condition that after changing any settings, 
-            STARLIGHT does not guarantee that the software will function properly, nor does it guarantee that it will not cause damage to your equipment.
+            @Localization["settings-development-tab-alert-description"]
         </MudText>
     </DialogContent>
     <DialogActions>

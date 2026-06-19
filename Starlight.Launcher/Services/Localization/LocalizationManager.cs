@@ -80,7 +80,8 @@ public sealed class LocalizationManager
 
         await AddLanguage(bundle, new CultureInfo(DefaultLocale));
 
-        await AddLanguage(bundle, culture);
+        if (culture.Name != DefaultLocale)
+            await AddLanguage(bundle, culture);
 
         _currentBundle = bundle;
 
