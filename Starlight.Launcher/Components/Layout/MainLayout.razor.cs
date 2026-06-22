@@ -77,10 +77,7 @@ public partial class MainLayout : LayoutComponentBase, IAsyncDisposable, IBrowse
     {
         var info = await _launcherUpdater.IsUpdateAvailable();
         if (!info.IsUpdateAvailable)
-        {
-            _snackbar.Add(_localization["settings-menu-update-latest"], Severity.Success);
             return;
-        }
 
         _snackbar.Add(
             _localization.GetString("settings-menu-update-found", ("latest", info.LatestVersion)),
