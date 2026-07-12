@@ -240,71 +240,94 @@
                         </MudStack>
                         break;
 
-                    case Mode.Register:
-                        <MudStack Row = "true" AlignItems = "AlignItems.Center" Class = "mb-4">
-                            <MudIconButton Icon = "@Icons.Material.Filled.ArrowBack"
-                              OnClick = "() => SwitchMode(Mode.SignIn)"
-                              Disabled = "_busy"/>
-                            <MudText Typo = "Typo.h5"> @_localization["auth-menu-registration"] </MudText>
-                        </MudStack>
+                case Mode.Register:
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+                        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                                       OnClick="() => SwitchMode(Mode.SignIn)"
+                                       Disabled="_busy" />
+                        <MudText Typo="Typo.h5">@_localization["auth-menu-registration"]</MudText>
+                    </MudStack>
 
+                    @if (!RegistrationEnabled)
+                    {
+                        <div class="reg-disabled">
+                            <div class="reg-disabled-badge">
+                                <MudIcon Icon="@Icons.Material.Filled.PersonOff" Class="reg-disabled-icon" />
+                            </div>
+                            <MudText Typo="Typo.h6" Class="mb-1">
+                                @_localization["auth-menu-registration-disabled-title"]
+                            </MudText>
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
+                                @_localization["auth-menu-registration-disabled-hint"]
+                            </MudText>
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       FullWidth="true"
+                                       StartIcon="@Icons.Material.Filled.Login"
+                                       OnClick="() => SwitchMode(Mode.SignIn)">
+                                @_localization["auth-menu-registration-back-to-signin"]
+                            </MudButton>
+                        </div>
+                    }
+                    else
+                    {
                         @if (_registerSuccessMessage != null)
                         {
-                            <MudAlert Severity = "Severity.Success" Class = "mb-3"> @_registerSuccessMessage </MudAlert>
-                            <MudButton Variant = "Variant.Filled"
-                              Color = "Color.Primary"
-                              FullWidth = "true"
-                              OnClick = "() => SwitchMode(Mode.SignIn)" >
+                            <MudAlert Severity="Severity.Success" Class="mb-3">@_registerSuccessMessage</MudAlert>
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       FullWidth="true"
+                                       OnClick="() => SwitchMode(Mode.SignIn)">
                                 @_localization["auth-menu-registration-signin"]
                             </MudButton>
                             return;
                         }
 
-                        <MudTextField @bind-Value = "_registerUsername"
-                          Label="@_localization["auth-menu-username-label"]"
-                          Variant = "Variant.Outlined"
-                          Disabled = "_busy"
-                          Class = "mb-3"/>
+                        <MudTextField @bind-Value="_registerUsername"
+                                      Label="@_localization["auth-menu-username-label"]"
+                                      Variant="Variant.Outlined"
+                                      Disabled="_busy"
+                                      Class="mb-3" />
 
-                        <MudTextField @bind-Value = "_registerEmail"
-                          Label="@_localization["auth-menu-email-label"]"
-                          InputType = "InputType.Email"
-                          Variant = "Variant.Outlined"
-                          Disabled = "_busy"
-                          Class = "mb-3"/>
+                        <MudTextField @bind-Value="_registerEmail"
+                                      Label="@_localization["auth-menu-email-label"]"
+                                      InputType="InputType.Email"
+                                      Variant="Variant.Outlined"
+                                      Disabled="_busy"
+                                      Class="mb-3" />
 
-                        <MudTextField @bind-Value = "_registerPassword"
-                          Label="@_localization["auth-menu-password-label"]"
-                          InputType = "InputType.Password"
-                          Variant = "Variant.Outlined"
-                          Disabled = "_busy"
-                          Class = "mb-3"/>
+                        <MudTextField @bind-Value="_registerPassword"
+                                      Label="@_localization["auth-menu-password-label"]"
+                                      InputType="InputType.Password"
+                                      Variant="Variant.Outlined"
+                                      Disabled="_busy"
+                                      Class="mb-3" />
 
-                        <MudTextField @bind-Value = "_registerPasswordConfirm"
-                          Label="@_localization["auth-menu-confirm-label"]"
-                          InputType = "InputType.Password"
-                          Variant = "Variant.Outlined"
-                          Disabled = "_busy"
-                          Class = "mb-3"/>
+                        <MudTextField @bind-Value="_registerPasswordConfirm"
+                                      Label="@_localization["auth-menu-confirm-label"]"
+                                      InputType="InputType.Password"
+                                      Variant="Variant.Outlined"
+                                      Disabled="_busy"
+                                      Class="mb-3" />
 
                         @if (_registerErrors != null && _registerErrors.Length > 0)
                         {
-                            <MudAlert Severity = "Severity.Error" Class = "mb-3">
+                            <MudAlert Severity="Severity.Error" Class="mb-3">
                                 @foreach (var err in _registerErrors)
                                 {
-                                    <div> @err </div>
+                                    <div>@err</div>
                                 }
                             </MudAlert>
                         }
 
-                        <MudButton Variant = "Variant.Filled"
-                          Color = "Color.Primary"
-                          FullWidth = "true"
-                          Disabled = "_busy"
-                          OnClick = "DoRegister">
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   FullWidth="true"
+                                   Disabled="_busy"
+                                   OnClick="DoRegister">
                             @if (_busy)
                             {
-                                <MudProgressCircular Size = "Size.Small" Indeterminate = "true" Class = "mr-2"/>
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
                                 <span>@_localization["auth-menu-registration-status-busy"]</span>
                             }
                             else
@@ -312,7 +335,8 @@
                                 <span>@_localization["auth-menu-registration-status-wait"]</span>
                             }
                         </MudButton>
-                        break;
+                    }
+                    break;
 
                     case Mode.ForgotPassword:
                         <MudStack Row = "true" AlignItems = "AlignItems.Center" Class = "mb-4">

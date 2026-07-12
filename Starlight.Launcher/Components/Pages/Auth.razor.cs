@@ -62,6 +62,8 @@ public partial class Auth : ComponentBase, IDisposable
 
     private Guid? _relogUserId;
 
+    private const bool RegistrationEnabled = false;
+
     protected override void OnInitialized()
     {
         _loginManager.LoginsChanged += OnLoginsChanged;
@@ -431,6 +433,9 @@ public partial class Auth : ComponentBase, IDisposable
 
     private async Task DoRegister()
     {
+        if (!RegistrationEnabled)
+            return;
+
         _registerErrors = null;
         _registerSuccessMessage = null;
 

@@ -71,6 +71,13 @@ auth-menu-registration = Registration
 auth-menu-registration-status-busy = Registration...
 auth-menu-registration-status-wait = Sign up
 
+auth-menu-registration-disabled-title = Registration disabled
+auth-menu-registration-disabled-hint = 
+    At this time, the official developer has denied the request for a restoration of the registration API.
+    Please use Discord to register or visit the official SS14 website.
+
+auth-menu-registration-back-to-signin = Back to Sign In
+
 # ForgotPassword
 
 auth-menu-forgotpassword = Password Recovery
