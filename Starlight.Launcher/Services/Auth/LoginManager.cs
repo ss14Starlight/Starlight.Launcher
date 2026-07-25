@@ -17,7 +17,7 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
     private readonly SettingsService _settings;
     private readonly IDispatcher _dispatcher;
 
-    public static readonly TimeSpan TokenRefreshInterval = TimeSpan.FromDays(1);
+    public static readonly TimeSpan TokenRefreshInterval = TimeSpan.FromMinutes(5);
 
     private CancellationTokenSource? _cts;
     private Task? _refreshTask;
@@ -218,13 +218,6 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
             if (l.LoginInfo.Token == null && l.LoginInfo.DiscordToken == null)
             {
                 Log.Warning("Token for {login} doesn't have any access tokens", l.LoginInfo);
-                l.SetStatus(AccountLoginStatus.Expired);
-                return;
-            }
-
-            if (l.LoginInfo.Token != null && l.LoginInfo.Token.IsTimeExpired())
-            {
-                Log.Warning("Token for {login} expired due to time", l.LoginInfo);
                 l.SetStatus(AccountLoginStatus.Expired);
                 return;
             }
