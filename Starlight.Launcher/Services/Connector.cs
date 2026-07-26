@@ -118,7 +118,7 @@ public partial class Connector : ObservableObject
         }
     }
 
-    public async void LaunchContentBundle(FileResult file, CancellationToken cancel = default)
+    public async void LaunchContentBundle(IFileResult file, CancellationToken cancel = default)
     {
         if (!TryBeginLaunch())
         {
@@ -241,7 +241,7 @@ public partial class Connector : ObservableObject
         PrivacyPolicyDifferentVersion = default;
     }
 
-    private async Task LaunchContentBundleInternal(FileResult file, CancellationToken cancel)
+    private async Task LaunchContentBundleInternal(IFileResult file, CancellationToken cancel)
     {
         Status = ConnectionStatus.Updating;
 

@@ -19,16 +19,14 @@ public partial class LauncherCommands
 
     private readonly LoginManager _loginManager;
     private readonly Connector _connector;
-    private readonly Dispatcher _dispatcher;
     public readonly Channel<string> CommandChannel;
 
     public event Func<string, Task>? ConnectRequested;
 
-    public LauncherCommands(LoginManager loginManager, Connector connector, Dispatcher dispatcher)
+    public LauncherCommands(LoginManager loginManager, Connector connector)
     {
         _loginManager = loginManager;
         _connector = connector;
-        _dispatcher = dispatcher;
 
         CommandChannel = Channel.CreateUnbounded<string>();
     }
@@ -41,7 +39,7 @@ public partial class LauncherCommands
             return;
         }
 
-        _dispatcher.Post(() =>
+        Dispatcher.UIThread.Post(() =>
         {
             window.Show();
             window.Activate();

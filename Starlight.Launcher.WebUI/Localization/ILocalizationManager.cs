@@ -17,4 +17,6 @@ public interface ILocalizationManager
     void SwitchLanguage(CultureInfo? culture);
 
     List<string> EnumarateAllLoadedLanguages();
+
+    Task Initialize();
 }

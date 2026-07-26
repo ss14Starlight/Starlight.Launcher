@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using MudBlazor;
+using MudBlazor.Services;
 using Starlight.Launcher.WebUI.Components;
 
 namespace Starlight.Launcher.WebUI;
@@ -22,6 +24,8 @@ public static class WebHostFactory
 
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents();
+
+        builder.Services.AddMudServices();
 
         configureServices?.Invoke(builder.Services);
 

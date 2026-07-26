@@ -53,7 +53,6 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
     protected override async Task OnInitializedAsync()
     {
         var settings = await _bridge.GetSettingsAsync();
-        await ApplyThemeAsync();
         _elementPosition = settings.Navigation;
         _navigation.LocationChanged += OnLocationChanged;
         _bridge.LoginsUnrecoverable += OnLoginsUnrecover;
@@ -204,6 +203,7 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
     {
         if (firstRender)
         {
+            await ApplyThemeAsync();
             await _browserViewportService.SubscribeAsync(this, fireImmediately: true);
             await _jS.InvokeVoidAsync("eval", "document.getElementById('app')?.classList.add('loaded')");
         }

@@ -36,17 +36,15 @@ public sealed partial class Updater
 
     private readonly IEngineManager _engineManager;
     private readonly HttpClient _http;
-    private readonly Dispatcher _dispatcher;
     private readonly SettingsService _settings;
     private readonly ContentManager _manager;
     private readonly DiscordRichPresence _presence;
     private bool _updating;
 
-    public Updater(IEngineManager engineManager, HttpClient http, Dispatcher dispatcher, SettingsService settings, ContentManager manager, DiscordRichPresence presence)
+    public Updater(IEngineManager engineManager, HttpClient http, SettingsService settings, ContentManager manager, DiscordRichPresence presence)
     {
         _engineManager = engineManager;
         _http = http;
-        _dispatcher = dispatcher;
         _settings = settings;
         _manager = manager;
         _presence = presence;
@@ -820,7 +818,7 @@ public sealed partial class Updater
         return changedVersion;
     }
 
-    private void DownloadProgressCallback(long downloaded, long total) => _dispatcher.Post(() => Progress = (downloaded, total, ProgressUnit.Bytes));
+    private void DownloadProgressCallback(long downloaded, long total) => Dispatcher.UIThread.Post(() => Progress = (downloaded, total, ProgressUnit.Bytes));
 
     internal static byte[] HashFileSha256(Stream stream)
     {
@@ -853,12 +851,6 @@ public sealed partial class Updater
     {
         public string[] Modules = Array.Empty<string>();
         public bool MultiWindow = false;
-    }
-
-    public enum ProgressUnit
-    {
-        None,
-        Bytes,
     }
 
     private sealed class TransactedDownloadState

@@ -213,21 +213,14 @@ public sealed class LocalizationManager : ILocalizationManager
     {
         _resourcesByCulture.Clear();
 
-        var prefix = $"{_assembly.GetName().Name}.Locale.";
-
         foreach (var resource in _assembly.GetManifestResourceNames())
         {
-            if (!resource.StartsWith(prefix))
-                continue;
-
-            var rest = resource[prefix.Length..];
-
-            var separator = rest.IndexOf('.');
+            var separator = resource.IndexOfAny(['\\', '/']);
 
             if (separator == -1)
                 continue;
 
-            var culture = rest[..separator];
+            var culture = resource[..separator];
 
             if (!_resourcesByCulture.TryGetValue(culture, out var list))
             {

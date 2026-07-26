@@ -16,7 +16,6 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
     private readonly AuthApi _authApi;
     private readonly StarlightAuthApi _starlightAuthApi;
     private readonly SettingsService _settings;
-    private readonly Dispatcher _dispatcher;
 
     public static readonly TimeSpan TokenRefreshInterval = TimeSpan.FromMinutes(5);
 
@@ -73,11 +72,10 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
         set => ActiveAccountId = value?.UserId;
     }
 
-    public LoginManager(AuthApi authApi, SettingsService settings, Dispatcher dispatcher, StarlightAuthApi starlightAuthApi)
+    public LoginManager(AuthApi authApi, SettingsService settings, StarlightAuthApi starlightAuthApi)
     {
         _authApi = authApi;
         _settings = settings;
-        _dispatcher = dispatcher;
         _starlightAuthApi = starlightAuthApi;
 
         Logins = new ReadOnlyObservableCollection<LoggedInAccount>(_loginsView);
@@ -410,7 +408,7 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
 
     private void DispatchToUi(Action action)
     {
-        _dispatcher.Post(action);
+        Dispatcher.UIThread.Post(action);
     }
 
     public async ValueTask DisposeAsync()

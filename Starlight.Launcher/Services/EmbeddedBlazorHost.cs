@@ -1,3 +1,4 @@
+using Avalonia.Threading;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Robust.Launcher.Api.Api;
@@ -8,6 +9,8 @@ using Starlight.Launcher.Services.Discord;
 using Starlight.Launcher.Services.ServerStatus;
 using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI;
+using Starlight.Launcher.WebUI.Bridge;
+using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Services;
 
 namespace Starlight.Launcher.Services;
@@ -25,7 +28,7 @@ public sealed class EmbeddedBlazorHost : IAsyncDisposable
             configureServices: services =>
             {
                 // Only re-expose what your .razor components actually @inject - trim
-                // this list to match your real markup instead of copying everything.
+                services.AddSingleton(nativeServices.GetRequiredService<ILocalizationManager>());
                 services.AddSingleton(nativeServices.GetRequiredService<SettingsService>());
                 services.AddSingleton(nativeServices.GetRequiredService<LauncherCommands>());
                 services.AddSingleton(nativeServices.GetRequiredService<LauncherMessaging>());
@@ -38,6 +41,7 @@ public sealed class EmbeddedBlazorHost : IAsyncDisposable
                 services.AddSingleton(nativeServices.GetRequiredService<DiscordAuthService>());
                 services.AddSingleton(nativeServices.GetRequiredService<ServerStatusCache>());
                 services.AddSingleton(nativeServices.GetRequiredService<UiTicker>());
+                services.AddSingleton(nativeServices.GetRequiredService<IBridge>());
             });
 
         await _app.StartAsync();

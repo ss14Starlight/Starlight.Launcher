@@ -16,14 +16,6 @@ public partial class LauncherUpdater
         ? ""
         : FileVersionInfo.GetVersionInfo(Environment.ProcessPath).ProductVersion?.Split('+')[0] ?? "";
 
-    public sealed record UpdateInfo(
-        bool IsUpdateAvailable,
-        string CurrentVersion,
-        string LatestVersion,
-        string ReleasePageUrl,
-        string ReleaseNotes,
-        ReleaseAsset? Asset);
-
     // Progress reporting for the download. (downloaded, total) — total == 0 means unknown.
     public event Action<(long downloaded, long total)>? DownloadProgress;
 

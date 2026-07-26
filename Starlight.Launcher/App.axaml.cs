@@ -11,11 +11,13 @@ using Robust.Launcher.Api.Utility;
 using Serilog;
 using Starlight.Launcher.Services;
 using Starlight.Launcher.Services.Auth;
+using Starlight.Launcher.Services.Bridge;
 using Starlight.Launcher.Services.Discord;
 using Starlight.Launcher.Services.EngineManager;
 using Starlight.Launcher.Services.Localization;
 using Starlight.Launcher.Services.ServerStatus;
 using Starlight.Launcher.Services.Settings;
+using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Services;
 
@@ -42,7 +44,7 @@ public partial class App : Application
             _blazorHost = new EmbeddedBlazorHost();
             _blazorHost.StartAsync(Services).GetAwaiter().GetResult();
 
-            Services.GetRequiredService<LocalizationManager>().Initialize();
+            Services.GetRequiredService<ILocalizationManager>().Initialize();
             if (OperatingSystem.IsWindows())
                 Services.GetRequiredService<DiscordRichPresence>().Initialize();
             Services.GetRequiredService<HubServerFetcher>().RequestInitialUpdate();
@@ -109,5 +111,6 @@ public partial class App : Application
         services.AddTransient<Connector>();
         services.AddSingleton<UiTicker>();
         services.AddSingleton<LauncherUpdater>();
+        services.AddSingleton<IBridge, Bridge>();
     }
 }
