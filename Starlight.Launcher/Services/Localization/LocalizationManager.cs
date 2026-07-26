@@ -1,4 +1,8 @@
-﻿using Linguini.Bundle;
+﻿using System.Globalization;
+using System.Reflection;
+using System.Text;
+using System.Text.Json;
+using Linguini.Bundle;
 using Linguini.Bundle.Builder;
 using Linguini.Shared.Types.Bundle;
 using Linguini.Syntax.Parser;
@@ -6,19 +10,17 @@ using Microsoft.Extensions.Logging;
 using Starlight.Launcher.Models.Data;
 using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.Services.State;
-using System.Globalization;
-using System.Text;
-using System.Text.Json;
 
 namespace Starlight.Launcher.Services.Localization;
 
 public sealed class LocalizationManager
 {
     private const string DefaultLocale = "en-US";
-    private const string PathToManifest = "Locale/manifest.json";
+
+    private Assembly Assembly => typeof(LocalizationManager).Assembly;
 
     private ILogger<LocalizationManager>? _logger;
-    private LocalizationsManifest _localizationsManifest = new();
+    private readonly Dictionary<string, List<string>> _resourcesByCulture = new();
     private FluentBundle? _currentBundle;
 
     private AppState? _state;
@@ -35,12 +37,7 @@ public sealed class LocalizationManager
         var currentLocale = CultureInfo.CurrentUICulture;
         try
         {
-            using var stream = await FileSystem.OpenAppPackageFileAsync(PathToManifest);
-            using var reader = new StreamReader(stream);
-
-            var content = await reader.ReadToEndAsync();
-            var manifest = JsonSerializer.Deserialize<LocalizationsManifest>(content);
-            _localizationsManifest = manifest ?? new();
+            IndexResources();
 
             SystemCulture = MatchCultureAgainstAvailable(currentLocale) ?? new CultureInfo(DefaultLocale);
 #if DEBUG
@@ -58,10 +55,6 @@ public sealed class LocalizationManager
                 await LoadCulture(new CultureInfo(selectedLocale));
             }
         }
-        catch (FileNotFoundException)
-        {
-            _logger?.LogCritical("Can't find localization manifest file {PathToManifest}", PathToManifest);
-        }
         catch (Exception ex)
         {
             _logger?.LogError(ex, "Failed to initialize localization: {Exception}", ex);
@@ -70,7 +63,7 @@ public sealed class LocalizationManager
 
     private async Task LoadCulture(CultureInfo culture)
     {
-        if (!_localizationsManifest.ContainsKey(culture.Name))
+        if (!_resourcesByCulture.ContainsKey(culture.Name))
         {
             _logger?.LogWarning("Culture {Culture} is not available, falling back to default", culture.Name);
             culture = new CultureInfo(DefaultLocale);
@@ -89,7 +82,7 @@ public sealed class LocalizationManager
     }
 
     public List<string> EnumarateAllLoadedLanguages()
-        => _localizationsManifest.Keys.ToList();
+        => _resourcesByCulture.Keys.ToList();
 
     public string GetString(string key)
     {
@@ -132,31 +125,44 @@ public sealed class LocalizationManager
         if (!culture.Parent.Equals(CultureInfo.InvariantCulture))
             await AddLanguage(bundle, culture.Parent);
 
-        if (!_localizationsManifest.ContainsKey(culture.Name))
+        if (!_resourcesByCulture.TryGetValue(culture.Name, out var resources))
             return;
-
-        var path = $"Locale/{culture.Name}"; // Path to folder with FTL FILES.
 
         var countFiles = 0;
-        try
+
+        foreach (var resource in resources)
         {
-            foreach (var file in _localizationsManifest[culture.Name])
+            try
             {
-                using var stream = await FileSystem.OpenAppPackageFileAsync(Path.Combine(path, file));
+                using var stream = Assembly.GetManifestResourceStream(resource);
+
+                if (stream == null)
+                    continue;
+
                 using var reader = new StreamReader(stream, Encoding.UTF8);
-                var resources = LinguiniParser.FromTextReader(reader, file).Parse();
-                foreach (var error in resources.Errors)
+
+                var parsed = LinguiniParser
+                    .FromTextReader(reader, resource)
+                    .Parse();
+
+                foreach (var error in parsed.Errors)
                 {
-                    _logger?.LogError("Failed to parse localization file {File} for culture {Culture}: {Error}", file, culture.Name, error.Message);
+                    _logger?.LogError(
+                        "Failed to parse {File}: {Error}",
+                        resource,
+                        error.Message);
                 }
-                bundle.AddResourceOverriding(resources);
+
+                bundle.AddResourceOverriding(parsed);
+
                 countFiles++;
             }
-        }
-        catch (Exception ex)
-        {
-            _logger?.LogError(ex, "Failed to load localization for culture {Culture} from path {Path}", culture.Name, path);
-            return;
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex,
+                    "Failed to load resource {Resource}",
+                    resource);
+            }
         }
 
         _logger?.LogInformation("Loaded {Count} localization files for culture {Culture}", countFiles, culture.Name);
@@ -166,7 +172,7 @@ public sealed class LocalizationManager
     {
         try
         {
-            if (!_localizationsManifest.ContainsKey(cultureName))
+            if (!_resourcesByCulture.ContainsKey(cultureName))
                 throw new ArgumentException($"Culture {cultureName} is not available");
             var culture = new CultureInfo(cultureName);
             SwitchLanguage(culture);
@@ -185,7 +191,7 @@ public sealed class LocalizationManager
     private CultureInfo? MatchCultureAgainstAvailable(CultureInfo culture)
     {
         foreach (var parent in EnumerateParents(culture))
-            if (_localizationsManifest.ContainsKey(parent.Name))
+            if (_resourcesByCulture.ContainsKey(parent.Name))
                 return parent;
         return null;
     }
@@ -196,6 +202,36 @@ public sealed class LocalizationManager
         {
             yield return culture;
             culture = culture.Parent;
+        }
+    }
+
+    private void IndexResources()
+    {
+        _resourcesByCulture.Clear();
+
+        var prefix = $"{Assembly.GetName().Name}.Locale.";
+
+        foreach (var resource in Assembly.GetManifestResourceNames())
+        {
+            if (!resource.StartsWith(prefix))
+                continue;
+
+            var rest = resource[prefix.Length..];
+
+            var separator = rest.IndexOf('.');
+
+            if (separator == -1)
+                continue;
+
+            var culture = rest[..separator];
+
+            if (!_resourcesByCulture.TryGetValue(culture, out var list))
+            {
+                list = [];
+                _resourcesByCulture[culture] = list;
+            }
+
+            list.Add(resource);
         }
     }
 }

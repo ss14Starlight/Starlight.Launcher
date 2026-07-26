@@ -75,8 +75,4 @@
 		<ProjectReference Include="..\Starlight.Launcher.Analyzer\Starlight.Launcher.Analyzer.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 		<ProjectReference Include="..\Starlight.Launcher.WebUI\Starlight.Launcher.WebUI.csproj" />
 	</ItemGroup>
- 
-	<Target Name="GenerateLocalizationIndex" BeforeTargets="BeforeBuild" Condition="'$(DesignTimeBuild)' != 'true'">
-		<Exec Command="dotnet run -c Release --project &quot;$(MSBuildProjectDirectory)/../LocalizationIndexer/LocalizationIndexer.csproj&quot; -- &quot;$(MSBuildProjectDirectory)/Resources/Raw/Locale&quot; &quot;$(MSBuildProjectDirectory)/Resources/Raw/Locale/manifest.json&quot;" />
-	</Target>
 </Project>
