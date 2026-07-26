@@ -1,19 +1,18 @@
 ﻿using System.Globalization;
 using System.Reflection;
 using System.Text;
-using System.Text.Json;
 using Linguini.Bundle;
 using Linguini.Bundle.Builder;
 using Linguini.Shared.Types.Bundle;
 using Linguini.Syntax.Parser;
 using Microsoft.Extensions.Logging;
-using Starlight.Launcher.Models.Data;
 using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.Services.State;
+using Starlight.Launcher.WebUI.Localization;
 
 namespace Starlight.Launcher.Services.Localization;
 
-public sealed class LocalizationManager
+public sealed class LocalizationManager : ILocalizationManager
 {
     private const string DefaultLocale = "en-US";
 
@@ -29,6 +28,8 @@ public sealed class LocalizationManager
 
     public string this[string key]
         => GetString(key);
+
+    public Action Changed;
 
     public async Task Initialize(ILogger<LocalizationManager> logger, SettingsService settings, AppState state)
     {
@@ -176,7 +177,7 @@ public sealed class LocalizationManager
                 throw new ArgumentException($"Culture {cultureName} is not available");
             var culture = new CultureInfo(cultureName);
             SwitchLanguage(culture);
-            _state?.CallUpdate();
+            Changed.Invoke();
         }
         catch (Exception ex)
         {

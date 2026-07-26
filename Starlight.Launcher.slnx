@@ -1,5 +1,4 @@
 <Solution>
-  <Project Path="LocalizationIndexer/LocalizationIndexer.csproj" />
   <Project Path="Robust.Launcher.Api/Robust.Launcher.Api.csproj" />
   <Project Path="Robust.Loader/Robust.Loader.csproj" />
   <Project Path="Robust.LoaderApi/Robust.LoaderApi/Robust.LoaderApi.csproj" />

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
     <PropertyGroup>
         <TargetFramework>net11.0</TargetFramework>
-        <LangVersion>15</LangVersion>
+        <LangVersion>14</LangVersion>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <ImplicitUsings>enable</ImplicitUsings>
@@ -23,4 +23,9 @@
         <SupportedPlatform Include="browser" />
     </ItemGroup>
 
+	<ItemGroup>
+		<!-- First only for models, second only for analyze  -->
+		<ProjectReference Include="..\Robust.Launcher.Api\Robust.Launcher.Api.csproj" />
+		<ProjectReference Include="..\Starlight.Launcher.Analyzer\Starlight.Launcher.Analyzer.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+	</ItemGroup>
 </Project>

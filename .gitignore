@@ -69,7 +69,3 @@ x86/
 
 # Publish Web Output
 *.[Pp]ublish.xml
-
-
-# Custom manifest for localization
-**/[Rr]esources/[Rr]aw/[Ll]ocale/[Mm]anifest.json
