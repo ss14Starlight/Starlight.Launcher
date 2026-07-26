@@ -8,6 +8,7 @@ using Linguini.Syntax.Parser;
 using Microsoft.Extensions.Logging;
 using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI.Localization;
+using TerraFX.Interop.Windows;
 
 namespace Starlight.Launcher.Services.Localization;
 
@@ -17,7 +18,8 @@ public sealed class LocalizationManager : ILocalizationManager
 
     private Assembly _assembly => typeof(LocalizationManager).Assembly;
 
-    private ILogger<LocalizationManager>? _logger;
+    private ILogger<LocalizationManager> _logger;
+    private SettingsService _settings;
     private readonly Dictionary<string, List<string>> _resourcesByCulture = new();
     private FluentBundle? _currentBundle;
 
@@ -26,11 +28,16 @@ public sealed class LocalizationManager : ILocalizationManager
     public string this[string key]
         => GetString(key);
 
-    public Action? Changed;
+    public event Action? Changed;
 
-    public async Task Initialize(ILogger<LocalizationManager> logger, SettingsService settings)
+    public LocalizationManager(ILogger<LocalizationManager> logger, SettingsService settings)
     {
         _logger = logger;
+        _settings = settings;
+    }
+
+    public async Task Initialize()
+    {
         var currentLocale = CultureInfo.CurrentUICulture;
         try
         {
@@ -40,7 +47,7 @@ public sealed class LocalizationManager : ILocalizationManager
 #if DEBUG
             _logger.LogDebug("Found system culture {SystemCulture} for current culture {CurrentCulture}", SystemCulture.Name, currentLocale.Name);
 #endif
-            var selectedLocale = settings.GetSettings().SelectedLanguage;
+            var selectedLocale = _settings.GetSettings().SelectedLanguage;
             if (string.IsNullOrEmpty(selectedLocale))
             {
                 _logger.LogInformation("No locale saved in settings, using system culture");
@@ -54,7 +61,7 @@ public sealed class LocalizationManager : ILocalizationManager
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Failed to initialize localization: {Exception}", ex);
+            _logger.LogError(ex, "Failed to initialize localization: {Exception}", ex);
         }
     }
 
@@ -62,7 +69,7 @@ public sealed class LocalizationManager : ILocalizationManager
     {
         if (!_resourcesByCulture.ContainsKey(culture.Name))
         {
-            _logger?.LogWarning("Culture {Culture} is not available, falling back to default", culture.Name);
+            _logger.LogWarning("Culture {Culture} is not available, falling back to default", culture.Name);
             culture = new CultureInfo(DefaultLocale);
         }
 

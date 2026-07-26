@@ -16,6 +16,7 @@ using Starlight.Launcher.Services.EngineManager;
 using Starlight.Launcher.Services.Localization;
 using Starlight.Launcher.Services.ServerStatus;
 using Starlight.Launcher.Services.Settings;
+using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Services;
 
 namespace Starlight.Launcher;
@@ -63,14 +64,6 @@ public partial class App : Application
                 _blazorHost.DisposeAsync().AsTask().GetAwaiter().GetResult();
             };
 
-            window.PropertyChanged += (_, e) =>
-            {
-                if (e.Property != Window.WindowStateProperty) return;
-                var state = Services.GetRequiredService<AppState>();
-                if (window.WindowState == WindowState.Minimized) state.NotifyPaused();
-                else state.NotifyResumed();
-            };
-
             desktop.MainWindow = window;
         }
 
@@ -97,8 +90,7 @@ public partial class App : Application
 
         var httpClient = HappyEyeballsHttp.CreateHttpClient();
         services.AddSingleton(httpClient);
-        services.AddSingleton<AppState>();
-        services.AddSingleton<LocalizationManager>();
+        services.AddSingleton<ILocalizationManager, LocalizationManager>();
         services.AddSingleton<HubApi>();
         services.AddSingleton<AuthApi>();
         services.AddSingleton<HubServerFetcher>();

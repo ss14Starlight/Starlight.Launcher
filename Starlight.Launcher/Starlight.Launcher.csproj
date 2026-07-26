@@ -23,7 +23,7 @@
 
 
 	<PropertyGroup>
-		<AvaloniaVersion>12.1.0</AvaloniaVersion> <!-- bump to whatever's latest on nuget.org -->
+		<AvaloniaVersion>12.0.1</AvaloniaVersion> <!-- bump to whatever's latest on nuget.org -->
 		<AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
 	</PropertyGroup>
 
@@ -44,6 +44,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
+		<PackageReference Include="Avalonia.Controls.WebView" Version="$(AvaloniaVersion)" />
 		<PackageReference Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
 		<PackageReference Include="Avalonia.Themes.Fluent" Version="$(AvaloniaVersion)" />
 		<PackageReference Include="Avalonia.Fonts.Inter" Version="$(AvaloniaVersion)" />

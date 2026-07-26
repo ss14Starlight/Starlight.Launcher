@@ -6,20 +6,21 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using CommunityToolkit.Mvvm.ComponentModel;
-using H.NotifyIcon.Core;
 using Robust.Launcher.Api.Models;
 using Robust.Launcher.Api.Models.Data;
 using Robust.Launcher.Api.Utility;
 using Serilog;
-using Starlight.Launcher.Models.Settings;
+using Starlight.Launcher.Models.Helpers;
 using Starlight.Launcher.Services.Auth;
 using Starlight.Launcher.Services.Discord;
 using Starlight.Launcher.Services.EngineManager;
 using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI.Models;
 using Starlight.Launcher.WebUI.Models.Connector;
-using TerraFX.Interop.Windows;
+using Starlight.Launcher.WebUI.Models.DiscordRichPresence;
+using Starlight.Launcher.WebUI.Models.Helpers;
+using Starlight.Launcher.WebUI.Models.Settings;
+using Starlight.Launcher.WebUI.Services;
 
 namespace Starlight.Launcher.Services;
 
@@ -56,13 +57,13 @@ public partial class Connector : ObservableObject
     public ConnectionStatus Status
     {
         get;
-        private set => SetProperty(ref field, value);
+        private set => SetField(ref field, value);
     } = ConnectionStatus.None;
 
     public bool ClientExitedBadly
     {
         get;
-        private set => SetProperty(ref field, value);
+        private set => SetField(ref field, value);
     }
 
     public ServerPrivacyPolicyInfo? PrivacyPolicyInfo { get; private set; }
@@ -70,7 +71,7 @@ public partial class Connector : ObservableObject
     public bool PrivacyPolicyDifferentVersion
     {
         get;
-        private set => SetProperty(ref field, value);
+        private set => SetField(ref field, value);
     }
 
     private bool TryBeginLaunch()
@@ -117,7 +118,7 @@ public partial class Connector : ObservableObject
         }
     }
 
-    public async void LaunchContentBundle(IFileResult file, CancellationToken cancel = default)
+    public async void LaunchContentBundle(FileResult file, CancellationToken cancel = default)
     {
         if (!TryBeginLaunch())
         {
@@ -240,7 +241,7 @@ public partial class Connector : ObservableObject
         PrivacyPolicyDifferentVersion = default;
     }
 
-    private async Task LaunchContentBundleInternal(IFileResult file, CancellationToken cancel)
+    private async Task LaunchContentBundleInternal(FileResult file, CancellationToken cancel)
     {
         Status = ConnectionStatus.Updating;
 

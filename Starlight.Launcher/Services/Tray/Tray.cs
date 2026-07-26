@@ -1,4 +1,6 @@
-using Starlight.Launcher.Services.Settings;
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
+using Starlight.Launcher.WebUI.Models.Tray;
 using Starlight.Launcher.WebUI.Services;
 
 namespace Starlight.Launcher.Services;
@@ -21,5 +23,9 @@ public sealed class TrayCoordinator
         _tray.IconActivated += (_, _) => _tray.ShowWindow();
     }
 
-    private void QuitApp() => Application.Current?.Quit();
+    private static void QuitApp()
+    {
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            desktop.Shutdown();
+    }
 }

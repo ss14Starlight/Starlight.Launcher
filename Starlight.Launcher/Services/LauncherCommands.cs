@@ -1,11 +1,15 @@
 using System.Text;
 using System.Threading.Channels;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Threading;
+using Microsoft.Extensions.Hosting.Internal;
 using MudBlazor;
 using Robust.Launcher.Api.Models;
 using Serilog;
-using Starlight.Launcher.Api.Models;
-using Starlight.Launcher.Components.Atoms.Dialogs;
 using Starlight.Launcher.Services.Auth;
+using Starlight.Launcher.WebUI.Models.Auth;
 
 namespace Starlight.Launcher.Services;
 
@@ -15,34 +19,40 @@ public partial class LauncherCommands
 
     private readonly LoginManager _loginManager;
     private readonly Connector _connector;
+    private readonly Dispatcher _dispatcher;
     public readonly Channel<string> CommandChannel;
 
     public event Func<string, Task>? ConnectRequested;
 
-    public LauncherCommands(LoginManager loginManager, Connector connector)
+    public LauncherCommands(LoginManager loginManager, Connector connector, Dispatcher dispatcher)
     {
         _loginManager = loginManager;
         _connector = connector;
+        _dispatcher = dispatcher;
 
         CommandChannel = Channel.CreateUnbounded<string>();
     }
 
     private void ActivateWindow()
     {
-        var window = Application.Current?.Windows.FirstOrDefault();
-        if (window is null)
+        if (Application.Current.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktopLifetime || desktopLifetime.MainWindow is not { } window)
         {
             Log.Warning("ActivateWindow: can't find active window!!!");
             return;
         }
 
-        if (MainThread.IsMainThread)
-            ActivateWindowPlatform(window);
-        else
-            MainThread.BeginInvokeOnMainThread(() => ActivateWindowPlatform(window));
+        _dispatcher.Post(() =>
+        {
+            window.Show();
+            window.Activate();
+        });
     }
 
-    partial void ActivateWindowPlatform(Window window);
+    private static void ActivateWindow(Window window)
+    {
+        window.Show();
+        window.Activate();
+    }
 
     private async Task Connect(string param)
     {

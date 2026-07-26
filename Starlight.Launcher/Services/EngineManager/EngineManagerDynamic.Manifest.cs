@@ -1,6 +1,6 @@
 using Serilog;
-using Starlight.Launcher.Models;
-using Starlight.Launcher.Models.Settings;
+using Starlight.Launcher.WebUI.Models.Data;
+using Starlight.Launcher.WebUI.Models.Settings;
 using System.Diagnostics;
 using System.Text.Json.Serialization;
 

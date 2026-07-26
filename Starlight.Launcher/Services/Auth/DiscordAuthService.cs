@@ -1,11 +1,12 @@
-using Microsoft.Maui.ApplicationModel;
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Security.Cryptography;
+using System.Web;
 using Robust.Launcher.Api.Models;
 using Robust.Launcher.Api.Models.Data;
 using Serilog;
-using Starlight.Launcher.Api.Models;
-using System.Collections.Concurrent;
-using System.Security.Cryptography;
-using System.Web;
+using Starlight.Launcher.WebUI.Models.Auth;
+using Starlight.Launcher.WebUI.Models.DiscordAuthService;
 
 namespace Starlight.Launcher.Services.Auth;
 
@@ -22,8 +23,18 @@ public sealed class DiscordAuthService(StarlightAuthApi api, LoginManager loginM
         _pending[state] = tcs;
         try
         {
-            if (!await Browser.Default.OpenAsync(api.BuildLauncherLoginUrl(state), BrowserLaunchMode.SystemPreferred))
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = api.BuildLauncherLoginUrl(state).ToString(),
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
                 throw new DiscordAuthException("Unable to open the browser to log in.");
+            }
 
             using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancel);
             timeoutCts.CancelAfter(_flowTimeout);

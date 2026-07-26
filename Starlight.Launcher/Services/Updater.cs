@@ -8,6 +8,7 @@ using Serilog;
 using Starlight.Launcher.Services.Discord;
 using Starlight.Launcher.Services.EngineManager;
 using Starlight.Launcher.Services.Settings;
+using Starlight.Launcher.WebUI.Models.DiscordRichPresence;
 using Starlight.Launcher.WebUI.Models.Updater;
 using System.Diagnostics.CodeAnalysis;
 using System.IO.Compression;

@@ -1,4 +1,4 @@
-﻿using Starlight.Launcher.Models.Data;
+﻿using Starlight.Launcher.WebUI.Models.Data;
 
 namespace Starlight.Launcher.Services.Settings;
 

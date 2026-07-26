@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Avalonia;
+using Avalonia.WebView.Desktop;
 using Serilog;
 
 namespace Starlight.Launcher;

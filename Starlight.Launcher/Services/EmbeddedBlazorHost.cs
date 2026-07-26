@@ -7,8 +7,7 @@ using Starlight.Launcher.Services.Auth;
 using Starlight.Launcher.Services.Discord;
 using Starlight.Launcher.Services.ServerStatus;
 using Starlight.Launcher.Services.Settings;
-using Starlight.Launcher.Services.State;
-using Starlight.Launcher.Web;
+using Starlight.Launcher.WebUI;
 using Starlight.Launcher.WebUI.Services;
 
 namespace Starlight.Launcher.Services;
@@ -28,7 +27,6 @@ public sealed class EmbeddedBlazorHost : IAsyncDisposable
                 // Only re-expose what your .razor components actually @inject - trim
                 // this list to match your real markup instead of copying everything.
                 services.AddSingleton(nativeServices.GetRequiredService<SettingsService>());
-                services.AddSingleton(nativeServices.GetRequiredService<AppState>());
                 services.AddSingleton(nativeServices.GetRequiredService<LauncherCommands>());
                 services.AddSingleton(nativeServices.GetRequiredService<LauncherMessaging>());
                 services.AddSingleton(nativeServices.GetRequiredService<INativeTray>());

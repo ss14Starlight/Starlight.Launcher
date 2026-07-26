@@ -6,6 +6,7 @@ using Serilog;
 using SpaceWizards.Sodium;
 using SQLitePCL;
 using Starlight.Launcher.Utility;
+using Starlight.Launcher.WebUI.Models.Updater;
 using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;

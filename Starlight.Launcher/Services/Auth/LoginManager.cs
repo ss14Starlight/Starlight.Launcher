@@ -1,11 +1,12 @@
+using Avalonia.Threading;
 using Robust.Launcher.Api.Api;
 using Robust.Launcher.Api.Models;
 using Robust.Launcher.Api.Models.Data;
 using Robust.Launcher.Api.Utility;
 using Serilog;
-using Starlight.Launcher.Api.Models;
-using Starlight.Launcher.Models.Helpers;
 using Starlight.Launcher.Services.Settings;
+using Starlight.Launcher.WebUI.Models.Auth;
+using Starlight.Launcher.WebUI.Models.Helpers;
 using System.Collections.ObjectModel;
 
 namespace Starlight.Launcher.Services.Auth;
@@ -15,7 +16,7 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
     private readonly AuthApi _authApi;
     private readonly StarlightAuthApi _starlightAuthApi;
     private readonly SettingsService _settings;
-    private readonly IDispatcher _dispatcher;
+    private readonly Dispatcher _dispatcher;
 
     public static readonly TimeSpan TokenRefreshInterval = TimeSpan.FromMinutes(5);
 
@@ -72,7 +73,7 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
         set => ActiveAccountId = value?.UserId;
     }
 
-    public LoginManager(AuthApi authApi, SettingsService settings, IDispatcher dispatcher, StarlightAuthApi starlightAuthApi)
+    public LoginManager(AuthApi authApi, SettingsService settings, Dispatcher dispatcher, StarlightAuthApi starlightAuthApi)
     {
         _authApi = authApi;
         _settings = settings;
@@ -409,10 +410,7 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
 
     private void DispatchToUi(Action action)
     {
-        if (_dispatcher.IsDispatchRequired)
-            _dispatcher.Dispatch(action);
-        else
-            action();
+        _dispatcher.Post(action);
     }
 
     public async ValueTask DisposeAsync()
