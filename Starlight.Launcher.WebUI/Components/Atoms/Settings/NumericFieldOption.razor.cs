@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 
-namespace Starlight.Launcher.Components.WebUI.Atoms.Settings;
+namespace Starlight.Launcher.WebUI.Components.Atoms.Settings;
 
 public partial class NumericFieldOption : ComponentBase
 {

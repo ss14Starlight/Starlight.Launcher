@@ -14,7 +14,7 @@
                     <MudIcon Icon="@Icons.Material.Filled.Dns" Size="Size.Large" />
                 </div>
                 <div>
-                    <MudText Typo="Typo.h5" Class="hub-header-title">@_localization["hub-menu-title"]</MudText>
+                    <MudText Typo="Typo.h5" Class="hub-header-title">@L["hub-menu-title"]</MudText>
 
                     @if (_servers is not null)
                     {
@@ -38,7 +38,7 @@
                 </div>
             </MudStack>
 
-            <MudTooltip Text="@_localization["hub-menu-refresh"]">
+            <MudTooltip Text="@L["hub-menu-refresh"]">
                 <MudIconButton Icon="@Icons.Material.Filled.Refresh"
                                 Color="Color.Primary"
                                 Variant="Variant.Filled"
@@ -71,7 +71,7 @@
         {
             <MudPaper Class="pa-8 d-flex flex-column align-center" Elevation="0">
                 <MudIcon Icon="@Icons.Material.Filled.CloudOff" Size="Size.Large" Class="mud-text-secondary mb-2" />
-                <MudText Class="mud-text-secondary">@_localization["hub-menu-server-list-empty"]</MudText>
+                <MudText Class="mud-text-secondary">@L["hub-menu-server-list-empty"]</MudText>
             </MudPaper>
         }
         else
@@ -88,7 +88,7 @@
                                         <MudText Typo="Typo.h6">@ParseDescription(server.Title)</MudText>
                                         @if (server.IsAdultOnly)
                                         {
-                                            <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="Color.Error">@_localization["hub-menu-server-adult-tag"]</MudChip>
+                                            <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="Color.Error">@L["hub-menu-server-adult-tag"]</MudChip>
                                         }
                                     </MudStack>
 
@@ -143,7 +143,7 @@
                                            StartIcon="@Icons.Material.Filled.Login"
                                            Disabled="@(server.Status == ServerStatus.Offline)"
                                            OnClick="@(() => Connect(server))">
-                                    @_localization["hub-menu-server-connect-button"]
+                                    @L["hub-menu-server-connect-button"]
                                 </MudButton>
 
                                 <MudIconButton Icon="@(IsFavorite(server) ? Icons.Material.Filled.Star : Icons.Material.Filled.StarBorder)"

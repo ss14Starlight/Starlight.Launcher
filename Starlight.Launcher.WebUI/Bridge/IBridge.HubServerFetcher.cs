@@ -8,7 +8,9 @@ public partial interface IBridge
     event Action? ServersChanged;
     event Action<RefreshListStatus>? StatusChanged;
 
-   void UpdateInfoFor(ServerStatusData statusData);
+    RefreshListStatus GetFetchStatus();
+
+    void UpdateInfoFor(ServerStatusData statusData);
 
     void RequestRefresh();
 

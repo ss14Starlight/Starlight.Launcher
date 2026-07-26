@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html id="high" lang="en">
+<head>
+    <ImportMap />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <link rel="stylesheet" href="@Assets["app.css"]" />
+    <link rel="stylesheet" href="@Assets["Starlight.Launcher.WebUI.styles.css"]" />
+    <HeadOutlet @rendermode="InteractiveServer" />
+</head>
+<body id="priority">
+    <Routes @rendermode="InteractiveServer" />
+    <script src="@Assets["scripts.js"]"></script>
+    <script src="@Assets["js/editor.js"]"></script>
+    <script src="@Assets["js/popup.js"]"></script>
+    <script src="@Assets["js/tip.js"]"></script>
+    <script src="_framework/blazor.web.js"></script>
+</body>
+</html>

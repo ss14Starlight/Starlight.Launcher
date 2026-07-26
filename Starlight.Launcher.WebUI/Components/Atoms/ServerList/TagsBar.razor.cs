@@ -2,7 +2,7 @@
 using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Models.ServerStatus;
 
-namespace Starlight.Launcher.Components.WebUI.Atoms.ServerList;
+namespace Starlight.Launcher.WebUI.Components.Atoms.ServerList;
 
 public partial class TagsBar : LocalizedComponentBase
 {

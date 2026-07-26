@@ -1,5 +1,8 @@
 ﻿@using Starlight.Launcher.WebUI.Components.Atoms.Dialogs
-@inherits LayoutComponentBase
+@using Starlight.Launcher.WebUI.Models.Data
+@using Starlight.Launcher.WebUI.Localization;
+
+@inherits LocalizedLayoutBase
 
 <MudPopoverProvider />
 <MudDialogProvider />
@@ -12,10 +15,10 @@
         {
             <MudText Typo="Typo.h5" Class="ml-3">STARLIGHT</MudText>
             <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" Class="ml-2">
-                @GetVersion()
+                @_bridge.GetVersion()
             </MudChip>
             <MudSpacer />
-            <MudTooltip Text="@_localization["main-layout-auth-tab"]">
+            <MudTooltip Text="@L["main-layout-auth-tab"]">
                 <MudIconButton Href="/auth" Icon="@Icons.Material.Filled.People" Size="Size.Medium" />
             </MudTooltip>
         }
@@ -50,13 +53,13 @@
         <MudAppBar Bottom="true" Elevation="3">
             @if (_elementPosition == ElementPosition.Top)
             {
-                <MudTooltip Text="@_localization["main-layout-auth-tab"]">
+                <MudTooltip Text="@L["main-layout-auth-tab"]">
                     <MudIconButton Href="/auth" Icon="@Icons.Material.Filled.People" Size="Size.Medium" />
                 </MudTooltip>
                 <MudSpacer />
                 <MudText Typo="Typo.h5" Class="mr-3">STARLIGHT</MudText>
                 <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" Class="ml-2">
-                    @GetVersion()
+                    @_bridge.GetVersion()
                 </MudChip>
             }
             else if (_elementPosition == ElementPosition.Bottom)

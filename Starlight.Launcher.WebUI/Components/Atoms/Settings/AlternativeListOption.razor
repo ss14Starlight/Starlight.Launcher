@@ -55,21 +55,21 @@
                                   Validation="@(new Func<string, string?>(ValidateUrl))"
                                   Class="flex-grow-1" />
 
-                    <MudTooltip Text="@_localization["settings-alternative-list-option-move-up"]">
+                    <MudTooltip Text="@L["settings-alternative-list-option-move-up"]">
                         <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward"
                                        Size="Size.Small"
                                        Disabled="@(index == 0)"
                                        OnClick="@(() => MoveUp(index))" />
                     </MudTooltip>
 
-                    <MudTooltip Text="@_localization["settings-alternative-list-option-move-down"]">
+                    <MudTooltip Text="@L["settings-alternative-list-option-move-down"]">
                         <MudIconButton Icon="@Icons.Material.Filled.ArrowDownward"
                                        Size="Size.Small"
                                        Disabled="@(index == Value.Count - 1)"
                                        OnClick="@(() => MoveDown(index))" />
                     </MudTooltip>
 
-                    <MudTooltip Text="@_localization["settings-alternative-list-option-remove"]">
+                    <MudTooltip Text="@L["settings-alternative-list-option-remove"]">
                         <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                        Size="Size.Small"
                                        Color="Color.Error"

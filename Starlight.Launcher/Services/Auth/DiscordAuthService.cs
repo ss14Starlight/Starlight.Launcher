@@ -133,7 +133,3 @@ public sealed class DiscordAuthService(StarlightAuthApi api, LoginManager loginM
         return Convert.ToHexString(bytes);
     }
 }
-
-public sealed record HandoffResult(string Token, string? RefreshToken, string? SessionId);
-
-public sealed class DiscordAuthException(string message) : Exception(message);

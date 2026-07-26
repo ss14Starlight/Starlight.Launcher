@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using Starlight.Launcher.WebUI.Localization;
 
-namespace Starlight.Launcher.Components.WebUI.Atoms;
+namespace Starlight.Launcher.WebUI.Components.Atoms;
 
 public sealed partial class HorizontalNavBar : LocalizedComponentBase, IDisposable
 {

@@ -1,14 +1,15 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using Starlight.Launcher.Components.WebUI.Atoms;
-using Starlight.Launcher.Components.WebUI.Atoms.Dialogs;
+using Starlight.Launcher.WebUI.Components.Atoms;
+using Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Localization;
 using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using Color = MudBlazor.Color;
+using Starlight.Launcher.WebUI.Models.Data;
 
-namespace Starlight.Launcher.Components.WebUI.Pages;
+namespace Starlight.Launcher.WebUI.Components.Pages;
 
 public sealed partial class NullLinkHub : LocalizedComponentBase, IAsyncDisposable
 {

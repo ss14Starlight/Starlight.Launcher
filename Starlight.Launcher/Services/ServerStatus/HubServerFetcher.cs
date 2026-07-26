@@ -3,6 +3,7 @@ using Robust.Launcher.Api.Models.ServerStatus;
 using Robust.Launcher.Api.Utility;
 using Serilog;
 using Starlight.Launcher.Services.Settings;
+using Starlight.Launcher.WebUI.Models.HubServerFetcher;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Starlight.Launcher.WebUI.Models.LauncherUpdater;
 
 namespace Starlight.Launcher.WebUI.Bridge;
@@ -10,4 +11,18 @@ public partial interface IBridge
     event Action<(long downloaded, long total)>? DownloadProgress;
 
     Task<UpdateInfo> IsUpdateAvailable();
+
+    Task<string> DownloadAsset(ReleaseAsset asset, CancellationToken ct = default);
+
+    void RunInstallerAndExit(string installerPath);
+
+    void CleanupOldInstallers();
+
+    bool ShouldShowChangelog();
+
+    Task<string?> GetChangelogForCurrentVersion();
+
+    void MarkChangelogSeen();
+
+    string GetVersion();
 }

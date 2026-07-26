@@ -123,7 +123,7 @@ public partial class Servers : LocalizedComponentBase, IDisposable
 
     private void RebuildFromFetcher()
     {
-        _allServers = _bridge.AllServers;
+        _allServers = _bridge.GetAllServers();
         _totalCount = _allServers.Count;
         ExtractTags(_allServers, out _availableRPTags, out _availableLangTags, out _availableRegionTags);
         ApplyFilters();

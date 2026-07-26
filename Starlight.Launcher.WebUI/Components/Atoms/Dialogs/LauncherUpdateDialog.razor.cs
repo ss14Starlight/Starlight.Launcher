@@ -4,7 +4,7 @@ using MudBlazor;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Models.LauncherUpdater;
 
-namespace Starlight.Launcher.Components.WebUI.Atoms.Dialogs;
+namespace Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 
 public sealed partial class LauncherUpdateDialog : ComponentBase, IDisposable
 {
@@ -69,7 +69,7 @@ public sealed partial class LauncherUpdateDialog : ComponentBase, IDisposable
     {
         try
         {
-            var path = await _launcherUpdater.DownloadAsset(Asset, _cts.Token);
+            var path = await _bridge.DownloadAsset(Asset, _cts.Token);
 
             _phase = Phase.Done;
             await InvokeAsync(StateHasChanged);
@@ -77,7 +77,7 @@ public sealed partial class LauncherUpdateDialog : ComponentBase, IDisposable
             // Small pause so the user sees "complete" before we vanish.
             await Task.Delay(800, _cts.Token);
 
-            LauncherUpdater.RunInstallerAndExit(path);
+            _bridge.RunInstallerAndExit(path);
         }
         catch (OperationCanceledException)
         {

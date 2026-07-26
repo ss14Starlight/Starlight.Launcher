@@ -68,12 +68,12 @@
             <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
                        StartIcon="@Icons.Material.Rounded.PlayArrow"
                        OnClick="Play" Class="server-card__play-btn">
-                @_localization["servers-list-item-play"]
+                @L["servers-list-item-play"]
             </MudButton>
         </div>
 
         <div class="server-card__fav" @onclick:stopPropagation="true">
-            <MudTooltip Color="Color.Primary" Text="@_localization["servers-list-item-favorites"]">
+            <MudTooltip Color="Color.Primary" Text="@L["servers-list-item-favorites"]">
                 <MudIconButton Icon="@(IsInFavorites ? Icons.Material.Rounded.Star : Icons.Material.Rounded.StarBorder)"
                                Color="Color.Primary" OnClick="HandleFavorites" />
             </MudTooltip>

@@ -1,6 +1,9 @@
 ﻿@page "/"
-@using Starlight.Launcher.Components.Atoms.WebUI.ServerList
+@using Starlight.Launcher.WebUI.Components.Atoms.ServerList
+@using Starlight.Launcher.WebUI.Localization
 @using MudBlazor
+
+@inherits LocalizedComponentBase
 
 <div class="app-bg"></div>
 
@@ -9,12 +12,12 @@
         <MudButton StartIcon="@Icons.Material.Filled.Dns"
                    Variant="Variant.Filled" Color="Color.Primary"
                    OnClick="OpenDirectConnect">
-            @_localization["home-menu-dirrect-connect"]
+            @L["home-menu-dirrect-connect"]
         </MudButton>
         <MudButton StartIcon="@Icons.Material.Filled.Movie"
                    Variant="Variant.Outlined"
                    OnClick="LoadReplay">
-            @_localization["home-menu-load-replay"]
+            @L["home-menu-load-replay"]
         </MudButton>
 
         <MudSpacer />

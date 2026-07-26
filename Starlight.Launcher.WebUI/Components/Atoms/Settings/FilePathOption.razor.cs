@@ -5,7 +5,7 @@ using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Models.Helpers;
 using Starlight.Launcher.WebUI.Services;
 
-namespace Starlight.Launcher.Components.WebUI.Atoms.Settings;
+namespace Starlight.Launcher.WebUI.Components.Atoms.Settings;
 
 public partial class FilePathOption : LocalizedComponentBase
 {

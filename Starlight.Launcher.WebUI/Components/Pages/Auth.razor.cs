@@ -8,8 +8,9 @@ using Serilog;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Models.Auth;
+using Starlight.Launcher.WebUI.Models.DiscordAuthService;
 
-namespace Starlight.Launcher.Components.WebUI.Pages;
+namespace Starlight.Launcher.WebUI.Components.Pages;
 
 public partial class Auth : LocalizedComponentBase, IDisposable
 {
@@ -62,15 +63,15 @@ public partial class Auth : LocalizedComponentBase, IDisposable
 
     protected override void OnInitialized()
     {
-        _loginManager.LoginsChanged += OnLoginsChanged;
+        _bridge.LoginEntriesChanged += OnLoginsChanged;
 
-        if (_loginManager.Logins.Count == 0)
+        if (_bridge.GetLoginEntries().Count == 0)
             _mode = Mode.SignIn;
     }
 
     private void OnLoginsChanged() => InvokeAsync(StateHasChanged);
 
-    public void Dispose() => _loginManager.LoginsChanged -= OnLoginsChanged;
+    public void Dispose() => _bridge.LoginEntriesChanged -= OnLoginsChanged;
 
     private async Task SelectAccount(LoggedInAccount account)
     {
@@ -79,21 +80,21 @@ public partial class Auth : LocalizedComponentBase, IDisposable
         {
             try
             {
-                await _loginManager.UpdateSingleAccountStatus(account);
+                await _bridge.UpdateSingleAccountStatus(account);
             }
             catch (AuthApiException ex)
             {
-                _snackbar.Add(_localization.GetString("auth-menu-token-verify-warning", ("ex", ex.Message)), Severity.Warning);
+                _snackbar.Add(L.GetString("auth-menu-token-verify-warning", ("ex", ex.Message)), Severity.Warning);
             }
 
             if (account.Status == AccountLoginStatus.Expired)
             {
-                _snackbar.Add(_localization["auth-menu-session-expired-warning"], Severity.Warning);
+                _snackbar.Add(L["auth-menu-session-expired-warning"], Severity.Warning);
                 await BeginRelogin(account);
                 return;
             }
 
-            _loginManager.ActiveAccountId = account.UserId;
+            _bridge.SetActiveAccountId(account.UserId);
             _nav.NavigateTo("/");
         }
         finally
@@ -104,8 +105,8 @@ public partial class Auth : LocalizedComponentBase, IDisposable
 
     private void RemoveAccount(LoggedInAccount account)
     {
-        _loginManager.RemoveLogin(account.UserId);
-        _snackbar.Add(_localization.GetString("auth-menu-account-deleted", ("account", account.LoginInfo.Username)), Severity.Info);
+        _bridge.RemoveLogin(account.UserId);
+        _snackbar.Add(L.GetString("auth-menu-account-deleted", ("account", account.LoginInfo.Username)), Severity.Info);
     }
 
     private void GoToSignIn()
@@ -130,9 +131,9 @@ public partial class Auth : LocalizedComponentBase, IDisposable
 
     private string StatusLabel(AccountLoginStatus s) => s switch
     {
-        AccountLoginStatus.Available => _localization["auth-menu-online-status"],
-        AccountLoginStatus.Expired => _localization["auth-menu-expired-status"],
-        AccountLoginStatus.Unsure => _localization["auth-menu-unsure-status"],
+        AccountLoginStatus.Available => L["auth-menu-online-status"],
+        AccountLoginStatus.Expired => L["auth-menu-expired-status"],
+        AccountLoginStatus.Unsure => L["auth-menu-unsure-status"],
         _ => s.ToString()
     };
 
@@ -167,13 +168,13 @@ public partial class Auth : LocalizedComponentBase, IDisposable
 
         if (string.IsNullOrWhiteSpace(_linkUsername) || string.IsNullOrEmpty(_linkPassword))
         {
-            _linkError = _localization["auth-menu-enter-info-error"];
+            _linkError = L["auth-menu-enter-info-error"];
             return;
         }
 
         if ((await _bridge.GetSettingsAsync()).SelectedAuthServer is not { } authServer)
         {
-            _linkError = _localization["auth-menu-no-server-error"];
+            _linkError = L["auth-menu-no-server-error"];
             return;
         }
 
@@ -188,9 +189,9 @@ public partial class Auth : LocalizedComponentBase, IDisposable
 
             if (result.IsSuccess && _linkUserId != null)
             {
-                _loginManager.LinkAuthToken(_linkUserId.Value, result.LoginInfo.UserId, result.LoginInfo);
+                _bridge.LinkAuthToken(_linkUserId.Value, result.LoginInfo.UserId, result.LoginInfo);
 
-                _snackbar.Add(_localization.GetString("auth-menu-account-linked", ("account", result.LoginInfo.Username)), Severity.Success);
+                _snackbar.Add(L.GetString("auth-menu-account-linked", ("account", result.LoginInfo.Username)), Severity.Success);
 
                 BackToAccountList();
                 return;
@@ -199,18 +200,18 @@ public partial class Auth : LocalizedComponentBase, IDisposable
             switch (result.Code)
             {
                 case AuthApi.AuthenticateDenyResponseCode.InvalidCredentials:
-                    _linkError = _localization["auth-menu-incorrect-info-error"];
+                    _linkError = L["auth-menu-incorrect-info-error"];
                     break;
                 case AuthApi.AuthenticateDenyResponseCode.TfaRequired:
                     _linkTfaRequired = true;
-                    _linkError = _localization["auth-menu-tfa-required-error"];
+                    _linkError = L["auth-menu-tfa-required-error"];
                     break;
                 case AuthApi.AuthenticateDenyResponseCode.TfaInvalid:
                     _linkTfaRequired = true;
-                    _linkError = _localization["auth-menu-tfa-invalid-error"];
+                    _linkError = L["auth-menu-tfa-invalid-error"];
                     break;
                 case AuthApi.AuthenticateDenyResponseCode.AccountLocked:
-                    _linkError = _localization["auth-menu-account-blocked-error"];
+                    _linkError = L["auth-menu-account-blocked-error"];
                     break;
                 default:
                     _linkError = string.Join("\n", result.Errors);
@@ -224,10 +225,10 @@ public partial class Auth : LocalizedComponentBase, IDisposable
     }
 
     private Task LinkDiscord(LoggedInAccount account) =>
-        RunDiscordAttach(account, _localization.GetString("auth-menu-linked-status", ("account", account.LoginInfo.Username)));
+        RunDiscordAttach(account, L.GetString("auth-menu-linked-status", ("account", account.LoginInfo.Username)));
 
     private Task ReloginDiscord(LoggedInAccount account) =>
-        RunDiscordAttach(account, _localization["auth-menu-discord-renewed"], navigateHome: true);
+        RunDiscordAttach(account, L["auth-menu-discord-renewed"], navigateHome: true);
 
     private async Task RunDiscordAttach(LoggedInAccount account, string success, bool navigateHome = false)
     {
@@ -239,13 +240,13 @@ public partial class Auth : LocalizedComponentBase, IDisposable
             _snackbar.Add(success, Severity.Success);
             if (navigateHome)
             {
-                _loginManager.ActiveAccountId = account.UserId;
+                _bridge.SetActiveAccountId(account.UserId);
                 _nav.NavigateTo("/");
             }
         }
         catch (OperationCanceledException)
         {
-            _snackbar.Add(_localization["auth-menu-discord-login-error"], Severity.Warning);
+            _snackbar.Add(L["auth-menu-discord-login-error"], Severity.Warning);
         }
         catch (DiscordAuthException ex)
         {
@@ -254,7 +255,7 @@ public partial class Auth : LocalizedComponentBase, IDisposable
         catch (Exception ex)
         {
             Log.Warning(ex, "Discord attach failed");
-            _snackbar.Add(_localization["auth-menu-discord-connect-fail"], Severity.Error);
+            _snackbar.Add(L["auth-menu-discord-connect-fail"], Severity.Error);
         }
         finally
         {
@@ -281,7 +282,7 @@ public partial class Auth : LocalizedComponentBase, IDisposable
         }
         catch (OperationCanceledException)
         {
-            _signInError = _localization["auth-menu-discord-login-error"];
+            _signInError = L["auth-menu-discord-login-error"];
         }
         catch (DiscordAuthException ex)
         {
@@ -290,7 +291,7 @@ public partial class Auth : LocalizedComponentBase, IDisposable
         catch (Exception ex)
         {
             Log.Warning(ex, "Discord login failed");
-            _signInError = _localization["auth-menu-discord-connect-fail"];
+            _signInError = L["auth-menu-discord-connect-fail"];
         }
         finally
         {
@@ -306,13 +307,13 @@ public partial class Auth : LocalizedComponentBase, IDisposable
 
         if (string.IsNullOrWhiteSpace(_signInUsername) || string.IsNullOrEmpty(_signInPassword))
         {
-            _signInError = _localization["auth-menu-enter-info-error"];
+            _signInError = L["auth-menu-enter-info-error"];
             return;
         }
 
         if ((await _bridge.GetSettingsAsync()).SelectedAuthServer is not { } authServer)
         {
-            _signInError = _localization["auth-menu-no-server-error"];
+            _signInError = L["auth-menu-no-server-error"];
             return;
         }
 
@@ -337,9 +338,9 @@ public partial class Auth : LocalizedComponentBase, IDisposable
 
             if (result.IsSuccess)
             {
-                _loginManager.AddFreshLogin(result.LoginInfo);
-                _loginManager.ActiveAccountId = result.LoginInfo.UserId;
-                _snackbar.Add(_localization.GetString("auth-menu-welcome-message", ("username", result.LoginInfo.Username)), Severity.Success);
+                _bridge.AddFreshLogin(result.LoginInfo);
+                _bridge.SetActiveAccountId(result.LoginInfo.UserId);
+                _snackbar.Add(L.GetString("auth-menu-welcome-message", ("username", result.LoginInfo.Username)), Severity.Success);
                 _nav.NavigateTo("/");
                 return;
             }
@@ -347,26 +348,26 @@ public partial class Auth : LocalizedComponentBase, IDisposable
             switch (result.Code)
             {
                 case AuthApi.AuthenticateDenyResponseCode.InvalidCredentials:
-                    _signInError = _localization["auth-menu-incorrect-info-error"];
+                    _signInError = L["auth-menu-incorrect-info-error"];
                     break;
 
                 case AuthApi.AuthenticateDenyResponseCode.AccountUnconfirmed:
-                    _signInError = _localization["auth-menu-unconfirmed-info-error"];
+                    _signInError = L["auth-menu-unconfirmed-info-error"];
                     _signInShowResend = true;
                     break;
 
                 case AuthApi.AuthenticateDenyResponseCode.TfaRequired:
                     _signInTfaRequired = true;
-                    _signInError = _localization["auth-menu-tfa-required-error"];
+                    _signInError = L["auth-menu-tfa-required-error"];
                     break;
 
                 case AuthApi.AuthenticateDenyResponseCode.TfaInvalid:
                     _signInTfaRequired = true;
-                    _signInError = _localization["auth-menu-tfa-invalid-error"];
+                    _signInError = L["auth-menu-tfa-invalid-error"];
                     break;
 
                 case AuthApi.AuthenticateDenyResponseCode.AccountLocked:
-                    _signInError = _localization["auth-menu-account-blocked-error"];
+                    _signInError = L["auth-menu-account-blocked-error"];
                     break;
 
                 default:
@@ -384,7 +385,7 @@ public partial class Auth : LocalizedComponentBase, IDisposable
     {
         if ((await _bridge.GetSettingsAsync()).SelectedAuthServer is not { } authServer)
         {
-            _snackbar.Add(_localization["auth-menu-no-server-error"], Severity.Error);
+            _snackbar.Add(L["auth-menu-no-server-error"], Severity.Error);
             return;
         }
 
@@ -395,13 +396,13 @@ public partial class Auth : LocalizedComponentBase, IDisposable
             {
                 var errors = await _authApi.ResendConfirmationAsync(_signInUsername, new UrlFallbackSet(authServer));
                 if (errors == null)
-                    _snackbar.Add(_localization.GetString("auth-menu-email-resent"), Severity.Success);
+                    _snackbar.Add(L.GetString("auth-menu-email-resent"), Severity.Success);
                 else
                     _snackbar.Add(string.Join("\n", errors), Severity.Error);
             }
             else
             {
-                _snackbar.Add(_localization["auth-menu-email-resent-info"], Severity.Warning);
+                _snackbar.Add(L["auth-menu-email-resent-info"], Severity.Warning);
             }
         }
         finally
@@ -439,15 +440,15 @@ public partial class Auth : LocalizedComponentBase, IDisposable
 
         var validationErrors = new List<string>();
         if (authServer == null)
-            validationErrors.Add(_localization["auth-menu-no-server-error"]);
+            validationErrors.Add(L["auth-menu-no-server-error"]);
         if (string.IsNullOrWhiteSpace(_registerUsername))
-            validationErrors.Add(_localization["auth-menu-register-username-missing"]);
+            validationErrors.Add(L["auth-menu-register-username-missing"]);
         if (string.IsNullOrWhiteSpace(_registerEmail) || !_registerEmail.Contains('@'))
-            validationErrors.Add(_localization["auth-menu-register-invalid-email"]);
+            validationErrors.Add(L["auth-menu-register-invalid-email"]);
         if (_registerPassword.Length < 8)
-            validationErrors.Add(_localization["auth-menu-register-too-short-pass"]);
+            validationErrors.Add(L["auth-menu-register-too-short-pass"]);
         if (_registerPassword != _registerPasswordConfirm)
-            validationErrors.Add(_localization["auth-menu-register-dont-match-pass"]);
+            validationErrors.Add(L["auth-menu-register-dont-match-pass"]);
 
         if (validationErrors.Count > 0)
         {
@@ -469,9 +470,9 @@ public partial class Auth : LocalizedComponentBase, IDisposable
             _registerSuccessMessage = result.Status switch
             {
                 RegisterResponseStatus.Registered =>
-                    _localization["auth-menu-register-success"],
-                RegisterResponseStatus.RegisteredNeedConfirmation => _localization.GetString("auth-menu-register-required-confirmation", ("email", _registerEmail)),
-                _ => _localization["auth-menu-register-success"]
+                    L["auth-menu-register-success"],
+                RegisterResponseStatus.RegisteredNeedConfirmation => L.GetString("auth-menu-register-required-confirmation", ("email", _registerEmail)),
+                _ => L["auth-menu-register-success"]
             };
 
             _registerPassword = "";
@@ -489,13 +490,13 @@ public partial class Auth : LocalizedComponentBase, IDisposable
 
         if ((await _bridge.GetSettingsAsync()).SelectedAuthServer is not { } authServer)
         {
-            _forgotError = _localization["auth-menu-no-server-error"];
+            _forgotError = L["auth-menu-no-server-error"];
             return;
         }
 
         if (string.IsNullOrWhiteSpace(_forgotEmail) || !_forgotEmail.Contains('@'))
         {
-            _forgotError = _localization["auth-menu-forgot-notvalid-email-error"];
+            _forgotError = L["auth-menu-forgot-notvalid-email-error"];
             return;
         }
 

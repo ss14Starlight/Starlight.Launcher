@@ -10,7 +10,7 @@
             @if (AvailableRPTags.Count > 0)
             {
                 <MudSelect Variant="Variant.Outlined" Margin="Margin.Dense" T="string"
-                           Label="@_localization["servers-list-tags-bar-rp-tags-label"]"
+                           Label="@L["servers-list-tags-bar-rp-tags-label"]"
                            MultiSelection="true" SelectedValues="Filters.SelectedRP"
                            SelectedValuesChanged="OnRPTagsChanged"
                            Class="server-toolbar__pill">
@@ -24,7 +24,7 @@
             @if (AvailableLangTags.Count > 0)
             {
                 <MudSelect Variant="Variant.Outlined" Margin="Margin.Dense" T="string"
-                           Label="@_localization["servers-list-tags-bar-lang-tags-label"]"
+                           Label="@L["servers-list-tags-bar-lang-tags-label"]"
                            MultiSelection="true" SelectedValues="Filters.SelectedLang"
                            SelectedValuesChanged="OnLangTagsChanged"
                            Class="server-toolbar__pill">
@@ -38,7 +38,7 @@
             @if (AvailableRegionTags.Count > 0)
             {
                 <MudSelect Variant="Variant.Outlined" Margin="Margin.Dense" T="string"
-                           Label="@_localization["servers-list-tags-bar-region-tags-label"]"
+                           Label="@L["servers-list-tags-bar-region-tags-label"]"
                            MultiSelection="true" SelectedValues="Filters.SelectedRegion"
                            SelectedValuesChanged="OnRegionTagsChanged"
                            Class="server-toolbar__pill">
@@ -58,7 +58,7 @@
                            StartIcon="@Icons.Material.Filled.Clear"
                            OnClick="ClearTagFilters"
                            Class="server-toolbar__clear-btn">
-                    @_localization["servers-list-tags-bar-clear-filters"]
+                    @L["servers-list-tags-bar-clear-filters"]
                 </MudButton>
             </div>
         </MudCollapse>

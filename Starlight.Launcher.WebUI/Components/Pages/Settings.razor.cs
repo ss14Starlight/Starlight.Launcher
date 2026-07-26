@@ -9,7 +9,7 @@ using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Models.Settings;
 using Starlight.Launcher.WebUI.Services;
 
-namespace Starlight.Launcher.Components.WebUI.Pages;
+namespace Starlight.Launcher.WebUI.Components.Pages;
 
 public partial class Settings : LocalizedComponentBase, IDisposable
 {
@@ -32,29 +32,29 @@ public partial class Settings : LocalizedComponentBase, IDisposable
     protected override async Task OnInitializedAsync()
     {
         var settings = await _bridge.GetSettingsAsync();
-        _availableLanguages = _localization.EnumarateAllLoadedLanguages().Select(x => new CultureInfo(x).Name).ToList();
-        _state.OnChange += OnStateChanged;
+        _availableLanguages = L.EnumarateAllLoadedLanguages().Select(x => new CultureInfo(x).Name).ToList();
         await base.OnInitializedAsync();
     }
 
     private async Task OnResetSettings()
     {
         var confirmed = await _dialog.ShowMessageBoxAsync(
-            _localization["settings-menu-reset-confirm-title"],
-            _localization["settings-menu-reset-confirm-text"],
-            yesText: _localization["settings-menu-reset-confirm-yes"],
-            cancelText: _localization["settings-menu-reset-confirm-cancel"]);
+            L["settings-menu-reset-confirm-title"],
+            L["settings-menu-reset-confirm-text"],
+            yesText: L["settings-menu-reset-confirm-yes"],
+            cancelText: L["settings-menu-reset-confirm-cancel"]);
 
         if (confirmed != true)
             return;
 
-        var settings = new AppSettings();
-        settings.LastSeenChangelogVersion = LauncherUpdater.GetVersion();
+        var settings = new AppSettings
+        {
+            LastSeenChangelogVersion = _bridge.GetVersion()
+        };
 
         await _bridge.WriteSettingsAsync(settings);
 
         _appSettingsCache = null;
-        _state.CallUpdate();
 
         _navigation.NavigateTo("/settings", forceLoad: true);
     }
@@ -64,16 +64,16 @@ public partial class Settings : LocalizedComponentBase, IDisposable
         var info = await _bridge.IsUpdateAvailable();
         if (!info.IsUpdateAvailable)
         {
-            _snackbar.Add(_localization["settings-menu-update-latest"], Severity.Success);
+            _snackbar.Add(L["settings-menu-update-latest"], Severity.Success);
             return;
         }
 
         _snackbar.Add(
-            _localization.GetString("settings-menu-update-found", ("latest", info.LatestVersion)),
+            L.GetString("settings-menu-update-found", ("latest", info.LatestVersion)),
             Severity.Warning,
             config =>
             {
-                config.Action = _localization["settings-menu-update-download"];
+                config.Action = L["settings-menu-update-download"];
                 config.ActionColor = MudBlazor.Color.Primary;
                 config.OnClick = _ =>
                 {
@@ -127,7 +127,7 @@ public partial class Settings : LocalizedComponentBase, IDisposable
             var settings = await _bridge.GetSettingsAsync();
             if (!settings.DevPolicyAccepted)
             {
-                var dialog = await _dialog.ShowAsync<AlertDialog>(_localization["settings-development-tab-alert-title"], options);
+                var dialog = await _dialog.ShowAsync<AlertDialog>(L["settings-development-tab-alert-title"], options);
                 if (dialog.Dialog is AlertDialog alert)
                 {
                     alert.OnSuccess += async () => await _bridge.WriteSettingsAsync(await _bridge.GetSettingsAsync() with { DevPolicyAccepted = true });
@@ -141,25 +141,23 @@ public partial class Settings : LocalizedComponentBase, IDisposable
         Func<AppSettings, string?, AppSettings> update)
     {
         if (value is not null && _availableLanguages.Contains(value))
-            _localization.SwitchLanguage(value?.ToString() ?? string.Empty);
+            L.SwitchLanguage(value?.ToString() ?? string.Empty);
 
         setLocal?.Invoke(value);
-        return UpdateSetting(s => update(s, value), true);
+        return UpdateSetting(s => update(s, value));
     }
 
-    private Task OnSettingChanged<T>(T value, Action<T>? setLocal, Func<AppSettings, T, AppSettings> update, bool callWindowUpdate = false)
+    private Task OnSettingChanged<T>(T value, Action<T>? setLocal, Func<AppSettings, T, AppSettings> update)
     {
         setLocal?.Invoke(value);
-        return UpdateSetting(s => update(s, value), callWindowUpdate);
+        return UpdateSetting(s => update(s, value));
     }
 
-    private async Task UpdateSetting(Func<AppSettings, AppSettings> update, bool callWindowUpdate = false)
+    private async Task UpdateSetting(Func<AppSettings, AppSettings> update)
     {
         var settings = await _bridge.GetSettingsAsync();
         var newSettings = update(settings);
         await _bridge.WriteSettingsAsync(newSettings);
-        if (callWindowUpdate)
-            _state.CallUpdate();
     }
 
     private async Task<T> FetchSettings<T>(Func<AppSettings, T> func)
@@ -189,11 +187,5 @@ public partial class Settings : LocalizedComponentBase, IDisposable
                 hubUris.Add(new Hub { HubUri = uri, Priority = Priority });
 
         return hubUris;
-    }
-
-    public void Dispose()
-    {
-        _state.OnChange -= OnStateChanged;
-        GC.SuppressFinalize(this);
     }
 }

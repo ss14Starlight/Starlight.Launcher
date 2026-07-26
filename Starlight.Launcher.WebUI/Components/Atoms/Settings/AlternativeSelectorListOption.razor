@@ -37,7 +37,7 @@
                 var value = Values[index];
 
                 <div class="d-flex align-center gap-2">
-                    <MudTooltip Text="@_localization["settings-alternative-selector-list-option-select"]">
+                    <MudTooltip Text="@L["settings-alternative-selector-list-option-select"]">
                         <MudChip T="string"
                                  Size="Size.Small"
                                  Color="@(index == _selectedIndex ? Color.Primary : Color.Default)"
@@ -65,7 +65,7 @@
                                   Validation="@(new Func<string, string?>(ValidateUrl))"
                                   Class="flex-grow-1" />
 
-                    <MudTooltip Text="@_localization["settings-alternative-selector-list-option-remove"]">
+                    <MudTooltip Text="@L["settings-alternative-selector-list-option-remove"]">
                         <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                        Size="Size.Small"
                                        Color="Color.Error"

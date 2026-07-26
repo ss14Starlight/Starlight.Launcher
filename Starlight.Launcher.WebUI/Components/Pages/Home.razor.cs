@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using Robust.Launcher.Api.Models.ServerStatus;
-using Starlight.Launcher.Components.WebUI.Atoms.Dialogs;
+using Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 using Starlight.Launcher.WebUI.Localization;
@@ -9,7 +9,7 @@ using Starlight.Launcher.WebUI.Models.Data;
 using Starlight.Launcher.WebUI.Models.HubServerFetcher;
 using Starlight.Launcher.WebUI.Services;
 
-namespace Starlight.Launcher.Components.WebUI.Pages;
+namespace Starlight.Launcher.WebUI.Components.Pages;
 
 public partial class Home : LocalizedComponentBase, IDisposable
 {

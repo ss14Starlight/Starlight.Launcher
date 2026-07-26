@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Starlight.Launcher.WebUI.Localization;
 
-namespace Starlight.Launcher.Components.WebUI.Atoms.Settings;
+namespace Starlight.Launcher.WebUI.Components.Atoms.Settings;
 
 public partial class AlternativeListOption : LocalizedComponentBase
 {

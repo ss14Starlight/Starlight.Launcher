@@ -2,9 +2,11 @@ namespace Starlight.Launcher.WebUI.Models.Helpers;
 
 public interface IFileResult
 {
-    string FileName { get; }
+    string FileName { get; init; }
 
-    Task<Stream> OpenReadAsync();
+    string FullPath { get; init; }
+
+    Task <Stream> OpenReadAsync();
 
     Task<Stream> OpenWriteAsync();
 }

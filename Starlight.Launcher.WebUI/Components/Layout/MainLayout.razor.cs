@@ -5,15 +5,17 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using MudBlazor;
 using MudBlazor.Services;
-using Starlight.Launcher.Components.WebUI.Atoms.Dialogs;
+using Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Models.Data;
 using Starlight.Launcher.WebUI.Models.Settings;
 using Starlight.Launcher.WebUI.Services;
+using Starlight.Launcher.WebUI.Localization;
+using Starlight.Launcher.WebUI.Models.DiscordRichPresence;
 
-namespace Starlight.Launcher.Components.WebUI.Layout;
+namespace Starlight.Launcher.WebUI.Components.Layout;
 
-public partial class MainLayout : LayoutComponentBase, IAsyncDisposable, IBrowserViewportObserver
+public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowserViewportObserver
 {
     [Inject] private IJSRuntime _jS { get; set; } = default!;
     [Inject] private IBrowserViewportService _browserViewportService { get; set; } = default!;
@@ -26,8 +28,6 @@ public partial class MainLayout : LayoutComponentBase, IAsyncDisposable, IBrowse
     Guid IBrowserViewportObserver.Id { get; } = Guid.NewGuid();
 
     private bool _isSmallScreen = false;
-
-    public static string GetVersion() => LauncherUpdater.GetVersion();
 
     private static string ToDataTheme(AppTheme t, bool systemPrefersDark) => t switch
     {
@@ -52,28 +52,27 @@ public partial class MainLayout : LayoutComponentBase, IAsyncDisposable, IBrowse
 
     protected override async Task OnInitializedAsync()
     {
-        var settings = await _settings.GetSettingsAsync();
+        var settings = await _bridge.GetSettingsAsync();
         await ApplyThemeAsync();
         _elementPosition = settings.Navigation;
-        _state.OnChange += AppCalledRepaint;
         _navigation.LocationChanged += OnLocationChanged;
-        _settings.LoginsUnrecoverable += OnLoginsUnrecover;
+        _bridge.LoginsUnrecoverable += OnLoginsUnrecover;
 
         if (settings.CollapseInTrayOnStart)
             _tray.HideWindow(); // If layout is initialized - window exists, so we can hide it right away if the user wants that.
 
-        _launcherUpdater.CleanupOldInstallers();
+        _bridge.CleanupOldInstallers();
         await ShowChangelogIfNeeded();
         await CheckUpdate();
     }
 
     private void OnLoginsUnrecover() =>
         _snackbar.Add(
-            _localization["settings-logins-unrecoverable"],
+            L["settings-logins-unrecoverable"],
             Severity.Error,
             config =>
             {
-                config.Action = _localization["settings-logins-unrecoverable-action"];
+                config.Action = L["settings-logins-unrecoverable-action"];
                 config.ActionColor = MudBlazor.Color.Primary;
                 config.OnClick = _ =>
                 {
@@ -81,7 +80,7 @@ public partial class MainLayout : LayoutComponentBase, IAsyncDisposable, IBrowse
                         null,
                         new DialogParameters<LoginsUnrecoverableDialog>
                         {
-                            { nameof(LoginsUnrecoverableDialog.Logins), _settings.GetLogins() }
+                            { nameof(LoginsUnrecoverableDialog.Logins), _bridge.GetLogins() }
                         },
                         new DialogOptions
                         {
@@ -95,13 +94,13 @@ public partial class MainLayout : LayoutComponentBase, IAsyncDisposable, IBrowse
 
     private async Task ShowChangelogIfNeeded()
     {
-        if (!_launcherUpdater.ShouldShowChangelog())
+        if (!_bridge.ShouldShowChangelog())
             return;
 
-        var notes = await _launcherUpdater.GetChangelogForCurrentVersion();
-        var version = LauncherUpdater.GetVersion();
+        var notes = await _bridge.GetChangelogForCurrentVersion();
+        var version = _bridge.GetVersion();
 
-        _launcherUpdater.MarkChangelogSeen();
+        _bridge.MarkChangelogSeen();
 
         if (string.IsNullOrWhiteSpace(notes))
             return;
@@ -126,16 +125,16 @@ public partial class MainLayout : LayoutComponentBase, IAsyncDisposable, IBrowse
 
     private async Task CheckUpdate()
     {
-        var info = await _launcherUpdater.IsUpdateAvailable();
+        var info = await _bridge.IsUpdateAvailable();
         if (!info.IsUpdateAvailable)
             return;
 
         _snackbar.Add(
-            _localization.GetString("settings-menu-update-found", ("latest", info.LatestVersion)),
+            L.GetString("settings-menu-update-found", ("latest", info.LatestVersion)),
             Severity.Warning,
             config =>
             {
-                config.Action = _localization["settings-menu-update-download"];
+                config.Action = L["settings-menu-update-download"];
                 config.ActionColor = MudBlazor.Color.Primary;
                 config.OnClick = _ =>
                 {
@@ -188,25 +187,16 @@ public partial class MainLayout : LayoutComponentBase, IAsyncDisposable, IBrowse
 
     private async Task ApplyThemeAsync()
     {
-        var settings = await _settings.GetSettingsAsync();
+        var settings = await _bridge.GetSettingsAsync();
         var prefersDark = await _jS.InvokeAsync<bool>("appTheme.prefersDark");
         var themeName = ToDataTheme(settings.Theme, prefersDark);
         await _jS.InvokeVoidAsync("appTheme.set", themeName);
     }
 
-    private void AppCalledRepaint() => _ = InvokeAsync((async () =>
-                                            {
-                                                var settings = await _settings.GetSettingsAsync();
-                                                await ApplyThemeAsync();
-                                                _elementPosition = settings.Navigation;
-                                                StateHasChanged();
-                                            }));
-
     public async ValueTask DisposeAsync()
     {
         GC.SuppressFinalize(this);
         await _browserViewportService.UnsubscribeAsync(this);
-        _state.OnChange -= AppCalledRepaint;
         _navigation.LocationChanged -= OnLocationChanged;
     }
 

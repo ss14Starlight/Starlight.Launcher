@@ -2,14 +2,15 @@
 using Microsoft.Extensions.Logging;
 using MudBlazor;
 using Robust.Launcher.Api.Models.ServerStatus;
-using Starlight.Launcher.Components.WebUI.Atoms.Dialogs;
-using Starlight.Launcher.Components.WebUI.Pages;
+using Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
+using Starlight.Launcher.WebUI.Components.Pages;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Services;
+using Starlight.Launcher.WebUI.Localization;
 
-namespace Starlight.Launcher.Components.Atoms.WebUI.ServerList;
+namespace Starlight.Launcher.WebUI.Components.Atoms.ServerList;
 
-public partial class ServerItem : ComponentBase, IDisposable
+public partial class ServerItem : LocalizedComponentBase, IDisposable
 {
     [Inject] private IBridge _bridge { get; set; } = default!;
     [Inject] private IDialogService _dialogService { get; set; } = default!;
@@ -61,7 +62,7 @@ public partial class ServerItem : ComponentBase, IDisposable
     {
         base.OnAfterRender(firstRender);
         if (firstRender)
-            _infoLoader.Request(Data);
+            _bridge.Request(Data);
     }
 
     private async void OnDataChanged()
@@ -73,7 +74,7 @@ public partial class ServerItem : ComponentBase, IDisposable
     private async Task HandleClick()
     {
         if (string.IsNullOrEmpty(Data.Description) && Data.StatusInfo == ServerStatusInfoCode.Fetched)
-            _infoLoader.Request(Data);
+            _bridge.Request(Data);
 
         _expanded = !_expanded;
         await Task.CompletedTask;
@@ -81,17 +82,8 @@ public partial class ServerItem : ComponentBase, IDisposable
 
     private async Task HandleFavorites() => await OnFavorites.InvokeAsync(Data);
 
-    private async Task OnInfoClick(string Url)
-    {
-        try
-        {
-            await Browser.OpenAsync(Url, BrowserLaunchMode.SystemPreferred);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"Failed to open URL {Url}");
-        }
-    }
+    private void OnInfoClick(string Url)
+        => _bridge.OpenBrowserAsync(Url);
 
     private async Task Play()
     {
@@ -112,7 +104,7 @@ public partial class ServerItem : ComponentBase, IDisposable
                 FullWidth = true
             };
 
-            await _dialogService.ShowAsync<NoAccountDialog>(_localization["no-account-dialog-title"], noaccountParams, noaccountOptions);
+            await _dialogService.ShowAsync<NoAccountDialog>(L["no-account-dialog-title"], noaccountParams, noaccountOptions);
         }
         else
         {
@@ -165,8 +157,8 @@ public partial class ServerItem : ComponentBase, IDisposable
 
     private string? _roundStatusText => Data.RoundStatus switch
     {
-        GameRoundStatus.InLobby => _localization["servers-list-item-round-lobby"],
-        GameRoundStatus.InRound => _localization["servers-list-item-round-in-round"],
+        GameRoundStatus.InLobby => L["servers-list-item-round-lobby"],
+        GameRoundStatus.InRound => L["servers-list-item-round-in-round"],
         _ => null,
     };
 

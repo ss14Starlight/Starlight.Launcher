@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Robust.Launcher.Api.Models.Data;
-using Starlight.Launcher.Models.Data;
-using Starlight.Launcher.Models.ServerStatus;
-using Starlight.Launcher.Models.Settings;
+using Starlight.Launcher.WebUI.Models.Data;
+using Starlight.Launcher.WebUI.Models.ServerStatus;
+using Starlight.Launcher.WebUI.Models.Settings;
 using System.Text.Json;
 
 namespace Starlight.Launcher.Services.Settings;
