@@ -2,26 +2,21 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using Starlight.Launcher.Components.Atoms.WebUI.Dialogs;
-using Starlight.Launcher.Components.Atoms.WebUI.Settings;
-using Starlight.Launcher.Models.Settings;
-using Starlight.Launcher.Services;
-using Starlight.Launcher.Services.Localization;
-using Starlight.Launcher.Services.Settings;
-using Starlight.Launcher.Services.State;
+using Starlight.Launcher.WebUI.Bridge;
+using Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
+using Starlight.Launcher.WebUI.Components.Atoms.Settings;
+using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Models.Settings;
+using Starlight.Launcher.WebUI.Services;
 
 namespace Starlight.Launcher.Components.WebUI.Pages;
 
-public partial class Settings : ComponentBase, IDisposable
+public partial class Settings : LocalizedComponentBase, IDisposable
 {
-    [Inject] private LocalizationManager _localization { get; set; } = default!;
-    [Inject] private SettingsService _settings { get; set; } = default!;
-    [Inject] private AppState _state { get; set; } = default!;
+    [Inject] private IBridge _bridge { get; set; } = default!;
     [Inject] private IDialogService _dialog { get; set; } = default!;
     [Inject] private IFileDialogService _fileDialog { get; set; } = default!;
     [Inject] private NavigationManager _navigation { get; set; } = default!;
-    [Inject] private LauncherUpdater _launcherUpdater { get; set; } = default!;
     [Inject] private ISnackbar _snackbar { get; set; } = default!;
     private List<string> _availableLanguages = [];
 
@@ -36,7 +31,7 @@ public partial class Settings : ComponentBase, IDisposable
 
     protected override async Task OnInitializedAsync()
     {
-        var settings = await _settings.GetSettingsAsync();
+        var settings = await _bridge.GetSettingsAsync();
         _availableLanguages = _localization.EnumarateAllLoadedLanguages().Select(x => new CultureInfo(x).Name).ToList();
         _state.OnChange += OnStateChanged;
         await base.OnInitializedAsync();
@@ -56,7 +51,7 @@ public partial class Settings : ComponentBase, IDisposable
         var settings = new AppSettings();
         settings.LastSeenChangelogVersion = LauncherUpdater.GetVersion();
 
-        await _settings.WriteSettingsAsync(settings);
+        await _bridge.WriteSettingsAsync(settings);
 
         _appSettingsCache = null;
         _state.CallUpdate();
@@ -66,7 +61,7 @@ public partial class Settings : ComponentBase, IDisposable
 
     private async Task CheckUpdate()
     {
-        var info = await _launcherUpdater.IsUpdateAvailable();
+        var info = await _bridge.IsUpdateAvailable();
         if (!info.IsUpdateAvailable)
         {
             _snackbar.Add(_localization["settings-menu-update-latest"], Severity.Success);
@@ -129,13 +124,13 @@ public partial class Settings : ComponentBase, IDisposable
                 BackdropClick = false,
             };
 
-            var settings = await _settings.GetSettingsAsync();
+            var settings = await _bridge.GetSettingsAsync();
             if (!settings.DevPolicyAccepted)
             {
                 var dialog = await _dialog.ShowAsync<AlertDialog>(_localization["settings-development-tab-alert-title"], options);
                 if (dialog.Dialog is AlertDialog alert)
                 {
-                    alert.OnSuccess += async () => await _settings.WriteSettingsAsync(await _settings.GetSettingsAsync() with { DevPolicyAccepted = true });
+                    alert.OnSuccess += async () => await _bridge.WriteSettingsAsync(await _bridge.GetSettingsAsync() with { DevPolicyAccepted = true });
                     alert.OnCancel += async () => await _tabs.ActivatePanelAsync(_generalTab);
                 }
             }
@@ -160,9 +155,9 @@ public partial class Settings : ComponentBase, IDisposable
 
     private async Task UpdateSetting(Func<AppSettings, AppSettings> update, bool callWindowUpdate = false)
     {
-        var settings = await _settings.GetSettingsAsync();
+        var settings = await _bridge.GetSettingsAsync();
         var newSettings = update(settings);
-        await _settings.WriteSettingsAsync(newSettings);
+        await _bridge.WriteSettingsAsync(newSettings);
         if (callWindowUpdate)
             _state.CallUpdate();
     }
@@ -177,7 +172,7 @@ public partial class Settings : ComponentBase, IDisposable
         }
         else
         {
-            settings = await _settings.GetSettingsAsync();
+            settings = await _bridge.GetSettingsAsync();
             _appSettingsCache = settings;
             _lastCacheUpdate = DateTime.Now;
         }

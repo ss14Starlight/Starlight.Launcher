@@ -3,7 +3,10 @@ using MudBlazor;
 using Robust.Launcher.Api.Models.ServerStatus;
 using Starlight.Launcher.Components.WebUI.Atoms.Dialogs;
 using Starlight.Launcher.WebUI.Bridge;
+using Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 using Starlight.Launcher.WebUI.Localization;
+using Starlight.Launcher.WebUI.Models.Data;
+using Starlight.Launcher.WebUI.Models.HubServerFetcher;
 using Starlight.Launcher.WebUI.Services;
 
 namespace Starlight.Launcher.Components.WebUI.Pages;
@@ -11,7 +14,6 @@ namespace Starlight.Launcher.Components.WebUI.Pages;
 public partial class Home : LocalizedComponentBase, IDisposable
 {
     [Inject] private IBridge _bridge { get; set; } = default!;
-    [Inject] private HubServerFetcher _fetcher { get; set; } = default!;
     [Inject] private ServerStatusCache _statusCache { get; set; } = default!;
     [Inject] private IDialogService _dialogService { get; set; } = default!;
     [Inject] private IFileDialogService _fileDialog { get; set; } = default!;
@@ -23,8 +25,8 @@ public partial class Home : LocalizedComponentBase, IDisposable
     public void Dispose()
     {
         _bridge.FavoritesChanged -= HandleFavorites;
-        _fetcher.ServersChanged -= OnServersChanged;
-        _fetcher.StatusChanged -= OnStatusChanged;
+        _bridge.ServersChanged -= OnServersChanged;
+        _bridge.StatusChanged -= OnStatusChanged;
         _disposeCts.Cancel();
         _disposeCts.Dispose();
         GC.SuppressFinalize(this);
@@ -36,8 +38,8 @@ public partial class Home : LocalizedComponentBase, IDisposable
     {
         UpdateFavorites(await _bridge.GetFavoritesAsync());
         _bridge.FavoritesChanged += HandleFavorites;
-        _fetcher.ServersChanged += OnServersChanged;
-        _fetcher.StatusChanged += OnStatusChanged;
+        _bridge.ServersChanged += OnServersChanged;
+        _bridge.StatusChanged += OnStatusChanged;
         await base.OnInitializedAsync();
     }
 
@@ -117,7 +119,7 @@ public partial class Home : LocalizedComponentBase, IDisposable
     }
 
     private void HandleInfoNeeded(ServerStatusData server) 
-        => ((IServerSource)_fetcher).UpdateInfoFor(server);
+        => _bridge.UpdateInfoFor(server);
 
     private async Task OpenDirectConnect()
     {

@@ -2,21 +2,19 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using Starlight.Launcher.Components.WebUI.Atoms;
 using Starlight.Launcher.Components.WebUI.Atoms.Dialogs;
-using Starlight.Launcher.Models.Data;
-using Starlight.Launcher.Services.Localization;
-using Starlight.Launcher.Services.Settings;
+using Starlight.Launcher.WebUI.Bridge;
+using Starlight.Launcher.WebUI.Localization;
 using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using Color = MudBlazor.Color;
 
 namespace Starlight.Launcher.Components.WebUI.Pages;
 
-public sealed partial class NullLinkHub : ComponentBase, IAsyncDisposable
+public sealed partial class NullLinkHub : LocalizedComponentBase, IAsyncDisposable
 {
     [Inject] private HttpClient _client { get; set; } = default!;
-    [Inject] private SettingsService _settings { get; set; } = default!;
+    [Inject] private IBridge _bridge { get; set; } = default!;
     [Inject] private IDialogService _dialog { get; set; } = default!;
-    [Inject] private LocalizationManager _localization { get; set; } = default!;
     private List<ServerListItem>? _servers;
     private string? _error;
     private CancellationTokenSource? _cts;
@@ -34,7 +32,7 @@ public sealed partial class NullLinkHub : ComponentBase, IAsyncDisposable
         await LoadAsync(_cts.Token);
         _ = PollLoopAsync(_cts.Token);
 
-        _settings.FavoritesChanged += OnFavoritesChanged;
+        _bridge.FavoritesChanged += OnFavoritesChanged;
     }
 
     private async Task PollLoopAsync(CancellationToken token)
@@ -67,7 +65,7 @@ public sealed partial class NullLinkHub : ComponentBase, IAsyncDisposable
     {
         try
         {
-            var baseUrl = _settings.GetSettings().StarlightAPIUrl;
+            var baseUrl = _bridge.GetSettings().StarlightAPIUrl;
             var url = new Uri(new Uri(baseUrl), "api/servers");
 
             var result = await _client.GetFromJsonAsync<List<ServerListItem>>(url, token);
@@ -110,18 +108,18 @@ public sealed partial class NullLinkHub : ComponentBase, IAsyncDisposable
 
     private async Task ToggleFavorite(ServerListItem server)
     {
-        var favorites = _settings.GetFavorites();
+        var favorites = _bridge.GetFavorites();
         var alreadyExist = favorites.FirstOrDefault(x => x.Address == server.ConnectionString);
 
         if (alreadyExist is null or default(FavoriteServer?))
         {
             favorites.Add(new FavoriteServer(server.Title, server.ConnectionString, ""));
-            await _settings.WriteFavoritesAsync(favorites);
+            await _bridge.WriteFavoritesAsync(favorites);
         }
         else if (alreadyExist != null)
         {
             favorites.Remove(alreadyExist);
-            await _settings.WriteFavoritesAsync(favorites);
+            await _bridge.WriteFavoritesAsync(favorites);
         }
     }
 
@@ -131,7 +129,7 @@ public sealed partial class NullLinkHub : ComponentBase, IAsyncDisposable
         {
             await InvokeAsync(() =>
             {
-                _favoriteAddresses = _settings.GetFavoriteAddressesSnapshot();
+                _favoriteAddresses = _bridge.GetFavoriteAddressesSnapshot();
                 StateHasChanged();
             });
         }
@@ -203,7 +201,7 @@ public sealed partial class NullLinkHub : ComponentBase, IAsyncDisposable
             _cts.Dispose();
         }
 
-        _settings.FavoritesChanged -= OnFavoritesChanged;
+        _bridge.FavoritesChanged -= OnFavoritesChanged;
     }
 
     private static MarkupString ParseDescription(string? text)

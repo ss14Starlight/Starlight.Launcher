@@ -1,25 +1,23 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Robust.Launcher.Api.Models.ServerStatus;
-using Starlight.Launcher.Models.Data;
-using Starlight.Launcher.Models.ServerStatus;
-using Starlight.Launcher.Services.Localization;
-using Starlight.Launcher.Services.ServerStatus;
-using Starlight.Launcher.Services.Settings;
+using Starlight.Launcher.WebUI.Bridge;
+using Starlight.Launcher.WebUI.Localization;
+using Starlight.Launcher.WebUI.Models.Data;
+using Starlight.Launcher.WebUI.Models.HubServerFetcher;
+using Starlight.Launcher.WebUI.Models.ServerStatus;
 using System.Collections.Concurrent;
 using System.Globalization;
 
-namespace Starlight.Launcher.Components.WebUI.Pages;
+namespace Starlight.Launcher.WebUI.Components.Pages;
 
-public partial class Servers : ComponentBase, IDisposable
+public partial class Servers : LocalizedComponentBase, IDisposable
 {
     private const int ServerRefreshThrottleMs = 200;
     private const int FilterDebounceMs = 150;
     private const int FilterPersistDelayMs = 500;
 
     [Inject] private ServerStatusCache _cache { get; set; } = default!;
-    [Inject] private SettingsService _settings { get; set; } = default!;
-    [Inject] private HubServerFetcher _fetcher { get; set; } = default!;
-    [Inject] private LocalizationManager _localization { get; set; } = default!;
+    [Inject] private IBridge _bridge { get; set; } = default!;
 
     private ServerListFilters _filters = new();
     private readonly CancellationTokenSource _disposeCts = new();
@@ -42,7 +40,7 @@ public partial class Servers : ComponentBase, IDisposable
 
     protected override async Task OnInitializedAsync()
     {
-        var settings = await _settings.GetSettingsAsync();
+        var settings = await _bridge.GetSettingsAsync();
         _bottomSearch = settings.ServerListToolbarBottomSearch;
         _searchBarPosition = settings.ServerListToolBarSearchPosition;
         _tagsBarPosition = settings.ServerListToolBarBottomTagsPosition;
@@ -51,11 +49,11 @@ public partial class Servers : ComponentBase, IDisposable
         _filters.TagsExpanded = settings.ServerListToolBarTagsBarOpen;
         _filters.Changed += OnFiltersChanged;
 
-        _favoriteAddresses = _settings.GetFavoriteAddressesSnapshot();
-        _settings.FavoritesChanged += OnFavoritesChanged;
+        _favoriteAddresses = _bridge.GetFavoriteAddressesSnapshot();
+        _bridge.FavoritesChanged += OnFavoritesChanged;
 
-        _fetcher.ServersChanged += OnServersChanged;
-        _fetcher.StatusChanged += OnStatusChanged;
+        _bridge.ServersChanged += OnServersChanged;
+        _bridge.StatusChanged += OnStatusChanged;
 
         RebuildFromFetcher();
     }
@@ -91,7 +89,7 @@ public partial class Servers : ComponentBase, IDisposable
         {
             await InvokeAsync(() =>
             {
-                _favoriteAddresses = _settings.GetFavoriteAddressesSnapshot();
+                _favoriteAddresses = _bridge.GetFavoriteAddressesSnapshot();
                 StateHasChanged();
             });
         }
@@ -117,7 +115,7 @@ public partial class Servers : ComponentBase, IDisposable
             });
 
             await Task.Delay(FilterPersistDelayMs, token);
-            await _settings.CacheFilters(_filters);
+            await _bridge.CacheFilters(_filters);
         }
         catch (OperationCanceledException) { }
         catch (ObjectDisposedException) { }
@@ -125,7 +123,7 @@ public partial class Servers : ComponentBase, IDisposable
 
     private void RebuildFromFetcher()
     {
-        _allServers = _fetcher.AllServers;
+        _allServers = _bridge.AllServers;
         _totalCount = _allServers.Count;
         ExtractTags(_allServers, out _availableRPTags, out _availableLangTags, out _availableRegionTags);
         ApplyFilters();
@@ -179,7 +177,7 @@ public partial class Servers : ComponentBase, IDisposable
         _filteredServers = [.. query];
     }
 
-    private void HandleRefresh() => _fetcher.RequestRefresh();
+    private void HandleRefresh() => _bridge.RequestRefresh();
 
     private void ClearFilters()
     {
@@ -194,24 +192,24 @@ public partial class Servers : ComponentBase, IDisposable
 
     private async Task HandleFavorite(ServerStatusData server)
     {
-        var favorites = _settings.GetFavorites();
+        var favorites = _bridge.GetFavorites();
         var alreadyExist = favorites.FirstOrDefault(x => x.Address == server.Address);
 
         if ((alreadyExist == null || alreadyExist == default) && server.HubAddress != null)
         {
             favorites.Add(new FavoriteServer(server.Name, server.Address, server.HubAddress));
-            await _settings.WriteFavoritesAsync(favorites);
+            await _bridge.WriteFavoritesAsync(favorites);
         }
         else if (alreadyExist != null)
         {
             favorites.Remove(alreadyExist);
-            await _settings.WriteFavoritesAsync(favorites);
+            await _bridge.WriteFavoritesAsync(favorites);
         }
     }
 
     private void HandleInfoNeeded(ServerStatusData server)
     {
-        ((IServerSource)_fetcher).UpdateInfoFor(server);
+        _bridge.UpdateInfoFor(server);
         _cache.TryInitialPing(server);
     }
 
@@ -339,10 +337,10 @@ public partial class Servers : ComponentBase, IDisposable
     public void Dispose()
     {
         GC.SuppressFinalize(this);
-        _fetcher.ServersChanged -= OnServersChanged;
-        _fetcher.StatusChanged -= OnStatusChanged;
+        _bridge.ServersChanged -= OnServersChanged;
+        _bridge.StatusChanged -= OnStatusChanged;
         _filters.Changed -= OnFiltersChanged;
-        _settings.FavoritesChanged -= OnFavoritesChanged;
+        _bridge.FavoritesChanged -= OnFavoritesChanged;
         _disposeCts.Cancel();
         _disposeCts.Dispose();
         _filterCts?.Dispose();

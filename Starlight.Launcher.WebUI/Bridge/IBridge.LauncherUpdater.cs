@@ -1,3 +1,5 @@
+using Starlight.Launcher.WebUI.Models.LauncherUpdater;
+
 namespace Starlight.Launcher.WebUI.Bridge;
 
 /// <summary>
@@ -6,4 +8,6 @@ namespace Starlight.Launcher.WebUI.Bridge;
 public partial interface IBridge
 {
     event Action<(long downloaded, long total)>? DownloadProgress;
+
+    Task<UpdateInfo> IsUpdateAvailable();
 }

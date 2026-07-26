@@ -1,10 +1,10 @@
-@using Starlight.Launcher.Components.Atoms.WebUI.ServerList
-@using Starlight.Launcher.Models.Data
-@using Starlight.Launcher.Services.ServerStatus
+@using Starlight.Launcher.WebUI.Components.Atoms.ServerList
+@using Starlight.Launcher.WebUI.Localization
 
 @page "/servers"
 
 @implements IDisposable
+@inherits LocalizedComponentBase
 
 <div class="server-page">
     @if (_fetcher.Status == RefreshListStatus.NotUpdated || _fetcher.Status == RefreshListStatus.UpdatingMaster)
