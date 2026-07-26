@@ -4,5 +4,6 @@
   <Project Path="Robust.Loader/Robust.Loader.csproj" />
   <Project Path="Robust.LoaderApi/Robust.LoaderApi/Robust.LoaderApi.csproj" />
   <Project Path="Starlight.Launcher.Analyzer/Starlight.Launcher.Analyzer.csproj" />
+  <Project Path="Starlight.Launcher.WebUI/Starlight.Launcher.WebUI.csproj" />
   <Project Path="Starlight.Launcher/Starlight.Launcher.csproj" />
 </Solution>
