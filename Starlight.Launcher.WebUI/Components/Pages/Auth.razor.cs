@@ -10,7 +10,7 @@ using Starlight.Launcher.Services.Auth;
 using Starlight.Launcher.Services.Localization;
 using Starlight.Launcher.Services.Settings;
 
-namespace Starlight.Launcher.Components.Pages;
+namespace Starlight.Launcher.Components.WebUI.Pages;
 
 public partial class Auth : ComponentBase, IDisposable
 {

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Starlight.Launcher.Services.Localization;
 
-namespace Starlight.Launcher.Components.Atoms;
+namespace Starlight.Launcher.Components.WebUI.Atoms;
 
 public sealed partial class VerticalNavBar : ComponentBase
 {

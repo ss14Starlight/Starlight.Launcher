@@ -4,7 +4,7 @@ using Robust.Launcher.Api.Models.Data;
 using Starlight.Launcher.Services;
 using Starlight.Launcher.Services.Localization;
 
-namespace Starlight.Launcher.Components.Atoms.Settings;
+namespace Starlight.Launcher.Components.WebUI.Atoms.Settings;
 
 public partial class FilePathOption : ComponentBase
 {

@@ -1,3 +1,4 @@
+using Avalonia.Threading;
 using Dapper;
 using Microsoft.Data.Sqlite;
 using Robust.Launcher.Api.Models;
@@ -7,6 +8,7 @@ using Serilog;
 using Starlight.Launcher.Services.Discord;
 using Starlight.Launcher.Services.EngineManager;
 using Starlight.Launcher.Services.Settings;
+using Starlight.Launcher.WebUI.Models.Updater;
 using System.Diagnostics.CodeAnalysis;
 using System.IO.Compression;
 using System.Numerics;
@@ -33,13 +35,13 @@ public sealed partial class Updater
 
     private readonly IEngineManager _engineManager;
     private readonly HttpClient _http;
-    private readonly IDispatcher _dispatcher;
+    private readonly Dispatcher _dispatcher;
     private readonly SettingsService _settings;
     private readonly ContentManager _manager;
     private readonly DiscordRichPresence _presence;
     private bool _updating;
 
-    public Updater(IEngineManager engineManager, HttpClient http, IDispatcher dispatcher, SettingsService settings, ContentManager manager, DiscordRichPresence presence)
+    public Updater(IEngineManager engineManager, HttpClient http, Dispatcher dispatcher, SettingsService settings, ContentManager manager, DiscordRichPresence presence)
     {
         _engineManager = engineManager;
         _http = http;
@@ -817,7 +819,7 @@ public sealed partial class Updater
         return changedVersion;
     }
 
-    private void DownloadProgressCallback(long downloaded, long total) => _dispatcher.Dispatch(() => Progress = (downloaded, total, ProgressUnit.Bytes));
+    private void DownloadProgressCallback(long downloaded, long total) => _dispatcher.Post(() => Progress = (downloaded, total, ProgressUnit.Bytes));
 
     internal static byte[] HashFileSha256(Stream stream)
     {
@@ -850,24 +852,6 @@ public sealed partial class Updater
     {
         public string[] Modules = Array.Empty<string>();
         public bool MultiWindow = false;
-    }
-
-    public enum UpdateStatus
-    {
-        CheckingClientUpdate,
-        CheckingEngineModules,
-        DownloadingEngineVersion,
-        DownloadingEngineModules,
-        FetchingClientManifest,
-        DownloadingClientUpdate,
-        Verifying,
-        CommittingDownload,
-        LoadingIntoDb,
-        CullingEngine,
-        CullingContent,
-        Ready,
-        Error,
-        LoadingContentBundle,
     }
 
     public enum ProgressUnit

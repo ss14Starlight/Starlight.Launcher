@@ -3,7 +3,7 @@ using Starlight.Launcher.Models.ServerStatus;
 using Starlight.Launcher.Services.Localization;
 using Starlight.Launcher.Services.ServerStatus;
 
-namespace Starlight.Launcher.Components.Atoms.ServerList;
+namespace Starlight.Launcher.Components.WebUI.Atoms.ServerList;
 
 public partial class SearchBar : ComponentBase
 {

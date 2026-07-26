@@ -2,14 +2,14 @@
 using Microsoft.Extensions.Logging;
 using MudBlazor;
 using Robust.Launcher.Api.Models.ServerStatus;
-using Starlight.Launcher.Components.Atoms.Dialogs;
-using Starlight.Launcher.Components.Pages;
+using Starlight.Launcher.Components.WebUI.Atoms.Dialogs;
+using Starlight.Launcher.Components.WebUI.Pages;
 using Starlight.Launcher.Services;
 using Starlight.Launcher.Services.Auth;
 using Starlight.Launcher.Services.Localization;
 using Starlight.Launcher.Services.ServerStatus;
 
-namespace Starlight.Launcher.Components.Atoms.ServerList;
+namespace Starlight.Launcher.Components.Atoms.WebUI.ServerList;
 
 public partial class ServerItem : ComponentBase, IDisposable
 {

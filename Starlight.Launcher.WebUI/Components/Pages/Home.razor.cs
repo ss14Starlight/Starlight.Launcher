@@ -1,14 +1,14 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using Robust.Launcher.Api.Models.ServerStatus;
-using Starlight.Launcher.Components.Atoms.Dialogs;
+using Starlight.Launcher.Components.WebUI.Atoms.Dialogs;
 using Starlight.Launcher.Models.Data;
 using Starlight.Launcher.Services;
 using Starlight.Launcher.Services.Localization;
 using Starlight.Launcher.Services.ServerStatus;
 using Starlight.Launcher.Services.Settings;
 
-namespace Starlight.Launcher.Components.Pages;
+namespace Starlight.Launcher.Components.WebUI.Pages;
 
 public partial class Home : ComponentBase, IDisposable
 {

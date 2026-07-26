@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using MudBlazor;
 using MudBlazor.Services;
-using Starlight.Launcher.Components.Atoms.Dialogs;
+using Starlight.Launcher.Components.WebUI.Atoms.Dialogs;
 using Starlight.Launcher.Models.Data;
 using Starlight.Launcher.Services;
 using Starlight.Launcher.Services.Discord;
@@ -15,7 +15,7 @@ using Starlight.Launcher.Services.State;
 
 using AppTheme = Starlight.Launcher.Models.Settings.AppTheme;
 
-namespace Starlight.Launcher.Components.Layout;
+namespace Starlight.Launcher.Components.WebUI.Layout;
 
 public partial class MainLayout : LayoutComponentBase, IAsyncDisposable, IBrowserViewportObserver
 {

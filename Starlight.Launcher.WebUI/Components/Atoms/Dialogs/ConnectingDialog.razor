@@ -1,5 +1,7 @@
-@using Starlight.Launcher.Services
-@using static Starlight.Launcher.Services.Connector
+@using Starlight.Launcher.WebUI.Models.Connector
+@using Starlight.Launcher.WebUI.Localization
+
+@inherits LocalizedComponentBase
 
 <MudDialog>
     <TitleContent>
@@ -10,11 +12,11 @@
     </TitleContent>
     <DialogContent>
         <div class="connect-dialog">
-            @switch (_connector.Status)
+            @switch (_bridge.GetConnectionStatus())
             {
                 case ConnectionStatus.AwaitingPrivacyPolicyAcceptance:
                     <MudText Class="mb-3">This server requires you to accept its privacy policy before connecting.</MudText>
-                    @if (_connector.PrivacyPolicyInfo is { } pp)
+                    @if (_bridge.GetPrivacyPolicyInfo() is { } pp)
                     {
                         <MudPaper Class="pa-3 d-flex align-center justify-space-between" Elevation="0" Outlined="true">
                             <div>
@@ -31,7 +33,7 @@
                             }
                         </MudPaper>
                     }
-                    @if (_connector.PrivacyPolicyDifferentVersion)
+                    @if (_bridge.GetPrivacyPolicyDifferentVersion())
                     {
                         <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-3">
                             The policy has changed since you last accepted it.
@@ -45,7 +47,7 @@
                     <MudAlert Severity="Severity.Error">@_statusText</MudAlert>
                     break;
 
-                case ConnectionStatus.ClientExited when _connector.ClientExitedBadly:
+                case ConnectionStatus.ClientExited when _bridge.IsClientExitedBadly():
                     <MudAlert Severity="Severity.Error">The game closed unexpectedly.</MudAlert>
                     break;
 
@@ -76,7 +78,7 @@
                             }
                         </div>
 
-                        @if (_isByteProgress && _updater.Progress is { total: > 0 } p)
+                        @if (_isByteProgress && _bridge.GetUpdateProgress() is { total: > 0 } p)
                         {
                             <div class="d-flex align-center justify-space-between connect-meta">
                                 <MudText Typo="Typo.caption">@Format(p.downloaded) / @Format(p.total)</MudText>
@@ -94,7 +96,7 @@
         </div>
     </DialogContent>
     <DialogActions>
-        @if (_connector.Status == ConnectionStatus.AwaitingPrivacyPolicyAcceptance)
+        @if (_bridge.GetConnectionStatus() == ConnectionStatus.AwaitingPrivacyPolicyAcceptance)
         {
             <MudButton OnClick="@(() => Decide(PrivacyPolicyAcceptResult.Denied))">Decline</MudButton>
             <MudButton Color="Color.Primary" Variant="Variant.Filled"
@@ -104,11 +106,11 @@
         }
         else if (_isTerminal)
         {
-            <MudButton OnClick="Close">@_localization["general-close"]</MudButton>
+            <MudButton OnClick="Close">@L["general-close"]</MudButton>
         }
         else
         {
-            <MudButton Color="Color.Error" OnClick="Cancel">@_localization["general-cancel"]</MudButton>
+            <MudButton Color="Color.Error" OnClick="Cancel">@L["general-cancel"]</MudButton>
         }
     </DialogActions>
 </MudDialog>

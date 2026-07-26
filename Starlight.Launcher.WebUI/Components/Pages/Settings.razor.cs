@@ -2,15 +2,15 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using Starlight.Launcher.Components.Atoms.Dialogs;
-using Starlight.Launcher.Components.Atoms.Settings;
+using Starlight.Launcher.Components.Atoms.WebUI.Dialogs;
+using Starlight.Launcher.Components.Atoms.WebUI.Settings;
 using Starlight.Launcher.Models.Settings;
 using Starlight.Launcher.Services;
 using Starlight.Launcher.Services.Localization;
 using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.Services.State;
 
-namespace Starlight.Launcher.Components.Pages;
+namespace Starlight.Launcher.Components.WebUI.Pages;
 
 public partial class Settings : ComponentBase, IDisposable
 {

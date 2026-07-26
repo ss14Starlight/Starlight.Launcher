@@ -2,23 +2,22 @@ using System.ComponentModel;
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using Starlight.Launcher.Services;
-using Starlight.Launcher.Services.Localization;
-using static Starlight.Launcher.Services.Connector;
-using static Starlight.Launcher.Services.Updater;
+using Starlight.Launcher.WebUI.Bridge;
+using Starlight.Launcher.WebUI.Localization;
+using Starlight.Launcher.WebUI.Models;
+using Starlight.Launcher.WebUI.Models.Connector;
+using Starlight.Launcher.WebUI.Models.Updater;
 
-namespace Starlight.Launcher.Components.Atoms.Dialogs;
+namespace Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 
-public sealed partial class ConnectingDialog : ComponentBase, IDisposable
+public sealed partial class ConnectingDialog : LocalizedComponentBase, IDisposable
 {
-    [Inject] private LocalizationManager _localization { get; set; } = default!;
-    [Inject] private Connector _connector { get; set; } = default!;
-    [Inject] private Updater _updater { get; set; } = default!;
+    [Inject] private IBridge _bridge { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance _mudDialog { get; set; } = default!;
 
     [Parameter] public string Address { get; set; } = "";
 
-    [Parameter] public FileResult? ContentBundle { get; set; }
+    [Parameter] public IFileResult? ContentBundle { get; set; }
 
     [Parameter] public string? Title { get; set; } = null;
 
@@ -41,16 +40,16 @@ public sealed partial class ConnectingDialog : ComponentBase, IDisposable
         : Icons.Material.Filled.Dns;
 
     private double _percent =>
-        _updater.Progress is { total: > 0 } p ? (double)p.downloaded / p.total * 100.0 : 0;
+        _bridge.GetUpdateProgress() is { total: > 0 } p ? (double)p.downloaded / p.total * 100.0 : 0;
 
     private string _percentCss => _percent.ToString("0.##", CultureInfo.InvariantCulture);
 
     private bool _hasDeterminateProgress =>
-        _connector.Status == ConnectionStatus.Updating && _updater.Progress is { total: > 0 };
+        _bridge.GetConnectionStatus() == ConnectionStatus.Updating && _bridge.GetUpdateProgress() is { total: > 0 };
 
     // Only these phases report progress as real bytes — gate byte/speed display on them.
     private bool _isByteProgress =>
-        _connector.Status == ConnectionStatus.Updating && _updater.Status is
+        _bridge.GetConnectionStatus() == ConnectionStatus.Updating && _bridge.GetUpdateStatus() is
             UpdateStatus.DownloadingEngineVersion
             or UpdateStatus.DownloadingEngineModules
             or UpdateStatus.DownloadingClientUpdate;
@@ -60,7 +59,7 @@ public sealed partial class ConnectingDialog : ComponentBase, IDisposable
         get
         {
             if (!_haveSpeed || _smoothedBytesPerSec <= 1) return null;
-            if (_updater.Progress is not { total: > 0 } p) return null;
+            if (_bridge.GetUpdateProgress() is not { total: > 0 } p) return null;
 
             var remaining = p.total - p.downloaded;
             if (remaining <= 0) return null;
@@ -75,17 +74,17 @@ public sealed partial class ConnectingDialog : ComponentBase, IDisposable
         }
     }
 
-    private bool _isTerminal => _connector.Status is
+    private bool _isTerminal => _bridge.GetConnectionStatus() is
         ConnectionStatus.ConnectionFailed
         or ConnectionStatus.UpdateError
         or ConnectionStatus.NotAContentBundle
         or ConnectionStatus.Cancelled
         or ConnectionStatus.ClientExited;
 
-    private string _statusText => _connector.Status switch
+    private string _statusText => _bridge.GetConnectionStatus() switch
     {
         ConnectionStatus.Connecting => "Contacting server…",
-        ConnectionStatus.Updating => _updater.Status switch
+        ConnectionStatus.Updating => _bridge.GetUpdateStatus() switch
         {
             UpdateStatus.DownloadingEngineVersion => "Downloading engine…",
             UpdateStatus.DownloadingEngineModules => "Downloading engine modules…",
@@ -107,7 +106,7 @@ public sealed partial class ConnectingDialog : ComponentBase, IDisposable
 
     protected override void OnInitialized()
     {
-        _connector.PropertyChanged += OnConnectorChanged;
+        _bridge.ConnectionPropertyChanged += OnConnectorChanged;
 
         _pollTimer = new Timer(_ =>
         {
@@ -117,15 +116,15 @@ public sealed partial class ConnectingDialog : ComponentBase, IDisposable
 
         // Fire-and-forget: Status drives the UI from here on.
         if (ContentBundle is { } bundle)
-            _connector.LaunchContentBundle(bundle, _cts.Token);
+            _bridge.LaunchContentBundle(bundle, _cts.Token);
         else
-            _connector.Connect(Address, _cts.Token);
+            _bridge.Connect(Address, _cts.Token);
     }
 
     // Recompute speed from the displayed counter so the two can never disagree.
     private void SampleSpeed()
     {
-        if (!_isByteProgress || _updater.Progress is not { total: > 0 } p)
+        if (!_isByteProgress || _bridge.GetUpdateProgress() is not { total: > 0 } p)
         {
             _haveSpeed = false;
             _smoothedBytesPerSec = 0;
@@ -136,9 +135,9 @@ public sealed partial class ConnectingDialog : ComponentBase, IDisposable
         var now = DateTime.UtcNow;
 
         // Reset on phase change or when the counter restarts (new download).
-        if (_updater.Status != _lastUpdateStatus || p.downloaded < _lastDownloaded)
+        if (_bridge.GetUpdateStatus() != _lastUpdateStatus || p.downloaded < _lastDownloaded)
         {
-            _lastUpdateStatus = _updater.Status;
+            _lastUpdateStatus = _bridge.GetUpdateStatus();
             _lastDownloaded = p.downloaded;
             _lastSampleUtc = now;
             _haveSpeed = false;
@@ -164,13 +163,13 @@ public sealed partial class ConnectingDialog : ComponentBase, IDisposable
     private void OnConnectorChanged(object? sender, PropertyChangedEventArgs e) =>
         InvokeAsync(() =>
         {
-            if (_connector.Status == ConnectionStatus.ClientRunning)
+            if (_bridge.GetConnectionStatus() == ConnectionStatus.ClientRunning)
                 _mudDialog.Close();
 
             StateHasChanged();
         });
 
-    private void Decide(PrivacyPolicyAcceptResult result) => _connector.ConfirmPrivacyPolicy(result);
+    private void Decide(PrivacyPolicyAcceptResult result) => _bridge.ConfirmPrivacyPolicy(result);
 
     private void Cancel()
     {
@@ -195,10 +194,10 @@ public sealed partial class ConnectingDialog : ComponentBase, IDisposable
 
     public void Dispose()
     {
-        _connector.PropertyChanged -= OnConnectorChanged;
+        _bridge.ConnectionPropertyChanged -= OnConnectorChanged;
         _pollTimer?.Dispose();
 
-        if (_connector.Status != ConnectionStatus.ClientRunning)
+        if (_bridge.GetConnectionStatus() != ConnectionStatus.ClientRunning)
         {
             if (!_cts.IsCancellationRequested)
                 _cts.Cancel();

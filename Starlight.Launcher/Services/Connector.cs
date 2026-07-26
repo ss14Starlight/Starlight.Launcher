@@ -1,3 +1,11 @@
+using System.Diagnostics;
+using System.IO.Compression;
+using System.Net.Http.Json;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using H.NotifyIcon.Core;
 using Robust.Launcher.Api.Models;
@@ -9,13 +17,8 @@ using Starlight.Launcher.Services.Auth;
 using Starlight.Launcher.Services.Discord;
 using Starlight.Launcher.Services.EngineManager;
 using Starlight.Launcher.Services.Settings;
-using System.Diagnostics;
-using System.IO.Compression;
-using System.Net.Http.Json;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using Starlight.Launcher.WebUI.Models;
+using Starlight.Launcher.WebUI.Models.Connector;
 using TerraFX.Interop.Windows;
 
 namespace Starlight.Launcher.Services;
@@ -114,7 +117,7 @@ public partial class Connector : ObservableObject
         }
     }
 
-    public async void LaunchContentBundle(FileResult file, CancellationToken cancel = default)
+    public async void LaunchContentBundle(IFileResult file, CancellationToken cancel = default)
     {
         if (!TryBeginLaunch())
         {
@@ -237,7 +240,7 @@ public partial class Connector : ObservableObject
         PrivacyPolicyDifferentVersion = default;
     }
 
-    private async Task LaunchContentBundleInternal(FileResult file, CancellationToken cancel)
+    private async Task LaunchContentBundleInternal(IFileResult file, CancellationToken cancel)
     {
         Status = ConnectionStatus.Updating;
 
@@ -851,21 +854,6 @@ public partial class Connector : ObservableObject
     }
 #pragma warning restore 162
 
-    public enum ConnectionStatus
-    {
-        None,
-        Updating,
-        UpdateError,
-        Connecting,
-        AwaitingPrivacyPolicyAcceptance,
-        ConnectionFailed,
-        StartingClient,
-        ClientRunning,
-        ClientExited,
-        Cancelled,
-        NotAContentBundle
-    }
-
     private sealed class ConnectException : Exception
     {
         public ConnectionStatus Status { get; }
@@ -917,9 +905,3 @@ public sealed record ContentBundleBaseBuild(
     [property: JsonPropertyName("manifest_url")] string? ManifestUrl,
     [property: JsonPropertyName("manifest_hash")] string? ManifestHash
 );
-
-public enum PrivacyPolicyAcceptResult
-{
-    Denied,
-    Accepted,
-}

@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 
-namespace Starlight.Launcher.Components.Atoms.Settings;
+namespace Starlight.Launcher.Components.WebUI.Atoms.Settings;
 
 public partial class SelectorListOption : ComponentBase
 {

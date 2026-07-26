@@ -8,7 +8,7 @@ using Starlight.Launcher.Services.Settings;
 using System.Collections.Concurrent;
 using System.Globalization;
 
-namespace Starlight.Launcher.Components.Pages;
+namespace Starlight.Launcher.Components.WebUI.Pages;
 
 public partial class Servers : ComponentBase, IDisposable
 {

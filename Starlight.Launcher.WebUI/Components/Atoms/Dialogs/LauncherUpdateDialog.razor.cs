@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using Starlight.Launcher.Services;
 
-namespace Starlight.Launcher.Components.Atoms.Dialogs;
+namespace Starlight.Launcher.Components.WebUI.Atoms.Dialogs;
 
 public sealed partial class LauncherUpdateDialog : ComponentBase, IDisposable
 {

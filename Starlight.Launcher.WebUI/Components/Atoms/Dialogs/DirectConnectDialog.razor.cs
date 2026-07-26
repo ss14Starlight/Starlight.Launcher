@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 
-namespace Starlight.Launcher.Components.Atoms.Dialogs;
+namespace Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 
 public partial class DirectConnectDialog : ComponentBase
 {
