@@ -1,12 +1,11 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
-using Starlight.Launcher.Services.Localization;
+using Starlight.Launcher.WebUI.Localization;
 
 namespace Starlight.Launcher.Components.WebUI.Atoms;
 
-public sealed partial class HorizontalNavBar : ComponentBase, IDisposable
+public sealed partial class HorizontalNavBar : LocalizedComponentBase, IDisposable
 {
-    [Inject] private LocalizationManager _localization { get; set; } = default!;
     [Inject] private NavigationManager _navigation { get; set; } = default!;
 
     private bool IsActive(string href, NavLinkMatch match = NavLinkMatch.Prefix)

@@ -1,8 +1,9 @@
 ﻿using Robust.Launcher.Api.Utility;
+using Starlight.Launcher.WebUI.Models.Data;
 using System.Collections.Immutable;
 using System.Text.Json.Serialization;
 
-namespace Starlight.Launcher.Models.Settings;
+namespace Starlight.Launcher.WebUI.Models.Settings;
 
 public partial record AppSettings
 {

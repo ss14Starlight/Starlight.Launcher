@@ -1,5 +1,6 @@
-@using Starlight.Launcher.Services.Localization
-@inject LocalizationManager Localization
+@using Starlight.Launcher.WebUI.Localization;
+
+@inherits LocalizedComponentBase
 
 <MudDialog>
     <TitleContent>
@@ -8,7 +9,7 @@
                      Color="Color.Primary"
                      Size="Size.Large" />
             <MudText Typo="Typo.h6">
-                @Localization["no-account-dialog-title"]
+                @L["no-account-dialog-title"]
             </MudText>
         </div>
     </TitleContent>
@@ -20,7 +21,7 @@
                      Color="Color.Info"
                      Size="Size.Medium" />
             <MudText Typo="Typo.body1">
-                @Localization["no-account-dialog-description"]
+                @L["no-account-dialog-description"]
             </MudText>
         </MudPaper>
     </DialogContent>
@@ -29,13 +30,13 @@
             <MudButton OnClick="Cancel"
                        Variant="Variant.Text"
                        Color="Color.Default">
-                @Localization["general-cancel"]
+                @L["general-cancel"]
             </MudButton>
             <MudButton OnClick="Success"
                        Variant="Variant.Filled"
                        Color="Color.Primary"
                        EndIcon="@Icons.Material.Rounded.ArrowForward">
-                @Localization["general-ok"]
+                @L["general-ok"]
             </MudButton>
         </div>
     </DialogActions>

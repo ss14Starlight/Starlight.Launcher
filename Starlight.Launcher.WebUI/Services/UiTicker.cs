@@ -1,4 +1,4 @@
-namespace Starlight.Launcher.Services;
+namespace Starlight.Launcher.WebUI.Services;
 
 public sealed class UiTicker : IDisposable
 {

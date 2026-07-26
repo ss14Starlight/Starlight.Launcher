@@ -1,17 +1,8 @@
 using Starlight.Launcher.Models;
 using Starlight.Launcher.Services.Settings;
+using Starlight.Launcher.WebUI.Services;
 
 namespace Starlight.Launcher.Services;
-
-public interface INativeTray : IDisposable
-{
-    void Initialize(TrayOptions options, IReadOnlyList<TrayMenuItem> menu);
-    void ShowWindow();
-    void HideWindow();
-    void UpdateTooltip(string text);
-    bool IsWindowVisible { get; }
-    event EventHandler? IconActivated;
-}
 
 public sealed class TrayCoordinator
 {

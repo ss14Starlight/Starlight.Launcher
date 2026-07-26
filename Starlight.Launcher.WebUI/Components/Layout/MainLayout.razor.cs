@@ -6,28 +6,20 @@ using Microsoft.JSInterop;
 using MudBlazor;
 using MudBlazor.Services;
 using Starlight.Launcher.Components.WebUI.Atoms.Dialogs;
-using Starlight.Launcher.Models.Data;
-using Starlight.Launcher.Services;
-using Starlight.Launcher.Services.Discord;
-using Starlight.Launcher.Services.Localization;
-using Starlight.Launcher.Services.Settings;
-using Starlight.Launcher.Services.State;
-
-using AppTheme = Starlight.Launcher.Models.Settings.AppTheme;
+using Starlight.Launcher.WebUI.Bridge;
+using Starlight.Launcher.WebUI.Models.Data;
+using Starlight.Launcher.WebUI.Models.Settings;
+using Starlight.Launcher.WebUI.Services;
 
 namespace Starlight.Launcher.Components.WebUI.Layout;
 
 public partial class MainLayout : LayoutComponentBase, IAsyncDisposable, IBrowserViewportObserver
 {
     [Inject] private IJSRuntime _jS { get; set; } = default!;
-    [Inject] private SettingsService _settings { get; set; } = default!;
-    [Inject] private LocalizationManager _localization { get; set; } = default!;
-    [Inject] private AppState _state { get; set; } = default!;
     [Inject] private IBrowserViewportService _browserViewportService { get; set; } = default!;
+    [Inject] private IBridge _bridge { get; set; } = default!;
     [Inject] private INativeTray _tray { get; set; } = default!;
     [Inject] private NavigationManager _navigation { get; set; } = default!;
-    [Inject] private DiscordRichPresence _presence { get; set; } = default!;
-    [Inject] private LauncherUpdater _launcherUpdater { get; set; } = default!;
     [Inject] private ISnackbar _snackbar { get; set; } = default!;
     [Inject] private IDialogService _dialogService { get; set; } = default!;
 
@@ -183,13 +175,13 @@ public partial class MainLayout : LayoutComponentBase, IAsyncDisposable, IBrowse
         switch (uri.AbsolutePath)
         {
             case "/servers":
-                _presence.UpdatePresence(PresenceState.SearchingServers);
+                _bridge.UpdatePresence(PresenceState.SearchingServers);
                 break;
             case "/settings":
-                _presence.UpdatePresence(PresenceState.SettingUp);
+                _bridge.UpdatePresence(PresenceState.SettingUp);
                 break;
             default:
-                _presence.UpdatePresence(PresenceState.Idle);
+                _bridge.UpdatePresence(PresenceState.Idle);
                 break;
         }
     }

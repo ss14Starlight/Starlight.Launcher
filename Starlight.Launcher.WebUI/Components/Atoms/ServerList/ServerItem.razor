@@ -1,4 +1,7 @@
 @using Robust.Launcher.Api.Models.ServerStatus
+@using Starlight.Launcher.WebUI.Localization;
+
+@inherits LocalizedComponentBase
 
 <div class="server-card @(_expanded ? "server-card--expanded" : null)" @onclick="HandleClick" role="button" tabindex="0" aria-expanded="@_expanded">
     <div class="server-card__row">

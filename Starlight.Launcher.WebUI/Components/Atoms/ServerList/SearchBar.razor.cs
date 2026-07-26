@@ -1,13 +1,12 @@
 ﻿using Microsoft.AspNetCore.Components;
-using Starlight.Launcher.Models.ServerStatus;
-using Starlight.Launcher.Services.Localization;
-using Starlight.Launcher.Services.ServerStatus;
+using Starlight.Launcher.WebUI.Localization;
+using Starlight.Launcher.WebUI.Models.HubServerFetcher;
+using Starlight.Launcher.WebUI.Models.ServerStatus;
 
 namespace Starlight.Launcher.Components.WebUI.Atoms.ServerList;
 
-public partial class SearchBar : ComponentBase
+public partial class SearchBar : LocalizedComponentBase
 {
-    [Inject] private LocalizationManager _localization { get; set; } = default!;
     [Parameter, EditorRequired] public ServerListFilters Filters { get; set; } = null!;
     [Parameter] public int TotalCount { get; set; }
     [Parameter] public int FilteredCount { get; set; }

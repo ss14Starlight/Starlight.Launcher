@@ -4,7 +4,7 @@ namespace Starlight.Launcher.WebUI.Localization;
 
 public interface ILocalizationManager
 {
-    event Action Changed { add; remove; }
+    event Action Changed;
 
     string this[string key] { get; }
 

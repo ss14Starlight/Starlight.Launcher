@@ -1,3 +1,7 @@
+@using Starlight.Launcher.WebUI.Localization;
+
+@inherits LocalizedComponentBase
+
 <MudCollapse Expanded="AlwaysExpanded || Filters.TagsExpanded">
     <div class="server-toolbar__tags-panel @(HasSearchAbove ? "has-top-divider" : "") @(HasSearchBelow ? "has-bottom-divider" : "") @(IsBottom ? "is-bottom" : "")">
 

@@ -9,6 +9,7 @@ using Starlight.Launcher.Services;
 using Starlight.Launcher.Services.Localization;
 using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.Services.State;
+using Starlight.Launcher.WebUI.Models.Settings;
 
 namespace Starlight.Launcher.Components.WebUI.Pages;
 

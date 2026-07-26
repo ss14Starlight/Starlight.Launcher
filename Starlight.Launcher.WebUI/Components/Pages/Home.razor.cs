@@ -2,23 +2,19 @@
 using MudBlazor;
 using Robust.Launcher.Api.Models.ServerStatus;
 using Starlight.Launcher.Components.WebUI.Atoms.Dialogs;
-using Starlight.Launcher.Models.Data;
-using Starlight.Launcher.Services;
-using Starlight.Launcher.Services.Localization;
-using Starlight.Launcher.Services.ServerStatus;
-using Starlight.Launcher.Services.Settings;
+using Starlight.Launcher.WebUI.Bridge;
+using Starlight.Launcher.WebUI.Localization;
+using Starlight.Launcher.WebUI.Services;
 
 namespace Starlight.Launcher.Components.WebUI.Pages;
 
-public partial class Home : ComponentBase, IDisposable
+public partial class Home : LocalizedComponentBase, IDisposable
 {
-    [Inject] private SettingsService _settings { get; set; } = default!;
+    [Inject] private IBridge _bridge { get; set; } = default!;
     [Inject] private HubServerFetcher _fetcher { get; set; } = default!;
     [Inject] private ServerStatusCache _statusCache { get; set; } = default!;
-    [Inject] private Connector _connector { get; set; } = default!;
     [Inject] private IDialogService _dialogService { get; set; } = default!;
     [Inject] private IFileDialogService _fileDialog { get; set; } = default!;
-    [Inject] private LocalizationManager _localization { get; set; } = default!;
 
     private List<ServerStatusData> _favoriteServers { get; set; } = null!;
     private readonly CancellationTokenSource _disposeCts = new();
@@ -26,7 +22,7 @@ public partial class Home : ComponentBase, IDisposable
 
     public void Dispose()
     {
-        _settings.FavoritesChanged -= HandleFavorites;
+        _bridge.FavoritesChanged -= HandleFavorites;
         _fetcher.ServersChanged -= OnServersChanged;
         _fetcher.StatusChanged -= OnStatusChanged;
         _disposeCts.Cancel();
@@ -38,8 +34,8 @@ public partial class Home : ComponentBase, IDisposable
 
     protected override async Task OnInitializedAsync()
     {
-        UpdateFavorites(await _settings.GetFavoritesAsync());
-        _settings.FavoritesChanged += HandleFavorites;
+        UpdateFavorites(await _bridge.GetFavoritesAsync());
+        _bridge.FavoritesChanged += HandleFavorites;
         _fetcher.ServersChanged += OnServersChanged;
         _fetcher.StatusChanged += OnStatusChanged;
         await base.OnInitializedAsync();
@@ -56,7 +52,7 @@ public partial class Home : ComponentBase, IDisposable
             await InvokeAsync(() =>
             {
                 Interlocked.Exchange(ref _rebuildScheduled, 0);
-                UpdateFavorites(_settings.GetFavorites());
+                UpdateFavorites(_bridge.GetFavorites());
                 StateHasChanged();
             });
         }
@@ -96,7 +92,7 @@ public partial class Home : ComponentBase, IDisposable
         {
             await InvokeAsync(async () =>
             {
-                UpdateFavorites(await _settings.GetFavoritesAsync());
+                UpdateFavorites(await _bridge.GetFavoritesAsync());
                 StateHasChanged();
             });
         }
@@ -105,18 +101,18 @@ public partial class Home : ComponentBase, IDisposable
 
     private async Task HandleFavorite(ServerStatusData server)
     {
-        var favorites = _settings.GetFavorites();
+        var favorites = _bridge.GetFavorites();
         var alreadyExist = favorites.FirstOrDefault(x => x.Address == server.Address);
 
         if ((alreadyExist == null || alreadyExist == default) && server.HubAddress != null)
         {
             favorites.Add(new FavoriteServer(server.Name, server.Address, server.HubAddress));
-            await _settings.WriteFavoritesAsync(favorites);
+            await _bridge.WriteFavoritesAsync(favorites);
         }
         else if (alreadyExist != null)
         {
             favorites.Remove(alreadyExist);
-            await _settings.WriteFavoritesAsync(favorites);
+            await _bridge.WriteFavoritesAsync(favorites);
         }
     }
 
@@ -146,17 +142,17 @@ public partial class Home : ComponentBase, IDisposable
         if (file is null)
             return;
 
-        _connector.LaunchContentBundle(file);
+        _bridge.LaunchContentBundle(file);
     }
 
     private async Task AddDirectFavorite(string address)
     {
-        var favorites = _settings.GetFavorites();
+        var favorites = _bridge.GetFavorites();
         if (favorites.Any(x => x.Address == address))
             return;
 
         favorites.Add(new FavoriteServer(address, address, ""));
-        await _settings.WriteFavoritesAsync(favorites);
+        await _bridge.WriteFavoritesAsync(favorites);
     }
     private Task ShowConnecting(Action<DialogParameters<ConnectingDialog>> configure)
     {

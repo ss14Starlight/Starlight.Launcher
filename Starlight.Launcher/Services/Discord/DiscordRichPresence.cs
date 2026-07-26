@@ -1,6 +1,7 @@
 using DiscordRPC;
 using Serilog;
 using Starlight.Launcher.Services.Settings;
+using Starlight.Launcher.WebUI.Models.DiscordRichPresence;
 
 namespace Starlight.Launcher.Services.Discord;
 
@@ -83,13 +84,4 @@ public sealed partial class DiscordRichPresence : IDisposable
         _lastUpdate = DateTime.UtcNow;
         _client.SetPresence(presence);
     }
-}
-
-public enum PresenceState
-{
-    Idle, // Home screen, not doing anything
-    SearchingServers, // Browsing server list
-    SettingUp, // Configuring settings, etc.
-    DownloadingContent,
-    LaunchingGame
 }

@@ -1,4 +1,6 @@
-@using Starlight.Launcher.Models.ServerStatus
+@using Starlight.Launcher.WebUI.Localization;
+
+@inherits LocalizedComponentBase
 
 <div class="server-toolbar__searchbar">
     <div class="server-toolbar__searchbar-left">
@@ -6,7 +8,7 @@
         <MudTextField T="string"
                       Value="Filters.SearchQuery"
                       ValueChanged="OnSearchChanged"
-                      Placeholder="@_localization["servers-list-search-bar-placeholder"]"
+                      Placeholder="@L["servers-list-search-bar-placeholder"]"
                       Variant="Variant.Outlined"
                       Margin="Margin.Dense"
                       Adornment="Adornment.Start"
@@ -22,9 +24,9 @@
                    Margin="Margin.Dense"
                    Dense="true"
                    Class="server-toolbar__sort server-toolbar__pill">
-            <MudSelectItem Value="ServerSortMode.Players">@_localization["servers-list-search-bar-players"]</MudSelectItem>
-            <MudSelectItem Value="ServerSortMode.Name">@_localization["servers-list-search-bar-name"]</MudSelectItem>
-            <MudSelectItem Value="ServerSortMode.Ping">@_localization["servers-list-search-bar-ping"]</MudSelectItem>
+            <MudSelectItem Value="ServerSortMode.Players">@L["servers-list-search-bar-players"]</MudSelectItem>
+            <MudSelectItem Value="ServerSortMode.Name">@L["servers-list-search-bar-name"]</MudSelectItem>
+            <MudSelectItem Value="ServerSortMode.Ping">@L["servers-list-search-bar-ping"]</MudSelectItem>
         </MudSelect>
 
         <div class="server-toolbar__chips">
@@ -32,28 +34,28 @@
                     class="server-toolbar__chip @(Filters.HideEmpty ? "is-active" : "")"
                     aria-pressed="@Filters.HideEmpty"
                     @onclick="ToggleHideEmpty">
-                @_localization["server-list-hide-empty"]
+                @L["server-list-hide-empty"]
             </button>
 
             <button type="button"
                     class="server-toolbar__chip @(Filters.HideFull ? "is-active" : "")"
                     aria-pressed="@Filters.HideFull"
                     @onclick="ToggleHideFull">
-                @_localization["server-list-hide-full"]
+                @L["server-list-hide-full"]
             </button>
 
             <button type="button"
                     class="server-toolbar__chip @(Filters.HideAdult ? "is-active" : "")"
                     aria-pressed="@Filters.HideAdult"
                     @onclick="ToggleHideAdult">
-                @_localization["server-list-hide-adult"]
+                @L["server-list-hide-adult"]
             </button>
 
             <button type="button"
                     class="server-toolbar__chip server-toolbar__chip--danger @(Filters.OnlyAdult ? "is-active" : "")"
                     aria-pressed="@Filters.OnlyAdult"
                     @onclick="ToggleOnlyAdult">
-                @_localization["server-list-only-adult"]
+                @L["server-list-only-adult"]
             </button>
         </div>
 

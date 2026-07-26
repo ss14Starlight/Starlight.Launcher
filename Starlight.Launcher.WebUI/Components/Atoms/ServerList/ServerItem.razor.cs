@@ -4,19 +4,15 @@ using MudBlazor;
 using Robust.Launcher.Api.Models.ServerStatus;
 using Starlight.Launcher.Components.WebUI.Atoms.Dialogs;
 using Starlight.Launcher.Components.WebUI.Pages;
-using Starlight.Launcher.Services;
-using Starlight.Launcher.Services.Auth;
-using Starlight.Launcher.Services.Localization;
-using Starlight.Launcher.Services.ServerStatus;
+using Starlight.Launcher.WebUI.Bridge;
+using Starlight.Launcher.WebUI.Services;
 
 namespace Starlight.Launcher.Components.Atoms.WebUI.ServerList;
 
 public partial class ServerItem : ComponentBase, IDisposable
 {
-    [Inject] private LocalizationManager _localization { get; set; } = default!;
-    [Inject] private ServerInfoLoader _infoLoader { get; set; } = default!;
+    [Inject] private IBridge _bridge { get; set; } = default!;
     [Inject] private IDialogService _dialogService { get; set; } = default!;
-    [Inject] private LoginManager _loginManager { get; set; } = default!;
     [Inject] private UiTicker _ticker { get; set; } = default!;
     [Parameter, EditorRequired] public ServerStatusData Data { get; set; } = default!;
     [Parameter] public EventCallback<ServerStatusData> OnInfoNeeded { get; set; }
@@ -99,7 +95,7 @@ public partial class ServerItem : ComponentBase, IDisposable
 
     private async Task Play()
     {
-        if (_loginManager.ActiveAccount == null)
+        if (_bridge.GetActiveAccount() == null)
         {
             var noaccountParams = new DialogParameters<NoAccountDialog>
             {

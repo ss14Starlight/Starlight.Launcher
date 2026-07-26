@@ -1,4 +1,4 @@
-namespace Starlight.Launcher.Models.ServerStatus;
+namespace Starlight.Launcher.WebUI.Models.ServerStatus;
 
 public sealed class ServerListFilters
 {

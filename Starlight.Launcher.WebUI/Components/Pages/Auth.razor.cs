@@ -5,22 +5,18 @@ using Robust.Launcher.Api.Api;
 using Robust.Launcher.Api.Models;
 using Robust.Launcher.Api.Utility;
 using Serilog;
-using Starlight.Launcher.Api.Models;
-using Starlight.Launcher.Services.Auth;
-using Starlight.Launcher.Services.Localization;
-using Starlight.Launcher.Services.Settings;
+using Starlight.Launcher.WebUI.Bridge;
+using Starlight.Launcher.WebUI.Localization;
+using Starlight.Launcher.WebUI.Models.Auth;
 
 namespace Starlight.Launcher.Components.WebUI.Pages;
 
-public partial class Auth : ComponentBase, IDisposable
+public partial class Auth : LocalizedComponentBase, IDisposable
 {
-    [Inject] private LoginManager _loginManager { get; set; } = default!;
-    [Inject] private SettingsService _settings { get; set; } = default!;
+    [Inject] private IBridge _bridge { get; set; } = default!;
     [Inject] private AuthApi _authApi { get; set; } = default!;
     [Inject] private NavigationManager _nav { get; set; } = default!;
-    [Inject] private DiscordAuthService _discordAuth { get; set; } = default!;
     [Inject] private ISnackbar _snackbar { get; set; } = default!;
-    [Inject] private LocalizationManager _localization { get; set; } = default!;
 
     private enum Mode
     {
@@ -175,7 +171,7 @@ public partial class Auth : ComponentBase, IDisposable
             return;
         }
 
-        if ((await _settings.GetSettingsAsync()).SelectedAuthServer is not { } authServer)
+        if ((await _bridge.GetSettingsAsync()).SelectedAuthServer is not { } authServer)
         {
             _linkError = _localization["auth-menu-no-server-error"];
             return;
@@ -239,7 +235,7 @@ public partial class Auth : ComponentBase, IDisposable
         await InvokeAsync(StateHasChanged);
         try
         {
-            await _discordAuth.AttachToAccountAsync(account);
+            await _bridge.AttachToAccountAsync(account);
             _snackbar.Add(success, Severity.Success);
             if (navigateHome)
             {
@@ -280,7 +276,7 @@ public partial class Auth : ComponentBase, IDisposable
         await InvokeAsync(StateHasChanged);
         try
         {
-            await _discordAuth.LoginAsync();
+            await _bridge.LoginAsync();
             _nav.NavigateTo("/");
         }
         catch (OperationCanceledException)
@@ -314,7 +310,7 @@ public partial class Auth : ComponentBase, IDisposable
             return;
         }
 
-        if ((await _settings.GetSettingsAsync()).SelectedAuthServer is not { } authServer)
+        if ((await _bridge.GetSettingsAsync()).SelectedAuthServer is not { } authServer)
         {
             _signInError = _localization["auth-menu-no-server-error"];
             return;
@@ -386,7 +382,7 @@ public partial class Auth : ComponentBase, IDisposable
 
     private async Task ResendConfirmation()
     {
-        if ((await _settings.GetSettingsAsync()).SelectedAuthServer is not { } authServer)
+        if ((await _bridge.GetSettingsAsync()).SelectedAuthServer is not { } authServer)
         {
             _snackbar.Add(_localization["auth-menu-no-server-error"], Severity.Error);
             return;
@@ -439,7 +435,7 @@ public partial class Auth : ComponentBase, IDisposable
         _registerErrors = null;
         _registerSuccessMessage = null;
 
-        var authServer = (await _settings.GetSettingsAsync()).SelectedAuthServer;
+        var authServer = (await _bridge.GetSettingsAsync()).SelectedAuthServer;
 
         var validationErrors = new List<string>();
         if (authServer == null)
@@ -491,7 +487,7 @@ public partial class Auth : ComponentBase, IDisposable
     {
         _forgotError = null;
 
-        if ((await _settings.GetSettingsAsync()).SelectedAuthServer is not { } authServer)
+        if ((await _bridge.GetSettingsAsync()).SelectedAuthServer is not { } authServer)
         {
             _forgotError = _localization["auth-menu-no-server-error"];
             return;

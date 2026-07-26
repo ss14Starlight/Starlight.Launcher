@@ -1,4 +1,4 @@
-﻿namespace Starlight.Launcher.Models.Data;
+﻿namespace Starlight.Launcher.WebUI.Models.Data;
 
 public record FavoriteServer(string? Name, string Address, string HubAddress)
 {

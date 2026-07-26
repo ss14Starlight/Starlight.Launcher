@@ -1,7 +1,0 @@
-namespace Starlight.Launcher.Services;
-
-public interface IFileDialogService
-{
-    Task<FileResult?> PickFileAsync(string filter = "Content bundles / replays\0*.zip;*.rt\0All Files\0*.*\0\0", CancellationToken cancel = default);
-    Task<FileResult?> PickFolderAsync(CancellationToken cancel = default);
-}

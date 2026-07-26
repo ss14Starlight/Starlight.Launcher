@@ -1,15 +1,15 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Components;
 using Robust.Launcher.Api.Models.Data;
-using Starlight.Launcher.Services;
-using Starlight.Launcher.Services.Localization;
+using Starlight.Launcher.WebUI.Localization;
+using Starlight.Launcher.WebUI.Models.Helpers;
+using Starlight.Launcher.WebUI.Services;
 
 namespace Starlight.Launcher.Components.WebUI.Atoms.Settings;
 
-public partial class FilePathOption : ComponentBase
+public partial class FilePathOption : LocalizedComponentBase
 {
     [Inject] private IFileDialogService _fileDialog { get; set; } = default!;
-    [Inject] private LocalizationManager _localization { get; set; } = default!;
 
     [Parameter] public string Value { get; set; } = "";
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
@@ -42,7 +42,7 @@ public partial class FilePathOption : ComponentBase
     /// Custom picker. When null, falls back to the injected
     /// <see cref="IFileDialogService"/>'s default file dialog.
     /// </summary>
-    [Parameter] public Func<Task<FileResult?>>? PickAction { get; set; }
+    [Parameter] public Func<Task<IFileResult?>>? PickAction { get; set; }
 
     protected override async Task OnInitializedAsync()
     {

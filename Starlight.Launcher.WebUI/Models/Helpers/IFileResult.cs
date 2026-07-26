@@ -1,4 +1,4 @@
-namespace Starlight.Launcher.WebUI.Models;
+namespace Starlight.Launcher.WebUI.Models.Helpers;
 
 public interface IFileResult
 {

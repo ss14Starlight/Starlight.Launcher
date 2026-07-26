@@ -1,10 +1,12 @@
+@using Starlight.Launcher.WebUI.Bridge;
+
 @implements IDisposable
 @inject IDialogService DialogService
-@inject LauncherCommands Commands
+@inject IBridge Bridge
 
 @code {
     protected override void OnInitialized()
-        => Commands.ConnectRequested += OnConnectRequested;
+        => Bridge.ConnectRequested += OnConnectRequested;
 
     private Task OnConnectRequested(string address) => InvokeAsync(async () =>
     {
@@ -24,5 +26,5 @@
         await DialogService.ShowAsync<ConnectingDialog>("Connecting", parameters, options);
     });
 
-    public void Dispose() => Commands.ConnectRequested -= OnConnectRequested;
+    public void Dispose() => Bridge.ConnectRequested -= OnConnectRequested;
 }

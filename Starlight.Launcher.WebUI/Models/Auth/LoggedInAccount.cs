@@ -1,8 +1,8 @@
 using Robust.Launcher.Api.Models;
 using Robust.Launcher.Api.Models.Data;
-using Starlight.Launcher.Models.Helpers;
+using Starlight.Launcher.WebUI.Models.Helpers;
 
-namespace Starlight.Launcher.Api.Models;
+namespace Starlight.Launcher.WebUI.Models.Auth;
 
 public abstract class LoggedInAccount : ObservableObject
 {

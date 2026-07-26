@@ -1,6 +1,6 @@
 using Robust.Launcher.Api.Utility;
 
-namespace Starlight.Launcher.Models;
+namespace Starlight.Launcher.WebUI.Models.Data;
 
 public sealed class RobustCdn
 {

@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using Robust.Launcher.Api.Models;
-using Starlight.Launcher.WebUI.Models;
 using Starlight.Launcher.WebUI.Models.Connector;
+using Starlight.Launcher.WebUI.Models.Helpers;
 
 namespace Starlight.Launcher.WebUI.Bridge;
 

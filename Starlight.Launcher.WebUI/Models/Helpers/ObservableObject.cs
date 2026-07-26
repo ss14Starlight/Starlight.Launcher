@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace Starlight.Launcher.Models.Helpers;
+namespace Starlight.Launcher.WebUI.Models.Helpers;
 
 public abstract class ObservableObject : INotifyPropertyChanged
 {

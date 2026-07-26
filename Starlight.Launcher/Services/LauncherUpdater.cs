@@ -15,8 +15,6 @@ public partial class LauncherUpdater
         ? ""
         : FileVersionInfo.GetVersionInfo(Environment.ProcessPath).ProductVersion?.Split('+')[0] ?? "";
 
-    public sealed record ReleaseAsset(string Name, string DownloadUrl, long Size);
-
     public sealed record UpdateInfo(
         bool IsUpdateAvailable,
         string CurrentVersion,

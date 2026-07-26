@@ -1,5 +1,5 @@
 
-namespace Starlight.Launcher.Models.Settings;
+namespace Starlight.Launcher.WebUI.Models.Settings;
 
 public record Hub
 {

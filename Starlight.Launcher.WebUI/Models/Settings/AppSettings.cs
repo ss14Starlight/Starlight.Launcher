@@ -1,7 +1,7 @@
-using Starlight.Launcher.Models.Data;
-using Starlight.Launcher.Models.ServerStatus;
+using Starlight.Launcher.WebUI.Models.Data;
+using Starlight.Launcher.WebUI.Models.ServerStatus;
 
-namespace Starlight.Launcher.Models.Settings;
+namespace Starlight.Launcher.WebUI.Models.Settings;
 
 public partial record AppSettings
 {

@@ -7,7 +7,6 @@ using Linguini.Shared.Types.Bundle;
 using Linguini.Syntax.Parser;
 using Microsoft.Extensions.Logging;
 using Starlight.Launcher.Services.Settings;
-using Starlight.Launcher.Services.State;
 using Starlight.Launcher.WebUI.Localization;
 
 namespace Starlight.Launcher.Services.Localization;
@@ -16,25 +15,22 @@ public sealed class LocalizationManager : ILocalizationManager
 {
     private const string DefaultLocale = "en-US";
 
-    private Assembly Assembly => typeof(LocalizationManager).Assembly;
+    private Assembly _assembly => typeof(LocalizationManager).Assembly;
 
     private ILogger<LocalizationManager>? _logger;
     private readonly Dictionary<string, List<string>> _resourcesByCulture = new();
     private FluentBundle? _currentBundle;
-
-    private AppState? _state;
 
     public CultureInfo SystemCulture { get; private set; } = CultureInfo.InvariantCulture;
 
     public string this[string key]
         => GetString(key);
 
-    public Action Changed;
+    public Action? Changed;
 
-    public async Task Initialize(ILogger<LocalizationManager> logger, SettingsService settings, AppState state)
+    public async Task Initialize(ILogger<LocalizationManager> logger, SettingsService settings)
     {
         _logger = logger;
-        _state = state;
         var currentLocale = CultureInfo.CurrentUICulture;
         try
         {
@@ -135,7 +131,7 @@ public sealed class LocalizationManager : ILocalizationManager
         {
             try
             {
-                using var stream = Assembly.GetManifestResourceStream(resource);
+                using var stream = _assembly.GetManifestResourceStream(resource);
 
                 if (stream == null)
                     continue;
@@ -210,9 +206,9 @@ public sealed class LocalizationManager : ILocalizationManager
     {
         _resourcesByCulture.Clear();
 
-        var prefix = $"{Assembly.GetName().Name}.Locale.";
+        var prefix = $"{_assembly.GetName().Name}.Locale.";
 
-        foreach (var resource in Assembly.GetManifestResourceNames())
+        foreach (var resource in _assembly.GetManifestResourceNames())
         {
             if (!resource.StartsWith(prefix))
                 continue;

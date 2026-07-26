@@ -1,16 +1,17 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using Starlight.Launcher.Services;
+using Starlight.Launcher.WebUI.Bridge;
+using Starlight.Launcher.WebUI.Models.LauncherUpdater;
 
 namespace Starlight.Launcher.Components.WebUI.Atoms.Dialogs;
 
 public sealed partial class LauncherUpdateDialog : ComponentBase, IDisposable
 {
-    [Inject] private LauncherUpdater _launcherUpdater { get; set; } = default!;
+    [Inject] private IBridge _bridge { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance _mudDialog { get; set; } = default!;
 
-    [Parameter] public LauncherUpdater.ReleaseAsset Asset { get; set; } = default!;
+    [Parameter] public ReleaseAsset Asset { get; set; } = default!;
 
     private enum Phase { Downloading, Done, Failed }
     private Phase _phase = Phase.Downloading;
@@ -53,7 +54,7 @@ public sealed partial class LauncherUpdateDialog : ComponentBase, IDisposable
 
     protected override void OnInitialized()
     {
-        _launcherUpdater.DownloadProgress += OnProgress;
+        _bridge.DownloadProgress += OnProgress;
 
         _pollTimer = new Timer(_ =>
         {
@@ -164,7 +165,7 @@ public sealed partial class LauncherUpdateDialog : ComponentBase, IDisposable
 
     public void Dispose()
     {
-        _launcherUpdater.DownloadProgress -= OnProgress;
+        _bridge.DownloadProgress -= OnProgress;
         _pollTimer?.Dispose();
 
         if (!_cts.IsCancellationRequested)

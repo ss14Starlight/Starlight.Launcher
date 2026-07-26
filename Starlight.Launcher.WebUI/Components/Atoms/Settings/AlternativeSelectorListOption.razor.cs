@@ -1,11 +1,10 @@
 using Microsoft.AspNetCore.Components;
-using Starlight.Launcher.Services.Localization;
+using Starlight.Launcher.WebUI.Localization;
 
 namespace Starlight.Launcher.Components.WebUI.Atoms.Settings;
 
-public partial class AlternativeSelectorListOption : ComponentBase
+public partial class AlternativeSelectorListOption : LocalizedComponentBase
 {
-    [Inject] private LocalizationManager _localization { get; set; } = default!;
 
     [Parameter] public List<string> Values { get; set; } = [];
     [Parameter] public EventCallback<List<string>> ValuesChanged { get; set; }
