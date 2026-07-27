@@ -11,15 +11,6 @@
 <div class="app-bg"></div>
 
 <div class="settings-page">
-    <div class="settings-reset-button">
-        <MudButton Variant="Variant.Outlined"
-                   Color="Color.Error"
-                   StartIcon="@Icons.Material.Filled.SettingsBackupRestore"
-                   OnClick="OnResetSettings">
-            @L["settings-menu-reset-option"]
-        </MudButton>
-    </div>
-
     <MudTabs @ref="_tabs" Elevation="0" ApplyEffectsToContainer="false" Class="settings-tabs pa-6" TabPanelsClass="settings-tabs-panels" ActivePanelIndexChanged="OnActivePanelIndexChanged">
         <MudTabPanel @ref="_generalTab" Text="@L["settings-menu-general-category"]">
             <MudContainer MaxWidth="MaxWidth.Small" Class="pa-0">
@@ -28,20 +19,20 @@
                 <BoolOption Title="@L["settings-menu-multiple-clients-option"]" Description="@L["settings-menu-multiple-clients-option-description"]" Icon="@Icons.Material.Filled.MultipleStop" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.PreventMultipleClients)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { PreventMultipleClients = v })" />
                 <FilePathOption Title="@L["settings-menu-data-folder-option"]" Description="@L["settings-menu-data-folder-option-description"]" Icon="@Icons.Material.Filled.FolderOpen" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.DirLauncherData)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { DirLauncherData = v })" AllowManualInput="false" PickAction="() => _fileDialog.PickFolderAsync()" ShowOpenButton="true" />
                 <MudButton StartIcon="@Icons.Material.Filled.BrowserUpdated"
-                           Variant="Variant.Filled"
-                           FullWidth=true
-                           OnClick="CheckUpdate">
+                            Variant="Variant.Filled"
+                            FullWidth=true
+                            OnClick="CheckUpdate">
                     @L["settings-menu-update-option"]
                 </MudButton>
             </MudContainer>
         </MudTabPanel>
         <MudTabPanel Text="@L["settings-menu-servers-category"]">
-             <MudContainer MaxWidth="MaxWidth.Small" Class="pa-0">
+                <MudContainer MaxWidth="MaxWidth.Small" Class="pa-0">
                 <MudText Typo="Typo.overline" Class="mud-text-secondary">@L["settings-menu-general-category"]</MudText>
                 <AlternativeListOption Title="@L["settings-menu-hub-list-option"]" Description="@L["settings-menu-hub-list-option-description"]" AddButtonTooltip="@L["settings-menu-hub-list-option-add-tooltip"]" EmptyValuesString="@L["settings-menu-hub-list-option-empty-values"]" TextFieldLabel="@L["settings-menu-hub-list-option-text-label"]" Icon="@Icons.Material.Filled.Hub" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings<List<(string Url, long Priority)>>(s => [.. s.Hubs.Select(h => (h.HubUri.ToString(), h.Priority))])" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { Hubs = ConvertToHubList(v) })" />
                 <AlternativeSelectorListOption Title="@L["settings-menu-auth-list-option"]" Description="@L["settings-menu-auth-list-option-description"]" AddButtonTooltip="@L["settings-menu-auth-list-option-add-tooltip"]" EmptyValuesString="@L["settings-menu-auth-list-option-empty-values"]" TextFieldLabel="@L["settings-menu-auth-list-option-text-label"]" Icon="@Icons.Material.Filled.Key" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings<(List<string>, string?)>(s => (s.AuthServerUrls, s.SelectedAuthServer))" SelfValueControlAction="(a, b) => OnSettingChanged((a, b), null, (s, v) => s with { AuthServerUrls = v.a, SelectedAuthServer = v.b })" />
                 <BoolOption Title="@L["settings-menu-deauth-onchange-option"]" Description="@L["settings-menu-deauth-onchange-option-description"]" Icon="@Icons.Material.Filled.KeyOff" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.DeauthOnChange)" SelfValueControlAction="x => { OnSettingChanged(x, null, (s, v) => s with { DeauthOnChange = !v }); if (_bridge.GetSettings() is { } settings && settings.DeauthOnChange) { _bridge.WriteLogins(new()); _bridge.WriteSettings(settings with { SelectedLoginId = null }); } }" />
-             </MudContainer>
+                </MudContainer>
         </MudTabPanel>
         <MudTabPanel Text="@L["settings-menu-appearance-category"]">
             <MudContainer MaxWidth="MaxWidth.Small" Class="pa-0">
@@ -76,4 +67,13 @@
             </MudContainer>
         </MudTabPanel>
     </MudTabs>
+
+    <div class="settings-reset-button">
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Error"
+                   StartIcon="@Icons.Material.Filled.SettingsBackupRestore"
+                   OnClick="OnResetSettings">
+            @L["settings-menu-reset-option"]
+        </MudButton>
+    </div>
 </div>

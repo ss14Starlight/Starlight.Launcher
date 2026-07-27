@@ -1,14 +1,16 @@
 .settings-page {
-    height: 100%;
-    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
     position: relative;
 }
 
 .settings-reset-button {
-    position: absolute;
-    bottom: 32px;
+    position: fixed;
     right: 32px;
-    z-index: 15;
+    bottom: 32px;
+    z-index: 100;
 }
 
 .mud-main-content.has-bottom-nav .settings-reset-button {
