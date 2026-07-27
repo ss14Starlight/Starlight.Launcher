@@ -193,8 +193,10 @@ public sealed partial class ConnectingDialog : LocalizedComponentBase, IDisposab
         return $"{v:0.#} {units[i]}";
     }
 
-    public void Dispose()
+    public override void Dispose()
     {
+        base.Dispose();
+
         _bridge.ConnectionPropertyChanged -= OnConnectorChanged;
         _pollTimer?.Dispose();
 

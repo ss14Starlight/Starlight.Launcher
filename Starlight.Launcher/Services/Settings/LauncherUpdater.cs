@@ -347,6 +347,9 @@ public partial class LauncherUpdater
 
     private static void RunDetachedShellScript(string script)
     {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return;
+
         var scriptPath = Path.Combine(Path.GetTempPath(), $"starlight-update-{Guid.NewGuid()}.sh");
         File.WriteAllText(scriptPath, script);
         File.SetUnixFileMode(scriptPath,

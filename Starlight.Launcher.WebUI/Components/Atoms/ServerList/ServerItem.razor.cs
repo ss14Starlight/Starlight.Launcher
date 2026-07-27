@@ -83,7 +83,7 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
     private async Task HandleFavorites() => await OnFavorites.InvokeAsync(Data);
 
     private void OnInfoClick(string Url)
-        => _bridge.OpenBrowserAsync(Url);
+        => _bridge.OpenBrowser(Url);
 
     private async Task Play()
     {
@@ -188,8 +188,10 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
         return icon;
     }
 
-    public void Dispose()
+    public override void Dispose()
     {
+        base.Dispose();
+
         _ticker.Tick -= OnTick;
         Data.Changed -= OnDataChanged;
     }

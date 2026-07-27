@@ -21,7 +21,7 @@ public sealed partial class Bridge : IBridge
 
     public ReadOnlyObservableCollection<LoggedInAccount> GetLoginEntries() => _loginManager.Logins;
 
-    public async Task UpdateSingleAccountStatus(LoggedInAccount account) => _loginManager.UpdateSingleAccountStatus(account);
+    public async Task UpdateSingleAccountStatus(LoggedInAccount account) => await _loginManager.UpdateSingleAccountStatus(account);
 
     public void RemoveLogin(Guid userId) => _loginManager.RemoveLogin(userId);
 

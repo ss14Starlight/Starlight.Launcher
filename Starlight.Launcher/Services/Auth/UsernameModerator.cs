@@ -126,8 +126,7 @@ public static class UsernameModerator
         foreach (var rune in s.EnumerateRunes())
         {
             int v = rune.Value;
-            bool keep = v is (>= 'a' and <= 'z') or (>= 'A' and <= 'Z') or (>= '0' and <= '9')
-                        || v is '_' or '-' or '.';
+            bool keep = v is (>= 'a' and <= 'z') or (>= 'A' and <= 'Z') or (>= '0' and <= '9') or '_' or '-' or '.';
 
             if (keep)
             {

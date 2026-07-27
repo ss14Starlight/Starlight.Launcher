@@ -3,7 +3,6 @@ using MudBlazor;
 using Robust.Launcher.Api.Models.ServerStatus;
 using Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 using Starlight.Launcher.WebUI.Bridge;
-using Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Models.Data;
 using Starlight.Launcher.WebUI.Models.HubServerFetcher;
@@ -22,8 +21,9 @@ public partial class Home : LocalizedComponentBase, IDisposable
     private readonly CancellationTokenSource _disposeCts = new();
     private int _rebuildScheduled;
 
-    public void Dispose()
+    public override void Dispose()
     {
+        base.Dispose();
         _bridge.FavoritesChanged -= HandleFavorites;
         _bridge.ServersChanged -= OnServersChanged;
         _bridge.StatusChanged -= OnStatusChanged;

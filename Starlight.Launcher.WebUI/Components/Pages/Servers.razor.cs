@@ -334,8 +334,9 @@ public partial class Servers : LocalizedComponentBase, IDisposable
         return false;
     }
 
-    public void Dispose()
+    public override void Dispose()
     {
+        base.Dispose();
         GC.SuppressFinalize(this);
         _bridge.ServersChanged -= OnServersChanged;
         _bridge.StatusChanged -= OnStatusChanged;

@@ -31,7 +31,7 @@ public sealed class DiscordAuthService(StarlightAuthApi api, LoginManager loginM
                     UseShellExecute = true
                 });
             }
-            catch (Exception ex)
+            catch
             {
                 throw new DiscordAuthException("Unable to open the browser to log in.");
             }

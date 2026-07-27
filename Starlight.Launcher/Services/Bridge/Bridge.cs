@@ -37,12 +37,10 @@ public sealed partial class Bridge : IBridge
         _updater = updater;
     }
 
-    public void OpenBrowserAsync(string url)
-    {
+    public void OpenBrowser(string url) =>
         Process.Start(new ProcessStartInfo
         {
             FileName = url,
             UseShellExecute = true
         });
-    }
 }

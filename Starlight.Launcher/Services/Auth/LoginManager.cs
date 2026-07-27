@@ -406,10 +406,7 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
         _settings.WriteLogins(snapshot);
     }
 
-    private void DispatchToUi(Action action)
-    {
-        Dispatcher.UIThread.Post(action);
-    }
+    private void DispatchToUi(Action action) => Dispatcher.UIThread.Post(action);
 
     public async ValueTask DisposeAsync()
     {

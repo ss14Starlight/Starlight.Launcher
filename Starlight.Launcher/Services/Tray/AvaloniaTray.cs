@@ -56,11 +56,7 @@ public sealed class AvaloniaTray : INativeTray
 
     public void HideWindow() => GetWindow()?.Hide();
 
-    public void UpdateTooltip(string text)
-    {
-        if (_trayIcon is not null)
-            _trayIcon.ToolTipText = text;
-    }
+    public void UpdateTooltip(string text) => _trayIcon?.ToolTipText = text;
 
     public void Dispose()
     {

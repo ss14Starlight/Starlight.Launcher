@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 
@@ -16,6 +17,9 @@ public sealed class DpapiKeyProvider : ILoginKeyProvider
 
     public async Task<byte[]> GetOrCreateKeyAsync(string keyPath)
     {
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            throw new Exception("Windows methods isn't supported on Linux or MAC!");
+
         Directory.CreateDirectory(Path.GetDirectoryName(keyPath)!);
 
         if (!File.Exists(keyPath) && File.Exists(_legacyKeyPath))
@@ -57,6 +61,9 @@ public sealed class DpapiKeyProvider : ILoginKeyProvider
 
     private async Task<byte[]> CreateAndStoreAsync(string keyPath)
     {
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            throw new Exception("Windows methods isn't supported on Linux or MAC!");
+
         var newKey = RandomNumberGenerator.GetBytes(32);
         var blob = ProtectedData.Protect(newKey, _entropy, DataProtectionScope.CurrentUser);
         var tmp = keyPath + ".tmp";

@@ -18,8 +18,8 @@ public sealed class LocalizationManager : ILocalizationManager
 
     private Assembly _assembly => typeof(LocalizationManager).Assembly;
 
-    private ILogger<LocalizationManager> _logger;
-    private SettingsService _settings;
+    private readonly ILogger<LocalizationManager> _logger;
+    private readonly SettingsService _settings;
     private readonly Dictionary<string, List<string>> _resourcesByCulture = new();
     private FluentBundle? _currentBundle;
 
@@ -180,7 +180,7 @@ public sealed class LocalizationManager : ILocalizationManager
                 throw new ArgumentException($"Culture {cultureName} is not available");
             var culture = new CultureInfo(cultureName);
             SwitchLanguage(culture);
-            Changed.Invoke();
+            Changed?.Invoke();
         }
         catch (Exception ex)
         {

@@ -28,14 +28,11 @@ public partial class MainWindow : Window
             _web.Source = blazorUrl;
 
 #if DEBUG
-        Opened += (_, _) =>
+        Opened += (_, _) => Process.Start(new ProcessStartInfo
         {
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = _blazorUrl!.ToString(),
-                UseShellExecute = true
-            });
-        };
+            FileName = _blazorUrl!.ToString(),
+            UseShellExecute = true
+        });
 #endif
     }
 

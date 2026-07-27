@@ -2,5 +2,5 @@ namespace Starlight.Launcher.WebUI.Bridge;
 
 public partial interface IBridge
 {
-    void OpenBrowserAsync(string url);
+    void OpenBrowser(string url);
 }

@@ -165,8 +165,11 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
 
             foreach (var entry in hubEntries)
             {
+                if (entry.Address == null)
+                    continue;
+
                 var maybeNewEntry = new HubServerListEntry(entry.Address, hub.AbsoluteUri, entry.StatusData);
-                if (entry.Address != null && !entries.TryAdd(entry.Address, maybeNewEntry))
+                if (!entries.TryAdd(entry.Address, maybeNewEntry))
                 {
                     Log.Verbose("Skipping {Entry} from {ThisHub}: already from {PreviousHub}",
                         entry.Address, hub.AbsoluteUri, entries[entry.Address].HubAddress);

@@ -71,7 +71,11 @@ public partial class Auth : LocalizedComponentBase, IDisposable
 
     private void OnLoginsChanged() => InvokeAsync(StateHasChanged);
 
-    public void Dispose() => _bridge.LoginEntriesChanged -= OnLoginsChanged;
+    public override void Dispose()
+    {
+        base.Dispose();
+        _bridge.LoginEntriesChanged -= OnLoginsChanged;
+    }
 
     private async Task SelectAccount(LoggedInAccount account)
     {

@@ -26,5 +26,10 @@ public sealed partial class HorizontalNavBar : LocalizedComponentBase, IDisposab
     protected override void OnInitialized()
         => _navigation.LocationChanged += OnLocationChanged;
 
-    public void Dispose() => _navigation.LocationChanged -= OnLocationChanged;
+    public override void Dispose()
+    {
+        base.Dispose();
+
+        _navigation.LocationChanged -= OnLocationChanged;
+    }
 }

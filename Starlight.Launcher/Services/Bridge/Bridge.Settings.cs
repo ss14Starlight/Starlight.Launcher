@@ -42,6 +42,6 @@ public sealed partial class Bridge : IBridge
 
     public void WriteLogins(Dictionary<Guid, LoginInfo> logins) => _settings.WriteLogins(logins);
 
-    public async Task CacheFilters(ServerListFilters filters) => _settings.CacheFilters(filters);
+    public async Task CacheFilters(ServerListFilters filters) => await _settings.CacheFilters(filters);
 
 }

@@ -194,7 +194,7 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
 
     private void AppCalledRepaint() => _ = InvokeAsync((async () =>
     {
-        var settings = await _settings.GetSettingsAsync();
+        var settings = await _bridge.GetSettingsAsync();
         await ApplyThemeAsync();
         _elementPosition = settings.Navigation;
         StateHasChanged();
