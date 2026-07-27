@@ -1,4 +1,7 @@
 using System.Diagnostics;
+using System.Formats.Tar;
+using System.IO.Compression;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using Starlight.Launcher.Services.Settings;
@@ -12,11 +15,17 @@ public partial class LauncherUpdater
 
     public LauncherUpdater(SettingsService settings) => _settings = settings;
 
-    public static string GetVersion() => Environment.ProcessPath == null
-        ? ""
-        : FileVersionInfo.GetVersionInfo(Environment.ProcessPath).ProductVersion?.Split('+')[0] ?? "";
+    public static string GetVersion()
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        var infoVersion = assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+            ?.InformationalVersion;
 
-    // Progress reporting for the download. (downloaded, total) — total == 0 means unknown.
+        var version = infoVersion ?? assembly.GetName().Version?.ToString() ?? "";
+        return version.Split('+')[0];
+    }
+
     public event Action<(long downloaded, long total)>? DownloadProgress;
 
     public async Task<UpdateInfo> IsUpdateAvailable()
@@ -88,7 +97,8 @@ public partial class LauncherUpdater
     private static string NormalizeVersion(string? version)
         => version?.Trim().TrimStart('v', 'V') ?? string.Empty;
 
-    // OS-specific asset selection. Today only Windows; the switch makes adding Linux/Mac trivial later.
+    // Matches the asset naming from build-and-release.yml exactly - if you change the
+    // naming there (rid strings, extensions), update this in lockstep.
     private static ReleaseAsset? PickAssetForCurrentOs(IReadOnlyList<ReleaseAsset> assets)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -99,8 +109,23 @@ public partial class LauncherUpdater
                 a.Name.Contains("setup", StringComparison.OrdinalIgnoreCase));
         }
 
-        // TODO Linux:  return assets.FirstOrDefault(a => a.Name.EndsWith(".AppImage", ...));
-        // TODO macOS:  return assets.FirstOrDefault(a => a.Name.EndsWith(".dmg", ...));
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            // e.g. "Starlight.Launcher-linux-x64-1.1.2.tar.gz"
+            return assets.FirstOrDefault(a =>
+                a.Name.Contains("linux-x64", StringComparison.OrdinalIgnoreCase) &&
+                a.Name.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            // e.g. "Starlight.Launcher-osx-arm64-1.1.2.zip"
+            var rid = RuntimeInformation.ProcessArchitecture == Architecture.Arm64 ? "osx-arm64" : "osx-x64";
+            return assets.FirstOrDefault(a =>
+                a.Name.Contains(rid, StringComparison.OrdinalIgnoreCase) &&
+                a.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase));
+        }
+
         return null;
     }
 
@@ -212,21 +237,97 @@ public partial class LauncherUpdater
     }
 
     /// <summary>
-    /// Starts the installer and asks the app to exit so it isn't locked during install.
+    /// Starts the update and asks the app to exit so files aren't locked during install.
     /// </summary>
-    public static void RunInstallerAndExit(string installerPath)
+    public static void RunInstallerAndExit(string downloadedPath, string installDir)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             Process.Start(new ProcessStartInfo
             {
-                FileName = installerPath,
+                FileName = downloadedPath,
                 UseShellExecute = true
             });
+            Environment.Exit(0);
+            return;
         }
-        // TODO Linux/macOS: chmod +x the AppImage / open the .dmg, etc.
 
-        // Give the OS a beat, then exit so the installer can replace files.
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            RunLinuxUpdate(downloadedPath, installDir);
+            return;
+        }
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            RunMacUpdate(downloadedPath, installDir);
+            return;
+        }
+
         Environment.Exit(0);
+    }
+
+    public static string GetMacAppBundleRoot(string baseDirectory) =>
+        Path.GetFullPath(Path.Combine(baseDirectory, "..", ".."));
+
+    private static void RunLinuxUpdate(string archivePath, string installDir)
+    {
+        var stagingDir = Path.Combine(Path.GetTempPath(), "starlight-update-" + Guid.NewGuid());
+        Directory.CreateDirectory(stagingDir);
+
+        using (var fileStream = File.OpenRead(archivePath))
+        using (var gzip = new GZipStream(fileStream, CompressionMode.Decompress))
+            TarFile.ExtractToDirectory(gzip, stagingDir, overwriteFiles: true);
+
+        var pid = Environment.ProcessId;
+        var exePath = Environment.ProcessPath!;
+
+        var script = $"""
+            #!/bin/sh
+            while kill -0 {pid} 2>/dev/null; do sleep 0.2; done
+            rm -rf "{installDir}"
+            mv "{stagingDir}" "{installDir}"
+            chmod +x "{installDir}/Starlight.Launcher"
+            exec "{exePath}"
+            """;
+
+        RunDetachedShellScript(script);
+        Environment.Exit(0);
+    }
+
+    private static void RunMacUpdate(string zipPath, string appBundlePath)
+    {
+        var stagingDir = Path.Combine(Path.GetTempPath(), "starlight-update-" + Guid.NewGuid());
+        ZipFile.ExtractToDirectory(zipPath, stagingDir, overwriteFiles: true);
+
+        var newAppPath = Path.Combine(stagingDir, "Starlight Launcher.app");
+        var pid = Environment.ProcessId;
+
+        var script = $"""
+            #!/bin/sh
+            while kill -0 {pid} 2>/dev/null; do sleep 0.2; done
+            rm -rf "{appBundlePath}"
+            mv "{newAppPath}" "{appBundlePath}"
+            xattr -cr "{appBundlePath}" 2>/dev/null
+            open "{appBundlePath}"
+            """;
+
+        RunDetachedShellScript(script);
+        Environment.Exit(0);
+    }
+
+    private static void RunDetachedShellScript(string script)
+    {
+        var scriptPath = Path.Combine(Path.GetTempPath(), $"starlight-update-{Guid.NewGuid()}.sh");
+        File.WriteAllText(scriptPath, script);
+        File.SetUnixFileMode(scriptPath,
+            UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = "/bin/sh",
+            ArgumentList = { scriptPath },
+            UseShellExecute = false,
+        });
     }
 }

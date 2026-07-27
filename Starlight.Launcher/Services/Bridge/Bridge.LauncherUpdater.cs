@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Models.LauncherUpdater;
 
@@ -15,7 +16,13 @@ public sealed partial class Bridge : IBridge
 
     public async Task<string> DownloadAsset(ReleaseAsset asset, CancellationToken ct = default) => await _launcherUpdater.DownloadAsset(asset, ct);
 
-    public void RunInstallerAndExit(string installerPath) => LauncherUpdater.RunInstallerAndExit(installerPath);
+    public void RunInstallerAndExit(string downloadedPath)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            LauncherUpdater.RunInstallerAndExit(downloadedPath, _settings.GetSettings().DirLauncherInstall);
+        else
+            LauncherUpdater.RunInstallerAndExit(downloadedPath, LauncherUpdater.GetMacAppBundleRoot(AppContext.BaseDirectory));
+    }
 
     public void CleanupOldInstallers() => _launcherUpdater.CleanupOldInstallers();
 
