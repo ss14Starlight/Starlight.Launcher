@@ -98,11 +98,7 @@ public partial class Settings : LocalizedComponentBase, IDisposable
                     else
                     {
                         // No installer for this OS in the release — fall back to the release page.
-                        Process.Start(new ProcessStartInfo
-                        {
-                            FileName = info.ReleasePageUrl,
-                            UseShellExecute = true
-                        });
+                        _bridge.OpenBrowser(info.ReleasePageUrl);
                     }
                     return Task.CompletedTask;
                 };

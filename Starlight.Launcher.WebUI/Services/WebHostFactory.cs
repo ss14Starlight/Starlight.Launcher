@@ -30,10 +30,7 @@ public static class WebHostFactory
 
         builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
-        builder.Services.Configure<HostOptions>(options =>
-        {
-            options.ShutdownTimeout = TimeSpan.FromSeconds(2);
-        });
+        builder.Services.Configure<HostOptions>(options => options.ShutdownTimeout = TimeSpan.FromSeconds(2));
 
         builder.Services.AddMudServices();
 

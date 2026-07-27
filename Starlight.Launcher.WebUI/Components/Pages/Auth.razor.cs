@@ -437,6 +437,7 @@ public partial class Auth : LocalizedComponentBase, IDisposable
         if (!RegistrationEnabled)
             return;
 
+        /*
         _registerErrors = null;
         _registerSuccessMessage = null;
 
@@ -486,6 +487,7 @@ public partial class Auth : LocalizedComponentBase, IDisposable
         {
             _busy = false;
         }
+        */
     }
 
     private async Task DoForgotPassword()
