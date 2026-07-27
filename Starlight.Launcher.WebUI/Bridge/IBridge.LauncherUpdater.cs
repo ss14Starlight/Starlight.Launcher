@@ -20,7 +20,7 @@ public partial interface IBridge
 
     bool ShouldShowChangelog();
 
-    Task<string?> GetChangelogForCurrentVersion();
+    Task<IReadOnlyList<ChangelogEntry>> GetChangelogsToShow();
 
     void MarkChangelogSeen();
 

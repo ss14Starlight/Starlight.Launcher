@@ -1,14 +1,14 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using Starlight.Launcher.WebUI.Models.LauncherUpdater;
 
 namespace Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 
 public partial class ChangelogDialog
 {
-    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance _mudDialog { get; set; } = default!;
 
-    [Parameter] public string Version { get; set; } = "";
-    [Parameter] public string Notes { get; set; } = "";
+    [Parameter] public IReadOnlyList<ChangelogEntry> Entries { get; set; } = Array.Empty<ChangelogEntry>();
 
-    private void Close() => MudDialog.Close();
+    private void Close() => _mudDialog.Close();
 }

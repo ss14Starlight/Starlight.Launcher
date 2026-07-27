@@ -96,18 +96,16 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
         if (!_bridge.ShouldShowChangelog())
             return;
 
-        var notes = await _bridge.GetChangelogForCurrentVersion();
-        var version = _bridge.GetVersion();
+        var entries = await _bridge.GetChangelogsToShow();
 
         _bridge.MarkChangelogSeen();
 
-        if (string.IsNullOrWhiteSpace(notes))
+        if (entries.Count == 0)
             return;
 
         var parameters = new DialogParameters<ChangelogDialog>
         {
-            { x => x.Version, version },
-            { x => x.Notes, notes! }
+            { x => x.Entries, entries }
         };
 
         await _dialogService.ShowAsync<ChangelogDialog>(

@@ -1,28 +1,82 @@
-@using Starlight.Launcher.WebUI.Localization;
-
+@using Starlight.Launcher.WebUI.Localization
 @inherits LocalizedComponentBase
 
 <MudDialog>
     <TitleContent>
-        <MudText Typo="Typo.h6">
-            @L.GetString("changelog-title", ("version", Version))
-        </MudText>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.NewReleases" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">@L["changelog-title"]</MudText>
+        </MudStack>
     </TitleContent>
     <DialogContent>
-        <MudPaper Class="pa-2" Style="max-height:60vh; overflow-y:auto;" Elevation="0">
-            @if (string.IsNullOrWhiteSpace(Notes))
-            {
-                <MudText>@L["changelog-empty"]</MudText>
-            }
-            else
-            {
-                <MudMarkdown Value="@Notes" />
-            }
-        </MudPaper>
+        @if (Entries.Count == 0)
+        {
+            <MudText Color="Color.Secondary" Class="pa-4">@L["changelog-empty"]</MudText>
+        }
+        else
+        {
+            <MudStack Style="max-height:65vh; overflow-y:auto;" Class="pr-1">
+                <MudExpansionPanels Elevation="0" Gutters="false">
+                    @for (var i = 0; i < Entries.Count; i++)
+                    {
+                        var entry = Entries[i];
+                        var isLatest = i == 0;
+
+                        <MudExpansionPanel @key="entry.Version" Expanded="isLatest" Class="mb-2 rounded-lg border">
+                            <TitleContent>
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudChip T="string"
+                                             Color="@(isLatest ? Color.Primary : Color.Default)"
+                                             Variant="@(isLatest ? Variant.Filled : Variant.Outlined)"
+                                             Size="Size.Small">
+                                        v@(entry.Version)
+                                    </MudChip>
+                                    @if (isLatest)
+                                    {
+                                        <MudText Typo="Typo.caption" Color="Color.Primary">
+                                            @L["changelog-latest"]
+                                        </MudText>
+                                    }
+                                </MudStack>
+                            </TitleContent>
+                            <ChildContent>
+                                @if (string.IsNullOrWhiteSpace(entry.Notes))
+                                {
+                                    <MudText Color="Color.Secondary">@L["changelog-empty"]</MudText>
+                                }
+                                else
+                                {
+                                    <div class="changelog-markdown">
+                                        <MudMarkdown Value="@entry.Notes" />
+                                    </div>
+                                }
+                            </ChildContent>
+                        </MudExpansionPanel>
+                    }
+                </MudExpansionPanels>
+            </MudStack>
+        }
     </DialogContent>
     <DialogActions>
-        <MudButton Color="Color.Primary" OnClick="Close">
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Close" Class="mr-2 mb-1">
             @L["changelog-close"]
         </MudButton>
     </DialogActions>
 </MudDialog>
+
+<style>
+    .changelog-markdown h1, .changelog-markdown h2, .changelog-markdown h3 {
+        font-size: 1rem;
+        margin-top: 0.5rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .changelog-markdown ul {
+        margin-block: 0.25rem;
+        padding-inline-start: 1.25rem;
+    }
+
+    .changelog-markdown p {
+        margin-block: 0.25rem;
+    }
+</style>

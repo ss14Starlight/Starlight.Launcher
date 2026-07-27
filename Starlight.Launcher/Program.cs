@@ -13,15 +13,20 @@ internal static class Program
     [STAThread]
     public static int Main(string[] args)
     {
+
         try
         {
 #if DEBUG
             if (OperatingSystem.IsWindows())
                 ConsoleHelper.CreateConsole();
+
+            Console.WriteLine($"argv: [{string.Join(", ", args.Select(a => $"\"{a}\""))}]");
 #endif
 
             if (OperatingSystem.IsWindows())
             {
+                ProtocolRegistration.RegisterWindows();
+
                 var userData = Path.Combine(AppPaths.AppDataDirectory, "WebView2");
                 Directory.CreateDirectory(userData);
                 Environment.SetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER", userData);
@@ -33,32 +38,30 @@ internal static class Program
                 .CreateLogger();
             Log.Logger = logger;
 
-            // Single-instance / protocol hand-off check. Same logic as before, just no
             var messaging = new LauncherMessaging();
-            string[] commands = { LauncherCommands.PingCommand };
-            var commandSendAnyway = false;
+            var messages = new[] { LauncherActivationMessage.Ping() };
+            var sendAnyway = false;
 
             if (args.Length == 1)
             {
-                if (Uri.TryCreate(args[0], UriKind.Absolute, out var result))
+                if (Uri.TryCreate(args[0], UriKind.Absolute, out var uri))
                 {
-                    commands = result.Host.Equals("auth", StringComparison.OrdinalIgnoreCase)
-                        ? [LauncherCommands.ConstructAuthCommand(result)]
-                        : [LauncherCommands.BlankReasonCommand, LauncherCommands.ConstructConnectCommand(result)];
-                    commandSendAnyway = true;
+                    var classified = LauncherUriRouter.Classify(uri);
+                    logger.Information("Classified activation URI {uri} as {kind}", uri, classified.Kind);
+                    messages = new[] { classified };
+                    sendAnyway = true;
+                }
+                else
+                {
+                    logger.Warning("Got exactly one argv entry but it didn't parse as a URI: {arg}", args[0]);
                 }
             }
-            else if (args.Length >= 2 && args[0] == "--commands")
-            {
-                commands = args.Skip(1).ToArray();
-                commandSendAnyway = true;
-            }
 
-            if (messaging.SendCommandsOrClaim(commands, commandSendAnyway))
+            logger.Information("IPC: sending/claiming with {@Messages}", messages);
+
+            if (messaging.SendMessagesOrClaim(messages, sendAnyway))
                 return 0;
 
-            // Stash so App.OnFrameworkInitializationCompleted can register the SAME
-            // instance into DI instead of constructing a second LauncherMessaging.
             App.PendingMessaging = messaging;
 
             return BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
@@ -85,15 +88,9 @@ internal static class Program
             .UsePlatformDetect()
             .WithInterFont()
             .LogToTrace()
-            .UseDesktopWebView(); // from WebView.Avalonia.Desktop - wires WebView2 / WKWebView / WebKitGTK per-OS
+            .UseDesktopWebView();
 }
 
-/// <summary>
-/// MAUI Essentials' FileSystem.Current.AppDataDirectory replacement.
-/// LocalApplicationData is XDG-correct on Linux (~/.local/share) and correct on Windows;
-/// macOS gets special-cased since Personal/LocalApplicationData don't map to
-/// ~/Library/Application Support the way you'd want for a desktop app.
-/// </summary>
 internal static class AppPaths
 {
     public static string AppDataDirectory
