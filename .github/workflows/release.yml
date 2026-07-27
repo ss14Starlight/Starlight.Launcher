@@ -128,6 +128,13 @@ jobs:
             <key>CFBundleIconFile</key><string>icon.icns</string>
             <key>CFBundlePackageType</key><string>APPL</string>
             <key>LSMinimumSystemVersion</key><string>12.0</string>
+            <key>CFBundleURLTypes</key>
+            <array>
+              <dict>
+                <key>CFBundleURLName</key><string>com.starlight.launcher.protocol</string>
+                <key>CFBundleURLSchemes</key><array><string>starlight</string></array>
+              </dict>
+            </array>
           </dict>
           </plist>
           PLIST

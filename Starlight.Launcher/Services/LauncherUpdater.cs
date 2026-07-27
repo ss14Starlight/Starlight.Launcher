@@ -31,12 +31,7 @@ public partial class LauncherUpdater
     public async Task<UpdateInfo> IsUpdateAvailable()
     {
         var (tagName, htmlUrl, body, assets) = await GetLatestRelease();
-
         var currentVersion = NormalizeVersion(GetVersion());
-
-        if (tagName == null && htmlUrl == null && body == null && assets.Count == 0)
-            return new UpdateInfo(false, currentVersion, string.Empty, string.Empty, string.Empty, null);
-
         var latestVersion = NormalizeVersion(tagName);
 
         Console.WriteLine($"Current version: {currentVersion}");
@@ -74,36 +69,65 @@ public partial class LauncherUpdater
         _settings.WriteSettings(settings);
     }
 
-    public async Task<string?> GetChangelogForCurrentVersion()
+    public async Task<IReadOnlyList<ChangelogEntry>> GetChangelogsToShow()
     {
-        var current = NormalizeVersion(GetVersion());
-        if (string.IsNullOrEmpty(current))
-            return null;
+        var lastSeen = ParseVersion(NormalizeVersion(_settings.GetSettings().LastSeenChangelogVersion));
+        var current = ParseVersion(NormalizeVersion(GetVersion()));
 
+        var releases = await GetAllReleases();
+
+        return releases
+            .Select(r => (r.TagName, r.Body, Parsed: ParseVersion(NormalizeVersion(r.TagName))))
+            .Where(r => r.Parsed is not null)
+            .Where(r => lastSeen is null || r.Parsed! > lastSeen)
+            .Where(r => current is null || r.Parsed! <= current)
+            .OrderByDescending(r => r.Parsed)
+            .Select(r => new ChangelogEntry(NormalizeVersion(r.TagName), r.Body))
+            .ToList();
+    }
+
+    private async Task<IReadOnlyList<(string? TagName, string? Body)>> GetAllReleases()
+    {
         using var httpClient = new HttpClient();
         httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Starlight.Launcher");
 
-        foreach (var tag in new[] { $"v{current}", current })
+        try
         {
             using var response = await httpClient.GetAsync(
-                $"https://api.github.com/repos/ss14Starlight/Starlight.Launcher/releases/tags/{tag}",
+                "https://api.github.com/repos/ss14Starlight/Starlight.Launcher/releases?per_page=50",
                 HttpCompletionOption.ResponseHeadersRead);
-            if (!response.IsSuccessStatusCode)
-                continue;
+            response.EnsureSuccessStatusCode();
 
             var json = await response.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(json);
-            if (doc.RootElement.TryGetProperty("body", out var b))
-                return b.GetString();
+            using var document = JsonDocument.Parse(json);
+
+            var result = new List<(string?, string?)>();
+            foreach (var el in document.RootElement.EnumerateArray())
+            {
+                var tag = el.TryGetProperty("tag_name", out var t) ? t.GetString() : null;
+                var body = el.TryGetProperty("body", out var b) ? b.GetString() : null;
+                result.Add((tag, body));
+            }
+            return result;
         }
-        return null;
+        catch
+        {
+            return Array.Empty<(string?, string?)>();
+        }
+    }
+
+    private static Version? ParseVersion(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+            return null;
+
+        var core = raw.Split('-')[0].Split('+')[0];
+        return Version.TryParse(core, out var v) ? v : null;
     }
 
     private static string NormalizeVersion(string? version)
         => version?.Trim().TrimStart('v', 'V') ?? string.Empty;
 
-    // Matches the asset naming from build-and-release.yml exactly - if you change the
-    // naming there (rid strings, extensions), update this in lockstep.
     private static ReleaseAsset? PickAssetForCurrentOs(IReadOnlyList<ReleaseAsset> assets)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -139,41 +163,34 @@ public partial class LauncherUpdater
         using var httpClient = new HttpClient();
         httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Starlight.Launcher");
 
-        try
+        using var response = await httpClient.GetAsync(
+            "https://api.github.com/repos/ss14Starlight/Starlight.Launcher/releases/latest",
+            HttpCompletionOption.ResponseHeadersRead);
+        response.EnsureSuccessStatusCode();
+
+        string responseBody = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(responseBody);
+
+        document.RootElement.TryGetProperty("tag_name", out var tagName);
+        document.RootElement.TryGetProperty("html_url", out var htmlUrl);
+        document.RootElement.TryGetProperty("body", out var body);
+
+        var assets = new List<ReleaseAsset>();
+        if (document.RootElement.TryGetProperty("assets", out var assetsEl) &&
+            assetsEl.ValueKind == JsonValueKind.Array)
         {
-            using var response = await httpClient.GetAsync(
-                "https://api.github.com/repos/ss14Starlight/Starlight.Launcher/releases/latest",
-                HttpCompletionOption.ResponseHeadersRead);
-            response.EnsureSuccessStatusCode();
-
-            string responseBody = await response.Content.ReadAsStringAsync();
-            using var document = JsonDocument.Parse(responseBody);
-
-            document.RootElement.TryGetProperty("tag_name", out var tagName);
-            document.RootElement.TryGetProperty("html_url", out var htmlUrl);
-            document.RootElement.TryGetProperty("body", out var body);
-
-            var assets = new List<ReleaseAsset>();
-            if (document.RootElement.TryGetProperty("assets", out var assetsEl) &&
-                assetsEl.ValueKind == JsonValueKind.Array)
+            foreach (var a in assetsEl.EnumerateArray())
             {
-                foreach (var a in assetsEl.EnumerateArray())
-                {
-                    var name = a.TryGetProperty("name", out var n) ? n.GetString() : null;
-                    var url = a.TryGetProperty("browser_download_url", out var u) ? u.GetString() : null;
-                    long size = a.TryGetProperty("size", out var s) && s.TryGetInt64(out var sv) ? sv : 0;
+                var name = a.TryGetProperty("name", out var n) ? n.GetString() : null;
+                var url = a.TryGetProperty("browser_download_url", out var u) ? u.GetString() : null;
+                long size = a.TryGetProperty("size", out var s) && s.TryGetInt64(out var sv) ? sv : 0;
 
-                    if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(url))
-                        assets.Add(new ReleaseAsset(name, url, size));
-                }
+                if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(url))
+                    assets.Add(new ReleaseAsset(name, url, size));
             }
+        }
 
-            return (tagName.GetString(), htmlUrl.GetString(), body.GetString(), assets);
-        }
-        catch
-        {
-            return (null, null, null, new List<ReleaseAsset>());
-        }
+        return (tagName.GetString(), htmlUrl.GetString(), body.GetString(), assets);
     }
 
     /// <summary>
@@ -192,7 +209,6 @@ public partial class LauncherUpdater
             asset.DownloadUrl, HttpCompletionOption.ResponseHeadersRead, ct);
         response.EnsureSuccessStatusCode();
 
-        // Content-Length can be null; fall back to the size from the API.
         var total = response.Content.Headers.ContentLength ?? (asset.Size > 0 ? asset.Size : 0);
 
         await using var src = await response.Content.ReadAsStreamAsync(ct);
@@ -312,6 +328,7 @@ public partial class LauncherUpdater
         var stagingDir = Path.Combine(Path.GetTempPath(), "starlight-update-" + Guid.NewGuid());
         ZipFile.ExtractToDirectory(zipPath, stagingDir, overwriteFiles: true);
 
+        // ditto -c --keepParent (used in CI) wraps the bundle as the top-level zip entry.
         var newAppPath = Path.Combine(stagingDir, "Starlight Launcher.app");
         var pid = Environment.ProcessId;
 
