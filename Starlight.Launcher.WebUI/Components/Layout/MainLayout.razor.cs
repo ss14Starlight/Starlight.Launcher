@@ -24,6 +24,7 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
     [Inject] private NavigationManager _navigation { get; set; } = default!;
     [Inject] private ISnackbar _snackbar { get; set; } = default!;
     [Inject] private IDialogService _dialogService { get; set; } = default!;
+    [Inject] private AppState _state { get; set; } = default!;
 
     Guid IBrowserViewportObserver.Id { get; } = Guid.NewGuid();
 
@@ -54,6 +55,7 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
     {
         var settings = await _bridge.GetSettingsAsync();
         _elementPosition = settings.Navigation;
+        _state.OnChange += AppCalledRepaint;
         _navigation.LocationChanged += OnLocationChanged;
         _bridge.LoginsUnrecoverable += OnLoginsUnrecover;
 
@@ -190,10 +192,19 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
         await _jS.InvokeVoidAsync("appTheme.set", themeName);
     }
 
+    private void AppCalledRepaint() => _ = InvokeAsync((async () =>
+    {
+        var settings = await _settings.GetSettingsAsync();
+        await ApplyThemeAsync();
+        _elementPosition = settings.Navigation;
+        StateHasChanged();
+    }));
+
     public async ValueTask DisposeAsync()
     {
         GC.SuppressFinalize(this);
         await _browserViewportService.UnsubscribeAsync(this);
+        _state.OnChange -= AppCalledRepaint;
         _navigation.LocationChanged -= OnLocationChanged;
     }
 

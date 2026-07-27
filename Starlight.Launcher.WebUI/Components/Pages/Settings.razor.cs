@@ -14,6 +14,7 @@ namespace Starlight.Launcher.WebUI.Components.Pages;
 public partial class Settings : LocalizedComponentBase, IDisposable
 {
     [Inject] private IBridge _bridge { get; set; } = default!;
+    [Inject] private AppState _state { get; set; } = default!;
     [Inject] private IDialogService _dialog { get; set; } = default!;
     [Inject] private IFileDialogService _fileDialog { get; set; } = default!;
     [Inject] private NavigationManager _navigation { get; set; } = default!;
@@ -55,6 +56,7 @@ public partial class Settings : LocalizedComponentBase, IDisposable
         await _bridge.WriteSettingsAsync(settings);
 
         _appSettingsCache = null;
+        _state.CallUpdate();
 
         _navigation.NavigateTo("/settings", forceLoad: true);
     }
@@ -147,17 +149,19 @@ public partial class Settings : LocalizedComponentBase, IDisposable
         return UpdateSetting(s => update(s, value));
     }
 
-    private Task OnSettingChanged<T>(T value, Action<T>? setLocal, Func<AppSettings, T, AppSettings> update)
+    private Task OnSettingChanged<T>(T value, Action<T>? setLocal, Func<AppSettings, T, AppSettings> update, bool callWindowUpdate = false)
     {
         setLocal?.Invoke(value);
-        return UpdateSetting(s => update(s, value));
+        return UpdateSetting(s => update(s, value), callWindowUpdate);
     }
 
-    private async Task UpdateSetting(Func<AppSettings, AppSettings> update)
+    private async Task UpdateSetting(Func<AppSettings, AppSettings> update, bool callWindowUpdate = false)
     {
         var settings = await _bridge.GetSettingsAsync();
         var newSettings = update(settings);
         await _bridge.WriteSettingsAsync(newSettings);
+        if (callWindowUpdate)
+            _state.CallUpdate();
     }
 
     private async Task<T> FetchSettings<T>(Func<AppSettings, T> func)

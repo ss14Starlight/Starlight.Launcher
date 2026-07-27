@@ -41,6 +41,7 @@ public sealed class EmbeddedBlazorHost : IAsyncDisposable
                 services.AddSingleton(nativeServices.GetRequiredService<UiTicker>());
                 services.AddSingleton(nativeServices.GetRequiredService<IBridge>());
                 services.AddSingleton(nativeServices.GetRequiredService<HttpClient>());
+                services.AddSingleton(nativeServices.GetRequiredService<AppState>());
             });
 
         await _app.StartAsync();

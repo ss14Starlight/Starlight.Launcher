@@ -112,5 +112,6 @@ public partial class App : Application
         services.AddSingleton<UiTicker>();
         services.AddSingleton<LauncherUpdater>();
         services.AddSingleton<IBridge, Bridge>();
+        services.AddSingleton<AppState>(); // Service for UI refresh.
     }
 }
