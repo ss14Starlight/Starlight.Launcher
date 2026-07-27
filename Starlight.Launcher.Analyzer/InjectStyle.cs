@@ -10,18 +10,16 @@ internal static class InjectStyle
 {
     public static bool IsCanonical(PropertyDeclarationSyntax p)
     {
-        var onlyPrivate =
-            p.Modifiers.Any(SyntaxKind.PrivateKeyword) &&
-            !p.Modifiers.Any(SyntaxKind.PublicKeyword) &&
-            !p.Modifiers.Any(SyntaxKind.ProtectedKeyword) &&
-            !p.Modifiers.Any(SyntaxKind.InternalKeyword);
+        var onlyPrivateOrInternal =
+            (p.Modifiers.Any(SyntaxKind.PrivateKeyword) || p.Modifiers.Any(SyntaxKind.ProtectedKeyword))
+            && !p.Modifiers.Any(SyntaxKind.PublicKeyword) && !p.Modifiers.Any(SyntaxKind.InternalKeyword);
 
         var defaultBang =
             p.Initializer?.Value is PostfixUnaryExpressionSyntax s &&
             s.IsKind(SyntaxKind.SuppressNullableWarningExpression) &&
             s.Operand.IsKind(SyntaxKind.DefaultLiteralExpression);
 
-        return onlyPrivate && defaultBang;
+        return onlyPrivateOrInternal && defaultBang;
     }
 
     public static PropertyDeclarationSyntax Canonicalize(PropertyDeclarationSyntax p)
