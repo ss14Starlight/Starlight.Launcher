@@ -9,7 +9,7 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<ApplicationIcon>Resources\AppIcon\icon.ico</ApplicationIcon>
 	</PropertyGroup>
- 
+
 	<!-- Hide the console window on Windows only (same as before) -->
 	<PropertyGroup Condition="$([MSBuild]::IsOSPlatform('windows'))">
 		<OutputType>WinExe</OutputType>
@@ -66,6 +66,10 @@
 		<PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
 		<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
 
+		<!-- restored only for blazor.web.js, which the in-process Blazor host serves at _framework/ -->
+		<PackageReference Include="Microsoft.AspNetCore.App.Internal.Assets" Version="10.0.10" ExcludeAssets="all" PrivateAssets="all" GeneratePathProperty="true" />
+		<PackageReference Include="MudBlazor" Version="9.7.0" GeneratePathProperty="true" />
+
 		<!-- Windows-only API (DPAPI)-->
 		<PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.8" />
 	</ItemGroup>
@@ -76,4 +80,23 @@
 		<ProjectReference Include="..\Starlight.Launcher.Analyzer\Starlight.Launcher.Analyzer.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 		<ProjectReference Include="..\Starlight.Launcher.WebUI\Starlight.Launcher.WebUI.csproj" />
 	</ItemGroup>
+
+	<Target Name="CopyWebUiStaticAssets" AfterTargets="Build">
+		<PropertyGroup>
+			<_BlazorFrameworkJs>$(PkgMicrosoft_AspNetCore_App_Internal_Assets)\_framework\blazor.web.js</_BlazorFrameworkJs>
+			<_MudBlazorFrameworCSS>$(PkgMudBlazor)\staticwebassets\MudBlazor.min.css</_MudBlazorFrameworCSS>
+			<_MudBlazorFrameworJs>$(PkgMudBlazor)\staticwebassets\MudBlazor.min.js</_MudBlazorFrameworJs>
+		</PropertyGroup>
+		<ItemGroup>
+			<_WebUiContentAssets Include="$(MSBuildThisFileDirectory)..\Starlight.Launcher.WebUI\wwwroot\**\*" />
+			<_WebUiScopedCssBundle Include="$(MSBuildThisFileDirectory)..\Starlight.Launcher.WebUI\obj\$(Configuration)\net11.0\scopedcss\bundle\Starlight.Launcher.WebUI.styles.css" />
+		</ItemGroup>
+		<Error Condition="!Exists('$(_BlazorFrameworkJs)')"
+			   Text="blazor.web.js not found at '$(_BlazorFrameworkJs)' — run a NuGet restore (the Microsoft.AspNetCore.App.Internal.Assets version is pinned in Directory.Packages.props)." />
+		<Copy SourceFiles="$(_BlazorFrameworkJs)" DestinationFolder="$(OutputPath)wwwroot\_framework" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="$(_MudBlazorFrameworJs)" DestinationFolder="$(OutputPath)wwwroot\_content\MudBlazor" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="$(_MudBlazorFrameworCSS)" DestinationFolder="$(OutputPath)wwwroot\_content\MudBlazor" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(_WebUiContentAssets)" DestinationFolder="$(OutputPath)wwwroot\%(RecursiveDir)" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(_WebUiScopedCssBundle)" DestinationFolder="$(OutputPath)wwwroot" Condition="Exists('@(_WebUiScopedCssBundle)')" SkipUnchangedFiles="true" />
+	</Target>
 </Project>

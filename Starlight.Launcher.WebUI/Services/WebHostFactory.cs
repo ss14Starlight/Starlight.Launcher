@@ -1,35 +1,42 @@
+using System.Net;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using MudBlazor;
 using MudBlazor.Services;
 using Starlight.Launcher.WebUI.Components;
+using Starlight.Launcher.WebUI.Services;
 
 namespace Starlight.Launcher.WebUI;
 
 public static class WebHostFactory
 {
-    public static WebApplication Create(
-        string[] args,
-        Action<IServiceCollection>? configureServices = null,
-        bool loopbackOnlyRandomPort = false)
+    public static WebApplication Create(Action<IServiceCollection>? configureServices = null)
     {
-        var builder = WebApplication.CreateBuilder(args);
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+        {
+            ContentRootPath = AppContext.BaseDirectory,
+            EnvironmentName = Environments.Production,
+        });
 
-        if (loopbackOnlyRandomPort)
-            builder.WebHost.UseUrls("http://127.0.0.1:0");
+        builder.WebHost.UseKestrel(o => o.Listen(IPAddress.Loopback, 0));
 
-        builder.Services.AddRazorComponents()
-            .AddInteractiveServerComponents();
+        builder.WebHost.UseStaticWebAssets();
+
+        builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
         builder.Services.AddMudServices();
 
         configureServices?.Invoke(builder.Services);
 
         var app = builder.Build();
+
+        var env = app.Services.GetRequiredService<IWebHostEnvironment>();
 
         if (!app.Environment.IsDevelopment())
             app.UseExceptionHandler("/Error");

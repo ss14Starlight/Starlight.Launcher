@@ -23,8 +23,6 @@ public sealed class EmbeddedBlazorHost : IAsyncDisposable
     public async Task StartAsync(IServiceProvider nativeServices)
     {
         _app = WebHostFactory.Create(
-            args: Array.Empty<string>(),
-            loopbackOnlyRandomPort: true,
             configureServices: services =>
             {
                 // Only re-expose what your .razor components actually @inject - trim
