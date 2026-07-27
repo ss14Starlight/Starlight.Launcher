@@ -33,7 +33,6 @@ internal static class Program
                 .CreateLogger();
             Log.Logger = logger;
 
-
             // Single-instance / protocol hand-off check. Same logic as before, just no
             var messaging = new LauncherMessaging();
             string[] commands = { LauncherCommands.PingCommand };

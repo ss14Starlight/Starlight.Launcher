@@ -82,7 +82,7 @@
 		<ProjectReference Include="..\Starlight.Launcher.WebUI\Starlight.Launcher.WebUI.csproj" />
 	</ItemGroup>
 
-	<Target Name="CopyWebUiStaticAssets" AfterTargets="Build">
+	<Target Name="CopyWebUiStaticAssets" AfterTargets="Build;Publish">
 		<PropertyGroup>
 			<_BlazorFrameworkJs>$(PkgMicrosoft_AspNetCore_App_Internal_Assets)\staticwebassets\_framework\blazor.web.js</_BlazorFrameworkJs>
 			<_MudBlazorFrameworkCSS>$(PkgMudBlazor)\staticwebassets\MudBlazor.min.css</_MudBlazorFrameworkCSS>
@@ -94,14 +94,35 @@
 			<_WebUiContentAssets Include="$(MSBuildThisFileDirectory)..\Starlight.Launcher.WebUI\wwwroot\**\*" />
 			<_WebUiScopedCssBundle Include="$(MSBuildThisFileDirectory)..\Starlight.Launcher.WebUI\obj\$(Configuration)\net11.0\scopedcss\bundle\Starlight.Launcher.WebUI.styles.css" />
 		</ItemGroup>
-		<Error Condition="!Exists('$(_BlazorFrameworkJs)')"
-			   Text="blazor.web.js not found at '$(_BlazorFrameworkJs)' — run a NuGet restore (the Microsoft.AspNetCore.App.Internal.Assets version is pinned in Directory.Packages.props)." />
+		<Error Condition="!Exists('$(_BlazorFrameworkJs)')" Text="blazor.web.js not found at '$(_BlazorFrameworkJs)' — run a NuGet restore (the Microsoft.AspNetCore.App.Internal.Assets version is pinned in Directory.Packages.props)." />
+
+		<!-- Blazor -->
+		
 		<Copy SourceFiles="$(_BlazorFrameworkJs)" DestinationFolder="$(OutputPath)wwwroot\_framework" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(_BlazorFrameworkJs)" DestinationFolder="$(PublishDir)wwwroot\_framework" Condition="'$(PublishDir)' != ''" SkipUnchangedFiles="true" />
+
+		<!-- MubBlazor -->
+		
 		<Copy SourceFiles="$(_MudBlazorFrameworkJs)" DestinationFolder="$(OutputPath)wwwroot\_content\MudBlazor" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(_MudBlazorFrameworkJs)" DestinationFolder="$(PublishDir)wwwroot\_content\MudBlazor" Condition="'$(PublishDir)' != ''" SkipUnchangedFiles="true" />
 		<Copy SourceFiles="$(_MudBlazorFrameworkCSS)" DestinationFolder="$(OutputPath)wwwroot\_content\MudBlazor" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(_MudBlazorFrameworkCSS)" DestinationFolder="$(PublishDir)wwwroot\_content\MudBlazor" Condition="'$(PublishDir)' != ''" SkipUnchangedFiles="true" />
+
+		<!-- Markdown -->
+		
 		<Copy SourceFiles="$(_MudBlazorMarkdownFrameworkJs)" DestinationFolder="$(OutputPath)wwwroot\_content\MudBlazor.Markdown" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(_MudBlazorMarkdownFrameworkJs)" DestinationFolder="$(PublishDir)wwwroot\_content\MudBlazor.Markdown" Condition="'$(PublishDir)' != ''" SkipUnchangedFiles="true" />
 		<Copy SourceFiles="$(_MudBlazorMarkdownFrameworkCSS)" DestinationFolder="$(OutputPath)wwwroot\_content\MudBlazor.Markdown" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(_MudBlazorMarkdownFrameworkCSS)" DestinationFolder="$(PublishDir)wwwroot\_content\MudBlazor.Markdown" Condition="'$(PublishDir)' != ''" SkipUnchangedFiles="true" />
+
+		<!-- wwwroot -->
+		
 		<Copy SourceFiles="@(_WebUiContentAssets)" DestinationFolder="$(OutputPath)wwwroot\%(RecursiveDir)" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(_WebUiContentAssets)" DestinationFolder="$(PublishDir)wwwroot\%(RecursiveDir)" Condition="'$(PublishDir)' != ''" SkipUnchangedFiles="true" />
+
+		<!-- scoped css -->
+		
 		<Copy SourceFiles="@(_WebUiScopedCssBundle)" DestinationFolder="$(OutputPath)wwwroot" Condition="Exists('@(_WebUiScopedCssBundle)')" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(_WebUiScopedCssBundle)" DestinationFolder="$(PublishDir)wwwroot\%(RecursiveDir)" Condition="'$(PublishDir)' != ''" SkipUnchangedFiles="true" />
 	</Target>
 </Project>
