@@ -1,11 +1,9 @@
 using System.Text;
 using System.Threading.Channels;
 using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Threading;
-using Microsoft.Extensions.Hosting.Internal;
-using MudBlazor;
+using Microsoft.Extensions.Logging;
 using Robust.Launcher.Api.Models;
 using Serilog;
 using Starlight.Launcher.Services.Auth;
@@ -17,23 +15,27 @@ public partial class LauncherCommands
 {
     private static string s_reason = "";
 
+    private readonly ILogger<LauncherCommands> _logger;
     private readonly LoginManager _loginManager;
     private readonly Connector _connector;
+    private readonly DiscordAuthService _discordAuth;
     public readonly Channel<string> CommandChannel;
 
     public event Func<string, Task>? ConnectRequested;
 
-    public LauncherCommands(LoginManager loginManager, Connector connector)
+    public LauncherCommands(ILogger<LauncherCommands> logger, LoginManager loginManager, Connector connector, DiscordAuthService discordAuth)
     {
+        _logger = logger;
         _loginManager = loginManager;
         _connector = connector;
+        _discordAuth = discordAuth;
 
         CommandChannel = Channel.CreateUnbounded<string>();
     }
 
     private void ActivateWindow()
     {
-        if (Application.Current.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktopLifetime || desktopLifetime.MainWindow is not { } window)
+        if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktopLifetime || desktopLifetime.MainWindow is not { } window)
         {
             Log.Warning("ActivateWindow: can't find active window!!!");
             return;
@@ -44,12 +46,6 @@ public partial class LauncherCommands
             window.Show();
             window.Activate();
         });
-    }
-
-    private static void ActivateWindow(Window window)
-    {
-        window.Show();
-        window.Activate();
     }
 
     private async Task Connect(string param)
@@ -74,24 +70,24 @@ public partial class LauncherCommands
 
         if (activeAccount!.Status != AccountLoginStatus.Available)
         {
-            Log.Warning($"Dropping connect command: Account not available");
+            _logger.LogWarning($"Dropping connect command: Account not available");
             return;
         }
 
         // Drop the command if we are already connecting.
         if (_connector.ActiveLaunches > 0)
         {
-            Log.Warning($"Dropping connect command: Busy connecting to a server");
+            _logger.LogWarning($"Dropping connect command: Busy connecting to a server");
             return;
         }
         // Note that we don't want to activate the window for something we'll requeue again and again.
         ActivateWindow();
-        Log.Information($"Connect command: \"{param}\", \"{reason}\"");
+        _logger.LogInformation($"Connect command: \"{param}\", \"{reason}\"");
 
         var handler = ConnectRequested;
         if (handler is null)
         {
-            Log.Error("Connect: no UI handler subscribed to ConnectRequested");
+            _logger.LogError("Connect: no UI handler subscribed to ConnectRequested");
             return;
         }
 
@@ -114,14 +110,14 @@ public partial class LauncherCommands
             }
             catch (Exception e)
             {
-                Log.Error(e, "Exception while processing launcher command {Command}", cmd);
+                _logger.LogError(e, "Exception while processing launcher command {Command}", cmd);
             }
         }
     }
 
     private async Task RunSingleCommand(string cmd)
     {
-        Log.Debug($"Launcher command: {cmd}");
+        _logger.LogDebug($"Launcher command: {cmd}");
 
         string? GetUntrustedTextField()
         {
@@ -131,7 +127,7 @@ public partial class LauncherCommands
             }
             catch (Exception ex)
             {
-                Log.Error($"Failed to parse untrusted text field: {ex}");
+                _logger.LogError($"Failed to parse untrusted text field: {ex}");
                 return null;
             }
         }
@@ -168,9 +164,17 @@ public partial class LauncherCommands
             // Used by the "pass URI as argument" logic, doesn't need to bother with safety measures
             await Connect(cmd[1..]);
         }
+        else if (cmd.StartsWith("a"))
+        {
+            // Discord OAuth handoff
+            if (Uri.TryCreate(cmd[1..], UriKind.Absolute, out var authUri))
+                _discordAuth.HandleDeepLink(authUri);
+            else
+                _logger.LogError("Bad auth deep link command: {cmd}", cmd);
+        }
         else
         {
-            Log.Error($"Unhandled launcher command: {cmd}");
+            _logger.LogError($"Unhandled launcher command: {cmd}");
         }
     }
 
@@ -180,4 +184,5 @@ public partial class LauncherCommands
     public const string RedialWaitCommand = ":RedialWait";
     public const string BlankReasonCommand = "r";
     public static string ConstructConnectCommand(Uri uri) => "c" + uri.ToString();
+    public static string ConstructAuthCommand(Uri uri) => "a" + uri.ToString();
 }

@@ -766,7 +766,7 @@ public partial class Connector : ObservableObject
 #endif
             basePath = Path.GetFullPath(Path.Combine(
                 settings.DirLauncherInstall,
-                "..", "..", "..", "..", "..",
+                "..", "..", "..", "..",
                 "Robust.Loader", "bin", BuildConfiguration, "net10.0"));
         }
 

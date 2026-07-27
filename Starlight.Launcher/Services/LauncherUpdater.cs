@@ -31,7 +31,12 @@ public partial class LauncherUpdater
     public async Task<UpdateInfo> IsUpdateAvailable()
     {
         var (tagName, htmlUrl, body, assets) = await GetLatestRelease();
+
         var currentVersion = NormalizeVersion(GetVersion());
+
+        if (tagName == null && htmlUrl == null && body == null && assets.Count == 0)
+            return new UpdateInfo(false, currentVersion, string.Empty, string.Empty, string.Empty, null);
+
         var latestVersion = NormalizeVersion(tagName);
 
         Console.WriteLine($"Current version: {currentVersion}");
@@ -134,34 +139,41 @@ public partial class LauncherUpdater
         using var httpClient = new HttpClient();
         httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Starlight.Launcher");
 
-        using var response = await httpClient.GetAsync(
-            "https://api.github.com/repos/ss14Starlight/Starlight.Launcher/releases/latest",
-            HttpCompletionOption.ResponseHeadersRead);
-        response.EnsureSuccessStatusCode();
-
-        string responseBody = await response.Content.ReadAsStringAsync();
-        using var document = JsonDocument.Parse(responseBody);
-
-        document.RootElement.TryGetProperty("tag_name", out var tagName);
-        document.RootElement.TryGetProperty("html_url", out var htmlUrl);
-        document.RootElement.TryGetProperty("body", out var body);
-
-        var assets = new List<ReleaseAsset>();
-        if (document.RootElement.TryGetProperty("assets", out var assetsEl) &&
-            assetsEl.ValueKind == JsonValueKind.Array)
+        try
         {
-            foreach (var a in assetsEl.EnumerateArray())
+            using var response = await httpClient.GetAsync(
+                "https://api.github.com/repos/ss14Starlight/Starlight.Launcher/releases/latest",
+                HttpCompletionOption.ResponseHeadersRead);
+            response.EnsureSuccessStatusCode();
+
+            string responseBody = await response.Content.ReadAsStringAsync();
+            using var document = JsonDocument.Parse(responseBody);
+
+            document.RootElement.TryGetProperty("tag_name", out var tagName);
+            document.RootElement.TryGetProperty("html_url", out var htmlUrl);
+            document.RootElement.TryGetProperty("body", out var body);
+
+            var assets = new List<ReleaseAsset>();
+            if (document.RootElement.TryGetProperty("assets", out var assetsEl) &&
+                assetsEl.ValueKind == JsonValueKind.Array)
             {
-                var name = a.TryGetProperty("name", out var n) ? n.GetString() : null;
-                var url = a.TryGetProperty("browser_download_url", out var u) ? u.GetString() : null;
-                long size = a.TryGetProperty("size", out var s) && s.TryGetInt64(out var sv) ? sv : 0;
+                foreach (var a in assetsEl.EnumerateArray())
+                {
+                    var name = a.TryGetProperty("name", out var n) ? n.GetString() : null;
+                    var url = a.TryGetProperty("browser_download_url", out var u) ? u.GetString() : null;
+                    long size = a.TryGetProperty("size", out var s) && s.TryGetInt64(out var sv) ? sv : 0;
 
-                if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(url))
-                    assets.Add(new ReleaseAsset(name, url, size));
+                    if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(url))
+                        assets.Add(new ReleaseAsset(name, url, size));
+                }
             }
-        }
 
-        return (tagName.GetString(), htmlUrl.GetString(), body.GetString(), assets);
+            return (tagName.GetString(), htmlUrl.GetString(), body.GetString(), assets);
+        }
+        catch
+        {
+            return (null, null, null, new List<ReleaseAsset>());
+        }
     }
 
     /// <summary>

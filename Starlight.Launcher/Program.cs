@@ -4,6 +4,7 @@ using System.Linq;
 using Avalonia;
 using Avalonia.WebView.Desktop;
 using Serilog;
+using Starlight.Launcher.Services;
 
 namespace Starlight.Launcher;
 
@@ -32,21 +33,19 @@ internal static class Program
                 .CreateLogger();
             Log.Logger = logger;
 
+
             // Single-instance / protocol hand-off check. Same logic as before, just no
-            // longer tied to MauiApp.CreateBuilder() - must still run before any UI spins up.
-            var messaging = new Services.LauncherMessaging();
-            string[] commands = { Services.LauncherCommands.PingCommand };
+            var messaging = new LauncherMessaging();
+            string[] commands = { LauncherCommands.PingCommand };
             var commandSendAnyway = false;
 
             if (args.Length == 1)
             {
                 if (Uri.TryCreate(args[0], UriKind.Absolute, out var result))
                 {
-                    commands = new[]
-                    {
-                        Services.LauncherCommands.BlankReasonCommand,
-                        Services.LauncherCommands.ConstructConnectCommand(result)
-                    };
+                    commands = result.Host.Equals("auth", StringComparison.OrdinalIgnoreCase)
+                        ? [LauncherCommands.ConstructAuthCommand(result)]
+                        : [LauncherCommands.BlankReasonCommand, LauncherCommands.ConstructConnectCommand(result)];
                     commandSendAnyway = true;
                 }
             }
