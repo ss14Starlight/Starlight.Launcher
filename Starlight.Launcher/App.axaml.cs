@@ -59,11 +59,11 @@ public partial class App : Application
 
             var window = new MainWindow(_blazorHost.Url) { Title = "Starlight.Launcher" };
 
-            window.Closing += (_, _) =>
+            window.Closing += async (_, _) =>
             {
                 commands.Shutdown();
                 messaging.StopAndWait();
-                _blazorHost.DisposeAsync().AsTask().GetAwaiter().GetResult();
+                await _blazorHost.DisposeAsync();
             };
 
             desktop.MainWindow = window;
