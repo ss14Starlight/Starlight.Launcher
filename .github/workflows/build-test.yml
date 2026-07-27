@@ -1,0 +1,37 @@
+name: build-test
+on:
+  pull_request:
+    branches: [ main ]
+
+env:
+  DOTNET_VERSION: '11.0.x'
+  MAIN_PROJECT: 'Starlight.Launcher/Starlight.Launcher.csproj'
+  LOADER_PROJECT: 'Robust.Loader/Robust.Loader.csproj'
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-x64
+          - os: ubuntu-latest
+            rid: linux-x64
+          - os: macos-latest
+            rid: osx-arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-quality: preview
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Build launcher
+        shell: bash
+        run: dotnet build ${{ env.MAIN_PROJECT }} -c Release -r ${{ matrix.rid }}
+      - name: Build loader
+        shell: bash
+        run: dotnet build ${{ env.LOADER_PROJECT }} -c Release -r ${{ matrix.rid }}
