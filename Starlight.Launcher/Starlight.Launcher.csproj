@@ -84,7 +84,7 @@
 
 	<Target Name="CopyWebUiStaticAssets" AfterTargets="Build">
 		<PropertyGroup>
-			<_BlazorFrameworkJs>$(PkgMicrosoft_AspNetCore_App_Internal_Assets)\_framework\blazor.web.js</_BlazorFrameworkJs>
+			<_BlazorFrameworkJs>$(PkgMicrosoft_AspNetCore_App_Internal_Assets)\staticwebassets\_framework\blazor.web.js</_BlazorFrameworkJs>
 			<_MudBlazorFrameworkCSS>$(PkgMudBlazor)\staticwebassets\MudBlazor.min.css</_MudBlazorFrameworkCSS>
 			<_MudBlazorFrameworkJs>$(PkgMudBlazor)\staticwebassets\MudBlazor.min.js</_MudBlazorFrameworkJs>
 		    <_MudBlazorMarkdownFrameworkJs>$(PkgMudBlazor_Markdown)\staticwebassets\MudBlazor.Markdown.min.js</_MudBlazorMarkdownFrameworkJs>
