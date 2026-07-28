@@ -8,10 +8,19 @@
 
 .settings-reset-button {
     position: fixed;
-    right: 32px;
+    right: 36px;
     bottom: 32px;
     z-index: 100;
+    border-radius: 12px !important;
+    background: color-mix(in srgb, var(--mud-palette-error) 10%, transparent) !important;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-color: color-mix(in srgb, var(--mud-palette-error) 35%, transparent) !important;
 }
+
+    .settings-reset-button:hover {
+        background: color-mix(in srgb, var(--mud-palette-error) 18%, transparent) !important;
+    }
 
 .mud-main-content.has-bottom-nav .settings-reset-button {
     bottom: calc(32px + var(--bottom-nav-height));
