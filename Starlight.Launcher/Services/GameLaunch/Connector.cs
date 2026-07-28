@@ -142,6 +142,7 @@ public partial class Connector : ObservableObject
         finally
         {
             Cleanup();
+            EndLaunch();
         }
     }
 

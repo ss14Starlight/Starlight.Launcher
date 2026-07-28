@@ -138,11 +138,26 @@ public partial class Home : LocalizedComponentBase, IDisposable
 
     private async Task LoadReplay()
     {
-        var file = await _bridge.PickFileAsync();
+        var file = await _fileDialog.PickFileAsync();
         if (file is null)
             return;
 
-        _bridge.LaunchContentBundle(file);
+        var parameters = new DialogParameters<ConnectingDialog>
+        {
+            { x => x.ContentBundle, file },
+            { x => x.Title, file.FileName }
+        };
+
+        var options = new DialogOptions
+        {
+            BackdropClick = false,
+            CloseOnEscapeKey = false,
+            CloseButton = false,
+            MaxWidth = MaxWidth.ExtraSmall,
+            FullWidth = true
+        };
+
+        await _dialogService.ShowAsync<ConnectingDialog>("Loading replay", parameters, options);
     }
 
     private async Task AddDirectFavorite(string address)
