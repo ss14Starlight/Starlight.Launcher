@@ -160,6 +160,7 @@
                         <MudTextField @bind-Value = "_signInUsername"
                           Label="@L["auth-menu-username-label"]"
                           Variant = "Variant.Outlined"
+                          Immediate = "true"
                           Disabled = "@(_busy || _relogUserId.HasValue)"
                           Class = "mb-3"/>
 
@@ -170,6 +171,7 @@
                           AdornmentIcon="@(_showPwd ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
                           OnAdornmentClick="() => _showPwd = !_showPwd"
                           Variant = "Variant.Outlined"
+                          Immediate = "true"
                           Disabled = "_busy"
                           Class = "mb-3"
                           OnKeyDown = "OnSignInKey"/>
@@ -179,6 +181,7 @@
                             <MudTextField @bind-Value = "_signInTfaCode"
                               Label="@L["auth-menu-2fa-label"]"
                               Variant = "Variant.Outlined"
+                              Immediate = "true"
                               Disabled = "_busy"
                               Class = "mb-3"
                               OnKeyDown = "OnSignInKey"/>
@@ -409,19 +412,19 @@
 
                         <MudTextField @bind-Value="_linkUsername"
                                       Label="@L["auth-menu-username-label"]"
-                                      Variant="Variant.Outlined" Disabled="_busy" Class="mb-3" />
+                                      Variant="Variant.Outlined" Immediate="true" Disabled="_busy" Class="mb-3" />
 
                         <MudTextField @bind-Value="_linkPassword"
                                       Label="@L["auth-menu-password-label"]"
                                       InputType="InputType.Password"
-                                      Variant="Variant.Outlined" Disabled="_busy" Class="mb-3"
+                                      Variant="Variant.Outlined" Immediate="true" Disabled="_busy" Class="mb-3"
                                       OnKeyDown="OnLinkKey" />
 
                         @if (_linkTfaRequired)
                         {
                             <MudTextField @bind-Value="_linkTfaCode"
                                           Label="@L["auth-menu-2fa-label"]"
-                                          Variant="Variant.Outlined" Disabled="_busy" Class="mb-3"
+                                          Variant="Variant.Outlined" Immediate="true" Disabled="_busy" Class="mb-3"
                                           OnKeyDown="OnLinkKey" />
                         }
 
