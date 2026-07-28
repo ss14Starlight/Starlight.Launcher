@@ -542,6 +542,7 @@ h1:focus {
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+    margin-top: 6px;
 }
 
     .sl-option-card:hover {
@@ -578,10 +579,3 @@ h1:focus {
     .mud-tab-panel::-webkit-scrollbar-thumb:hover {
         background: var(--mud-palette-action-disabled);
     }
-
-.mud-input-label,
-.mud-input-slot,
-.mud-input-outlined-border {
-    transform: translateZ(0);
-    will-change: transform;
-}
