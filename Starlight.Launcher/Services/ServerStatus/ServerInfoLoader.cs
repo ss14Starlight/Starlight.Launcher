@@ -8,14 +8,11 @@ public sealed class ServerInfoLoader : IDisposable
 {
     private const int MaxConcurrent = 8;
 
-    private readonly Func<ServerStatusData, Task> _fetch;
     private readonly Channel<ServerStatusData> _queue =
         Channel.CreateUnbounded<ServerStatusData>(new UnboundedChannelOptions { SingleReader = true });
     private readonly ConcurrentDictionary<string, byte> _inFlight = new(StringComparer.OrdinalIgnoreCase);
     private readonly SemaphoreSlim _gate = new(MaxConcurrent, MaxConcurrent);
     private readonly CancellationTokenSource _cts = new();
-
-    public ServerInfoLoader(Func<ServerStatusData, Task> fetch) => _fetch = fetch;
 
     public void Request(ServerStatusData? data)
     {
