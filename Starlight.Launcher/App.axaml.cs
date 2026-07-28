@@ -97,7 +97,7 @@ public partial class App : Application
         _ = services.AddSingleton(sp =>
         {
             var fetcher = sp.GetRequiredService<HubServerFetcher>();
-            return new ServerInfoLoader(fetcher.UpdateInfoForAsync);
+            return new ServerInfoLoader();
         });
         _ = services.AddSingleton<ServerStatusCache>();
         _ = services.AddSingleton<ContentManager>();
