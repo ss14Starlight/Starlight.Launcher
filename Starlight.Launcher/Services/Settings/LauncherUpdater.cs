@@ -30,28 +30,34 @@ public partial class LauncherUpdater
 
     public async Task<UpdateInfo> IsUpdateAvailable()
     {
-        var (tagName, htmlUrl, body, assets) = await GetLatestRelease();
         var currentVersion = NormalizeVersion(GetVersion());
-        var latestVersion = NormalizeVersion(tagName);
+        var current = ParseVersion(currentVersion);
 
-        Console.WriteLine($"Current version: {currentVersion}");
-        Console.WriteLine($"Latest version: {latestVersion}");
+        var releases = await GetReleases();
 
-        var asset = PickAssetForCurrentOs(assets);
+        var newest = releases
+            .Select(r => (Release: r, Parsed: ParseVersion(NormalizeVersion(r.TagName))))
+            .Where(r => r.Parsed is not null)
+            .OrderByDescending(r => r.Parsed)
+            .FirstOrDefault();
+
+        if (newest.Release is null)
+            return new UpdateInfo(false, currentVersion, string.Empty, string.Empty, string.Empty, null);
+
+        var latestVersion = NormalizeVersion(newest.Release.TagName);
+        var isNewer = current is null || newest.Parsed! > current;
+
+        var asset = isNewer ? PickAssetForCurrentOs(newest.Release.Assets) : null;
 
         return new UpdateInfo(
-            !string.Equals(currentVersion, latestVersion, StringComparison.OrdinalIgnoreCase),
+            isNewer,
             currentVersion,
             latestVersion,
-            htmlUrl ?? string.Empty,
-            body ?? string.Empty,
+            newest.Release.HtmlUrl,
+            newest.Release.Body ?? string.Empty,
             asset);
     }
 
-    /// <summary>
-    /// True if the currently running version differs from the last version
-    /// for which we showed the changelog. Used to show "what's new" after an update.
-    /// </summary>
     public bool ShouldShowChangelog()
     {
         var current = NormalizeVersion(GetVersion());
@@ -74,7 +80,7 @@ public partial class LauncherUpdater
         var lastSeen = ParseVersion(NormalizeVersion(_settings.GetSettings().LastSeenChangelogVersion));
         var current = ParseVersion(NormalizeVersion(GetVersion()));
 
-        var releases = await GetAllReleases();
+        var releases = await GetReleases();
 
         return releases
             .Select(r => (r.TagName, r.Body, Parsed: ParseVersion(NormalizeVersion(r.TagName))))
@@ -86,7 +92,9 @@ public partial class LauncherUpdater
             .ToList();
     }
 
-    private async Task<IReadOnlyList<(string? TagName, string? Body)>> GetAllReleases()
+    private sealed record GhReleaseInfo(string TagName, string HtmlUrl, string? Body, IReadOnlyList<ReleaseAsset> Assets);
+
+    private async Task<IReadOnlyList<GhReleaseInfo>> GetReleases()
     {
         using var httpClient = new HttpClient();
         httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Starlight.Launcher");
@@ -101,20 +109,43 @@ public partial class LauncherUpdater
             var json = await response.Content.ReadAsStringAsync();
             using var document = JsonDocument.Parse(json);
 
-            var result = new List<(string?, string?)>();
+            var result = new List<GhReleaseInfo>();
             foreach (var el in document.RootElement.EnumerateArray())
             {
                 var tag = el.TryGetProperty("tag_name", out var t) ? t.GetString() : null;
+                if (string.IsNullOrWhiteSpace(tag))
+                    continue;
+
+                var htmlUrl = el.TryGetProperty("html_url", out var h) ? h.GetString() : null;
                 var body = el.TryGetProperty("body", out var b) ? b.GetString() : null;
-                result.Add((tag, body));
+
+                var assets = new List<ReleaseAsset>();
+                if (el.TryGetProperty("assets", out var assetsEl) && assetsEl.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var a in assetsEl.EnumerateArray())
+                    {
+                        var name = a.TryGetProperty("name", out var n) ? n.GetString() : null;
+                        var url = a.TryGetProperty("browser_download_url", out var u) ? u.GetString() : null;
+                        long size = a.TryGetProperty("size", out var s) && s.TryGetInt64(out var sv) ? sv : 0;
+
+                        if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(url))
+                            assets.Add(new ReleaseAsset(name, url, size));
+                    }
+                }
+
+                result.Add(new GhReleaseInfo(tag!, htmlUrl ?? "", body, assets));
             }
+
             return result;
         }
         catch
         {
-            return Array.Empty<(string?, string?)>();
+            return Array.Empty<GhReleaseInfo>();
         }
     }
+
+    private static string NormalizeVersion(string? version)
+        => version?.Trim().TrimStart('v', 'V') ?? string.Empty;
 
     private static Version? ParseVersion(string? raw)
     {
@@ -125,14 +156,10 @@ public partial class LauncherUpdater
         return Version.TryParse(core, out var v) ? v : null;
     }
 
-    private static string NormalizeVersion(string? version)
-        => version?.Trim().TrimStart('v', 'V') ?? string.Empty;
-
     private static ReleaseAsset? PickAssetForCurrentOs(IReadOnlyList<ReleaseAsset> assets)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            // e.g. "Starlight.Launcher-1.1.2-setup.exe"
             return assets.FirstOrDefault(a =>
                 a.Name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) &&
                 a.Name.Contains("setup", StringComparison.OrdinalIgnoreCase));
@@ -140,7 +167,6 @@ public partial class LauncherUpdater
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            // e.g. "Starlight.Launcher-linux-x64-1.1.2.tar.gz"
             return assets.FirstOrDefault(a =>
                 a.Name.Contains("linux-x64", StringComparison.OrdinalIgnoreCase) &&
                 a.Name.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase));
@@ -148,7 +174,6 @@ public partial class LauncherUpdater
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            // e.g. "Starlight.Launcher-osx-arm64-1.1.2.zip"
             var rid = RuntimeInformation.ProcessArchitecture == Architecture.Arm64 ? "osx-arm64" : "osx-x64";
             return assets.FirstOrDefault(a =>
                 a.Name.Contains(rid, StringComparison.OrdinalIgnoreCase) &&
@@ -156,41 +181,6 @@ public partial class LauncherUpdater
         }
 
         return null;
-    }
-
-    private async Task<(string? TagName, string? HtmlUrl, string? Body, IReadOnlyList<ReleaseAsset> Assets)> GetLatestRelease()
-    {
-        using var httpClient = new HttpClient();
-        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Starlight.Launcher");
-
-        using var response = await httpClient.GetAsync(
-            "https://api.github.com/repos/ss14Starlight/Starlight.Launcher/releases/latest",
-            HttpCompletionOption.ResponseHeadersRead);
-        response.EnsureSuccessStatusCode();
-
-        string responseBody = await response.Content.ReadAsStringAsync();
-        using var document = JsonDocument.Parse(responseBody);
-
-        document.RootElement.TryGetProperty("tag_name", out var tagName);
-        document.RootElement.TryGetProperty("html_url", out var htmlUrl);
-        document.RootElement.TryGetProperty("body", out var body);
-
-        var assets = new List<ReleaseAsset>();
-        if (document.RootElement.TryGetProperty("assets", out var assetsEl) &&
-            assetsEl.ValueKind == JsonValueKind.Array)
-        {
-            foreach (var a in assetsEl.EnumerateArray())
-            {
-                var name = a.TryGetProperty("name", out var n) ? n.GetString() : null;
-                var url = a.TryGetProperty("browser_download_url", out var u) ? u.GetString() : null;
-                long size = a.TryGetProperty("size", out var s) && s.TryGetInt64(out var sv) ? sv : 0;
-
-                if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(url))
-                    assets.Add(new ReleaseAsset(name, url, size));
-            }
-        }
-
-        return (tagName.GetString(), htmlUrl.GetString(), body.GetString(), assets);
     }
 
     /// <summary>
@@ -249,17 +239,14 @@ public partial class LauncherUpdater
                 }
                 catch (IOException)
                 {
-                    // File still locked (rare) — skip it, we'll get it next launch.
                 }
                 catch (UnauthorizedAccessException)
                 {
-                    // Same idea — don't let one stubborn file break startup.
                 }
             }
         }
         catch (Exception ex)
         {
-            // Cleanup must never crash startup.
             Console.WriteLine($"Installer cleanup failed: {ex.Message}");
         }
     }
@@ -328,7 +315,6 @@ public partial class LauncherUpdater
         var stagingDir = Path.Combine(Path.GetTempPath(), "starlight-update-" + Guid.NewGuid());
         ZipFile.ExtractToDirectory(zipPath, stagingDir, overwriteFiles: true);
 
-        // ditto -c --keepParent (used in CI) wraps the bundle as the top-level zip entry.
         var newAppPath = Path.Combine(stagingDir, "Starlight Launcher.app");
         var pid = Environment.ProcessId;
 
