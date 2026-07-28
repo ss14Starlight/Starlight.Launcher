@@ -169,7 +169,7 @@ public partial class LauncherUpdater
         {
             return assets.FirstOrDefault(a =>
                 a.Name.Contains("linux-x64", StringComparison.OrdinalIgnoreCase) &&
-                a.Name.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase));
+                a.Name.EndsWith(".AppImage", StringComparison.OrdinalIgnoreCase));
         }
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))

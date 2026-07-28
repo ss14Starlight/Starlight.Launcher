@@ -145,7 +145,7 @@ jobs:
         run: |
           dpkg-deb --build --root-owner-group \
             "deb/starlight-launcher_${{ steps.ver.outputs.version }}_amd64" \
-            "Starlight.Launcher-${{ steps.ver.outputs.version }}-amd64.deb"
+            "Starlight.Launcher-linux-x64-${{ steps.ver.outputs.version }}.deb"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -185,7 +185,7 @@ jobs:
           wget -q https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool
           chmod +x appimagetool
 
-          ./appimagetool --appimage-extract-and-run "$APPDIR" "Starlight.Launcher-${{ steps.ver.outputs.version }}-x86_64.AppImage"
+          ./appimagetool --appimage-extract-and-run "$APPDIR" "Starlight.Launcher-linux-x64-${{ steps.ver.outputs.version }}.AppImage"
 
       - uses: actions/upload-artifact@v4
         with:
