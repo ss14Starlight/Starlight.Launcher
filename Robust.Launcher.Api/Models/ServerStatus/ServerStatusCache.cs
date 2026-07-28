@@ -222,19 +222,30 @@ public sealed class ServerStatusCache : IServerSource
         catch (OperationCanceledException)
         {
             data.StatusInfo = ServerStatusInfoCode.NotFetched;
+            data.NotifyChanged();
             return;
         }
         catch (Exception e) when (e is JsonException or HttpRequestException or InvalidDataException)
         {
             data.StatusInfo = ServerStatusInfoCode.Error;
+            data.NotifyChanged();
             return;
         }
-        catch (Exception e) when (e is HubApiException apiException)
+        catch (HubApiException apiException)
         {
 #if DEBUG
             if (apiException.IsRateLimited)
                 _logger.LogDebug("Hub: {Url} returned 429 exception(Too Many Requests)!", apiException.RequestUrl);
 #endif
+            data.StatusInfo = ServerStatusInfoCode.Error;
+            data.NotifyChanged();
+            return;
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Unexpected error fetching info for {Address}", data.Address);
+            data.StatusInfo = ServerStatusInfoCode.Error;
+            data.NotifyChanged();
             return;
         }
 
@@ -279,69 +290,69 @@ public sealed class ServerStatusCache : IServerSource
 
     void IServerSource.UpdateInfoFor(ServerStatusData statusData) =>
         _ = UpdateInfoForCore(statusData, async cancel =>
+        {
+            var uriBuilder = new UriBuilder(
+                UriHelper.GetServerInfoAddress(statusData.Address))
             {
-                var uriBuilder = new UriBuilder(
-                    UriHelper.GetServerInfoAddress(statusData.Address))
+                Query = "can_skip_build=1"
+            };
+
+            var url = uriBuilder.ToString();
+
+            try
+            {
+                _logger.LogDebug(
+                    "Updating server info. Address: {Address}, Url: {Url}",
+                    statusData.Address,
+                    url);
+
+                var result = await _http.GetFromJsonAsync<ServerInfo>(
+                    url,
+                    cancel);
+
+                if (result is null)
                 {
-                    Query = "can_skip_build=1"
-                };
-
-                var url = uriBuilder.ToString();
-
-                try
+                    _logger.LogWarning(
+                        "Server info response was null. Address: {Address}",
+                        statusData.Address);
+                }
+                else
                 {
                     _logger.LogDebug(
-                        "Updating server info. Address: {Address}, Url: {Url}",
-                        statusData.Address,
-                        url);
-
-                    var result = await _http.GetFromJsonAsync<ServerInfo>(
-                        url,
-                        cancel);
-
-                    if (result is null)
-                    {
-                        _logger.LogWarning(
-                            "Server info response was null. Address: {Address}",
-                            statusData.Address);
-                    }
-                    else
-                    {
-                        _logger.LogDebug(
-                            "Server info updated successfully. Address: {Address}",
-                            statusData.Address);
-                    }
-
-                    return result;
-                }
-                catch (OperationCanceledException)
-                {
-                    _logger.LogInformation(
-                        "Server info update cancelled. Address: {Address}",
+                        "Server info updated successfully. Address: {Address}",
                         statusData.Address);
-
-                    throw;
                 }
-                catch (HttpRequestException ex)
-                {
-                    _logger.LogError(
-                        ex,
-                        "HTTP error while updating server info. Address: {Address}, Url: {Url}",
-                        statusData.Address,
-                        url);
 
-                    throw;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(
-                        ex,
-                        "Unexpected error while updating server info. Address: {Address}",
-                        statusData.Address);
+                return result;
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogInformation(
+                    "Server info update cancelled. Address: {Address}",
+                    statusData.Address);
 
-                    throw;
-                }
-            });
+                throw;
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "HTTP error while updating server info. Address: {Address}, Url: {Url}",
+                    statusData.Address,
+                    url);
+
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Unexpected error while updating server info. Address: {Address}",
+                    statusData.Address);
+
+                throw;
+            }
+        });
 
     private sealed class CacheReg
     {
