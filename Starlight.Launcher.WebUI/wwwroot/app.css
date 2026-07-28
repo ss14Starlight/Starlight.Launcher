@@ -578,3 +578,10 @@ h1:focus {
     .mud-tab-panel::-webkit-scrollbar-thumb:hover {
         background: var(--mud-palette-action-disabled);
     }
+
+.mud-input-label,
+.mud-input-slot,
+.mud-input-outlined-border {
+    transform: translateZ(0);
+    will-change: transform;
+}
