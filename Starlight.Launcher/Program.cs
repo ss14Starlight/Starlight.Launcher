@@ -21,9 +21,12 @@ internal static class Program
 #endif
 
             if (OperatingSystem.IsWindows())
-            {
                 ProtocolRegistration.RegisterWindows();
+            else if (OperatingSystem.IsLinux())
+                ProtocolRegistration.RegisterLinux();
 
+            if (OperatingSystem.IsWindows())
+            {
                 var userData = Path.Combine(AppPaths.AppDataDirectory, "WebView2");
                 Directory.CreateDirectory(userData);
                 Environment.SetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER", userData);

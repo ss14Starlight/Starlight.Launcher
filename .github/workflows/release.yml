@@ -79,12 +79,118 @@ jobs:
         run: |
           chmod +x publish/linux-x64/Starlight.Launcher
           chmod +x publish/linux-x64/loader/Robust.Loader
+
       - name: Package as tar.gz
         run: tar -czf Starlight.Launcher-linux-x64-${{ steps.ver.outputs.version }}.tar.gz -C publish/linux-x64 .
       - uses: actions/upload-artifact@v4
         with:
-          name: linux-build
+          name: linux-tarball
           path: Starlight.Launcher-linux-x64-*.tar.gz
+
+      - name: Assemble .deb package tree
+        run: |
+          set -e
+          PKG_VERSION="${{ steps.ver.outputs.version }}"
+          PKG_ROOT="deb/starlight-launcher_${PKG_VERSION}_amd64"
+
+          mkdir -p "$PKG_ROOT/DEBIAN"
+          mkdir -p "$PKG_ROOT/opt/starlight-launcher"
+          mkdir -p "$PKG_ROOT/usr/bin"
+          mkdir -p "$PKG_ROOT/usr/share/applications"
+          mkdir -p "$PKG_ROOT/usr/share/icons/hicolor/256x256/apps"
+
+          cp -R publish/linux-x64/. "$PKG_ROOT/opt/starlight-launcher/"
+          chmod +x "$PKG_ROOT/opt/starlight-launcher/Starlight.Launcher"
+          chmod +x "$PKG_ROOT/opt/starlight-launcher/loader/Robust.Loader"
+
+          ln -s /opt/starlight-launcher/Starlight.Launcher "$PKG_ROOT/usr/bin/starlight-launcher"
+
+          cp PublishFiles/icon.png "$PKG_ROOT/usr/share/icons/hicolor/256x256/apps/starlight-launcher.png" || true
+
+          cat > "$PKG_ROOT/usr/share/applications/starlight-launcher.desktop" << DESKTOP
+          [Desktop Entry]
+          Type=Application
+          Name=Starlight Launcher
+          Comment=Starlight Launcher for Space Station 14
+          Exec=/opt/starlight-launcher/Starlight.Launcher %u
+          Icon=starlight-launcher
+          Terminal=false
+          Categories=Game;
+          MimeType=x-scheme-handler/starlight;
+          DESKTOP
+
+          cat > "$PKG_ROOT/DEBIAN/control" << CONTROL
+          Package: starlight-launcher
+          Version: ${PKG_VERSION}
+          Section: games
+          Priority: optional
+          Architecture: amd64
+          Maintainer: Starlight Team <noreply@example.com>
+          Description: Starlight Launcher for Space Station 14
+           A modern, cross-platform launcher built on Avalonia and Blazor.
+          CONTROL
+
+          cat > "$PKG_ROOT/DEBIAN/postinst" << 'POSTINST'
+          #!/bin/sh
+          set -e
+          # Refreshes the desktop-file and MIME caches so the new app/association
+          # actually shows up without the user having to log out and back in.
+          update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
+          gtk-update-icon-cache /usr/share/icons/hicolor >/dev/null 2>&1 || true
+          exit 0
+          POSTINST
+          chmod 0755 "$PKG_ROOT/DEBIAN/postinst"
+
+      - name: Build .deb
+        run: |
+          dpkg-deb --build --root-owner-group \
+            "deb/starlight-launcher_${{ steps.ver.outputs.version }}_amd64" \
+            "Starlight.Launcher-${{ steps.ver.outputs.version }}-amd64.deb"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-deb
+          path: Starlight.Launcher-*.deb
+
+      - name: Build AppImage
+        run: |
+          set -e
+          APPDIR=AppDir
+          mkdir -p "$APPDIR/usr/bin" "$APPDIR/usr/share/applications" "$APPDIR/usr/share/icons/hicolor/256x256/apps"
+
+          cp -R publish/linux-x64/. "$APPDIR/usr/bin/"
+          chmod +x "$APPDIR/usr/bin/Starlight.Launcher"
+          chmod +x "$APPDIR/usr/bin/loader/Robust.Loader"
+
+          cp PublishFiles/icon.png "$APPDIR/usr/share/icons/hicolor/256x256/apps/starlight-launcher.png" || true
+          cp PublishFiles/icon.png "$APPDIR/starlight-launcher.png" || true
+
+          cat > "$APPDIR/starlight-launcher.desktop" << DESKTOP
+          [Desktop Entry]
+          Type=Application
+          Name=Starlight Launcher
+          Exec=Starlight.Launcher %u
+          Icon=starlight-launcher
+          Categories=Game;
+          MimeType=x-scheme-handler/starlight;
+          DESKTOP
+
+          cat > "$APPDIR/AppRun" << 'APPRUN'
+          #!/bin/sh
+          HERE="$(dirname "$(readlink -f "$0")")"
+          exec "$HERE/usr/bin/Starlight.Launcher" "$@"
+          APPRUN
+          chmod +x "$APPDIR/AppRun"
+
+          wget -q https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool
+          chmod +x appimagetool
+
+          ./appimagetool --appimage-extract-and-run "$APPDIR" "Starlight.Launcher-${{ steps.ver.outputs.version }}-x86_64.AppImage"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-appimage
+          path: Starlight.Launcher-*.AppImage
 
   macos:
     runs-on: macos-latest
