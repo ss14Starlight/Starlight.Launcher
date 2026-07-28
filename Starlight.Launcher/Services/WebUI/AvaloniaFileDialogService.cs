@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
+using Microsoft.Extensions.Logging;
 using Starlight.Launcher.Models.Helpers;
 using Starlight.Launcher.WebUI.Models.Helpers;
 using Starlight.Launcher.WebUI.Services;
@@ -10,41 +11,73 @@ namespace Starlight.Launcher.Services;
 
 public sealed class AvaloniaFileDialogService : IFileDialogService
 {
+    private readonly ILogger<AvaloniaFileDialogService> _logger;
+
+    public AvaloniaFileDialogService(ILogger<AvaloniaFileDialogService> logger) => _logger = logger;
+
     public async Task<IFileResult?> PickFileAsync(
         string filter = "Content bundles / replays\0*.zip;*.rt\0All Files\0*.*\0\0",
         CancellationToken cancel = default)
     {
         var topLevel = GetTopLevel();
-        if (topLevel is null) return null;
+        if (topLevel is null)
+        {
+            _logger.LogWarning("PickFileAsync: no TopLevel/MainWindow available");
+            return null;
+        }
 
         cancel.ThrowIfCancellationRequested();
 
-        var results = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        try
         {
-            Title = "Select file",
-            AllowMultiple = false,
-            FileTypeFilter = ParseWin32Filter(filter),
-        });
+            var results = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = "Select file",
+                AllowMultiple = false,
+                FileTypeFilter = ParseWin32Filter(filter),
+            });
 
-        var path = results.FirstOrDefault()?.TryGetLocalPath();
-        return path is null ? null : new FileResult(path);
+            _logger.LogInformation("PickFileAsync: picker returned {Count} result(s)", results.Count);
+
+            var path = results.FirstOrDefault()?.TryGetLocalPath();
+            return path is null ? null : new FileResult(path);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "PickFileAsync failed - on Linux this is often a missing xdg-desktop-portal");
+            return null;
+        }
     }
 
     public async Task<IFileResult?> PickFolderAsync(CancellationToken cancel = default)
     {
         var topLevel = GetTopLevel();
-        if (topLevel is null) return null;
+        if (topLevel is null)
+        {
+            _logger.LogWarning("PickFolderAsync: no TopLevel/MainWindow available");
+            return null;
+        }
 
         cancel.ThrowIfCancellationRequested();
 
-        var results = await topLevel.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        try
         {
-            Title = "Select a folder",
-            AllowMultiple = false,
-        });
+            var results = await topLevel.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+            {
+                Title = "Select a folder",
+                AllowMultiple = false,
+            });
 
-        var path = results.FirstOrDefault()?.TryGetLocalPath();
-        return path is null ? null : new FileResult(path);
+            _logger.LogInformation("PickFolderAsync: picker returned {Count} result(s)", results.Count);
+
+            var path = results.FirstOrDefault()?.TryGetLocalPath();
+            return path is null ? null : new FileResult(path);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "PickFolderAsync failed - on Linux this is often a missing xdg-desktop-portal");
+            return null;
+        }
     }
 
     private static TopLevel? GetTopLevel() =>
