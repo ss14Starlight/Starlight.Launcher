@@ -45,5 +45,28 @@
     <script src="_content/MudBlazor.Markdown/MudBlazor.Markdown.min.js"></script>
     <script src="@Assets["js/theme.js"]"></script>
     <script src="@Assets["js/scripts.js"]"></script>
+
+    <!-- Temporary diagnostic - add this <script> block to App.razor right before
+         </body>, test, then remove it once we have an answer either way. -->
+    <script>
+    document.addEventListener('focusin', function (e) {
+        var badge = document.getElementById('__focus_debug');
+        if (!badge) {
+            badge = document.createElement('div');
+            badge.id = '__focus_debug';
+            badge.style.cssText =
+                'position:fixed;top:0;left:0;z-index:999999;background:#c00;color:#fff;' +
+                'padding:6px 10px;font:12px monospace;pointer-events:none;';
+            document.body.appendChild(badge);
+        }
+        badge.textContent = 'focusin: ' + e.target.tagName + '.' + (e.target.className || '(no class)') +
+            ' | activeElement match: ' + (document.activeElement === e.target);
+    });
+
+    document.addEventListener('focusout', function () {
+        var badge = document.getElementById('__focus_debug');
+        if (badge) badge.textContent += ' -> focusout fired';
+    });
+    </script>
 </body>
 </html>
