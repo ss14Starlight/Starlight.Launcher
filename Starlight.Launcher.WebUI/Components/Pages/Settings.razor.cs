@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Globalization;
+﻿using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using Starlight.Launcher.WebUI.Bridge;
@@ -66,18 +65,18 @@ public partial class Settings : LocalizedComponentBase, IDisposable
         var info = await _bridge.IsUpdateAvailable();
         if (!info.IsUpdateAvailable)
         {
-            _snackbar.Add(L["settings-menu-update-latest"], Severity.Success);
+            _ = _snackbar.Add(L["settings-menu-update-latest"], Severity.Success);
             return;
         }
 
-        _snackbar.Add(
+        _ = _snackbar.Add(
             L.GetString("settings-menu-update-found", ("latest", info.LatestVersion)),
             Severity.Warning,
             config =>
             {
                 config.Action = L["settings-menu-update-download"];
                 config.ActionColor = MudBlazor.Color.Primary;
-                config.OnClick = _ =>
+                config.OnClick = __ =>
                 {
                     if (info.Asset is { } asset)
                     {
@@ -85,7 +84,7 @@ public partial class Settings : LocalizedComponentBase, IDisposable
                         {
                         { x => x.Asset, asset }
                         };
-                        _dialog.ShowAsync<LauncherUpdateDialog>(
+                        _ = _dialog.ShowAsync<LauncherUpdateDialog>(
                             null,
                             parameters,
                             new DialogOptions
@@ -104,9 +103,6 @@ public partial class Settings : LocalizedComponentBase, IDisposable
                 };
             });
     }
-
-    private void OnStateChanged()
-        => StateHasChanged();
 
     private async void OnActivePanelIndexChanged(int value)
     {

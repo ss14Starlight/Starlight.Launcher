@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
@@ -75,9 +74,9 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
             {
                 config.Action = L["settings-logins-unrecoverable-action"];
                 config.ActionColor = MudBlazor.Color.Primary;
-                config.OnClick = _ =>
+                config.OnClick = __ =>
                 {
-                    _dialogService.ShowAsync<LoginsUnrecoverableDialog>(
+                    _ = _dialogService.ShowAsync<LoginsUnrecoverableDialog>(
                         null,
                         new DialogParameters<LoginsUnrecoverableDialog>
                         {
@@ -110,7 +109,7 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
             { x => x.Entries, entries }
         };
 
-        await _dialogService.ShowAsync<ChangelogDialog>(
+        _ = await _dialogService.ShowAsync<ChangelogDialog>(
             null,
             parameters,
             new DialogOptions
@@ -128,14 +127,14 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
         if (!info.IsUpdateAvailable)
             return;
 
-        _snackbar.Add(
+        _ = _snackbar.Add(
             L.GetString("settings-menu-update-found", ("latest", info.LatestVersion)),
             Severity.Warning,
             config =>
             {
                 config.Action = L["settings-menu-update-download"];
                 config.ActionColor = MudBlazor.Color.Primary;
-                config.OnClick = _ =>
+                config.OnClick = __ =>
                 {
                     if (info.Asset is { } asset)
                     {
@@ -143,7 +142,7 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
                         {
                         { x => x.Asset, asset }
                         };
-                        _dialogService.ShowAsync<LauncherUpdateDialog>(
+                        _ = _dialogService.ShowAsync<LauncherUpdateDialog>(
                             null,
                             parameters,
                             new DialogOptions

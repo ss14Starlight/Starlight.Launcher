@@ -21,7 +21,7 @@ public sealed class ContentManager
 
         // I tried to set this from inside the migrations but didn't work, rip.
         // Anyways: enabling WAL mode here so that downloading new files doesn't lock up if your game is running.
-        con.Execute("PRAGMA journal_mode=WAL");
+        _ = con.Execute("PRAGMA journal_mode=WAL");
 
         Log.Debug("Migrating content database...");
 
@@ -53,12 +53,12 @@ public sealed class ContentManager
                         return false;
                     }
 
-                    con.Execute("DELETE FROM InterruptedDownload");
-                    con.Execute("DELETE FROM ContentVersion");
-                    con.Execute("DELETE FROM Content");
+                    _ = con.Execute("DELETE FROM InterruptedDownload");
+                    _ = con.Execute("DELETE FROM ContentVersion");
+                    _ = con.Execute("DELETE FROM Content");
                     transact.Commit();
 
-                    con.Execute("VACUUM");
+                    _ = con.Execute("VACUUM");
                     return true;
                 }
                 catch (Exception e)
@@ -141,7 +141,7 @@ public sealed class ContentManager
         {
             Log.Debug("Removing died client {Pid} from RunningClient", pid);
 
-            con.Execute("DELETE FROM RunningClient WHERE ProcessId = @ProcessId", new
+            _ = con.Execute("DELETE FROM RunningClient WHERE ProcessId = @ProcessId", new
             {
                 ProcessId = pid
             });

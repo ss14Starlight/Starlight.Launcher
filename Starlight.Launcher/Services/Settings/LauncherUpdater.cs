@@ -35,26 +35,26 @@ public partial class LauncherUpdater
 
         var releases = await GetReleases();
 
-        var newest = releases
+        var (Release, Parsed) = releases
             .Select(r => (Release: r, Parsed: ParseVersion(NormalizeVersion(r.TagName))))
             .Where(r => r.Parsed is not null)
             .OrderByDescending(r => r.Parsed)
             .FirstOrDefault();
 
-        if (newest.Release is null)
+        if (Release is null)
             return new UpdateInfo(false, currentVersion, string.Empty, string.Empty, string.Empty, null);
 
-        var latestVersion = NormalizeVersion(newest.Release.TagName);
-        var isNewer = current is null || newest.Parsed! > current;
+        var latestVersion = NormalizeVersion(Release.TagName);
+        var isNewer = current is null || Parsed! > current;
 
-        var asset = isNewer ? PickAssetForCurrentOs(newest.Release.Assets) : null;
+        var asset = isNewer ? PickAssetForCurrentOs(Release.Assets) : null;
 
         return new UpdateInfo(
             isNewer,
             currentVersion,
             latestVersion,
-            newest.Release.HtmlUrl,
-            newest.Release.Body ?? string.Empty,
+            Release.HtmlUrl,
+            Release.Body ?? string.Empty,
             asset);
     }
 
@@ -104,7 +104,7 @@ public partial class LauncherUpdater
             using var response = await httpClient.GetAsync(
                 "https://api.github.com/repos/ss14Starlight/Starlight.Launcher/releases?per_page=50",
                 HttpCompletionOption.ResponseHeadersRead);
-            response.EnsureSuccessStatusCode();
+            _ = response.EnsureSuccessStatusCode();
 
             var json = await response.Content.ReadAsStringAsync();
             using var document = JsonDocument.Parse(json);
@@ -189,7 +189,7 @@ public partial class LauncherUpdater
     public async Task<string> DownloadAsset(ReleaseAsset asset, CancellationToken ct = default)
     {
         var dir = GetUpdateFolder();
-        Directory.CreateDirectory(dir);
+        _ = Directory.CreateDirectory(dir);
         var path = Path.Combine(dir, asset.Name);
 
         using var httpClient = new HttpClient();
@@ -197,7 +197,7 @@ public partial class LauncherUpdater
 
         using var response = await httpClient.GetAsync(
             asset.DownloadUrl, HttpCompletionOption.ResponseHeadersRead, ct);
-        response.EnsureSuccessStatusCode();
+        _ = response.EnsureSuccessStatusCode();
 
         var total = response.Content.Headers.ContentLength ?? (asset.Size > 0 ? asset.Size : 0);
 
@@ -258,7 +258,7 @@ public partial class LauncherUpdater
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            Process.Start(new ProcessStartInfo
+            _ = Process.Start(new ProcessStartInfo
             {
                 FileName = downloadedPath,
                 UseShellExecute = true
@@ -288,7 +288,7 @@ public partial class LauncherUpdater
     private static void RunLinuxUpdate(string archivePath, string installDir)
     {
         var stagingDir = Path.Combine(Path.GetTempPath(), "starlight-update-" + Guid.NewGuid());
-        Directory.CreateDirectory(stagingDir);
+        _ = Directory.CreateDirectory(stagingDir);
 
         using (var fileStream = File.OpenRead(archivePath))
         using (var gzip = new GZipStream(fileStream, CompressionMode.Decompress))
@@ -341,7 +341,7 @@ public partial class LauncherUpdater
         File.SetUnixFileMode(scriptPath,
             UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
 
-        Process.Start(new ProcessStartInfo
+        _ = Process.Start(new ProcessStartInfo
         {
             FileName = "/bin/sh",
             ArgumentList = { scriptPath },

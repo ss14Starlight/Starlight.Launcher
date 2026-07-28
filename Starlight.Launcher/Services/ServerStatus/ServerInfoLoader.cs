@@ -14,13 +14,9 @@ public sealed class ServerInfoLoader : IDisposable
     private readonly ConcurrentDictionary<string, byte> _inFlight = new(StringComparer.OrdinalIgnoreCase);
     private readonly SemaphoreSlim _gate = new(MaxConcurrent, MaxConcurrent);
     private readonly CancellationTokenSource _cts = new();
-    private readonly Task _pump;
 
-    public ServerInfoLoader(Func<ServerStatusData, Task> fetch)
-    {
-        _fetch = fetch;
-        _pump = Task.Run(() => PumpAsync(_cts.Token));
-    }
+    public ServerInfoLoader(Func<ServerStatusData, Task> fetch) => _fetch = fetch;
+
     public void Request(ServerStatusData? data)
     {
         if (data is null || data.StatusInfo != ServerStatusInfoCode.NotFetched)
@@ -31,42 +27,13 @@ public sealed class ServerInfoLoader : IDisposable
             return;
 
         if (!_queue.Writer.TryWrite(data))
-            _inFlight.TryRemove(data.Address, out _);
-    }
-
-    private async Task PumpAsync(CancellationToken token)
-    {
-        try
-        {
-            await foreach (var data in _queue.Reader.ReadAllAsync(token).ConfigureAwait(false))
-            {
-                await _gate.WaitAsync(token).ConfigureAwait(false);
-                _ = ProcessAsync(data);
-            }
-        }
-        catch (OperationCanceledException) { }
-    }
-
-    private async Task ProcessAsync(ServerStatusData data)
-    {
-        try
-        {
-            if (data.StatusInfo == ServerStatusInfoCode.NotFetched)
-                await _fetch(data).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException) { }
-        catch { }
-        finally
-        {
-            _gate.Release();
-            _inFlight.TryRemove(data.Address, out _);
-        }
+            _ = _inFlight.TryRemove(data.Address, out _);
     }
 
     public void Dispose()
     {
         _cts.Cancel();
-        _queue.Writer.TryComplete();
+        _ = _queue.Writer.TryComplete();
         try { _cts.Dispose(); } catch { }
         try { _gate.Dispose(); } catch { }
     }

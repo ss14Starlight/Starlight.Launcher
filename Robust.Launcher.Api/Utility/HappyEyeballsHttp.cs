@@ -238,7 +238,7 @@ public static class HappyEyeballsHttp
             else
             {
                 // Faulted. Remove it.
-                tasks.Remove(completedTask);
+                _ = tasks.Remove(completedTask);
             }
         }
 

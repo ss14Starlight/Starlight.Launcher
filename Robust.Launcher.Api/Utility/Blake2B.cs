@@ -12,7 +12,7 @@ public static class Blake2B
         CryptoGenericHashBlake2B.State state;
         var pool = ArrayPool<byte>.Shared.Rent(65536);
 
-        CryptoGenericHashBlake2B.Init(ref state, ReadOnlySpan<byte>.Empty, outputLength);
+        _ = CryptoGenericHashBlake2B.Init(ref state, ReadOnlySpan<byte>.Empty, outputLength);
 
         while (true)
         {
@@ -21,13 +21,13 @@ public static class Blake2B
                 break;
 
             var readData = pool.AsSpan(0, read);
-            CryptoGenericHashBlake2B.Update(ref state, readData);
+            _ = CryptoGenericHashBlake2B.Update(ref state, readData);
         }
 
         ArrayPool<byte>.Shared.Return(pool);
 
         var result = new byte[outputLength];
-        CryptoGenericHashBlake2B.Final(ref state, result);
+        _ = CryptoGenericHashBlake2B.Final(ref state, result);
 
         return result;
     }

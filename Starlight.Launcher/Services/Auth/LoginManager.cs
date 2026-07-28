@@ -154,7 +154,7 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
             DispatchToUi(() =>
             {
                 foreach (var d in toRemoveFromView)
-                    _loginsView.Remove(d);
+                    _ = _loginsView.Remove(d);
                 foreach (var d in toAddToView)
                     _loginsView.Add(d);
             });
@@ -173,7 +173,7 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
         _cts = new CancellationTokenSource();
         _refreshTask = RunRefreshLoop(_cts.Token);
 
-        Task.Run(async () => await RefreshAllTokens());
+        _ = Task.Run(async () => await RefreshAllTokens());
     }
 
     private async Task RunRefreshLoop(CancellationToken cancellationToken)

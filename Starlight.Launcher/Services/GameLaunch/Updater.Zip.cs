@@ -35,12 +35,12 @@ public sealed partial class Updater
 
         var zipHash = await ZipUpdateDownloadContent(tempFile, buildInfo, cancel);
 
-        con.Execute("UPDATE ContentVersion SET ZipHash=@ZipHash WHERE Id=@Version",
+        _ = con.Execute("UPDATE ContentVersion SET ZipHash=@ZipHash WHERE Id=@Version",
             new { ZipHash = zipHash, Version = versionId });
 
         Status = UpdateStatus.LoadingIntoDb;
 
-        tempFile.Seek(0, SeekOrigin.Begin);
+        _ = tempFile.Seek(0, SeekOrigin.Begin);
 
         // File downloaded, time to dump this into the DB.
 
@@ -212,7 +212,7 @@ public sealed partial class Updater
                     }
                 }
 
-                con.Execute(
+                _ = con.Execute(
                     "INSERT INTO ContentManifest(VersionId, Path, ContentId) VALUES (@VersionId, @Path, @ContentId)",
                     new
                     {

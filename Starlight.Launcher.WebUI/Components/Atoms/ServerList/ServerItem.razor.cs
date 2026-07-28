@@ -1,12 +1,11 @@
-﻿using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Logging;
-using MudBlazor;
+﻿using MudBlazor;
 using Robust.Launcher.Api.Models.ServerStatus;
 using Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 using Starlight.Launcher.WebUI.Components.Pages;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Services;
 using Starlight.Launcher.WebUI.Localization;
+using Microsoft.AspNetCore.Components;
 
 namespace Starlight.Launcher.WebUI.Components.Atoms.ServerList;
 
@@ -19,7 +18,6 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
     [Parameter] public EventCallback<ServerStatusData> OnInfoNeeded { get; set; }
     [Parameter] public EventCallback<ServerStatusData> OnFavorites { get; set; }
     [Parameter] public bool IsInFavorites { get; set; } = false;
-    [Inject] private ILogger<ServerItem> _logger { get; set; } = default!;
 
     private bool _expanded = false;
 
@@ -104,7 +102,7 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
                 FullWidth = true
             };
 
-            await _dialogService.ShowAsync<NoAccountDialog>(L["no-account-dialog-title"], noaccountParams, noaccountOptions);
+            _ = await _dialogService.ShowAsync<NoAccountDialog>(L["no-account-dialog-title"], noaccountParams, noaccountOptions);
         }
         else
         {
@@ -123,7 +121,7 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
                 FullWidth = true
             };
 
-            await _dialogService.ShowAsync<ConnectingDialog>("Connecting", parameters, options);
+            _ = await _dialogService.ShowAsync<ConnectingDialog>("Connecting", parameters, options);
         }
     }
 

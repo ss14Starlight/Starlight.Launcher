@@ -1,42 +1,62 @@
-using System.Buffers;
 using System;
+using System.Buffers;
 using System.IO;
-using System.Threading.Tasks;
 using System.Runtime.InteropServices;
-using SharpZstd.Interop;
-using static SharpZstd.Interop.Zstd;
 using System.Threading;
+using System.Threading.Tasks;
+using SharpZstd.Interop;
 
 namespace Starlight.Launcher.Utility;
 
+/// <summary>
+/// Provides helper methods for Zstandard compression.
+/// </summary>
 public static class ZStd
 {
-    public static int CompressBound(int length) => (int)ZSTD_compressBound((nuint)length);
+    /// <summary>
+    /// Returns the maximum compressed size for the specified input length.
+    /// </summary>
+    public static int CompressBound(int length) => (int)Zstd.ZSTD_compressBound((nuint)length);
 }
 
+/// <summary>
+/// Represents a reusable Zstandard compression context.
+/// </summary>
 public sealed unsafe partial class ZStdCCtx : IDisposable
 {
+    /// <summary>
+    /// Current compression context for this class.
+    /// </summary>
     public ZSTD_CCtx* Context { get; private set; }
 
     private bool _disposed => Context == null;
 
-    public ZStdCCtx() => Context = ZSTD_createCCtx();
+    /// <summary>
+    /// Initializes a new compression context.
+    /// </summary>
+    public ZStdCCtx() => Context = Zstd.ZSTD_createCCtx();
 
+    /// <summary>
+    /// Sets a compression parameter for this context.
+    /// </summary>
     public void SetParameter(ZSTD_cParameter parameter, int value)
     {
         CheckDisposed();
 
-        ZSTD_CCtx_setParameter(Context, parameter, value);
+        _ = Zstd.ZSTD_CCtx_setParameter(Context, parameter, value);
     }
 
-    public int Compress(Span<byte> destination, Span<byte> source, int compressionLevel = ZSTD_CLEVEL_DEFAULT)
+    /// <summary>
+    /// Compresses the source data into the destination buffer.
+    /// </summary>
+    public int Compress(Span<byte> destination, Span<byte> source, int compressionLevel = 3)
     {
         CheckDisposed();
 
         fixed (byte* dst = destination)
         fixed (byte* src = source)
         {
-            var ret = ZSTD_compressCCtx(
+            var ret = Zstd.ZSTD_compressCCtx(
                 Context,
                 dst, (nuint)destination.Length,
                 src, (nuint)source.Length,
@@ -47,17 +67,23 @@ public sealed unsafe partial class ZStdCCtx : IDisposable
         }
     }
 
+    /// <summary>
+    /// Releases the unmanaged compression context.
+    /// </summary>
     ~ZStdCCtx()
     {
         Dispose();
     }
 
+    /// <summary>
+    /// Releases the unmanaged compression context.
+    /// </summary>
     public void Dispose()
     {
         if (_disposed)
             return;
 
-        ZSTD_freeCCtx(Context);
+        _ = Zstd.ZSTD_freeCCtx(Context);
         Context = null;
         GC.SuppressFinalize(this);
     }
@@ -65,21 +91,36 @@ public sealed unsafe partial class ZStdCCtx : IDisposable
     private void CheckDisposed() => ObjectDisposedException.ThrowIf(_disposed, nameof(ZStdCCtx));
 }
 
+/// <summary>
+/// Represents a reusable Zstandard decompression context.
+/// </summary>
 public sealed unsafe partial class ZStdDCtx : IDisposable
 {
+    /// <summary>
+    /// Current decompression context for this class
+    /// </summary>
     public ZSTD_DCtx* Context { get; private set; }
 
     private bool _disposed => Context == null;
 
-    public ZStdDCtx() => Context = ZSTD_createDCtx();
+    /// <summary>
+    /// Initializes a new decompression context.
+    /// </summary>
+    public ZStdDCtx() => Context = Zstd.ZSTD_createDCtx();
 
+    /// <summary>
+    /// Sets a decompression parameter for this context.
+    /// </summary>
     public void SetParameter(ZSTD_dParameter parameter, int value)
     {
         CheckDisposed();
 
-        ZSTD_DCtx_setParameter(Context, parameter, value);
+        _ = Zstd.ZSTD_DCtx_setParameter(Context, parameter, value);
     }
 
+    /// <summary>
+    /// Decompresses the source data into the destination buffer.
+    /// </summary>
     public int Decompress(Span<byte> destination, Span<byte> source)
     {
         CheckDisposed();
@@ -87,24 +128,30 @@ public sealed unsafe partial class ZStdDCtx : IDisposable
         fixed (byte* dst = destination)
         fixed (byte* src = source)
         {
-            var ret = ZSTD_decompressDCtx(Context, dst, (nuint)destination.Length, src, (nuint)source.Length);
+            var ret = Zstd.ZSTD_decompressDCtx(Context, dst, (nuint)destination.Length, src, (nuint)source.Length);
 
             ZStdException.ThrowIfError(ret);
             return (int)ret;
         }
     }
 
+    /// <summary>
+    /// Releases the unmanaged decompression context.
+    /// </summary>
     ~ZStdDCtx()
     {
         Dispose();
     }
 
+    /// <summary>
+    /// Releases the unmanaged decompression context.
+    /// </summary>
     public void Dispose()
     {
         if (_disposed)
             return;
 
-        ZSTD_freeDCtx(Context);
+        _ = Zstd.ZSTD_freeDCtx(Context);
         Context = null;
         GC.SuppressFinalize(this);
     }
@@ -112,30 +159,51 @@ public sealed unsafe partial class ZStdDCtx : IDisposable
     private void CheckDisposed() => ObjectDisposedException.ThrowIf(_disposed, nameof(ZStdDCtx));
 }
 
+/// <summary>
+/// Represents an exception thrown by the Zstandard library.
+/// </summary>
 [Serializable]
 public class ZStdException : Exception
 {
+    /// <summary>
+    /// Initializes a new ZStd exception.
+    /// </summary>
     public ZStdException()
     {
     }
 
+    /// <summary>
+    /// Initializes a new ZStd exception.
+    /// </summary>
     public ZStdException(string message) : base(message)
     {
     }
 
+    /// <summary>
+    /// Initializes a new ZStd exception.
+    /// </summary>
     public ZStdException(string message, Exception inner) : base(message, inner)
     {
     }
 
-    public static unsafe ZStdException FromCode(nuint code) => new(Marshal.PtrToStringUTF8((IntPtr)ZSTD_getErrorName(code))!);
+    /// <summary>
+    /// Creates an exception from a Zstandard error code.
+    /// </summary>
+    public static unsafe ZStdException FromCode(nuint code) => new(Marshal.PtrToStringUTF8((IntPtr)Zstd.ZSTD_getErrorName(code))!);
 
+    /// <summary>
+    /// Throws a <see cref="ZStdException"/> if the specified result represents an error.
+    /// </summary>
     public static void ThrowIfError(nuint code)
     {
-        if (ZSTD_isError(code) != 0)
+        if (Zstd.ZSTD_isError(code) != 0)
             throw FromCode(code);
     }
 }
 
+/// <summary>
+/// Provides a stream that decompresses Zstandard-compressed data while reading.
+/// </summary>
 public sealed class ZStdDecompressStream : Stream
 {
     private readonly Stream _baseStream;
@@ -146,21 +214,27 @@ public sealed class ZStdDecompressStream : Stream
     private int _bufferSize;
     private bool _disposed;
 
+    /// <summary>
+    /// Initializes a new decompression stream.
+    /// </summary>
     public unsafe ZStdDecompressStream(Stream baseStream, bool ownStream = true)
     {
         _baseStream = baseStream;
         _ownStream = ownStream;
-        _ctx = ZSTD_createDCtx();
-        _buffer = ArrayPool<byte>.Shared.Rent((int)ZSTD_DStreamInSize());
+        _ctx = Zstd.ZSTD_createDCtx();
+        _buffer = ArrayPool<byte>.Shared.Rent((int)Zstd.ZSTD_DStreamInSize());
     }
 
+    /// <summary>
+    /// Releases the resources used by the stream.
+    /// </summary>
     protected override unsafe void Dispose(bool disposing)
     {
         if (_disposed)
             return;
 
         _disposed = true;
-        ZSTD_freeDCtx(_ctx);
+        _ = Zstd.ZSTD_freeDCtx(_ctx);
 
         if (disposing)
         {
@@ -171,20 +245,32 @@ public sealed class ZStdDecompressStream : Stream
         }
     }
 
+    /// <summary>
+    /// Flushes the underlying stream.
+    /// </summary>
     public override void Flush()
     {
         ThrowIfDisposed();
         _baseStream.Flush();
     }
 
+    /// <summary>
+    /// Reads and decompresses data into the specified buffer.
+    /// </summary>
     public override int Read(byte[] buffer, int offset, int count) => Read(buffer.AsSpan(offset, count));
 
+    /// <summary>
+    /// Reads and decompresses a single byte.
+    /// </summary>
     public override int ReadByte()
     {
         Span<byte> buf = stackalloc byte[1];
         return Read(buf) == 0 ? -1 : buf[0];
     }
 
+    /// <summary>
+    /// Reads and decompresses data into the specified buffer.
+    /// </summary>
     public override unsafe int Read(Span<byte> buffer)
     {
         ThrowIfDisposed();
@@ -204,7 +290,7 @@ public sealed class ZStdDecompressStream : Stream
             {
                 var outputBuf = new ZSTD_outBuffer { dst = outputPtr, pos = 0, size = (nuint)buffer.Length };
                 var inputBuf = new ZSTD_inBuffer { src = inputPtr, pos = (nuint)_bufferPos, size = (nuint)_bufferSize };
-                var ret = ZSTD_decompressStream(_ctx, &outputBuf, &inputBuf);
+                var ret = Zstd.ZSTD_decompressStream(_ctx, &outputBuf, &inputBuf);
 
                 _bufferPos = (int)inputBuf.pos;
                 ZStdException.ThrowIfError(ret);
@@ -215,6 +301,9 @@ public sealed class ZStdDecompressStream : Stream
         } while (true);
     }
 
+    /// <summary>
+    /// Asynchronously reads and decompresses data into the specified buffer.
+    /// </summary>
     public override async ValueTask<int> ReadAsync(
         Memory<byte> buffer,
         CancellationToken cancellationToken = default)
@@ -251,7 +340,7 @@ public sealed class ZStdDecompressStream : Stream
                 inputBuf.pos = (nuint)stream._bufferPos;
                 inputBuf.size = (nuint)stream._bufferSize;
 
-                var ret = ZSTD_decompressStream(stream._ctx, &outputBuf, &inputBuf);
+                var ret = Zstd.ZSTD_decompressStream(stream._ctx, &outputBuf, &inputBuf);
 
                 stream._bufferPos = (int)inputBuf.pos;
                 ZStdException.ThrowIfError(ret);
@@ -261,17 +350,44 @@ public sealed class ZStdDecompressStream : Stream
         }
     }
 
+    /// <summary>
+    /// Currently not supported.
+    /// </summary>
     public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
 
+    /// <summary>
+    /// Currently not supported.
+    /// </summary>
     public override void SetLength(long value) => throw new NotSupportedException();
 
+    /// <summary>
+    /// Currently not supported.
+    /// </summary>
     public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
 
+    /// <summary>
+    /// Stream access parameter which determines read access.
+    /// </summary>
     public override bool CanRead => true;
+
+    /// <summary>
+    /// Stream access parameter which determines seek access.
+    /// </summary>
     public override bool CanSeek => false;
+
+    /// <summary>
+    /// Stream access parameter which determines write access.
+    /// </summary>
     public override bool CanWrite => false;
+
+    /// <summary>
+    /// Currently not supported.
+    /// </summary>
     public override long Length => throw new NotSupportedException();
 
+    /// <summary>
+    /// Currently not supported.
+    /// </summary>
     public override long Position
     {
         get => throw new NotSupportedException();
@@ -285,6 +401,9 @@ public sealed class ZStdDecompressStream : Stream
     }
 }
 
+/// <summary>
+/// Provides a stream that compresses data using Zstandard while writing.
+/// </summary>
 public sealed class ZStdCompressStream : Stream
 {
     private readonly Stream _baseStream;
@@ -294,18 +413,30 @@ public sealed class ZStdCompressStream : Stream
     private int _bufferPos;
     private bool _disposed;
 
+    /// <summary>
+    /// Initializes a new compression stream.
+    /// </summary>
     public unsafe ZStdCompressStream(Stream baseStream, bool ownStream = true)
     {
-        _ctx = ZSTD_createCCtx();
+        _ctx = Zstd.ZSTD_createCCtx();
         _baseStream = baseStream;
         _ownStream = ownStream;
-        _buffer = ArrayPool<byte>.Shared.Rent((int)ZSTD_CStreamOutSize());
+        _buffer = ArrayPool<byte>.Shared.Rent((int)Zstd.ZSTD_CStreamOutSize());
     }
 
+    /// <summary>
+    /// Flushes all pending compressed data to the underlying stream.
+    /// </summary>
     public override void Flush() => FlushInternal(ZSTD_EndDirective.ZSTD_e_flush);
 
+    /// <summary>
+    /// Finalizes the compression stream and writes all remaining compressed data.
+    /// </summary>
     public void FlushEnd() => FlushInternal(ZSTD_EndDirective.ZSTD_e_end);
 
+    /// <summary>
+    /// Flushes pending compressed data according to the specified Zstandard directive.
+    /// </summary>
     private unsafe void FlushInternal(ZSTD_EndDirective directive)
     {
         fixed (byte* outPtr = _buffer)
@@ -319,7 +450,7 @@ public sealed class ZStdCompressStream : Stream
 
             while (true)
             {
-                var err = ZSTD_compressStream2(_ctx, &outBuf, &inBuf, directive);
+                var err = Zstd.ZSTD_compressStream2(_ctx, &outBuf, &inBuf, directive);
                 ZStdException.ThrowIfError(err);
                 _bufferPos = (int)outBuf.pos;
 
@@ -335,14 +466,29 @@ public sealed class ZStdCompressStream : Stream
         _baseStream.Flush();
     }
 
+    /// <summary>
+    /// Currently not supported
+    /// </summary>
     public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
 
+    /// <summary>
+    /// Currently not supported
+    /// </summary>
     public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
 
+    /// <summary>
+    /// Currently not supported
+    /// </summary>
     public override void SetLength(long value) => throw new NotSupportedException();
 
+    /// <summary>
+    /// Compresses the specified data and appends it to the compression stream.
+    /// </summary>
     public override void Write(byte[] buffer, int offset, int count) => Write(buffer.AsSpan(offset, count));
 
+    /// <summary>
+    /// Compresses the specified data and appends it to the compression stream.
+    /// </summary>
     public override unsafe void Write(ReadOnlySpan<byte> buffer)
     {
         ThrowIfDisposed();
@@ -362,7 +508,7 @@ public sealed class ZStdCompressStream : Stream
 
             while (true)
             {
-                var err = ZSTD_compressStream2(_ctx, &outBuf, &inBuf, ZSTD_EndDirective.ZSTD_e_continue);
+                var err = Zstd.ZSTD_compressStream2(_ctx, &outBuf, &inBuf, ZSTD_EndDirective.ZSTD_e_continue);
                 ZStdException.ThrowIfError(err);
                 _bufferPos = (int)outBuf.pos;
 
@@ -377,17 +523,38 @@ public sealed class ZStdCompressStream : Stream
         }
     }
 
+    /// <summary>
+    /// Stream access parameter which determines read access.
+    /// </summary>
     public override bool CanRead => false;
+
+    /// <summary>
+    /// Stream access parameter which determines seek access.
+    /// </summary>
     public override bool CanSeek => false;
+
+    /// <summary>
+    /// Stream access parameter which determines write access.
+    /// </summary>
     public override bool CanWrite => true;
+
+    /// <summary>
+    /// Currently not supported
+    /// </summary>
     public override long Length => throw new NotSupportedException();
 
+    /// <summary>
+    /// Currently not supported
+    /// </summary>
     public override long Position
     {
         get => throw new NotSupportedException();
         set => throw new NotSupportedException();
     }
 
+    /// <summary>
+    /// Releases the resources used by the stream.
+    /// </summary>
     protected override unsafe void Dispose(bool disposing)
     {
         base.Dispose(disposing);
@@ -396,7 +563,7 @@ public sealed class ZStdCompressStream : Stream
             return;
 
         _disposed = true;
-        ZSTD_freeCCtx(_ctx);
+        _ = Zstd.ZSTD_freeCCtx(_ctx);
 
         if (disposing)
         {

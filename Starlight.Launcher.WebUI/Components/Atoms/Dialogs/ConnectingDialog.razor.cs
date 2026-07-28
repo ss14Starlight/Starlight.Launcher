@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Localization;
-using Starlight.Launcher.WebUI.Models;
 using Starlight.Launcher.WebUI.Models.Connector;
 using Starlight.Launcher.WebUI.Models.Helpers;
 using Starlight.Launcher.WebUI.Models.Updater;
@@ -31,10 +30,6 @@ public sealed partial class ConnectingDialog : LocalizedComponentBase, IDisposab
     private double _smoothedBytesPerSec;
     private bool _haveSpeed;
     private UpdateStatus _lastUpdateStatus;
-
-    private string _title => ContentBundle is { } f
-        ? $"Launching {f.FileName}"
-        : $"Connecting to {Title ?? Address}";
 
     private string _titleIcon => ContentBundle is not null
         ? Icons.Material.Filled.Inventory2
@@ -112,7 +107,7 @@ public sealed partial class ConnectingDialog : LocalizedComponentBase, IDisposab
         _pollTimer = new Timer(_ =>
         {
             SampleSpeed();
-            InvokeAsync(StateHasChanged);
+            _ = InvokeAsync(StateHasChanged);
         }, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(250));
 
         // Fire-and-forget: Status drives the UI from here on.

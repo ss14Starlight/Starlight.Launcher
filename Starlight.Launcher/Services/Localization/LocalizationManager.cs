@@ -8,7 +8,6 @@ using Linguini.Syntax.Parser;
 using Microsoft.Extensions.Logging;
 using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI.Localization;
-using TerraFX.Interop.Windows;
 
 namespace Starlight.Launcher.Services.Localization;
 

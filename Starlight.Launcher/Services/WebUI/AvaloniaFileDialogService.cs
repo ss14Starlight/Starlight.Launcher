@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -10,12 +9,21 @@ using Starlight.Launcher.WebUI.Services;
 
 namespace Starlight.Launcher.Services;
 
+/// <summary>
+/// Provides file and folder picker dialogs using Avalonia's storage API.
+/// </summary>
 public sealed class AvaloniaFileDialogService : IFileDialogService
 {
     private readonly ILogger<AvaloniaFileDialogService> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AvaloniaFileDialogService"/> class.
+    /// </summary>
     public AvaloniaFileDialogService(ILogger<AvaloniaFileDialogService> logger) => _logger = logger;
 
+    /// <summary>
+    /// Displays a file picker dialog and returns the selected file.
+    /// </summary>
     public async Task<IFileResult?> PickFileAsync(
         string filter = "Content bundles / replays\0*.zip;*.rt\0All Files\0*.*\0\0",
         CancellationToken cancel = default)
@@ -65,6 +73,9 @@ public sealed class AvaloniaFileDialogService : IFileDialogService
         }
     }
 
+    /// <summary>
+    /// Displays a folder picker dialog and returns the selected folder.
+    /// </summary>
     public async Task<IFileResult?> PickFolderAsync(CancellationToken cancel = default)
     {
         var topLevel = GetTopLevel();
@@ -111,9 +122,15 @@ public sealed class AvaloniaFileDialogService : IFileDialogService
         }
     }
 
+    /// <summary>
+    /// Gets the application's main window.
+    /// </summary>
     private static TopLevel? GetTopLevel() =>
         (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
 
+    /// <summary>
+    /// Converts a Win32-style file filter string into Avalonia file picker filters.
+    /// </summary>
     private static FilePickerFileType[] ParseWin32Filter(string filter)
     {
         var parts = filter.Split('\0', StringSplitOptions.RemoveEmptyEntries);

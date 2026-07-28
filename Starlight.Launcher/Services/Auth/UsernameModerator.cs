@@ -94,11 +94,11 @@ public static class UsernameModerator
 
             if (pendingSpace)
             {
-                sb.Append(' ');
+                _ = sb.Append(' ');
                 pendingSpace = false;
             }
 
-            sb.Append(rune.ToString());
+            _ = sb.Append(rune.ToString());
         }
 
         return sb.ToString();
@@ -130,8 +130,8 @@ public static class UsernameModerator
 
             if (keep)
             {
-                if (pendingSpace) { sb.Append(' '); pendingSpace = false; }
-                sb.Append((char)v);
+                if (pendingSpace) { _ = sb.Append(' '); pendingSpace = false; }
+                _ = sb.Append((char)v);
             }
             else if (v == ' ')
             {
@@ -172,7 +172,7 @@ public static class UsernameModerator
         foreach (var rune in s.EnumerateRunes())
         {
             if (n++ == MaxLength) break;
-            sb.Append(rune.ToString());
+            _ = sb.Append(rune.ToString());
         }
         return sb.ToString().TrimEnd();
     }

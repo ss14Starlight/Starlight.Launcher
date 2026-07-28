@@ -1,6 +1,3 @@
-using System;
-using System.IO;
-using System.Linq;
 using Avalonia;
 using Avalonia.WebView.Desktop;
 using Serilog;
@@ -102,7 +99,7 @@ internal static class AppPaths
                 : Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 
             var dir = Path.Combine(baseDir, "Starlight.Launcher");
-            Directory.CreateDirectory(dir);
+            _ = Directory.CreateDirectory(dir);
             return dir;
         }
     }

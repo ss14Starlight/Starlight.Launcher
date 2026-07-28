@@ -21,14 +21,14 @@ public sealed class Blake2BHasherStream : Stream
         WrappingStream = wrapping;
         _reader = reader;
 
-        CryptoGenericHashBlake2B.Init(ref State, key, outputLength);
+        _ = CryptoGenericHashBlake2B.Init(ref State, key, outputLength);
     }
 
     public byte[] Finish()
     {
         var result = new byte[OutputLength];
 
-        CryptoGenericHashBlake2B.Final(ref State, result);
+        _ = CryptoGenericHashBlake2B.Final(ref State, result);
 
         return result;
     }
@@ -65,7 +65,7 @@ public sealed class Blake2BHasherStream : Stream
         var read = WrappingStream.Read(buffer, offset, count);
 
         if (read > 0)
-            CryptoGenericHashBlake2B.Update(ref State, buffer.AsSpan(offset, read));
+            _ = CryptoGenericHashBlake2B.Update(ref State, buffer.AsSpan(offset, read));
 
         return read;
     }
@@ -78,7 +78,7 @@ public sealed class Blake2BHasherStream : Stream
         var read = WrappingStream.Read(buffer);
 
         if (read > 0)
-            CryptoGenericHashBlake2B.Update(ref State, buffer[..read]);
+            _ = CryptoGenericHashBlake2B.Update(ref State, buffer[..read]);
 
         return read;
     }
@@ -91,7 +91,7 @@ public sealed class Blake2BHasherStream : Stream
         var read = await WrappingStream.ReadAsync(buffer, cancellationToken);
 
         if (read > 0)
-            CryptoGenericHashBlake2B.Update(ref State, buffer[..read].Span);
+            _ = CryptoGenericHashBlake2B.Update(ref State, buffer[..read].Span);
 
         return read;
     }
@@ -106,7 +106,7 @@ public sealed class Blake2BHasherStream : Stream
             throw new InvalidOperationException();
 
         WrappingStream.Write(buffer, offset, count);
-        CryptoGenericHashBlake2B.Update(ref State, buffer.AsSpan(offset, count));
+        _ = CryptoGenericHashBlake2B.Update(ref State, buffer.AsSpan(offset, count));
     }
 
     public override bool CanRead => _reader;

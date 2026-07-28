@@ -8,6 +8,7 @@
         <IsPackable>false</IsPackable>
         <RootNamespace>Starlight.Launcher.WebUI</RootNamespace>
         <StaticWebAssetBasePath>/</StaticWebAssetBasePath>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
 
     <ItemGroup>

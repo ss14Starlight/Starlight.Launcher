@@ -4,13 +4,9 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using MudBlazor;
 using MudBlazor.Services;
 using Starlight.Launcher.WebUI.Components;
-using Starlight.Launcher.WebUI.Services;
 
 namespace Starlight.Launcher.WebUI;
 
@@ -24,15 +20,15 @@ public static class WebHostFactory
             EnvironmentName = Environments.Production,
         });
 
-        builder.WebHost.UseKestrel(o => o.Listen(IPAddress.Loopback, 0));
+        _ = builder.WebHost.UseKestrel(o => o.Listen(IPAddress.Loopback, 0));
 
-        builder.WebHost.UseStaticWebAssets();
+        _ = builder.WebHost.UseStaticWebAssets();
 
-        builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+        _ = builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
-        builder.Services.Configure<HostOptions>(options => options.ShutdownTimeout = TimeSpan.FromSeconds(2));
+        _ = builder.Services.Configure<HostOptions>(options => options.ShutdownTimeout = TimeSpan.FromSeconds(2));
 
-        builder.Services.AddMudServices();
+        _ = builder.Services.AddMudServices();
 
         configureServices?.Invoke(builder.Services);
 
@@ -41,12 +37,12 @@ public static class WebHostFactory
         var env = app.Services.GetRequiredService<IWebHostEnvironment>();
 
         if (!app.Environment.IsDevelopment())
-            app.UseExceptionHandler("/Error");
+            _ = app.UseExceptionHandler("/Error");
 
-        app.UseStaticFiles();
-        app.UseAntiforgery();
+        _ = app.UseStaticFiles();
+        _ = app.UseAntiforgery();
 
-        app.MapRazorComponents<App>()
+        _ = app.MapRazorComponents<App>()
             .AddInteractiveServerRenderMode();
 
         return app;

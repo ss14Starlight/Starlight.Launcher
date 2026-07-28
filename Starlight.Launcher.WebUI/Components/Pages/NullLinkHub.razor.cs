@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using Starlight.Launcher.WebUI.Components.Atoms;
 using Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Localization;
@@ -101,7 +100,7 @@ public sealed partial class NullLinkHub : LocalizedComponentBase, IAsyncDisposab
             FullWidth = true
         };
 
-        await _dialog.ShowAsync<ConnectingDialog>("Connecting", parameters, options);
+        _ = await _dialog.ShowAsync<ConnectingDialog>("Connecting", parameters, options);
     }
 
     private bool IsFavorite(ServerListItem server)
@@ -119,7 +118,7 @@ public sealed partial class NullLinkHub : LocalizedComponentBase, IAsyncDisposab
         }
         else if (alreadyExist != null)
         {
-            favorites.Remove(alreadyExist);
+            _ = favorites.Remove(alreadyExist);
             await _bridge.WriteFavoritesAsync(favorites);
         }
     }

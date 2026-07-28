@@ -6,7 +6,6 @@ using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Models.Data;
 using Starlight.Launcher.WebUI.Models.HubServerFetcher;
-using Starlight.Launcher.WebUI.Services;
 
 namespace Starlight.Launcher.WebUI.Components.Pages;
 
@@ -15,7 +14,6 @@ public partial class Home : LocalizedComponentBase, IDisposable
     [Inject] private IBridge _bridge { get; set; } = default!;
     [Inject] private ServerStatusCache _statusCache { get; set; } = default!;
     [Inject] private IDialogService _dialogService { get; set; } = default!;
-    [Inject] private IFileDialogService _fileDialog { get; set; } = default!;
 
     private List<ServerStatusData> _favoriteServers { get; set; } = null!;
     private readonly CancellationTokenSource _disposeCts = new();
@@ -53,13 +51,13 @@ public partial class Home : LocalizedComponentBase, IDisposable
             await Task.Delay(200, _disposeCts.Token);
             await InvokeAsync(() =>
             {
-                Interlocked.Exchange(ref _rebuildScheduled, 0);
+                _ = Interlocked.Exchange(ref _rebuildScheduled, 0);
                 UpdateFavorites(_bridge.GetFavorites());
                 StateHasChanged();
             });
         }
-        catch (OperationCanceledException) { Interlocked.Exchange(ref _rebuildScheduled, 0); }
-        catch (ObjectDisposedException) { Interlocked.Exchange(ref _rebuildScheduled, 0); }
+        catch (OperationCanceledException) { _ = Interlocked.Exchange(ref _rebuildScheduled, 0); }
+        catch (ObjectDisposedException) { _ = Interlocked.Exchange(ref _rebuildScheduled, 0); }
     }
 
     private async void OnStatusChanged(RefreshListStatus _)
@@ -76,7 +74,7 @@ public partial class Home : LocalizedComponentBase, IDisposable
         _favoriteServers = servers.Select(x =>
         {
             var data = _statusCache.GetStatusFor(x.Address, x.HubAddress);
-            _statusCache.TryInitialUpdateStatus(data);
+            _ = _statusCache.TryInitialUpdateStatus(data);
             data.Changed += OnServerDataChanged;
             return data;
         }).ToList();
@@ -113,7 +111,7 @@ public partial class Home : LocalizedComponentBase, IDisposable
         }
         else if (alreadyExist != null)
         {
-            favorites.Remove(alreadyExist);
+            _ = favorites.Remove(alreadyExist);
             await _bridge.WriteFavoritesAsync(favorites);
         }
     }

@@ -193,7 +193,7 @@ public sealed partial class Updater
                     );
 
                     // Copy base build manifest into new version
-                    con.Execute(
+                    _ = con.Execute(
                         @"INSERT INTO ContentManifest (VersionId, Path, ContentId)
                         SELECT @NewVersion, Path, ContentId
                         FROM ContentManifest
@@ -213,7 +213,7 @@ public sealed partial class Updater
 
                 // Insert real manifest hash into the database.
                 var manifestHash = GenerateContentManifestHash(con, versionId);
-                con.Execute("UPDATE ContentVersion SET Hash = @Hash WHERE Id = @Version",
+                _ = con.Execute("UPDATE ContentVersion SET Hash = @Hash WHERE Id = @Version",
                     new { Hash = manifestHash, Version = versionId });
 
                 Log.Debug("Manifest hash of new version is {Hash}", Convert.ToHexString(manifestHash));
@@ -272,7 +272,7 @@ public sealed partial class Updater
                     Status = UpdateStatus.DownloadingEngineModules;
 
                     var manifest = await moduleManifest.Value;
-                    await _engineManager.DownloadModuleIfNecessary(
+                    _ = await _engineManager.DownloadModuleIfNecessary(
                         name,
                         version,
                         manifest,
@@ -342,7 +342,7 @@ public sealed partial class Updater
                 else
                 {
                     Log.Debug("Culling version {ForkId}/{ForkVersion}", version.ForkId, version.ForkVersion);
-                    con.Execute("DELETE FROM ContentVersion WHERE Id = @Id", new { version.Id });
+                    _ = con.Execute("DELETE FROM ContentVersion WHERE Id = @Id", new { version.Id });
                     anythingRemoved = true;
                 }
             }
@@ -521,7 +521,7 @@ public sealed partial class Updater
 
         foreach (var contentId in state.DownloadedContentEntries)
         {
-            con.Execute("""
+            _ = con.Execute("""
                 INSERT INTO InterruptedDownloadContent(InterruptedDownloadId, ContentId)
                 VALUES (@DownloadId, @ContentId)
                 """,
@@ -532,9 +532,7 @@ public sealed partial class Updater
     private static void ClearIncompleteTransactedState(SqliteConnection con, TransactedDownloadState state)
     {
         if (state.MadeContentVersion is { } contentVersion)
-        {
-            con.Execute("DELETE FROM ContentVersion WHERE Id = @Id", new { Id = contentVersion });
-        }
+            _ = con.Execute("DELETE FROM ContentVersion WHERE Id = @Id", new { Id = contentVersion });
     }
 
     [SuppressMessage("ReSharper", "MethodHasAsyncOverload")]
@@ -577,7 +575,7 @@ public sealed partial class Updater
                 });
 
             // Copy entire manifest over.
-            con.Execute(@"
+            _ = con.Execute(@"
                     INSERT INTO ContentManifest (VersionId, Path, ContentId)
                     SELECT @NewVersion, Path, ContentId
                     FROM ContentManifest
@@ -590,7 +588,7 @@ public sealed partial class Updater
 
             if (changedEngineVersion)
             {
-                con.Execute(@"
+                _ = con.Execute(@"
                         INSERT INTO ContentEngineDependency (VersionId, ModuleName, ModuleVersion)
                         VALUES (@VersionId, 'Robust', @EngineVersion)",
                     new
@@ -616,7 +614,7 @@ public sealed partial class Updater
                     {
                         var version = IEngineManager.ResolveEngineModuleVersion(manifest, module, engineVersion);
 
-                        con.Execute(@"
+                        _ = con.Execute(@"
                                 INSERT INTO ContentEngineDependency(VersionId, ModuleName, ModuleVersion)
                                 VALUES (@Version, @ModName, @EngineVersion)",
                             new
@@ -631,7 +629,7 @@ public sealed partial class Updater
             else
             {
                 // Copy module dependencies.
-                con.Execute(@"
+                _ = con.Execute(@"
                     INSERT INTO ContentEngineDependency (VersionId, ModuleName, ModuleVersion)
                     SELECT @NewVersion, ModuleName, ModuleVersion
                     FROM ContentEngineDependency
@@ -687,21 +685,15 @@ public sealed partial class Updater
         if (!string.IsNullOrEmpty(buildInfo.ManifestUrl)
             && !string.IsNullOrEmpty(buildInfo.ManifestDownloadUrl)
             && !string.IsNullOrEmpty(buildInfo.ManifestHash))
-        {
             manifestHash = await ManifestDownloadNewVersion(buildInfo, con, versionId, state, cancel);
-        }
         else if (buildInfo.DownloadUrl != null)
-        {
             manifestHash = await ZipDownloadNewVersion(buildInfo, con, versionId, cancel);
-        }
         else
-        {
             throw new InvalidOperationException("No download information provided at all!");
-        }
 
         Log.Debug("Manifest hash: {ManifestHash}", Convert.ToHexString(manifestHash));
 
-        con.Execute(
+        _ = con.Execute(
             "UPDATE ContentVersion SET Hash = @Hash WHERE Id = @Id",
             new { Hash = manifestHash, Id = versionId });
 
@@ -719,7 +711,7 @@ public sealed partial class Updater
         Lazy<Task<EngineModuleManifest>> moduleManifest)
     {
         // Engine version.
-        con.Execute(
+        _ = con.Execute(
             @"INSERT INTO ContentEngineDependency(VersionId, ModuleName, ModuleVersion)
                 VALUES (@Version, 'Robust', @EngineVersion)",
             new
@@ -745,7 +737,7 @@ public sealed partial class Updater
         {
             var version = IEngineManager.ResolveEngineModuleVersion(manifest, module, engineVersion);
 
-            con.Execute(
+            _ = con.Execute(
                 @"INSERT INTO ContentEngineDependency(VersionId, ModuleName, ModuleVersion)
                         VALUES (@Version, @ModName, @ModVersion)",
                 new
@@ -802,7 +794,7 @@ public sealed partial class Updater
 
         manifestWriter.Flush();
 
-        manifestStream.Seek(0, SeekOrigin.Begin);
+        _ = manifestStream.Seek(0, SeekOrigin.Begin);
 
         return Blake2B.HashStream(manifestStream, 32);
     }

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -36,6 +35,7 @@ public sealed class ServerStatusCache : IServerSource
     ///     This does NOT start fetching the data.
     /// </summary>
     /// <param name="serverAddress">The address of the server to fetch data for.</param>
+    /// <param name="hubAddress">The address of the hub to fetch data for.</param>
     public ServerStatusData GetStatusFor(string serverAddress, string? hubAddress = null)
         => _cachedData.GetOrAdd(
             serverAddress,
@@ -68,7 +68,7 @@ public sealed class ServerStatusCache : IServerSource
         }
         finally
         {
-            reg.Semaphore.Release();
+            _ = reg.Semaphore.Release();
         }
     }
 
@@ -134,7 +134,7 @@ public sealed class ServerStatusCache : IServerSource
                         HttpCompletionOption.ResponseHeadersRead,
                         linkedToken.Token);
 
-                    response.EnsureSuccessStatusCode();
+                    _ = response.EnsureSuccessStatusCode();
 
                     status = await response.Content
                                  .ReadFromJsonAsync<ServerApi.ServerStatus>(linkedToken.Token)

@@ -68,13 +68,13 @@ public partial class Servers : LocalizedComponentBase, IDisposable
             await Task.Delay(ServerRefreshThrottleMs, _disposeCts.Token);
             await InvokeAsync(() =>
             {
-                Interlocked.Exchange(ref _rebuildScheduled, 0);
+                _ = Interlocked.Exchange(ref _rebuildScheduled, 0);
                 RebuildFromFetcher();
                 StateHasChanged();
             });
         }
-        catch (OperationCanceledException) { Interlocked.Exchange(ref _rebuildScheduled, 0); }
-        catch (ObjectDisposedException) { Interlocked.Exchange(ref _rebuildScheduled, 0); }
+        catch (OperationCanceledException) { _ = Interlocked.Exchange(ref _rebuildScheduled, 0); }
+        catch (ObjectDisposedException) { _ = Interlocked.Exchange(ref _rebuildScheduled, 0); }
     }
 
     private async void OnStatusChanged(RefreshListStatus _)
@@ -202,7 +202,7 @@ public partial class Servers : LocalizedComponentBase, IDisposable
         }
         else if (alreadyExist != null)
         {
-            favorites.Remove(alreadyExist);
+            _ = favorites.Remove(alreadyExist);
             await _bridge.WriteFavoritesAsync(favorites);
         }
     }
@@ -210,7 +210,7 @@ public partial class Servers : LocalizedComponentBase, IDisposable
     private void HandleInfoNeeded(ServerStatusData server)
     {
         _bridge.UpdateInfoFor(server);
-        _cache.TryInitialPing(server);
+        _ = _cache.TryInitialPing(server);
     }
 
     private static void ExtractTags(IEnumerable<ServerStatusData> servers, out IReadOnlyList<string> rpTags, out IReadOnlyList<string> langTags, out IReadOnlyList<string> regionTags)

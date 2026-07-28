@@ -145,7 +145,7 @@ internal class Program
         if (!_fileApi.TryOpen($"{name}.dll", out asm))
             return false;
 
-        _fileApi.TryOpen($"{name}.pdb", out pdb);
+        _ = _fileApi.TryOpen($"{name}.pdb", out pdb);
         return true;
     }
 

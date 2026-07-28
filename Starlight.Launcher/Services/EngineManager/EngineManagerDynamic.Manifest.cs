@@ -39,7 +39,7 @@ public sealed partial class EngineManagerDynamic
         }
         finally
         {
-            _manifestSemaphore.Release();
+            _ = _manifestSemaphore.Release();
         }
     }
 

@@ -89,7 +89,7 @@ public sealed partial class Updater
 
         var request = new HttpRequestMessage(HttpMethod.Get, buildInfo.ManifestUrl);
         var manifestResp = await _http.SendZStdAsync(request, HttpCompletionOption.ResponseHeadersRead, cancel);
-        manifestResp.EnsureSuccessStatusCode();
+        _ = manifestResp.EnsureSuccessStatusCode();
 
         var manifest = Blake2BHasherStream.CreateReader(
             await manifestResp.Content.ReadAsStreamAsync(cancel),
@@ -170,7 +170,7 @@ public sealed partial class Updater
                 // Does not exist in DB. We need to download it.
                 toDownload.Add(i);
                 // A blob can appear multiple times in the manifest. Avoid downloading it twice.
-                queuedHashes.Add(key);
+                _ = queuedHashes.Add(key);
             }
         }
 
@@ -219,7 +219,7 @@ public sealed partial class Updater
 
         request.Headers.AcceptEncoding.Add(new StringWithQualityHeaderValue("zstd"));
         var response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancel);
-        response.EnsureSuccessStatusCode();
+        _ = response.EnsureSuccessStatusCode();
 
         var stream = await response.Content.ReadAsStreamAsync(cancel);
         var bandwidthStream = new BandwidthStream(stream);
@@ -329,7 +329,7 @@ public sealed partial class Updater
                 }
 
                 swBlake.Start();
-                CryptoGenericHashBlake2B.Hash(hash, data.Span, ReadOnlySpan<byte>.Empty);
+                _ = CryptoGenericHashBlake2B.Hash(hash, data.Span, ReadOnlySpan<byte>.Empty);
                 swBlake.Stop();
 
                 /*
@@ -371,7 +371,7 @@ public sealed partial class Updater
                 stmtInsertContent.BindInt(db, 3, (int)compression); // @Compression
                 stmtInsertContent.BindInt(db, 4, writeData.Length); // @DataSize
 
-                stmtInsertContent.Step(db);
+                _ = stmtInsertContent.Step(db);
 
                 var rowId = raw.sqlite3_column_int64(stmtInsertContent, 0);
 
@@ -411,7 +411,7 @@ public sealed partial class Updater
         var request = new HttpRequestMessage(HttpMethod.Options, url);
 
         var resp = await _http.SendAsync(request, cancel);
-        resp.EnsureSuccessStatusCode();
+        _ = resp.EnsureSuccessStatusCode();
 
         if (!resp.Headers.TryGetValues("X-Robust-Download-Min-Protocol", out var minHeaders)
             || !resp.Headers.TryGetValues("X-Robust-Download-Max-Protocol", out var maxHeaders))
@@ -463,7 +463,7 @@ public sealed partial class Updater
 
             stmtInsertContentManifest.BindString(db, 2, entry.Path);
             stmtInsertContentManifest.BindInt64(db, 3, contentId);
-            stmtInsertContentManifest.Step(db);
+            _ = stmtInsertContentManifest.Step(db);
             stmtInsertContentManifest.Reset(db);
         }
     }

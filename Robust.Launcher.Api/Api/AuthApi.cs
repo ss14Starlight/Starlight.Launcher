@@ -14,17 +14,26 @@ using Robust.Launcher.Api.Utility;
 
 namespace Robust.Launcher.Api.Api;
 
+/// <summary>
+/// Provides methods for interacting with the authentication API.
+/// </summary>
 public sealed class AuthApi
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<AuthApi> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AuthApi"/> class.
+    /// </summary>
     public AuthApi(HttpClient http, ILogger<AuthApi> logger)
     {
         _httpClient = http;
         _logger = logger;
     }
 
+    /// <summary>
+    /// Authenticates a user.
+    /// </summary>
     public async Task<AuthenticateResult> AuthenticateAsync(AuthenticateRequest request, UrlFallbackSet authSet)
     {
         try
@@ -79,6 +88,9 @@ public sealed class AuthApi
         }
     }
 
+    /// <summary>
+    /// Registers a new user account.
+    /// </summary>
     public async Task<RegisterResult> RegisterAsync(string username, string email, string password, UrlFallbackSet authSet)
     {
         try
@@ -122,7 +134,9 @@ public sealed class AuthApi
         }
     }
 
-    /// <returns>Any errors that occured</returns>
+    /// <summary>
+    /// Requests a password reset email.
+    /// </summary>
     public async Task<string[]?> ForgotPasswordAsync(string email, UrlFallbackSet authSet)
     {
         try
@@ -152,6 +166,9 @@ public sealed class AuthApi
         }
     }
 
+    /// <summary>
+    /// Requests a new account confirmation email.
+    /// </summary>
     public async Task<string[]?> ResendConfirmationAsync(string email, UrlFallbackSet authSet)
     {
         try
@@ -182,10 +199,9 @@ public sealed class AuthApi
         }
     }
 
-    /// <returns>Null if the server refused to refresh the token (it expired).</returns>
-    /// <exception cref="AuthApiException">
-    ///     Thrown if an unexpected error occured.
-    /// </exception>
+    /// <summary>
+    /// Refreshes an authentication token.
+    /// </summary>
     public async Task<LoginToken?> RefreshTokenAsync(string token, UrlFallbackSet authSet)
     {
         try
@@ -231,6 +247,9 @@ public sealed class AuthApi
         }
     }
 
+    /// <summary>
+    /// Logs out the specified authentication token.
+    /// </summary>
     public async Task LogoutTokenAsync(string token, UrlFallbackSet authSet)
     {
         try
@@ -261,12 +280,8 @@ public sealed class AuthApi
     }
 
     /// <summary>
-    ///     Check if a token is still valid.
+    /// Checks whether an authentication token is still valid.
     /// </summary>
-    /// <returns>True if the token is still valid.</returns>
-    /// <exception cref="AuthApiException">
-    ///     Thrown if an unexpected error occured.
-    /// </exception>
     public async Task<bool> CheckTokenAsync(string token, UrlFallbackSet authSet)
     {
         try
@@ -304,62 +319,130 @@ public sealed class AuthApi
         }
     }
 
+    /// <summary>
+    /// Represents an authentication request.
+    /// </summary>
     public sealed record AuthenticateRequest(string? Username, Guid? UserId, string Password, string? TfaCode = null)
     {
+        /// <summary>
+        /// Initializes an authentication request using a username.
+        /// </summary>
         public AuthenticateRequest(string username, string password) : this(username, null, password)
         {
 
         }
 
+        /// <summary>
+        /// Initializes an authentication request using a user ID.
+        /// </summary>
         public AuthenticateRequest(Guid userId, string password) : this(null, userId, password)
         {
 
         }
     }
 
+    /// <summary>
+    /// Represents a successful authentication response.
+    /// </summary>
     public sealed record AuthenticateResponse(string Token, string Username, Guid UserId, DateTimeOffset ExpireTime);
 
+    /// <summary>
+    /// Represents a failed authentication response.
+    /// </summary>
     public sealed record AuthenticateDenyResponse(string[] Errors, AuthenticateDenyResponseCode Code);
 
+    /// <summary>
+    /// Specifies the reason an authentication request was denied.
+    /// </summary>
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum AuthenticateDenyResponseCode
     {
-        // @formatter:off
+        /// <summary>
+        /// No response
+        /// </summary>
         None = 0,
+        /// <summary>
+        /// Invalid credentials
+        /// </summary>
         InvalidCredentials = 1,
+        /// <summary>
+        /// Account needs confirmation via email
+        /// </summary>
         AccountUnconfirmed = 2,
+        /// <summary>
+        /// Account needs 2fa
+        /// </summary>
         TfaRequired = 3,
+        /// <summary>
+        /// Invalid 2fa
+        /// </summary>
         TfaInvalid = 4,
+        /// <summary>
+        /// Account banned
+        /// </summary>
         AccountLocked = 5,
-
-        // Not actually from the API, but used internally.
+        /// <summary>
+        /// Unknown
+        /// </summary>
         UnknownError = -1,
-        // @formatter:on
     }
 
+    /// <summary>
+    /// Represents a user registration request.
+    /// </summary>
     public sealed record RegisterRequest(string Username, string Email, string Password);
 
+    /// <summary>
+    /// Represents a successful registration response.
+    /// </summary>
     public sealed record RegisterResponse(RegisterResponseStatus Status);
 
+    /// <summary>
+    /// Represents a failed registration response.
+    /// </summary>
     public sealed record RegisterResponseError(string[] Errors);
 
+    /// <summary>
+    /// Represents a password reset request.
+    /// </summary>
     public sealed record ResetPasswordRequest(string Email);
 
+    /// <summary>
+    /// Represents an account confirmation request.
+    /// </summary>
     public sealed record ResendConfirmationRequest(string Email);
 
+    /// <summary>
+    /// Represents a logout request.
+    /// </summary>
     public sealed record LogoutRequest(string Token);
 
+    /// <summary>
+    /// Represents a token refresh request.
+    /// </summary>
     public sealed record RefreshRequest(string Token);
 
+    /// <summary>
+    /// Represents a token refresh response.
+    /// </summary>
     public sealed record RefreshResponse(DateTimeOffset ExpireTime, string NewToken);
 }
 
+/// <summary>
+/// Represents the result of an authentication request.
+/// </summary>
 public readonly struct AuthenticateResult
 {
     private readonly LoginInfo? _loginInfo;
 
+    /// <summary>
+    /// Gets the authentication failure code.
+    /// </summary>
     public AuthApi.AuthenticateDenyResponseCode Code { get; }
 
+    /// <summary>
+    /// Initializes a successful authentication result.
+    /// </summary>
     public AuthenticateResult(LoginInfo loginInfo)
     {
         _loginInfo = loginInfo;
@@ -367,6 +450,9 @@ public readonly struct AuthenticateResult
         Code = default;
     }
 
+    /// <summary>
+    /// Initializes a failed authentication result.
+    /// </summary>
     public AuthenticateResult(string[] errors, AuthApi.AuthenticateDenyResponseCode code)
     {
         _loginInfo = null;
@@ -374,55 +460,103 @@ public readonly struct AuthenticateResult
         Code = code;
     }
 
+    /// <summary>
+    /// Gets a value indicating whether the authentication succeeded.
+    /// </summary>
     public bool IsSuccess => _loginInfo != null;
 
+    /// <summary>
+    /// Gets the authenticated login information.
+    /// </summary>
     public LoginInfo LoginInfo => _loginInfo ?? throw new InvalidOperationException("This AuthenticateResult is not a success.");
 
+    /// <summary>
+    /// Gets the authentication errors.
+    /// </summary>
     [AllowNull]
     public string[] Errors => field ?? throw new InvalidOperationException("This AuthenticateResult is not a failure.");
 }
 
+/// <summary>
+/// Represents the result of a registration request.
+/// </summary>
 public readonly struct RegisterResult
 {
     private readonly RegisterResponseStatus? _status;
 
+    /// <summary>
+    /// Initializes a successful registration result.
+    /// </summary>
     public RegisterResult(RegisterResponseStatus status)
     {
         _status = status;
         Errors = null;
     }
 
+    /// <summary>
+    /// Initializes a failed registration result.
+    /// </summary>
     public RegisterResult(string[] errors)
     {
         _status = null;
         Errors = errors;
     }
 
+    /// <summary>
+    /// Gets a value indicating whether the registration succeeded.
+    /// </summary>
     public bool IsSuccess => _status != null;
 
+    /// <summary>
+    /// Gets the registration status.
+    /// </summary>
     public RegisterResponseStatus Status => _status ?? throw new InvalidOperationException("This RegisterResult is not a success.");
 
+    /// <summary>
+    /// Gets the registration errors.
+    /// </summary>
     [AllowNull]
     public string[] Errors => field ?? throw new InvalidOperationException("This RegisterResult is not a failure.");
 }
 
+/// <summary>
+/// Specifies the result of a registration request.
+/// </summary>
 public enum RegisterResponseStatus
 {
+    /// <summary>
+    /// Success
+    /// </summary>
     Registered,
+    /// <summary>
+    /// Needs confirmation via email
+    /// </summary>
     RegisteredNeedConfirmation
 }
 
+/// <summary>
+/// Represents an error that occurs while communicating with the authentication API.
+/// </summary>
 [Serializable]
 public class AuthApiException : Exception
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AuthApiException"/> class.
+    /// </summary>
     public AuthApiException()
     {
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AuthApiException"/> class with the specified error message.
+    /// </summary>
     public AuthApiException(string message) : base(message)
     {
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AuthApiException"/> class with the specified error message and inner exception.
+    /// </summary>
     public AuthApiException(string message, Exception inner) : base(message, inner)
     {
     }

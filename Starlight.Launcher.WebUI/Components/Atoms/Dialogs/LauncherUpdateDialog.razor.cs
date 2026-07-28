@@ -59,7 +59,7 @@ public sealed partial class LauncherUpdateDialog : ComponentBase, IDisposable
         _pollTimer = new Timer(_ =>
         {
             SampleSpeed();
-            InvokeAsync(StateHasChanged);
+            _ = InvokeAsync(StateHasChanged);
         }, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(250));
 
         _ = RunAsync();

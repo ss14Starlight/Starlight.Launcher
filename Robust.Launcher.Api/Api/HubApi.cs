@@ -2,7 +2,6 @@ using Robust.Launcher.Api.Models;
 using Robust.Launcher.Api.Utility;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -11,17 +10,26 @@ using System.Threading.Tasks;
 
 namespace Robust.Launcher.Api.Api;
 
+/// <summary>
+/// Provides methods for interacting with the hub API.
+/// </summary>
 public sealed class HubApi
 {
     private readonly HttpClient _http;
     private readonly ILogger<HubApi> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="HubApi"/> class.
+    /// </summary>
     public HubApi(HttpClient http, ILogger<HubApi> logger)
     {
         _http = http;
         _logger = logger;
     }
 
+    /// <summary>
+    /// Retrieves the list of available servers from the hub.
+    /// </summary>
     public async Task<ServerListEntry[]> GetServers(UrlFallbackSet hubUri, CancellationToken cancel)
     {
         HubApiException? lastError = null;
@@ -55,6 +63,9 @@ public sealed class HubApi
         throw lastError ?? new HubApiException("No URLs in fallback set");
     }
 
+    /// <summary>
+    /// Retrieves information about a server from the hub.
+    /// </summary>
     public async Task<ServerInfo> GetServerInfo(
         string serverAddress,
         string hubAddress,
@@ -69,6 +80,9 @@ public sealed class HubApi
         return await RequestJsonAsync<ServerInfo>(url, cancel).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Sends a request and deserializes the JSON response.
+    /// </summary>
     private async Task<T> RequestJsonAsync<T>(string url, CancellationToken cancel)
     {
         HttpResponseMessage response;
@@ -137,5 +151,8 @@ public sealed class HubApi
         }
     }
 
+    /// <summary>
+    /// Represents a server entry returned by the hub.
+    /// </summary>
     public sealed record ServerListEntry(string Address, ServerApi.ServerStatus StatusData);
 }

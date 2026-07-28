@@ -1,6 +1,4 @@
-using System;
 using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,7 +42,7 @@ public partial class App : Application
             _blazorHost = new EmbeddedBlazorHost();
             _blazorHost.StartAsync(Services).GetAwaiter().GetResult();
 
-            Services.GetRequiredService<ILocalizationManager>().Initialize();
+            Services.GetRequiredService<ILocalizationManager>().Initialize().GetAwaiter().GetResult();
             if (OperatingSystem.IsWindows())
                 Services.GetRequiredService<DiscordRichPresence>().Initialize();
             Services.GetRequiredService<HubServerFetcher>().RequestInitialUpdate();
@@ -74,44 +72,44 @@ public partial class App : Application
 
     private static void RegisterServices(IServiceCollection services)
     {
-        services.AddLogging(b => b.ClearProviders().AddSerilog(Serilog.Log.Logger));
+        _ = services.AddLogging(b => b.ClearProviders().AddSerilog(Serilog.Log.Logger));
 
         if (OperatingSystem.IsWindows())
-            services.AddSingleton<ILoginKeyProvider, DpapiKeyProvider>();
+            _ = services.AddSingleton<ILoginKeyProvider, DpapiKeyProvider>();
         else
-            services.AddSingleton<ILoginKeyProvider, FileKeyProvider>();
+            _ = services.AddSingleton<ILoginKeyProvider, FileKeyProvider>();
 
-        services.AddSingleton<INativeTray, AvaloniaTray>();
-        services.AddSingleton<IFileDialogService, AvaloniaFileDialogService>();
+        _ = services.AddSingleton<INativeTray, AvaloniaTray>();
+        _ = services.AddSingleton<IFileDialogService, AvaloniaFileDialogService>();
 
-        services.AddSingleton<SettingsService>();
-        services.AddSingleton<DiscordRichPresence>();
-        services.AddSingleton<TrayCoordinator>();
-        services.AddSingleton(PendingMessaging ?? new LauncherMessaging());
-        services.AddSingleton<LauncherCommands>();
+        _ = services.AddSingleton<SettingsService>();
+        _ = services.AddSingleton<DiscordRichPresence>();
+        _ = services.AddSingleton<TrayCoordinator>();
+        _ = services.AddSingleton(PendingMessaging ?? new LauncherMessaging());
+        _ = services.AddSingleton<LauncherCommands>();
 
         var httpClient = HappyEyeballsHttp.CreateHttpClient();
-        services.AddSingleton(httpClient);
-        services.AddSingleton<ILocalizationManager, LocalizationManager>();
-        services.AddSingleton<HubApi>();
-        services.AddSingleton<AuthApi>();
-        services.AddSingleton<HubServerFetcher>();
-        services.AddSingleton(sp =>
+        _ = services.AddSingleton(httpClient);
+        _ = services.AddSingleton<ILocalizationManager, LocalizationManager>();
+        _ = services.AddSingleton<HubApi>();
+        _ = services.AddSingleton<AuthApi>();
+        _ = services.AddSingleton<HubServerFetcher>();
+        _ = services.AddSingleton(sp =>
         {
             var fetcher = sp.GetRequiredService<HubServerFetcher>();
             return new ServerInfoLoader(fetcher.UpdateInfoForAsync);
         });
-        services.AddSingleton<ServerStatusCache>();
-        services.AddSingleton<ContentManager>();
-        services.AddSingleton<IEngineManager, EngineManagerDynamic>();
-        services.AddSingleton<Updater>();
-        services.AddSingleton<LoginManager>();
-        services.AddSingleton<StarlightAuthApi>();
-        services.AddSingleton<DiscordAuthService>();
-        services.AddTransient<Connector>();
-        services.AddSingleton<UiTicker>();
-        services.AddSingleton<LauncherUpdater>();
-        services.AddSingleton<IBridge, Bridge>();
-        services.AddSingleton<AppState>(); // Service for UI refresh.
+        _ = services.AddSingleton<ServerStatusCache>();
+        _ = services.AddSingleton<ContentManager>();
+        _ = services.AddSingleton<IEngineManager, EngineManagerDynamic>();
+        _ = services.AddSingleton<Updater>();
+        _ = services.AddSingleton<LoginManager>();
+        _ = services.AddSingleton<StarlightAuthApi>();
+        _ = services.AddSingleton<DiscordAuthService>();
+        _ = services.AddTransient<Connector>();
+        _ = services.AddSingleton<UiTicker>();
+        _ = services.AddSingleton<LauncherUpdater>();
+        _ = services.AddSingleton<IBridge, Bridge>();
+        _ = services.AddSingleton<AppState>(); // Service for UI refresh.
     }
 }

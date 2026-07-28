@@ -20,7 +20,7 @@ public sealed class DpapiKeyProvider : ILoginKeyProvider
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             throw new Exception("Windows methods isn't supported on Linux or MAC!");
 
-        Directory.CreateDirectory(Path.GetDirectoryName(keyPath)!);
+        _ = Directory.CreateDirectory(Path.GetDirectoryName(keyPath)!);
 
         if (!File.Exists(keyPath) && File.Exists(_legacyKeyPath))
         {

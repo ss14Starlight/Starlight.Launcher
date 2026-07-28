@@ -18,7 +18,7 @@ public sealed partial class SettingsService
         {
             return _loginKey ??= await _keyProvider.GetOrCreateKeyAsync(_loginKeyPath);
         }
-        finally { _keyLock.Release(); }
+        finally { _ = _keyLock.Release(); }
     }
 
     private static readonly byte[] _magic = "SLE1"u8.ToArray(); // Starlight Logins Encrypted v1

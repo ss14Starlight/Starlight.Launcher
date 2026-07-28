@@ -13,7 +13,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _favoritesLock.Release();
+            _ = _favoritesLock.Release();
         }
     }
 
@@ -27,7 +27,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _favoritesLock.Release();
+            _ = _favoritesLock.Release();
         }
 
         FavoritesChanged?.Invoke();
@@ -44,7 +44,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _favoritesLock.Release();
+            _ = _favoritesLock.Release();
         }
     }
 
@@ -58,7 +58,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _favoritesLock.Release();
+            _ = _favoritesLock.Release();
         }
 
         FavoritesChanged?.Invoke();

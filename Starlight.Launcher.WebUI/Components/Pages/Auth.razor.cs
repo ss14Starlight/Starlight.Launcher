@@ -39,12 +39,12 @@ public partial class Auth : LocalizedComponentBase, IDisposable
     private bool _signInShowResend;
     private bool _showPwd;
 
-    private string _registerUsername = "";
-    private string _registerEmail = "";
-    private string _registerPassword = "";
-    private string _registerPasswordConfirm = "";
-    private string[]? _registerErrors;
-    private string? _registerSuccessMessage;
+    //private string _registerUsername = "";
+    //private string _registerEmail = "";
+    //private string _registerPassword = "";
+    //private string _registerPasswordConfirm = "";
+    //private string[]? _registerErrors;
+    //private string? _registerSuccessMessage;
 
     private string _forgotEmail = "";
     private string? _forgotError;
@@ -88,12 +88,12 @@ public partial class Auth : LocalizedComponentBase, IDisposable
             }
             catch (AuthApiException ex)
             {
-                _snackbar.Add(L.GetString("auth-menu-token-verify-warning", ("ex", ex.Message)), Severity.Warning);
+                _ = _snackbar.Add(L.GetString("auth-menu-token-verify-warning", ("ex", ex.Message)), Severity.Warning);
             }
 
             if (account.Status == AccountLoginStatus.Expired)
             {
-                _snackbar.Add(L["auth-menu-session-expired-warning"], Severity.Warning);
+                _ = _snackbar.Add(L["auth-menu-session-expired-warning"], Severity.Warning);
                 await BeginRelogin(account);
                 return;
             }
@@ -110,7 +110,7 @@ public partial class Auth : LocalizedComponentBase, IDisposable
     private void RemoveAccount(LoggedInAccount account)
     {
         _bridge.RemoveLogin(account.UserId);
-        _snackbar.Add(L.GetString("auth-menu-account-deleted", ("account", account.LoginInfo.Username)), Severity.Info);
+        _ = _snackbar.Add(L.GetString("auth-menu-account-deleted", ("account", account.LoginInfo.Username)), Severity.Info);
     }
 
     private void GoToSignIn()
@@ -139,14 +139,6 @@ public partial class Auth : LocalizedComponentBase, IDisposable
         AccountLoginStatus.Expired => L["auth-menu-expired-status"],
         AccountLoginStatus.Unsure => L["auth-menu-unsure-status"],
         _ => s.ToString()
-    };
-
-    private MudBlazor.Color StatusColor(AccountLoginStatus s) => s switch
-    {
-        AccountLoginStatus.Available => MudBlazor.Color.Success,
-        AccountLoginStatus.Expired => MudBlazor.Color.Warning,
-        AccountLoginStatus.Unsure => MudBlazor.Color.Surface,
-        _ => MudBlazor.Color.Default
     };
 
     private void LinkAccount(LoggedInAccount account)
@@ -195,7 +187,7 @@ public partial class Auth : LocalizedComponentBase, IDisposable
             {
                 _bridge.LinkAuthToken(_linkUserId.Value, result.LoginInfo.UserId, result.LoginInfo);
 
-                _snackbar.Add(L.GetString("auth-menu-account-linked", ("account", result.LoginInfo.Username)), Severity.Success);
+                _ = _snackbar.Add(L.GetString("auth-menu-account-linked", ("account", result.LoginInfo.Username)), Severity.Success);
 
                 BackToAccountList();
                 return;
@@ -241,7 +233,7 @@ public partial class Auth : LocalizedComponentBase, IDisposable
         try
         {
             await _bridge.AttachToAccountAsync(account);
-            _snackbar.Add(success, Severity.Success);
+            _ = _snackbar.Add(success, Severity.Success);
             if (navigateHome)
             {
                 _bridge.SetActiveAccountId(account.UserId);
@@ -250,16 +242,16 @@ public partial class Auth : LocalizedComponentBase, IDisposable
         }
         catch (OperationCanceledException)
         {
-            _snackbar.Add(L["auth-menu-discord-login-error"], Severity.Warning);
+            _ = _snackbar.Add(L["auth-menu-discord-login-error"], Severity.Warning);
         }
         catch (DiscordAuthException ex)
         {
-            _snackbar.Add(ex.Message, Severity.Error);
+            _ = _snackbar.Add(ex.Message, Severity.Error);
         }
         catch (Exception ex)
         {
             Log.Warning(ex, "Discord attach failed");
-            _snackbar.Add(L["auth-menu-discord-connect-fail"], Severity.Error);
+            _ = _snackbar.Add(L["auth-menu-discord-connect-fail"], Severity.Error);
         }
         finally
         {
@@ -281,7 +273,7 @@ public partial class Auth : LocalizedComponentBase, IDisposable
         await InvokeAsync(StateHasChanged);
         try
         {
-            await _bridge.LoginAsync();
+            _ = await _bridge.LoginAsync();
             _nav.NavigateTo("/");
         }
         catch (OperationCanceledException)
@@ -344,7 +336,7 @@ public partial class Auth : LocalizedComponentBase, IDisposable
             {
                 _bridge.AddFreshLogin(result.LoginInfo);
                 _bridge.SetActiveAccountId(result.LoginInfo.UserId);
-                _snackbar.Add(L.GetString("auth-menu-welcome-message", ("username", result.LoginInfo.Username)), Severity.Success);
+                _ = _snackbar.Add(L.GetString("auth-menu-welcome-message", ("username", result.LoginInfo.Username)), Severity.Success);
                 _nav.NavigateTo("/");
                 return;
             }
@@ -389,7 +381,7 @@ public partial class Auth : LocalizedComponentBase, IDisposable
     {
         if ((await _bridge.GetSettingsAsync()).SelectedAuthServer is not { } authServer)
         {
-            _snackbar.Add(L["auth-menu-no-server-error"], Severity.Error);
+            _ = _snackbar.Add(L["auth-menu-no-server-error"], Severity.Error);
             return;
         }
 
@@ -400,13 +392,13 @@ public partial class Auth : LocalizedComponentBase, IDisposable
             {
                 var errors = await _authApi.ResendConfirmationAsync(_signInUsername, new UrlFallbackSet(authServer));
                 if (errors == null)
-                    _snackbar.Add(L.GetString("auth-menu-email-resent"), Severity.Success);
+                    _ = _snackbar.Add(L.GetString("auth-menu-email-resent"), Severity.Success);
                 else
-                    _snackbar.Add(string.Join("\n", errors), Severity.Error);
+                    _ = _snackbar.Add(string.Join("\n", errors), Severity.Error);
             }
             else
             {
-                _snackbar.Add(L["auth-menu-email-resent-info"], Severity.Warning);
+                _ = _snackbar.Add(L["auth-menu-email-resent-info"], Severity.Warning);
             }
         }
         finally
@@ -430,64 +422,6 @@ public partial class Auth : LocalizedComponentBase, IDisposable
     {
         ResetSignInForm();
         _mode = Mode.AccountList;
-    }
-
-    private async Task DoRegister()
-    {
-        if (!RegistrationEnabled)
-            return;
-
-        /*
-        _registerErrors = null;
-        _registerSuccessMessage = null;
-
-        var authServer = (await _bridge.GetSettingsAsync()).SelectedAuthServer;
-
-        var validationErrors = new List<string>();
-        if (authServer == null)
-            validationErrors.Add(L["auth-menu-no-server-error"]);
-        if (string.IsNullOrWhiteSpace(_registerUsername))
-            validationErrors.Add(L["auth-menu-register-username-missing"]);
-        if (string.IsNullOrWhiteSpace(_registerEmail) || !_registerEmail.Contains('@'))
-            validationErrors.Add(L["auth-menu-register-invalid-email"]);
-        if (_registerPassword.Length < 8)
-            validationErrors.Add(L["auth-menu-register-too-short-pass"]);
-        if (_registerPassword != _registerPasswordConfirm)
-            validationErrors.Add(L["auth-menu-register-dont-match-pass"]);
-
-        if (validationErrors.Count > 0)
-        {
-            _registerErrors = validationErrors.ToArray();
-            return;
-        }
-
-        _busy = true;
-        try
-        {
-            var result = await _authApi.RegisterAsync(_registerUsername, _registerEmail, _registerPassword, new UrlFallbackSet(authServer!));
-
-            if (!result.IsSuccess)
-            {
-                _registerErrors = result.Errors;
-                return;
-            }
-
-            _registerSuccessMessage = result.Status switch
-            {
-                RegisterResponseStatus.Registered =>
-                    L["auth-menu-register-success"],
-                RegisterResponseStatus.RegisteredNeedConfirmation => L.GetString("auth-menu-register-required-confirmation", ("email", _registerEmail)),
-                _ => L["auth-menu-register-success"]
-            };
-
-            _registerPassword = "";
-            _registerPasswordConfirm = "";
-        }
-        finally
-        {
-            _busy = false;
-        }
-        */
     }
 
     private async Task DoForgotPassword()
@@ -536,7 +470,7 @@ public partial class Auth : LocalizedComponentBase, IDisposable
     private void SwitchMode(Mode mode)
     {
         if (mode == Mode.SignIn) ResetSignInForm();
-        if (mode == Mode.Register) { _registerErrors = null; _registerSuccessMessage = null; }
+        //if (mode == Mode.Register) { _registerErrors = null; _registerSuccessMessage = null; }
         if (mode == Mode.ForgotPassword) { _forgotError = null; _forgotSuccess = false; }
 
         _mode = mode;

@@ -7,7 +7,6 @@ using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Models.Helpers;
 using Starlight.Launcher.WebUI.Services;
-using TerraFX.Interop.DirectX;
 
 namespace Starlight.Launcher.Services.Bridge;
 

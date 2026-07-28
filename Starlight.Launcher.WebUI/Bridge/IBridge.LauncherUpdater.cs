@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Starlight.Launcher.WebUI.Models.LauncherUpdater;
 
 namespace Starlight.Launcher.WebUI.Bridge;

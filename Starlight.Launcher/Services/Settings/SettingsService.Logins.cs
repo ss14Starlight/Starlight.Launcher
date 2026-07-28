@@ -16,7 +16,7 @@ public sealed partial class SettingsService
         var loaded = await LoadLoginsAsync();
         await _loginsLock.WaitAsync();
         try { _logins = loaded; }
-        finally { _loginsLock.Release(); }
+        finally { _ = _loginsLock.Release(); }
         _loginsLoaded = true;
     }
 
@@ -29,7 +29,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _loginsLock.Release();
+            _ = _loginsLock.Release();
         }
     }
 
@@ -49,7 +49,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _loginsLock.Release();
+            _ = _loginsLock.Release();
         }
 
         LoginsChanged?.Invoke();
@@ -66,7 +66,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _loginsLock.Release();
+            _ = _loginsLock.Release();
         }
 
         LoginsChanged?.Invoke();
@@ -83,7 +83,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _loginsLock.Release();
+            _ = _loginsLock.Release();
         }
     }
 
@@ -96,7 +96,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _loginsLock.Release();
+            _ = _loginsLock.Release();
         }
 
         LoginsChanged?.Invoke();
@@ -106,7 +106,7 @@ public sealed partial class SettingsService
 
     private static async Task WriteBytesSafeAsync(byte[] content, string dir, string filePath)
     {
-        Directory.CreateDirectory(dir);
+        _ = Directory.CreateDirectory(dir);
         var tempFile = filePath + ".tmp";
         await File.WriteAllBytesAsync(tempFile, content);
         File.Move(tempFile, filePath, true);
@@ -123,7 +123,7 @@ public sealed partial class SettingsService
         await _loginsLock.WaitAsync();
         try { await WriteLoginsCoreAsync(); }
         catch (Exception ex) { _logger.LogError(ex, "Failed to save encrypted logins"); }
-        finally { _loginsLock.Release(); }
+        finally { _ = _loginsLock.Release(); }
     }
 
     private async Task WriteLoginsCoreAsync()
@@ -165,7 +165,7 @@ public sealed partial class SettingsService
             _logins = list.ToDictionary(x => x.UserId);
             await _loginsLock.WaitAsync();
             try { await WriteLoginsCoreAsync(); }
-            finally { _loginsLock.Release(); }
+            finally { _ = _loginsLock.Release(); }
             return _logins;
         }
         catch (Exception ex)

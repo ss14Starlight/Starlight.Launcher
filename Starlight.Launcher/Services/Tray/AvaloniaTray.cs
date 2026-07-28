@@ -62,7 +62,7 @@ public sealed class AvaloniaTray : INativeTray
     {
         if (_trayIcon is null) return;
 
-        TrayIcon.GetIcons(Application.Current!)?.Remove(_trayIcon);
+        _ = TrayIcon.GetIcons(Application.Current!)?.Remove(_trayIcon);
         _trayIcon.Dispose();
         _trayIcon = null;
     }

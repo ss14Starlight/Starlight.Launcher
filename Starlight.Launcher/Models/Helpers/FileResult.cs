@@ -20,7 +20,7 @@ public sealed class FileResult : IFileResult
     {
         var directory = Path.GetDirectoryName(FullPath);
         if (!string.IsNullOrEmpty(directory))
-            Directory.CreateDirectory(directory);
+            _ = Directory.CreateDirectory(directory);
 
         return Task.FromResult<Stream>(File.Open(FullPath, FileMode.OpenOrCreate, FileAccess.Write));
     }

@@ -17,7 +17,7 @@ public static class Migrator
 
         using var transaction = connection.BeginTransaction();
 
-        connection.Execute(@"
+        _ = connection.Execute(@"
         CREATE TABLE IF NOT EXISTS SchemaVersions(
             SchemaVersionID INTEGER PRIMARY KEY,
             ScriptName TEXT NOT NULL,
@@ -42,9 +42,9 @@ public static class Migrator
             {
                 var code = script.Up(connection);
 
-                connection.Execute(code);
+                _ = connection.Execute(code);
 
-                connection.Execute(
+                _ = connection.Execute(
                     "INSERT INTO SchemaVersions(ScriptName, Applied) VALUES (@Script, datetime('now'))",
                     new { Script = name });
 

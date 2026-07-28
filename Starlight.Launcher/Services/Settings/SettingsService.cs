@@ -69,7 +69,7 @@ public sealed partial class SettingsService : IAsyncDisposable
         _favoritesPath = Path.Combine(_settings.DirLauncherData, "favorites.json");
         _enginesPath = Path.Combine(_settings.DirLauncherData, "engines.json");
         _modulesPath = Path.Combine(_settings.DirLauncherData, "modules.json");
-        Task.Run(() => InitializeLoginsAsync());
+        _ = Task.Run(() => InitializeLoginsAsync());
         _favorites = LoadJson(_favoritesPath, new List<FavoriteServer>());
         _engineInstallations = LoadJson(_enginesPath, new List<InstalledEngineVersion>()).ToDictionary(x => x.Version);
         _engineModules = LoadJson(_modulesPath, new HashSet<(string Version, string Name)>());
@@ -141,7 +141,7 @@ public sealed partial class SettingsService : IAsyncDisposable
 
     private static async Task WriteFileSafeAsync(string content, string dir, string filePath)
     {
-        Directory.CreateDirectory(dir);
+        _ = Directory.CreateDirectory(dir);
 
         var tempFile = filePath + ".tmp";
         await File.WriteAllTextAsync(tempFile, content);
@@ -164,7 +164,7 @@ public sealed partial class SettingsService : IAsyncDisposable
         }
         finally
         {
-            _settingsLock.Release();
+            _ = _settingsLock.Release();
         }
     }
 
@@ -184,7 +184,7 @@ public sealed partial class SettingsService : IAsyncDisposable
         }
         finally
         {
-            _settingsLock.Release();
+            _ = _settingsLock.Release();
         }
 
         NotifySettingsChanged(old, settings);
@@ -207,7 +207,7 @@ public sealed partial class SettingsService : IAsyncDisposable
         }
         finally
         {
-            _settingsLock.Release();
+            _ = _settingsLock.Release();
         }
     }
 
@@ -225,7 +225,7 @@ public sealed partial class SettingsService : IAsyncDisposable
         }
         finally
         {
-            _settingsLock.Release();
+            _ = _settingsLock.Release();
         }
 
         NotifySettingsChanged(old, settings);
@@ -262,7 +262,7 @@ public sealed partial class SettingsService : IAsyncDisposable
             updated = _settings with { CachedFilters = filters };
             _settings = updated;
         }
-        finally { _settingsLock.Release(); }
+        finally { _ = _settingsLock.Release(); }
 
         NotifySettingsChanged(old, updated);
         ScheduleSaveInternal(ref _settingsSaveCts, () => SaveJsonAsync(_filePath, _settingsLock, _settings), "settings");

@@ -11,7 +11,7 @@ public sealed class FileKeyProvider : ILoginKeyProvider
 
     public async Task<byte[]> GetOrCreateKeyAsync(string keyPath)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(keyPath)!);
+        _ = Directory.CreateDirectory(Path.GetDirectoryName(keyPath)!);
 
         if (File.Exists(keyPath))
         {

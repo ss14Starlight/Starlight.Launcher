@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Net.Http.Json;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
@@ -10,12 +9,10 @@ using Robust.Launcher.Api.Models;
 using Robust.Launcher.Api.Models.Data;
 using Robust.Launcher.Api.Utility;
 using Serilog;
-using Starlight.Launcher.Models.Helpers;
 using Starlight.Launcher.Services.Auth;
 using Starlight.Launcher.Services.Discord;
 using Starlight.Launcher.Services.EngineManager;
 using Starlight.Launcher.Services.Settings;
-using Starlight.Launcher.WebUI.Models;
 using Starlight.Launcher.WebUI.Models.Connector;
 using Starlight.Launcher.WebUI.Models.DiscordRichPresence;
 using Starlight.Launcher.WebUI.Models.Helpers;
@@ -80,7 +77,7 @@ public partial class Connector : ObservableObject
 
         if (others > 0 && _settings.GetSettings().PreventMultipleClients)
         {
-            Interlocked.Decrement(ref _activeLaunches);
+            _ = Interlocked.Decrement(ref _activeLaunches);
             return false;
         }
 
@@ -250,7 +247,7 @@ public partial class Connector : ObservableObject
         {
             var zipHash = await Task.Run(() => Updater.HashFileSha256(zipStream), cancel);
 
-            zipStream.Seek(0, SeekOrigin.Begin);
+            _ = zipStream.Seek(0, SeekOrigin.Begin);
 
             using var zipFile = new ZipArchive(zipStream, ZipArchiveMode.Read);
 
@@ -345,7 +342,7 @@ public partial class Connector : ObservableObject
             var waitClient = clientProc.WaitForExitAsync(cancel);
             var waitDelay = Task.Delay(300, cancel);
 
-            await Task.WhenAny(waitDelay, waitClient);
+            _ = await Task.WhenAny(waitDelay, waitClient);
 
             if (!clientProc.HasExited)
             {
@@ -637,13 +634,13 @@ public partial class Connector : ObservableObject
             startInfo.ArgumentList.Add(arg);
 
         var commandBuilder = new StringBuilder();
-        commandBuilder.Append(startInfo.FileName);
+        _ = commandBuilder.Append(startInfo.FileName);
 
         for (var i = 0; i < startInfo.ArgumentList.Count; i++)
         {
             var arg = startInfo.ArgumentList[i];
 
-            commandBuilder.Append($" [{i}] {arg}");
+            _ = commandBuilder.Append($" [{i}] {arg}");
         }
 
         Log.Debug("Launch command: {LaunchCommand}", commandBuilder.ToString());

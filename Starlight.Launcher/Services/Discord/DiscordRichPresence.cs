@@ -15,8 +15,6 @@ public sealed partial class DiscordRichPresence : IDisposable
 
     private readonly DateTime _startedAt = DateTime.UtcNow;
 
-    private DateTime _lastUpdate;
-
     public DiscordRichPresence(SettingsService settingsService)
     {
         var settings = settingsService.GetSettings();
@@ -40,7 +38,7 @@ public sealed partial class DiscordRichPresence : IDisposable
 
     public void Initialize()
     {
-        _client?.Initialize();
+        _ = _client?.Initialize();
         UpdatePresence(CurrentPresenceState); // Initial presence update to set the starting state
     }
 
@@ -81,7 +79,6 @@ public sealed partial class DiscordRichPresence : IDisposable
         };
         CurrentPresenceState = state;
         _currentServerName = serverName ?? _currentServerName;
-        _lastUpdate = DateTime.UtcNow;
         _client.SetPresence(presence);
     }
 }

@@ -65,7 +65,7 @@ public sealed partial class SettingsService
             var s = Interlocked.Exchange(ref _sub, null);
             if (s is null) return;
             lock (owner._settingsSubsLock)
-                owner._settingsSubs.Remove(s);
+                _ = owner._settingsSubs.Remove(s);
         }
     }
 }
