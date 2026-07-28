@@ -1,5 +1,9 @@
+using System;
 using System.Buffers;
+using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using SharpZstd.Interop;
 
 namespace Starlight.Launcher.Utility;
