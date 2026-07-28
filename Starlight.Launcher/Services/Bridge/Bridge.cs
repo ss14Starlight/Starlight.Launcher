@@ -1,9 +1,12 @@
 using System.Diagnostics;
+using Avalonia.Threading;
 using Starlight.Launcher.Services.Auth;
 using Starlight.Launcher.Services.Discord;
 using Starlight.Launcher.Services.ServerStatus;
 using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI.Bridge;
+using Starlight.Launcher.WebUI.Models.Helpers;
+using Starlight.Launcher.WebUI.Services;
 using TerraFX.Interop.DirectX;
 
 namespace Starlight.Launcher.Services.Bridge;
@@ -20,10 +23,11 @@ public sealed partial class Bridge : IBridge
     private readonly ServerInfoLoader _serverInfoLoader;
     private readonly SettingsService _settings;
     private readonly Updater _updater;
+    private readonly IFileDialogService _fileDialog;
 
     public Bridge(LauncherCommands commands, Connector connector, DiscordAuthService discordAuth,
         DiscordRichPresence discordRichPresence, HubServerFetcher hubServerFetcher, LauncherUpdater launcherUpdater,
-        LoginManager loginManager, ServerInfoLoader serverInfoLoader, SettingsService settings, Updater updater)
+        LoginManager loginManager, ServerInfoLoader serverInfoLoader, SettingsService settings, Updater updater, IFileDialogService fileDialog)
     {
         _commands = commands;
         _connector = connector;
@@ -35,6 +39,7 @@ public sealed partial class Bridge : IBridge
         _serverInfoLoader = serverInfoLoader;
         _settings = settings;
         _updater = updater;
+        _fileDialog = fileDialog;
     }
 
     public void OpenBrowser(string url) =>
@@ -43,4 +48,8 @@ public sealed partial class Bridge : IBridge
             FileName = url,
             UseShellExecute = true
         });
+
+    public async Task<IFileResult?> PickFileAsync(
+        string filter = "Content bundles / replays\0*.zip;*.rt\0All Files\0*.*\0\0",
+        CancellationToken cancel = default) => await Dispatcher.UIThread.InvokeAsync(async () => await _fileDialog.PickFileAsync());
 }

@@ -140,7 +140,7 @@ public partial class Home : LocalizedComponentBase, IDisposable
 
     private async Task LoadReplay()
     {
-        var file = await _fileDialog.PickFileAsync();
+        var file = await _bridge.PickFileAsync();
         if (file is null)
             return;
 

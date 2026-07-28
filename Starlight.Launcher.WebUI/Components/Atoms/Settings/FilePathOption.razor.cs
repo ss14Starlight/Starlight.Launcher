@@ -1,6 +1,4 @@
-using System.Diagnostics;
 using Microsoft.AspNetCore.Components;
-using Robust.Launcher.Api.Models.Data;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Models.Helpers;
@@ -10,7 +8,6 @@ namespace Starlight.Launcher.WebUI.Components.Atoms.Settings;
 
 public partial class FilePathOption : LocalizedComponentBase
 {
-    [Inject] private IFileDialogService _fileDialog { get; set; } = default!;
     [Inject] private IBridge _bridge { get; set; } = default!;
 
     [Parameter] public string Value { get; set; } = "";
@@ -62,7 +59,7 @@ public partial class FilePathOption : LocalizedComponentBase
     {
         var result = PickAction is not null
             ? await PickAction.Invoke()
-            : await _fileDialog.PickFileAsync();
+            : await _bridge.PickFileAsync();
 
         if (result is null || string.IsNullOrEmpty(result.FullPath))
             return;

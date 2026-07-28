@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -28,15 +29,30 @@ public sealed class AvaloniaFileDialogService : IFileDialogService
 
         cancel.ThrowIfCancellationRequested();
 
+        _logger.LogInformation(
+            "CanOpen={CanOpen}, CanPickFolder={CanPickFolder}",
+            topLevel.StorageProvider.CanOpen,
+            topLevel.StorageProvider.CanPickFolder);
+
         try
         {
-            var results = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            var pickerTask = topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
             {
                 Title = "Select file",
                 AllowMultiple = false,
                 FileTypeFilter = ParseWin32Filter(filter),
             });
 
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(30), cancel);
+            var completed = await Task.WhenAny(pickerTask, timeoutTask);
+
+            if (completed == timeoutTask)
+            {
+                _logger.LogWarning("PickFileAsync: OpenFilePickerAsync did not return within 30s. ");
+                return null;
+            }
+
+            var results = await pickerTask;
             _logger.LogInformation("PickFileAsync: picker returned {Count} result(s)", results.Count);
 
             var path = results.FirstOrDefault()?.TryGetLocalPath();
@@ -44,7 +60,7 @@ public sealed class AvaloniaFileDialogService : IFileDialogService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "PickFileAsync failed - on Linux this is often a missing xdg-desktop-portal");
+            _logger.LogError(ex, "PickFileAsync failed");
             return null;
         }
     }
@@ -58,16 +74,31 @@ public sealed class AvaloniaFileDialogService : IFileDialogService
             return null;
         }
 
+        _logger.LogInformation(
+            "CanOpen={CanOpen}, CanPickFolder={CanPickFolder}",
+            topLevel.StorageProvider.CanOpen,
+            topLevel.StorageProvider.CanPickFolder);
+
         cancel.ThrowIfCancellationRequested();
 
         try
         {
-            var results = await topLevel.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+            var pickerTask = topLevel.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
             {
                 Title = "Select a folder",
                 AllowMultiple = false,
             });
 
+            var timeoutTask = Task.Delay(TimeSpan.FromSeconds(30), cancel);
+            var completed = await Task.WhenAny(pickerTask, timeoutTask);
+
+            if (completed == timeoutTask)
+            {
+                _logger.LogWarning("PickFolderAsync: OpenFolderPickerAsync did not return within 30s");
+                return null;
+            }
+
+            var results = await pickerTask;
             _logger.LogInformation("PickFolderAsync: picker returned {Count} result(s)", results.Count);
 
             var path = results.FirstOrDefault()?.TryGetLocalPath();
@@ -75,7 +106,7 @@ public sealed class AvaloniaFileDialogService : IFileDialogService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "PickFolderAsync failed - on Linux this is often a missing xdg-desktop-portal");
+            _logger.LogError(ex, "PickFolderAsync failed");
             return null;
         }
     }
