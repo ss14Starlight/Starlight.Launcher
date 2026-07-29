@@ -48,9 +48,6 @@
 		<Reference Include="Avalonia.Base">
 			<HintPath>packages\Avalonia\Avalonia.Base.dll</HintPath>
 		</Reference>
-		<Reference Include="Avalonia.Build.Tasks">
-			<HintPath>packages\Avalonia\Avalonia.Build.Tasks.dll</HintPath>
-		</Reference>
 		<Reference Include="Avalonia.Controls">
 			<HintPath>packages\Avalonia\Avalonia.Controls.dll</HintPath>
 		</Reference>
