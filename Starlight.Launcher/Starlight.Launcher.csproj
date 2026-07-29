@@ -57,35 +57,32 @@
 		<Reference Include="Avalonia.DesignerSupport">
 			<HintPath>packages\Avalonia\Avalonia.DesignerSupport.dll</HintPath>
 		</Reference>
-		<Reference Include=Avalonia.Dialogs">
+		<Reference Include="Avalonia.Dialogs">
 			<HintPath>packages\Avalonia\Avalonia.Dialogs.dll</HintPath>
 		</Reference>
 		<Reference Include="Avalonia">
 			<HintPath>packages\Avalonia\Avalonia.dll</HintPath>
 		</Reference>
-		<Reference Include=Avalonia.Markup">
+		<Reference Include="Avalonia.Markup">
 			<HintPath>packages\Avalonia\Avalonia.Markup.dll</HintPath>
 		</Reference>
-		<Reference Include=Avalonia.Markup.Xaml">
+		<Reference Include="Avalonia.Markup.Xaml">
 			<HintPath>packages\Avalonia\Avalonia.Markup.Xaml.dll</HintPath>
 		</Reference>
-		<Reference Include=Avalonia.Metal">
+		<Reference Include="Avalonia.Metal">
 			<HintPath>packages\Avalonia\Avalonia.Metal.dll</HintPath>
 		</Reference>
-		<Reference Include=Avalonia.MicroCom">
+		<Reference Include="Avalonia.MicroCom">
 			<HintPath>packages\Avalonia\Avalonia.MicroCom.dll</HintPath>
 		</Reference>
-		<Reference Include=Avalonia.OpenGL">
+		<Reference Include="Avalonia.OpenGL">
 			<HintPath>packages\Avalonia\Avalonia.OpenGL.dll</HintPath>
 		</Reference>
-		<Reference Include=Avalonia.Remote.Protocol">
+		<Reference Include="Avalonia.Remote.Protocol">
 			<HintPath>packages\Avalonia\Avalonia.Remote.Protocol.dll</HintPath>
 		</Reference>
-		<Reference Include=Avalonia.Vulkan">
+		<Reference Include="Avalonia.Vulkan">
 			<HintPath>packages\Avalonia\Avalonia.Vulkan.dll</HintPath>
-		</Reference>
-		<Reference Include=Microsoft.Build.Framework">
-			<HintPath>packages\Avalonia\Microsoft.Build.Framework.dll</HintPath>
 		</Reference>
 		<Reference Include="Avalonia.Controls.WebView">
 			<HintPath>packages\Avalonia.Controls.WebView.dll</HintPath>
