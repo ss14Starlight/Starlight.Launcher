@@ -25,7 +25,7 @@
 
 
 	<PropertyGroup>
-		<AvaloniaVersion>12.0.1</AvaloniaVersion> <!-- bump to whatever's latest on nuget.org -->
+		<AvaloniaVersion>12.1.0</AvaloniaVersion> <!-- bump to whatever's latest on nuget.org -->
 		<AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
 	</PropertyGroup>
 
@@ -45,52 +45,16 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Reference Include="Avalonia.Base">
-			<HintPath>packages\Avalonia\Avalonia.Base.dll</HintPath>
-		</Reference>
-		<Reference Include="Avalonia.Controls">
-			<HintPath>packages\Avalonia\Avalonia.Controls.dll</HintPath>
-		</Reference>
-		<Reference Include="Avalonia.DesignerSupport">
-			<HintPath>packages\Avalonia\Avalonia.DesignerSupport.dll</HintPath>
-		</Reference>
-		<Reference Include="Avalonia.Dialogs">
-			<HintPath>packages\Avalonia\Avalonia.Dialogs.dll</HintPath>
-		</Reference>
-		<Reference Include="Avalonia">
-			<HintPath>packages\Avalonia\Avalonia.dll</HintPath>
-		</Reference>
-		<Reference Include="Avalonia.Markup">
-			<HintPath>packages\Avalonia\Avalonia.Markup.dll</HintPath>
-		</Reference>
-		<Reference Include="Avalonia.Markup.Xaml">
-			<HintPath>packages\Avalonia\Avalonia.Markup.Xaml.dll</HintPath>
-		</Reference>
-		<Reference Include="Avalonia.Metal">
-			<HintPath>packages\Avalonia\Avalonia.Metal.dll</HintPath>
-		</Reference>
-		<Reference Include="Avalonia.MicroCom">
-			<HintPath>packages\Avalonia\Avalonia.MicroCom.dll</HintPath>
-		</Reference>
-		<Reference Include="Avalonia.OpenGL">
-			<HintPath>packages\Avalonia\Avalonia.OpenGL.dll</HintPath>
-		</Reference>
-		<Reference Include="Avalonia.Remote.Protocol">
-			<HintPath>packages\Avalonia\Avalonia.Remote.Protocol.dll</HintPath>
-		</Reference>
-		<Reference Include="Avalonia.Vulkan">
-			<HintPath>packages\Avalonia\Avalonia.Vulkan.dll</HintPath>
-		</Reference>
 		<Reference Include="Avalonia.Controls.WebView">
 			<HintPath>packages\Avalonia.Controls.WebView.dll</HintPath>
 		</Reference>
 		<Reference Include="Avalonia.Controls.WebView.Core">
 			<HintPath>packages\Avalonia.Controls.WebView.Core.dll</HintPath>
 		</Reference>
-		<PackageReference Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
-		<PackageReference Include="Avalonia.Themes.Fluent" Version="$(AvaloniaVersion)" />
-		<PackageReference Include="Avalonia.Fonts.Inter" Version="$(AvaloniaVersion)" />
-		<PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3" Condition="'$(Configuration)' == 'Debug'" />
+		<PackageReference Include="Avalonia" Version="12.1.0" />
+		<PackageReference Include="Avalonia.Desktop" Version="12.1.0" />
+		<PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.0" />
+		<PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.0" />
 
 		<PackageReference Include="WebView.Avalonia" Version="11.0.0.1" />
 		<PackageReference Include="WebView.Avalonia.Desktop" Version="11.0.0.1" />
