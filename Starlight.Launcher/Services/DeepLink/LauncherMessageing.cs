@@ -64,8 +64,23 @@ public class LauncherMessaging
     public void StopAndWait()
     {
         _pipeServerSelfDestruct.Cancel();
-        try { _ = _serverTask?.Wait(TimeSpan.FromSeconds(2)); }
-        catch (AggregateException) { }
+
+        _pipeServer?.Dispose();
+
+        if (_serverTask == null)
+            return;
+
+        try
+        {
+            _serverTask.Wait();
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (AggregateException ex) when (
+            ex.InnerExceptions.All(e => e is OperationCanceledException or ObjectDisposedException))
+        {
+        }
     }
 
     private async Task ServerTask(LauncherCommands lc)
