@@ -46,7 +46,12 @@
 
 	<ItemGroup>
 		<PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
-		<PackageReference Include="Avalonia.Controls.WebView" Version="$(AvaloniaVersion)" />
+		<Reference Include="Avalonia.Controls.WebView">
+			<HintPath>Avalonia.Controls.WebView.dll</HintPath>
+		</Reference>
+		<Reference Include="Avalonia.Controls.WebView.Core">
+			<HintPath>Avalonia.Controls.WebView.Core.dll</HintPath>
+		</Reference>
 		<PackageReference Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
 		<PackageReference Include="Avalonia.Themes.Fluent" Version="$(AvaloniaVersion)" />
 		<PackageReference Include="Avalonia.Fonts.Inter" Version="$(AvaloniaVersion)" />
