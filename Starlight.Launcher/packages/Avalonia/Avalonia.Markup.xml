@@ -1,0 +1,88 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Avalonia.Markup</name>
+    </assembly>
+    <members>
+        <member name="T:Avalonia.Data.Binding">
+            <summary>
+            Provides limited compatibility with the 11.x Binding class. Use <see cref="T:Avalonia.Data.ReflectionBinding"/>
+            for new code.
+            </summary>
+        </member>
+        <member name="T:Avalonia.Markup.Data.DelayedBinding">
+            <summary>
+            Provides delayed bindings for controls.
+            </summary>
+            <remarks>
+            The XAML engine applies its bindings in a delayed manner where bindings are only applied
+            when a control has finished initializing. This is done because applying bindings as soon
+            as controls are created means that long-form bindings (i.e. bindings that don't use the
+            `{Binding}` markup extension but instead use `&lt;Binding&gt;`) don't work, as the binding
+            is applied to the property before the properties on the `Binding` object are set. Looking 
+            at WPF it uses a similar mechanism for bindings that come from XAML.
+            </remarks>
+        </member>
+        <member name="M:Avalonia.Markup.Data.DelayedBinding.Add(Avalonia.StyledElement,Avalonia.AvaloniaProperty,Avalonia.Data.BindingBase)">
+            <summary>
+            Adds a delayed binding to a control.
+            </summary>
+            <param name="target">The control.</param>
+            <param name="property">The property on the control to bind to.</param>
+            <param name="binding">The binding.</param>
+        </member>
+        <member name="M:Avalonia.Markup.Data.DelayedBinding.Add(Avalonia.StyledElement,Avalonia.Data.Core.IPropertyInfo,System.Func{Avalonia.StyledElement,System.Object})">
+            <summary>
+            Adds a delayed value to a control.
+            </summary>
+            <param name="target">The control.</param>
+            <param name="property">The property on the control to bind to.</param>
+            <param name="value">A function which returns the value.</param>
+        </member>
+        <member name="M:Avalonia.Markup.Data.DelayedBinding.ApplyBindings(Avalonia.StyledElement)">
+            <summary>
+            Applies any delayed bindings to a control.
+            </summary>
+            <param name="control">The control.</param>
+        </member>
+        <member name="T:Avalonia.Markup.Parsers.ContainerQueryParser">
+            <summary>
+            Parses a <see cref="T:Avalonia.Styling.Selector"/> from text.
+            </summary>
+        </member>
+        <member name="M:Avalonia.Markup.Parsers.ContainerQueryParser.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:Avalonia.Markup.Parsers.ContainerQueryParser"/> class.
+            </summary>
+        </member>
+        <member name="M:Avalonia.Markup.Parsers.ContainerQueryParser.Parse(System.String)">
+            <summary>
+            Parses a <see cref="T:Avalonia.Styling.Selector"/> from a string.
+            </summary>
+            <param name="s">The string.</param>
+            <returns>The parsed selector.</returns>
+        </member>
+        <member name="T:Avalonia.Markup.Parsers.SelectorParser">
+            <summary>
+            Parses a <see cref="T:Avalonia.Styling.Selector"/> from text.
+            </summary>
+        </member>
+        <member name="M:Avalonia.Markup.Parsers.SelectorParser.#ctor(System.Func{System.String,System.String,System.Type})">
+            <summary>
+            Initializes a new instance of the <see cref="T:Avalonia.Markup.Parsers.SelectorParser"/> class.
+            </summary>
+            <param name="typeResolver">
+            The type resolver to use. The type resolver is a function which accepts two strings:
+            a type name and a XML namespace prefix and a type name, and should return the resolved
+            type or throw an exception.
+            </param>
+        </member>
+        <member name="M:Avalonia.Markup.Parsers.SelectorParser.Parse(System.String)">
+            <summary>
+            Parses a <see cref="T:Avalonia.Styling.Selector"/> from a string.
+            </summary>
+            <param name="s">The string.</param>
+            <returns>The parsed selector.</returns>
+        </member>
+    </members>
+</doc>

@@ -45,12 +45,53 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
+		<Reference Include="Avalonia.Base">
+			<HintPath>packages\Avalonia\Avalonia.Base.dll</HintPath>
+		</Reference>
+		<Reference Include="Avalonia.Build.Tasks">
+			<HintPath>packages\Avalonia\Avalonia.Build.Tasks.dll</HintPath>
+		</Reference>
+		<Reference Include="Avalonia.Controls">
+			<HintPath>packages\Avalonia\Avalonia.Controls.dll</HintPath>
+		</Reference>
+		<Reference Include="Avalonia.DesignerSupport">
+			<HintPath>packages\Avalonia\Avalonia.DesignerSupport.dll</HintPath>
+		</Reference>
+		<Reference Include=Avalonia.Dialogs">
+			<HintPath>packages\Avalonia\Avalonia.Dialogs.dll</HintPath>
+		</Reference>
+		<Reference Include="Avalonia">
+			<HintPath>packages\Avalonia\Avalonia.dll</HintPath>
+		</Reference>
+		<Reference Include=Avalonia.Markup">
+			<HintPath>packages\Avalonia\Avalonia.Markup.dll</HintPath>
+		</Reference>
+		<Reference Include=Avalonia.Markup.Xaml">
+			<HintPath>packages\Avalonia\Avalonia.Markup.Xaml.dll</HintPath>
+		</Reference>
+		<Reference Include=Avalonia.Metal">
+			<HintPath>packages\Avalonia\Avalonia.Metal.dll</HintPath>
+		</Reference>
+		<Reference Include=Avalonia.MicroCom">
+			<HintPath>packages\Avalonia\Avalonia.MicroCom.dll</HintPath>
+		</Reference>
+		<Reference Include=Avalonia.OpenGL">
+			<HintPath>packages\Avalonia\Avalonia.OpenGL.dll</HintPath>
+		</Reference>
+		<Reference Include=Avalonia.Remote.Protocol">
+			<HintPath>packages\Avalonia\Avalonia.Remote.Protocol.dll</HintPath>
+		</Reference>
+		<Reference Include=Avalonia.Vulkan">
+			<HintPath>packages\Avalonia\Avalonia.Vulkan.dll</HintPath>
+		</Reference>
+		<Reference Include=Microsoft.Build.Framework">
+			<HintPath>packages\Avalonia\Microsoft.Build.Framework.dll</HintPath>
+		</Reference>
 		<Reference Include="Avalonia.Controls.WebView">
-			<HintPath>Avalonia.Controls.WebView.dll</HintPath>
+			<HintPath>packages\Avalonia.Controls.WebView.dll</HintPath>
 		</Reference>
 		<Reference Include="Avalonia.Controls.WebView.Core">
-			<HintPath>Avalonia.Controls.WebView.Core.dll</HintPath>
+			<HintPath>packages\Avalonia.Controls.WebView.Core.dll</HintPath>
 		</Reference>
 		<PackageReference Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
 		<PackageReference Include="Avalonia.Themes.Fluent" Version="$(AvaloniaVersion)" />
