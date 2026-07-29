@@ -25,3 +25,7 @@
 .mud-main-content.has-bottom-nav .settings-reset-button {
     bottom: calc(32px + var(--bottom-nav-height));
 }
+
+.mud-tabs-tabbar {
+    border-radius: 10px;
+}
