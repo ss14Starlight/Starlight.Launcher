@@ -15,9 +15,16 @@ public sealed partial class SettingsService
     {
         var loaded = await LoadLoginsAsync();
         await _loginsLock.WaitAsync();
-        try { _logins = loaded; }
+        try
+        {
+            foreach (var (id, info) in loaded)
+                if (!_logins.ContainsKey(id))
+                    _logins[id] = info;
+        }
         finally { _ = _loginsLock.Release(); }
         _loginsLoaded = true;
+
+        ScheduleSaveInternal(ref _loginsSaveCts, SaveLoginsEncryptedAsync, "logins");
     }
 
     public Dictionary<Guid, LoginInfo> GetLogins()

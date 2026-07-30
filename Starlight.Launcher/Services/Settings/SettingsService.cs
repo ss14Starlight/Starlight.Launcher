@@ -1,9 +1,10 @@
+using System.Collections.Concurrent;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Robust.Launcher.Api.Models.Data;
 using Starlight.Launcher.WebUI.Models.Data;
 using Starlight.Launcher.WebUI.Models.ServerStatus;
 using Starlight.Launcher.WebUI.Models.Settings;
-using System.Text.Json;
 
 namespace Starlight.Launcher.Services.Settings;
 
@@ -56,6 +57,8 @@ public sealed partial class SettingsService : IAsyncDisposable
         WriteIndented = true
     };
 
+    private readonly ConcurrentDictionary<string, Task> _pendingSaves = new();
+
     #endregion
 
     public SettingsService(ILogger<SettingsService> logger, ILoginKeyProvider keyProvider)
@@ -90,7 +93,7 @@ public sealed partial class SettingsService : IAsyncDisposable
 
         var delay = _settings.SaveIntervalMs;
 
-        _ = Task.Run(async () =>
+        var task = Task.Run(async () =>
         {
             try
             {
@@ -103,6 +106,8 @@ public sealed partial class SettingsService : IAsyncDisposable
                 _logger.LogError(ex, "Auto-save failed for {what}", what);
             }
         });
+
+        _pendingSaves[what] = task;
     }
 
     private async Task SaveJsonAsync<T>(string path, SemaphoreSlim slim, T obj)
@@ -250,6 +255,14 @@ public sealed partial class SettingsService : IAsyncDisposable
         _keyLock.Dispose();
 
         GC.SuppressFinalize(this);
+    }
+
+    public async Task FlushPendingSavesAsync()
+    {
+        await SaveAllAsync();
+        var pending = _pendingSaves.Values.ToArray();
+        try { await Task.WhenAll(pending); }
+        catch { }
     }
 
     public async Task CacheFilters(ServerListFilters filters)

@@ -51,17 +51,28 @@ public partial class App : Application
             Services.GetRequiredService<TrayCoordinator>().Initialize();
 
             var commands = Services.GetRequiredService<LauncherCommands>();
+            var settings = Services.GetRequiredService<SettingsService>();
             var messaging = Services.GetRequiredService<LauncherMessaging>();
             commands.RunCommandTask();
             messaging.StartServerTask(commands);
 
             var window = new MainWindow(_blazorHost.Url) { Title = "Starlight.Launcher" };
 
-            window.Closing += async (_, _) =>
+            var flushing = false;
+
+            desktop.ShutdownRequested += async (_, e) =>
             {
+                if (flushing) return;
+                flushing = true;
+
+                e.Cancel = true;
+
                 commands.Shutdown();
                 messaging.StopAndWait();
                 await _blazorHost.DisposeAsync();
+
+                await settings.FlushPendingSavesAsync();
+                desktop.Shutdown();
             };
 
             desktop.MainWindow = window;

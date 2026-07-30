@@ -10,6 +10,7 @@ public class LauncherMessaging
     private LauncherActivationMessage[] _initialMessages = Array.Empty<LauncherActivationMessage>();
     private NamedPipeServerStream? _pipeServer;
     private readonly CancellationTokenSource _pipeServerSelfDestruct = new();
+    private static readonly Encoding _noBomUtf8 = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
     private Task? _serverTask;
 
     public bool SendMessagesOrClaim(LauncherActivationMessage[] messages, bool sendAnyway = true)
@@ -27,7 +28,7 @@ public class LauncherMessaging
             {
                 client.Connect(150);
 
-                using var writer = new StreamWriter(client, Encoding.UTF8, leaveOpen: true) { AutoFlush = true };
+                using var writer = new StreamWriter(client, _noBomUtf8, leaveOpen: true) { AutoFlush = true };
                 foreach (var message in messages)
                 {
                     var json = JsonSerializer.Serialize(message);
@@ -95,7 +96,6 @@ public class LauncherMessaging
 
         if (_pipeServer == null) return;
 
-        var reader = new StreamReader(_pipeServer, Encoding.UTF8);
         try
         {
             while (true)
@@ -103,12 +103,16 @@ public class LauncherMessaging
                 await _pipeServer.WaitForConnectionAsync(token).ConfigureAwait(false);
                 if (token.IsCancellationRequested) break;
 
+                var reader = new StreamReader(_pipeServer, _noBomUtf8, detectEncodingFromByteOrderMarks: true);
+
                 try
                 {
                     while (true)
                     {
                         var line = await reader.ReadLineAsync().WaitAsync(token).ConfigureAwait(false);
                         if (line is null) break;
+
+                        line = line.TrimStart('\uFEFF');
 
                         Log.Information("IPC: received raw line: {line}", line);
 
