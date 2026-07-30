@@ -21,7 +21,6 @@
 
 <p align="center">
   <img alt=".NET" src="https://img.shields.io/badge/.NET-11.0-512BD4?logo=dotnet">
-  <img alt="MAUI" src="https://img.shields.io/badge/Powered%20by-.NET%20MAUI-512BD4?logo=dotnet">
   <img alt="Blazor" src="https://img.shields.io/badge/UI-Blazor-5C2D91?logo=blazor">
   <img alt="Windows" src="https://img.shields.io/badge/Platform-Windows-0078D6?logo=windows">
   <img alt="License" src="https://img.shields.io/badge/License-MIT-green">
@@ -78,7 +77,6 @@ Created by the **Starlight Team**, it focuses on:
 ## 🛠 Built With
 
 - [.NET](https://dotnet.microsoft.com/) - core framework
-- [.NET MAUI](https://learn.microsoft.com/dotnet/maui/) - cross-platform app framework
 - [Blazor Hybrid](https://learn.microsoft.com/aspnet/core/blazor/hybrid/) - UI layer
 - Space Station 14 Launcher API - server/auth integration
 
