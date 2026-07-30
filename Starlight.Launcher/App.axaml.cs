@@ -88,10 +88,23 @@ public partial class App : Application
                 }
             };
 
+            WindowState previousState = window.WindowState;
+
             window.PropertyChanged += (_, e) =>
             {
-                if (settings.GetSettings().CollapseInTrayOnMinimize && e.Property == Window.WindowStateProperty && window.WindowState == WindowState.Minimized)
-                    Avalonia.Threading.Dispatcher.UIThread.Post(Services.GetRequiredService<INativeTray>().HideWindow);
+                if (e.Property != Window.WindowStateProperty)
+                    return;
+
+                var current = window.WindowState;
+
+                if (previousState != WindowState.Minimized &&
+                    current == WindowState.Minimized)
+                {
+                    if (settings.GetSettings().CollapseInTrayOnMinimize)
+                        Services.GetRequiredService<INativeTray>().HideWindow();
+                }
+
+                previousState = current;
             };
 
             desktop.MainWindow = window;
