@@ -1,4 +1,4 @@
-﻿using Starlight.Launcher.Models.Data;
+﻿using Starlight.Launcher.WebUI.Models.Data;
 
 namespace Starlight.Launcher.Services.Settings;
 
@@ -13,7 +13,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _favoritesLock.Release();
+            _ = _favoritesLock.Release();
         }
     }
 
@@ -27,7 +27,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _favoritesLock.Release();
+            _ = _favoritesLock.Release();
         }
 
         FavoritesChanged?.Invoke();
@@ -44,7 +44,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _favoritesLock.Release();
+            _ = _favoritesLock.Release();
         }
     }
 
@@ -58,7 +58,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _favoritesLock.Release();
+            _ = _favoritesLock.Release();
         }
 
         FavoritesChanged?.Invoke();

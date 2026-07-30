@@ -1,6 +1,7 @@
 using DiscordRPC;
 using Serilog;
 using Starlight.Launcher.Services.Settings;
+using Starlight.Launcher.WebUI.Models.DiscordRichPresence;
 
 namespace Starlight.Launcher.Services.Discord;
 
@@ -13,8 +14,6 @@ public sealed partial class DiscordRichPresence : IDisposable
     private string _currentServerName = "";
 
     private readonly DateTime _startedAt = DateTime.UtcNow;
-
-    private DateTime _lastUpdate;
 
     public DiscordRichPresence(SettingsService settingsService)
     {
@@ -39,7 +38,7 @@ public sealed partial class DiscordRichPresence : IDisposable
 
     public void Initialize()
     {
-        _client?.Initialize();
+        _ = _client?.Initialize();
         UpdatePresence(CurrentPresenceState); // Initial presence update to set the starting state
     }
 
@@ -80,16 +79,6 @@ public sealed partial class DiscordRichPresence : IDisposable
         };
         CurrentPresenceState = state;
         _currentServerName = serverName ?? _currentServerName;
-        _lastUpdate = DateTime.UtcNow;
         _client.SetPresence(presence);
     }
-}
-
-public enum PresenceState
-{
-    Idle, // Home screen, not doing anything
-    SearchingServers, // Browsing server list
-    SettingUp, // Configuring settings, etc.
-    DownloadingContent,
-    LaunchingGame
 }

@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+    <PropertyGroup>
+        <TargetFramework>net11.0</TargetFramework>
+        <LangVersion>14</LangVersion>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <IsPackable>false</IsPackable>
+        <RootNamespace>Starlight.Launcher.WebUI</RootNamespace>
+        <StaticWebAssetBasePath>/</StaticWebAssetBasePath>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="MudBlazor" Version="9.7.0" />
+      <PackageReference Include="MudBlazor.Markdown" Version="9.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <SupportedPlatform Include="browser" />
+    </ItemGroup>
+
+	<ItemGroup>
+		<!-- First only for models, second only for analyze  -->
+		<ProjectReference Include="..\Robust.Launcher.Api\Robust.Launcher.Api.csproj" />
+		<ProjectReference Include="..\Starlight.Launcher.Analyzer\Starlight.Launcher.Analyzer.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+	</ItemGroup>
+</Project>

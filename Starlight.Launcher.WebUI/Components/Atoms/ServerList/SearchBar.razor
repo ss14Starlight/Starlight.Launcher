@@ -1,0 +1,101 @@
+@using Starlight.Launcher.WebUI.Models.ServerStatus;
+@using Starlight.Launcher.WebUI.Localization;
+
+@inherits LocalizedComponentBase
+
+<div class="server-toolbar__searchbar">
+    <div class="server-toolbar__searchbar-left">
+
+        <MudTextField T="string"
+                      Value="Filters.SearchQuery"
+                      ValueChanged="OnSearchChanged"
+                      Placeholder="@L["servers-list-search-bar-placeholder"]"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      Clearable="true"
+                      Immediate="true"
+                      Class="server-toolbar__search server-toolbar__pill" />
+
+        <MudSelect T="ServerSortMode"
+                   Value="Filters.SortBy"
+                   ValueChanged="OnSortChanged"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   Dense="true"
+                   Class="server-toolbar__sort server-toolbar__pill">
+            <MudSelectItem Value="ServerSortMode.Players">@L["servers-list-search-bar-players"]</MudSelectItem>
+            <MudSelectItem Value="ServerSortMode.Name">@L["servers-list-search-bar-name"]</MudSelectItem>
+            <MudSelectItem Value="ServerSortMode.Ping">@L["servers-list-search-bar-ping"]</MudSelectItem>
+        </MudSelect>
+
+        <div class="server-toolbar__chips">
+            <button type="button"
+                    class="server-toolbar__chip @(Filters.HideEmpty ? "is-active" : "")"
+                    aria-pressed="@Filters.HideEmpty"
+                    @onclick="ToggleHideEmpty">
+                @L["server-list-hide-empty"]
+            </button>
+
+            <button type="button"
+                    class="server-toolbar__chip @(Filters.HideFull ? "is-active" : "")"
+                    aria-pressed="@Filters.HideFull"
+                    @onclick="ToggleHideFull">
+                @L["server-list-hide-full"]
+            </button>
+
+            <button type="button"
+                    class="server-toolbar__chip @(Filters.HideAdult ? "is-active" : "")"
+                    aria-pressed="@Filters.HideAdult"
+                    @onclick="ToggleHideAdult">
+                @L["server-list-hide-adult"]
+            </button>
+
+            <button type="button"
+                    class="server-toolbar__chip server-toolbar__chip--danger @(Filters.OnlyAdult ? "is-active" : "")"
+                    aria-pressed="@Filters.OnlyAdult"
+                    @onclick="ToggleOnlyAdult">
+                @L["server-list-only-adult"]
+            </button>
+        </div>
+
+    </div>
+
+    <div class="server-toolbar__searchbar-right">
+
+        @{
+            var (statusText, statusColor) = GetStatusDisplay();
+        }
+
+        <MudTooltip Text="@statusText">
+            <MudIcon Icon="@Icons.Material.Filled.Circle"
+                     Color="statusColor"
+                     Size="Size.Small"
+                     Class="server-toolbar__status-dot" />
+        </MudTooltip>
+
+        <MudText Typo="Typo.caption" Class="server-toolbar__counter">
+            @FilteredCount<span class="server-toolbar__counter-slash">/</span>@TotalCount
+        </MudText>
+
+        @if (TagsExpandButton)
+        {
+            <MudIconButton Icon="@(Filters.TagsExpanded ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.Tune)"
+                           Color="@(_hasActiveTagFilters ? Color.Primary : Color.Default)"
+                           Variant="Variant.Text"
+                           Size="Size.Small"
+                           OnClick="ToggleTagsExpanded"
+                           Class="server-toolbar__icon-btn" />
+        }
+
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                       Color="Color.Default"
+                       Variant="Variant.Text"
+                       Size="Size.Small"
+                       Disabled="@_isRefreshing"
+                       OnClick="OnRefresh"
+                       Class="@("server-toolbar__icon-btn " + (_isRefreshing ? "mud-spinner" : ""))" />
+    </div>
+
+</div>

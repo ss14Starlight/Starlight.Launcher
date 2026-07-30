@@ -83,6 +83,12 @@ dotnet_code_quality_unused_parameters = all:warning
 
 # Suppression preferences
 dotnet_remove_unnecessary_suppression_exclusions = none
+dotnet_diagnostic.IDE0079.severity = warning # flag suppressions that are no longer needed - complements the line above
+
+# Unused code
+dotnet_diagnostic.IDE0005.severity = warning # unused using directives - the actual ask; needs EnforceCodeStyleInBuild=true in csproj to fire during `dotnet build`, not just in the IDE
+dotnet_diagnostic.IDE0051.severity = warning # private member is never used
+dotnet_diagnostic.IDE0052.severity = warning # private member's value is never read (assigned but unused)
 
 # New line preferences
 dotnet_style_allow_multiple_blank_lines_experimental = false:warning
@@ -144,8 +150,8 @@ csharp_style_prefer_range_operator = true:warning
 csharp_style_prefer_tuple_swap = true:warning
 csharp_style_prefer_utf8_string_literals = true
 csharp_style_throw_expression = true:warning
-csharp_style_unused_value_assignment_preference = discard_variable
-csharp_style_unused_value_expression_statement_preference = discard_variable
+csharp_style_unused_value_assignment_preference = discard_variable:warning
+csharp_style_unused_value_expression_statement_preference = discard_variable:warning
 
 # 'using' directive preferences
 csharp_using_directive_placement = outside_namespace:warning
@@ -287,6 +293,9 @@ dotnet_naming_style.begin_s_.required_prefix = s_
 dotnet_naming_style.begin_s_.required_suffix =
 dotnet_naming_style.begin_s_.word_separator =
 dotnet_naming_style.begin_s_.capitalization = camel_case
+
+# I don't want to comment every shit
+dotnet_diagnostic.CS1591.severity = none
 
 [*.{cs,vb}]
 dotnet_diagnostic.CA1873.severity = none

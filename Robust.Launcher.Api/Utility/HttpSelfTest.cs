@@ -230,13 +230,11 @@ internal static class HttpSelfTest
                 var subData = data.Slice(chunkOffset, remainingSize);
 
                 foreach (var b in subData)
-                {
-                    sb.Append($"{b:X2} ");
-                }
+                    _ = sb.Append($"{b:X2} ");
 
                 _log($"{chunkOffset:X16} {sb}");
 
-                sb.Clear();
+                _ = sb.Clear();
             }
         }
 

@@ -1,0 +1,17 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Starlight.Launcher.App"
+             RequestedThemeVariant="Default">
+
+    <Application.Styles>
+        <FluentTheme />
+    </Application.Styles>
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <!-- fonts previously loaded via MauiProgram's ConfigureFonts(...) -
+                 register them here as AvaloniaResource + FontFamily, see notes.txt -->
+        </ResourceDictionary>
+    </Application.Resources>
+
+</Application>

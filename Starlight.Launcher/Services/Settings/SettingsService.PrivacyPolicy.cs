@@ -1,4 +1,4 @@
-﻿using Starlight.Launcher.Models.Data;
+﻿using Starlight.Launcher.WebUI.Models.Data;
 
 namespace Starlight.Launcher.Services.Settings;
 
@@ -20,7 +20,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _settingsLock.Release();
+            _ = _settingsLock.Release();
         }
     }
 
@@ -36,7 +36,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _settingsLock.Release();
+            _ = _settingsLock.Release();
         }
 
         ScheduleSaveInternal(ref _settingsSaveCts, () => SaveJsonAsync(_filePath, _settingsLock, _settings), "settings");
@@ -52,7 +52,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _settingsLock.Release();
+            _ = _settingsLock.Release();
         }
 
         ScheduleSaveInternal(ref _settingsSaveCts, () => SaveJsonAsync(_filePath, _settingsLock, _settings), "settings");

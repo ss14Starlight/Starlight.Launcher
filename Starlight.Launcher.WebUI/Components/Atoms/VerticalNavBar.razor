@@ -1,0 +1,30 @@
+@using Starlight.Launcher.WebUI.Localization;
+@using Starlight.Launcher.WebUI.Bridge;
+@inject IBridge Bridge;
+
+@inherits LocalizedComponentBase
+
+<MudDrawerHeader>
+    <MudText Typo="Typo.h5" Class="ml-3">STARLIGHT</MudText>
+    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" Class="ml-2">
+        @Bridge.GetVersion()
+    </MudChip>
+</MudDrawerHeader>
+<MudNavMenu Dense="true" Margin="Margin.Normal" Rounded="true" Color="Color.Primary" Class="pa-2">
+    <MudNavLink Icon="@Icons.Material.Filled.Home" Href="/" Match="NavLinkMatch.All">
+        @L["main-layout-home-tab"]
+    </MudNavLink>
+    <MudNavLink Icon="@Icons.Material.Filled.Computer" Href="/servers" Match="NavLinkMatch.All">
+        @L["main-layout-servers-tab"]
+    </MudNavLink>
+    <MudNavLink Icon="@Icons.Material.Filled.Link" Href="/hub" Match="NavLinkMatch.All">
+        @L["main-layout-hub-tab"]
+    </MudNavLink>
+    <MudNavLink Icon="@Icons.Material.Filled.Settings" Href="/settings" Match="NavLinkMatch.All">
+        @L["main-layout-settings-tab"]
+    </MudNavLink>
+</MudNavMenu>
+<MudSpacer />
+<MudNavLink Icon="@Icons.Material.Filled.People" Href="/auth" Match="NavLinkMatch.All">
+    @L["main-layout-auth-tab"]
+</MudNavLink>

@@ -13,7 +13,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _enginesLock.Release();
+            _ = _enginesLock.Release();
         }
     }
 
@@ -26,7 +26,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _enginesLock.Release();
+            _ = _enginesLock.Release();
         }
 
         EnginesChanged?.Invoke();
@@ -39,11 +39,11 @@ public sealed partial class SettingsService
         _enginesLock.Wait();
         try
         {
-            _engineInstallations.Remove(version);
+            _ = _engineInstallations.Remove(version);
         }
         finally
         {
-            _enginesLock.Release();
+            _ = _enginesLock.Release();
         }
 
         EnginesChanged?.Invoke();
@@ -60,7 +60,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _enginesLock.Release();
+            _ = _enginesLock.Release();
         }
 
         EnginesChanged?.Invoke();
@@ -77,7 +77,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _enginesLock.Release();
+            _ = _enginesLock.Release();
         }
     }
 
@@ -90,7 +90,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _enginesLock.Release();
+            _ = _enginesLock.Release();
         }
 
         EnginesChanged?.Invoke();

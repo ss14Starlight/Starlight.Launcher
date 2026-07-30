@@ -1,9 +1,10 @@
+using System.Collections.Concurrent;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Robust.Launcher.Api.Models.Data;
-using Starlight.Launcher.Models.Data;
-using Starlight.Launcher.Models.ServerStatus;
-using Starlight.Launcher.Models.Settings;
-using System.Text.Json;
+using Starlight.Launcher.WebUI.Models.Data;
+using Starlight.Launcher.WebUI.Models.ServerStatus;
+using Starlight.Launcher.WebUI.Models.Settings;
 
 namespace Starlight.Launcher.Services.Settings;
 
@@ -56,6 +57,8 @@ public sealed partial class SettingsService : IAsyncDisposable
         WriteIndented = true
     };
 
+    private readonly ConcurrentDictionary<string, Task> _pendingSaves = new();
+
     #endregion
 
     public SettingsService(ILogger<SettingsService> logger, ILoginKeyProvider keyProvider)
@@ -69,7 +72,6 @@ public sealed partial class SettingsService : IAsyncDisposable
         _favoritesPath = Path.Combine(_settings.DirLauncherData, "favorites.json");
         _enginesPath = Path.Combine(_settings.DirLauncherData, "engines.json");
         _modulesPath = Path.Combine(_settings.DirLauncherData, "modules.json");
-        Task.Run(() => InitializeLoginsAsync());
         _favorites = LoadJson(_favoritesPath, new List<FavoriteServer>());
         _engineInstallations = LoadJson(_enginesPath, new List<InstalledEngineVersion>()).ToDictionary(x => x.Version);
         _engineModules = LoadJson(_modulesPath, new HashSet<(string Version, string Name)>());
@@ -90,7 +92,7 @@ public sealed partial class SettingsService : IAsyncDisposable
 
         var delay = _settings.SaveIntervalMs;
 
-        _ = Task.Run(async () =>
+        var task = Task.Run(async () =>
         {
             try
             {
@@ -103,6 +105,8 @@ public sealed partial class SettingsService : IAsyncDisposable
                 _logger.LogError(ex, "Auto-save failed for {what}", what);
             }
         });
+
+        _pendingSaves[what] = task;
     }
 
     private async Task SaveJsonAsync<T>(string path, SemaphoreSlim slim, T obj)
@@ -141,7 +145,7 @@ public sealed partial class SettingsService : IAsyncDisposable
 
     private static async Task WriteFileSafeAsync(string content, string dir, string filePath)
     {
-        Directory.CreateDirectory(dir);
+        _ = Directory.CreateDirectory(dir);
 
         var tempFile = filePath + ".tmp";
         await File.WriteAllTextAsync(tempFile, content);
@@ -164,7 +168,7 @@ public sealed partial class SettingsService : IAsyncDisposable
         }
         finally
         {
-            _settingsLock.Release();
+            _ = _settingsLock.Release();
         }
     }
 
@@ -184,7 +188,7 @@ public sealed partial class SettingsService : IAsyncDisposable
         }
         finally
         {
-            _settingsLock.Release();
+            _ = _settingsLock.Release();
         }
 
         NotifySettingsChanged(old, settings);
@@ -207,7 +211,7 @@ public sealed partial class SettingsService : IAsyncDisposable
         }
         finally
         {
-            _settingsLock.Release();
+            _ = _settingsLock.Release();
         }
     }
 
@@ -225,7 +229,7 @@ public sealed partial class SettingsService : IAsyncDisposable
         }
         finally
         {
-            _settingsLock.Release();
+            _ = _settingsLock.Release();
         }
 
         NotifySettingsChanged(old, settings);
@@ -252,6 +256,14 @@ public sealed partial class SettingsService : IAsyncDisposable
         GC.SuppressFinalize(this);
     }
 
+    public async Task FlushPendingSavesAsync()
+    {
+        await SaveAllAsync();
+        var pending = _pendingSaves.Values.ToArray();
+        try { await Task.WhenAll(pending); }
+        catch { }
+    }
+
     public async Task CacheFilters(ServerListFilters filters)
     {
         AppSettings old, updated;
@@ -262,7 +274,7 @@ public sealed partial class SettingsService : IAsyncDisposable
             updated = _settings with { CachedFilters = filters };
             _settings = updated;
         }
-        finally { _settingsLock.Release(); }
+        finally { _ = _settingsLock.Release(); }
 
         NotifySettingsChanged(old, updated);
         ScheduleSaveInternal(ref _settingsSaveCts, () => SaveJsonAsync(_filePath, _settingsLock, _settings), "settings");

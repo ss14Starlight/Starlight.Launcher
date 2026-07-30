@@ -13,7 +13,7 @@ sealed partial class SettingsService
         }
         finally
         {
-            _modulesLock.Release();
+            _ = _modulesLock.Release();
         }
     }
 
@@ -22,11 +22,11 @@ sealed partial class SettingsService
         _modulesLock.Wait();
         try
         {
-            _engineModules.Add((module.Version, module.Name));
+            _ = _engineModules.Add((module.Version, module.Name));
         }
         finally
         {
-            _modulesLock.Release();
+            _ = _modulesLock.Release();
         }
 
         ModulesChanged?.Invoke();
@@ -39,11 +39,11 @@ sealed partial class SettingsService
         _modulesLock.Wait();
         try
         {
-            _engineModules.Remove(module);
+            _ = _engineModules.Remove(module);
         }
         finally
         {
-            _modulesLock.Release();
+            _ = _modulesLock.Release();
         }
 
         EnginesChanged?.Invoke();
@@ -60,7 +60,7 @@ sealed partial class SettingsService
         }
         finally
         {
-            _modulesLock.Release();
+            _ = _modulesLock.Release();
         }
 
         ModulesChanged?.Invoke();
@@ -77,7 +77,7 @@ sealed partial class SettingsService
         }
         finally
         {
-            _modulesLock.Release();
+            _ = _modulesLock.Release();
         }
     }
 
@@ -90,7 +90,7 @@ sealed partial class SettingsService
         }
         finally
         {
-            _modulesLock.Release();
+            _ = _modulesLock.Release();
         }
 
         ModulesChanged?.Invoke();

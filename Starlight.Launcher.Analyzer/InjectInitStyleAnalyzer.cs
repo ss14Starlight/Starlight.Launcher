@@ -20,7 +20,7 @@ public sealed class InjectStyleAnalyzer : DiagnosticAnalyzer
         DiagnosticId,
         title: "[Inject] property style",
 #pragma warning disable RS1032
-        messageFormat: "The [Inject] property '{0}' must be 'private ... = default!;'",
+        messageFormat: "The [Inject] property '{0}' must be private or protected and should have 'default!' as value!",
 #pragma warning restore RS1032
         category: "Style",
         defaultSeverity: DiagnosticSeverity.Warning,

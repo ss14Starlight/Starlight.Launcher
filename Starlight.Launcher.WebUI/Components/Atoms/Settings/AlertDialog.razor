@@ -1,0 +1,34 @@
+@using Starlight.Launcher.WebUI.Localization;
+
+@inherits LocalizedComponentBase
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.body1">
+            @L["settings-development-tab-alert-description"]
+        </MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton onclick="Cancel" Color="Color.Secondary">@L["general-cancel"]</MudButton>
+        <MudButton OnClick="Success" Color="Color.Primary">@L["general-ok"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    public event Action? OnCancel;
+    public event Action? OnSuccess;
+
+    private void Success()
+    {
+        OnSuccess?.Invoke();
+        MudDialog.Close();
+    }
+
+    private void Cancel()
+    {
+        OnCancel?.Invoke();
+        MudDialog.Cancel();
+    }
+}

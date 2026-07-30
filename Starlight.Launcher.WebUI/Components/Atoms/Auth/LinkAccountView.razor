@@ -1,0 +1,50 @@
+@using Starlight.Launcher.WebUI.Components.Pages
+@using Starlight.Launcher.WebUI.Localization;
+
+@inherits LocalizedComponentBase
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+    <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Class="icon-btn-ghost"
+                    OnClick="() => OnModeSwitch?.Invoke(Mode.AccountList)" Disabled="Busy" />
+    <MudText Typo="Typo.h5">@L["auth-menu-link-account-title"]</MudText>
+</MudStack>
+
+<MudText Class="mb-3 mud-text-secondary">
+    @L["auth-menu-link-account-hint"]
+</MudText>
+
+<MudTextField @bind-Value="Username"
+                Label="@L["auth-menu-username-label"]"
+                Variant="Variant.Outlined" Immediate="true" Disabled="Busy" Class="mb-3 auth-field" />
+
+<MudTextField @bind-Value="Password"
+                Label="@L["auth-menu-password-label"]"
+                InputType="InputType.Password"
+                Variant="Variant.Outlined" Immediate="true" Disabled="Busy" Class="mb-3 auth-field"
+                OnKeyDown="OnLinkKey" />
+
+@if (TfaRequired)
+{
+    <MudTextField @bind-Value="TfaCode"
+                    Label="@L["auth-menu-2fa-label"]"
+                    Variant="Variant.Outlined" Immediate="true" Disabled="Busy" Class="mb-3 auth-field"
+                    OnKeyDown="OnLinkKey" />
+}
+
+@if (!string.IsNullOrEmpty(Error))
+{
+    <MudAlert Severity="Severity.Error" Class="mb-3 error-alert">@Error</MudAlert>
+}
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary"
+            FullWidth="true" Disabled="Busy" OnClick="DoLinkAccount" Class="cta-btn-primary">
+    @if (Busy)
+    {
+        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+        <span>@L["auth-menu-link-account-busy"]</span>
+    }
+    else
+    {
+        <span>@L["auth-menu-link-account-confirm"]</span>
+    }
+</MudButton>

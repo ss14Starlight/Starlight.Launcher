@@ -41,7 +41,7 @@ internal sealed class ContentDbFileApi : IFileApi, IDisposable
 
         // Make sure to have a read transaction on every database connection
         // so that the launcher can't delete anything from underneath us if the user does anything.
-        sqlite3_exec(db, "BEGIN");
+        _ = sqlite3_exec(db, "BEGIN");
 
         CheckThrowSqliteErr(db, err);
 
@@ -61,7 +61,7 @@ internal sealed class ContentDbFileApi : IFileApi, IDisposable
                 null);
             CheckThrowSqliteErr(db, err);
 
-            sqlite3_exec(db, "BEGIN");
+            _ = sqlite3_exec(db, "BEGIN");
 
             _dbConnections.Add(new ConPoolEntry(db, ZSTD_createDCtx(), InitBlob()));
         }
@@ -86,11 +86,11 @@ internal sealed class ContentDbFileApi : IFileApi, IDisposable
             """,
             out var stmt);
         CheckThrowSqliteErr(db, err);
-        sqlite3_bind_int(stmt, 1, Environment.ProcessId);
-        sqlite3_bind_text(stmt, 2, Process.GetCurrentProcess().MainModule?.FileName ?? "");
-        sqlite3_bind_int64(stmt, 3, contentVersion);
+        _ = sqlite3_bind_int(stmt, 1, Environment.ProcessId);
+        _ = sqlite3_bind_text(stmt, 2, Process.GetCurrentProcess().MainModule?.FileName ?? "");
+        _ = sqlite3_bind_int64(stmt, 3, contentVersion);
 
-        sqlite3_step(stmt);
+        _ = sqlite3_step(stmt);
 
         stmt.Dispose();
     }
@@ -98,7 +98,7 @@ internal sealed class ContentDbFileApi : IFileApi, IDisposable
     private static void ClearRunningClient(sqlite3 db)
     {
         // Ensure we are not in a transaction anymore.
-        sqlite3_exec(db, "ROLLBACK");
+        _ = sqlite3_exec(db, "ROLLBACK");
 
         var err = sqlite3_prepare_v2(
             db,
@@ -108,9 +108,9 @@ internal sealed class ContentDbFileApi : IFileApi, IDisposable
             """,
             out var stmt);
         CheckThrowSqliteErr(db, err);
-        sqlite3_bind_int(stmt, 1, Environment.ProcessId);
+        _ = sqlite3_bind_int(stmt, 1, Environment.ProcessId);
 
-        sqlite3_step(stmt);
+        _ = sqlite3_step(stmt);
 
         stmt.Dispose();
     }
@@ -128,7 +128,7 @@ internal sealed class ContentDbFileApi : IFileApi, IDisposable
             out var stmt);
         CheckThrowSqliteErr(db, err);
 
-        sqlite3_bind_int64(stmt, 1, version);
+        _ = sqlite3_bind_int64(stmt, 1, version);
 
         while ((err = sqlite3_step(stmt)) == SQLITE_ROW)
         {
@@ -257,7 +257,7 @@ internal sealed class ContentDbFileApi : IFileApi, IDisposable
             if (entry != null)
                 _dbConnections.Add(entry);
 
-            _dbConnectionsSemaphore.Release();
+            _ = _dbConnectionsSemaphore.Release();
         }
     }
 
@@ -302,7 +302,7 @@ internal sealed class ContentDbFileApi : IFileApi, IDisposable
         }
         finally
         {
-            ZSTD_DCtx_reset(context, ZSTD_ResetDirective.ZSTD_reset_session_only);
+            _ = ZSTD_DCtx_reset(context, ZSTD_ResetDirective.ZSTD_reset_session_only);
             ArrayPool<byte>.Shared.Return(buffer);
         }
     }

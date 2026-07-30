@@ -4,6 +4,7 @@
     <OutputType>WinExe</OutputType>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	  <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('FreeBSD'))">
@@ -20,7 +21,7 @@
   <ItemGroup>
 	  <!-- I'm not making a new shared project for a single enum. -->
 	  <Compile Include="../Robust.Launcher.Api/Models/ContentManagement/ContentCompressionScheme.cs" />
-	  <Compile Include="../Starlight.Launcher/Utility/ZStd.cs" />
+	  <Compile Include="../Starlight.Launcher/Helpers/ZStd.cs" />
 	  <Compile Include="../Robust.Launcher.Api/Utility/Libc.cs" />
 	  <Compile Include="../Robust.Launcher.Api/Utility/SqliteBlobStream.cs" />
   </ItemGroup>

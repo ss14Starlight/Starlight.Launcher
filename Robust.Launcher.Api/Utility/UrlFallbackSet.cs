@@ -56,7 +56,7 @@ public sealed class UrlFallbackSet
     public async Task<T?> GetFromJsonAsync<T>(HttpClient client, CancellationToken cancel = default) where T : notnull
     {
         var msg = await GetAsync(client, cancel).ConfigureAwait(false);
-        msg.EnsureSuccessStatusCode();
+        _ = msg.EnsureSuccessStatusCode();
 
         return await msg.Content.ReadFromJsonAsync<T>(cancel).ConfigureAwait(false);
     }
@@ -64,7 +64,7 @@ public sealed class UrlFallbackSet
     public async Task<byte[]> GetByteArrayAsync(HttpClient client, CancellationToken cancel = default)
     {
         var msg = await GetAsync(client, cancel).ConfigureAwait(false);
-        msg.EnsureSuccessStatusCode();
+        _ = msg.EnsureSuccessStatusCode();
 
         return await msg.Content.ReadAsByteArrayAsync(cancel).ConfigureAwait(false);
     }
@@ -72,7 +72,7 @@ public sealed class UrlFallbackSet
     public async Task<string> GetStringAsync(HttpClient client, CancellationToken cancel = default)
     {
         var msg = await GetAsync(client, cancel).ConfigureAwait(false);
-        msg.EnsureSuccessStatusCode();
+        _ = msg.EnsureSuccessStatusCode();
 
         return await msg.Content.ReadAsStringAsync(cancel).ConfigureAwait(false);
     }

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html id="high" lang="en">
+<head>
+    <ImportMap />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Starlight.Launcher</title>
+    <base href="/" />
+
+    <script>(function () {
+            var dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.setAttribute('data-theme', dark ? 'emerald-dark' : 'emerald-light');
+        })();</script>
+
+    <link rel="stylesheet" href="@Assets["Starlight.Launcher.WebUI.styles.css"]" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet" />
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <link href="_content/MudBlazor.Markdown/MudBlazor.Markdown.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="css/themes.css" />
+    <link rel="stylesheet" href="@Assets["app.css"]" />
+    <link rel="icon" href="data:,">
+    <HeadOutlet @rendermode="InteractiveServer" />
+</head>
+<body id="priority">
+    <Routes @rendermode="InteractiveServer" />
+
+    <div class="status-bar-safe-area"></div>
+
+    <div id="app">
+        <div class="sl-splash">
+            <div class="sl-splash__brand">Starlight</div>
+            <div class="sl-splash__spinner"></div>
+            <div class="sl-splash__text">Loading…</div>
+        </div>
+    </div>
+
+    <div id="blazor-error-ui" data-nosnippet>
+        An unhandled error has occurred.
+        <a href="." class="reload">Reload</a>
+        <span class="dismiss">🗙</span>
+    </div>
+
+    <script src="_framework/blazor.web.js"></script>
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    <script src="_content/MudBlazor.Markdown/MudBlazor.Markdown.min.js"></script>
+    <script src="@Assets["js/theme.js"]"></script>
+    <script src="@Assets["js/scripts.js"]"></script>
+</body>
+</html>

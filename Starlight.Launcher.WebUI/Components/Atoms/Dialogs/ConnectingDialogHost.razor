@@ -1,0 +1,30 @@
+@using Starlight.Launcher.WebUI.Bridge;
+
+@implements IDisposable
+@inject IDialogService DialogService
+@inject IBridge Bridge
+
+@code {
+    protected override void OnInitialized()
+        => Bridge.ConnectRequested += OnConnectRequested;
+
+    private Task OnConnectRequested(string address) => InvokeAsync(async () =>
+    {
+        var parameters = new DialogParameters<ConnectingDialog>
+        {
+            { x => x.Address, address },
+            { x => x.Title, null }
+        };
+        var options = new DialogOptions
+        {
+            BackdropClick = false,
+            CloseOnEscapeKey = false,
+            CloseButton = false,
+            MaxWidth = MaxWidth.ExtraSmall,
+            FullWidth = true
+        };
+        await DialogService.ShowAsync<ConnectingDialog>("Connecting", parameters, options);
+    });
+
+    public void Dispose() => Bridge.ConnectRequested -= OnConnectRequested;
+}

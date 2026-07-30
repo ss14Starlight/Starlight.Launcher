@@ -1,0 +1,105 @@
+@using Starlight.Launcher.WebUI.Components.Pages
+@using Starlight.Launcher.WebUI.Localization;
+
+@inherits LocalizedComponentBase
+
+<MudStack Row = "true" AlignItems = "AlignItems.Center" Class = "mb-4">
+    @if (_bridge.GetLoginEntries().Count > 0)
+    {
+        <MudIconButton Icon = "@Icons.Material.Filled.ArrowBack" Class="icon-btn-ghost"
+            OnClick = "() => OnModeSwitch?.Invoke(Mode.AccountList)"
+            Disabled = "Busy"/>
+    }
+
+    <MudText Typo="Typo.h5">
+        @(RelogUserId.HasValue ? L["auth-menu-signin-login-again"] : L["auth-menu-signin-login"])
+    </MudText>
+</MudStack>
+
+<MudTextField @bind-Value = "Username"
+    Label="@L["auth-menu-username-label"]"
+    Variant = "Variant.Outlined"
+    Immediate = "true"
+    Disabled = "@(Busy || RelogUserId.HasValue)"
+    Class="mb-3 auth-field"/>
+
+<MudTextField @bind-Value = "Password"
+    Label="@L["auth-menu-password-label"]"
+    InputType="@(Pwd ? InputType.Text : InputType.Password)"
+    Adornment="Adornment.End"
+    AdornmentIcon="@(Pwd ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
+    OnAdornmentClick="() => Pwd = !Pwd"
+    Variant = "Variant.Outlined"
+    Immediate = "true"
+    Disabled = "Busy"
+    Class="mb-3 auth-field"
+    OnKeyDown = "OnSignInKey"/>
+
+@if (TfaRequired)
+{
+    <MudTextField @bind-Value = "TfaCode"
+        Label="@L["auth-menu-2fa-label"]"
+        Variant = "Variant.Outlined"
+        Immediate = "true"
+        Disabled = "Busy"
+        Class="mb-3 auth-field"
+        OnKeyDown = "OnSignInKey"/>
+}
+
+@if (!string.IsNullOrEmpty(Error))
+{
+    <MudAlert Severity = "Severity.Error" Class="mb-3 error-alert"> @Error </MudAlert>
+}
+
+@if (ShowResend)
+{
+    <MudButton Variant = "Variant.Text"
+        Color = "Color.Info"
+        FullWidth = "true"
+        Disabled = "Busy"
+        OnClick = "ResendConfirmation"
+        Class="mb-3 auth-link-btn">
+        @L["auth-menu-resend-confirmation"]
+    </MudButton>
+}
+
+<MudButton Variant = "Variant.Filled"
+    Color = "Color.Primary"
+    FullWidth = "true"
+    Disabled = "Busy"
+    OnClick = "DoSignIn"
+    Class="mb-3 cta-btn-primary">
+    @if (Busy)
+    {
+        <MudProgressCircular Size = "Size.Small" Indeterminate = "true" Class = "mr-2"/>
+        <span>@L["auth-menu-signin-status-busy"]</span>
+    }
+    else
+    {
+        <span>@L["auth-menu-signin-status-wait"]</span>
+    }
+</MudButton>
+
+<MudDivider Class="my-3 starlight-divider" />
+<MudButton Variant="Variant.Outlined"
+            Color="Color.Default"
+            FullWidth="true"
+            StartIcon="@Icons.Custom.Brands.Discord"
+            Disabled="Busy"
+            OnClick="LoginWithDiscord"
+            Class="mb-3 discord-btn">
+    @L["auth-menu-signin-method-discord"]
+</MudButton>
+
+<MudStack Row = "true" Justify = "Justify.SpaceBetween">
+    <MudButton Variant = "Variant.Text"
+        Disabled="Busy" Class="auth-link-btn"
+        OnClick="() => OnModeSwitch?.Invoke(Mode.ForgotPassword)">
+        @L["auth-menu-signin-forgot-password"]
+    </MudButton>
+    <MudButton Variant = "Variant.Text"
+        Disabled="Busy" Class="auth-link-btn"
+        OnClick="() => OnModeSwitch?.Invoke(Mode.Register)">
+        @L["auth-menu-registration"]
+    </MudButton>
+</MudStack>

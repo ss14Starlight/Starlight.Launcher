@@ -3,6 +3,7 @@ using Robust.Launcher.Api.Models.ServerStatus;
 using Robust.Launcher.Api.Utility;
 using Serilog;
 using Starlight.Launcher.Services.Settings;
+using Starlight.Launcher.WebUI.Models.HubServerFetcher;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 
@@ -73,7 +74,7 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
         }
         finally
         {
-            _lock.Release();
+            _ = _lock.Release();
         }
     }
 
@@ -141,7 +142,7 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
 
         foreach (var (task, _) in requests)
         {
-            try { await task.ConfigureAwait(false); }
+            try { _ = await task.ConfigureAwait(false); }
             catch { }
         }
 
@@ -164,8 +165,11 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
 
             foreach (var entry in hubEntries)
             {
+                if (entry.Address == null)
+                    continue;
+
                 var maybeNewEntry = new HubServerListEntry(entry.Address, hub.AbsoluteUri, entry.StatusData);
-                if (entry.Address != null && !entries.TryAdd(entry.Address, maybeNewEntry))
+                if (!entries.TryAdd(entry.Address, maybeNewEntry))
                 {
                     Log.Verbose("Skipping {Entry} from {ThisHub}: already from {PreviousHub}",
                         entry.Address, hub.AbsoluteUri, entries[entry.Address].HubAddress);
@@ -244,13 +248,13 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
                     }
                     finally
                     {
-                        throttle.Release();
+                        _ = throttle.Release();
                     }
                 }).ConfigureAwait(false);
         }
         catch (HubApiException ex) when (ex.IsRateLimited)
         {
-            SetHubBackoff(hubAddress, ex.RetryAfter);
+            _ = SetHubBackoff(hubAddress, ex.RetryAfter);
             Log.Warning("GetServerInfo for {Address} hit 429 on {Hub}",
                 statusData.Address, hubAddress);
             statusData.StatusInfo = ServerStatusInfoCode.Error;
@@ -285,7 +289,7 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
                 remaining = until - DateTimeOffset.UtcNow;
                 if (remaining > TimeSpan.Zero)
                     return true;
-                _hubBackoffUntil.Remove(hubAddress);
+                _ = _hubBackoffUntil.Remove(hubAddress);
             }
         }
         remaining = TimeSpan.Zero;
@@ -354,7 +358,7 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
         {
             if (hubEx.IsRateLimited)
             {
-                SetHubBackoff(hub.AbsoluteUri, hubEx.RetryAfter);
+                _ = SetHubBackoff(hub.AbsoluteUri, hubEx.RetryAfter);
                 Log.Warning("Hub {Hub} returned 429 (Retry-After: {RetryAfter})",
                     hub, hubEx.RetryAfter);
             }
@@ -367,7 +371,7 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
             {
                 Log.Warning(hubEx, "Hub {Hub} failed: status={Status}", hub, hubEx.StatusCode);
                 if ((int?)hubEx.StatusCode >= 500)
-                    SetHubBackoff(hub.AbsoluteUri);
+                    _ = SetHubBackoff(hub.AbsoluteUri);
             }
         }
         else
@@ -408,8 +412,8 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
     {
         lock (_backoffLock)
         {
-            _hubFailCount.Remove(hubAddress);
-            _hubBackoffUntil.Remove(hubAddress);
+            _ = _hubFailCount.Remove(hubAddress);
+            _ = _hubBackoffUntil.Remove(hubAddress);
         }
     }
 
@@ -447,37 +451,3 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
 
     #endregion
 }
-
-#region Models
-
-public enum RefreshListStatus
-{
-    /// <summary>
-    /// Hasn't started updating yet?
-    /// </summary>
-    NotUpdated,
-
-    /// <summary>
-    /// Fetching master server list.
-    /// </summary>
-    UpdatingMaster,
-
-    /// <summary>
-    /// Fetched information from ALL servers from the hub.
-    /// </summary>
-    Updated,
-
-    /// <summary>
-    /// A connection error occured when fetching from at least one hub.
-    /// </summary>
-    PartialError,
-
-    /// <summary>
-    /// An error occured.
-    /// </summary>
-    Error,
-}
-
-public sealed record HubServerListEntry(string Address, string HubAddress, ServerApi.ServerStatus StatusData);
-
-#endregion

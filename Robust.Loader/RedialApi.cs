@@ -61,6 +61,6 @@ internal sealed class RedialApi : IRedialApi
             startInfo.EnvironmentVariables.Remove(envVar);
         }
 
-        Process.Start(startInfo);
+        _ = Process.Start(startInfo);
     }
 }

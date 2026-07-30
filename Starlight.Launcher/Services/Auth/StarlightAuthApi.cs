@@ -1,4 +1,5 @@
 using Starlight.Launcher.Services.Settings;
+using Starlight.Launcher.WebUI.Models.DiscordAuthService;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -56,7 +57,7 @@ public sealed class StarlightAuthApi(HttpClient http, SettingsService settings)
         if (resp.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.BadRequest)
             return null; // expired / revoked / reuse_detected -> re-login
 
-        resp.EnsureSuccessStatusCode();
+        _ = resp.EnsureSuccessStatusCode();
         return await resp.Content.ReadFromJsonAsync<StarlightRefreshResult>(cancellationToken: cancel);
     }
 }

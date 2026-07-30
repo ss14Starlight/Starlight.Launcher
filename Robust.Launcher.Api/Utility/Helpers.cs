@@ -1,6 +1,5 @@
 using System;
 using System.Buffers;
-using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
@@ -67,7 +66,7 @@ public static class Helpers
             var lpBytesReturned = 0u;
             var lpInBuffer = (short)Win.COMPRESSION_FORMAT_DEFAULT;
 
-            Win.DeviceIoControl(
+            _ = Win.DeviceIoControl(
                 handle,
                 FSCTL.FSCTL_SET_COMPRESSION,
                 &lpInBuffer,
@@ -77,14 +76,14 @@ public static class Helpers
                 &lpBytesReturned,
                 null);
 
-            Win.CloseHandle(handle);
+            _ = Win.CloseHandle(handle);
         }
     }
 
     public static void EnsureDirectoryExists(string dir)
     {
         if (!Directory.Exists(dir))
-            Directory.CreateDirectory(dir);
+            _ = Directory.CreateDirectory(dir);
     }
 
     public static async Task DownloadToStream(this HttpClient client, string uri, Stream stream,
@@ -92,7 +91,7 @@ public static class Helpers
         await Task.Run(async () =>
             {
                 using var response = await client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, cancel);
-                response.EnsureSuccessStatusCode();
+                _ = response.EnsureSuccessStatusCode();
 
                 await using var contentStream = await response.Content.ReadAsStreamAsync(cancel);
                 // await using var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite, 4096, useAsync: true);

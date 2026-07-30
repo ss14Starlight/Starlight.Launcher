@@ -31,7 +31,7 @@ public sealed class ServerInfoLoader : IDisposable
             return;
 
         if (!_queue.Writer.TryWrite(data))
-            _inFlight.TryRemove(data.Address, out _);
+            _ = _inFlight.TryRemove(data.Address, out _);
     }
 
     private async Task PumpAsync(CancellationToken token)
@@ -66,7 +66,7 @@ public sealed class ServerInfoLoader : IDisposable
     public void Dispose()
     {
         _cts.Cancel();
-        _queue.Writer.TryComplete();
+        _ = _queue.Writer.TryComplete();
         try { _cts.Dispose(); } catch { }
         try { _gate.Dispose(); } catch { }
     }

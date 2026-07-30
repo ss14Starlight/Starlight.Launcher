@@ -1,0 +1,13 @@
+.discord-btn {
+    border-color: rgba(88,101,242,.35) !important;
+    color: #C7C9FB !important;
+    background: rgba(88,101,242,.06);
+    transition: background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .15s ease;
+}
+
+    .discord-btn:hover:not(.mud-disabled) {
+        background: rgba(88,101,242,.16);
+        border-color: rgba(88,101,242,.65);
+        box-shadow: 0 8px 20px -10px rgba(88,101,242,.5);
+        transform: translateY(-1px);
+    }

@@ -1,0 +1,160 @@
+@page "/hub"
+@using Starlight.Launcher.WebUI.Localization;
+
+@inherits LocalizedComponentBase
+
+<div class="app-bg"></div>
+<div class="hub-content">
+
+    <MudPaper Elevation="0" Class="hub-header mb-4" Style="padding:16px 20px;">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Spacing="3">
+
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                <div class="hub-header-icon">
+                    <MudIcon Icon="@Icons.Material.Filled.Dns" Size="Size.Large" />
+                </div>
+                <div>
+                    <MudText Typo="Typo.h5" Class="hub-header-title">@L["hub-menu-title"]</MudText>
+
+                    @if (_servers is not null)
+                    {
+                        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-2" Wrap="Wrap.Wrap">
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Text"
+                                     Icon="@Icons.Material.Filled.Storage" Class="hub-meta-chip">
+                                @_servers.Count server(s)
+                            </MudChip>
+
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Success"
+                                     Icon="@Icons.Material.Filled.Circle" Class="hub-meta-chip">
+                                @_servers.Count(s => s.Status is ServerStatus.Lobby or ServerStatus.Round or ServerStatus.RoundEnding) online
+                            </MudChip>
+
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Text"
+                                     Icon="@Icons.Material.Filled.Schedule" Class="hub-meta-chip mud-text-secondary">
+                                @_lastUpdated.ToLocalTime().ToString("HH:mm:ss")
+                            </MudChip>
+                        </MudStack>
+                    }
+                </div>
+            </MudStack>
+
+            <MudTooltip Text="@L["hub-menu-refresh"]">
+                <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                                Color="Color.Primary"
+                                Variant="Variant.Filled"
+                                Disabled="_isRefreshing"
+                                OnClick="RefreshAsync"
+                                Class="@(_isRefreshing ? "hub-refresh spin" : "hub-refresh")" />
+            </MudTooltip>
+
+        </MudStack>
+    </MudPaper>
+
+    <div class="hub-scroll">
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
+        }
+
+        @if (_servers is null)
+        {
+            <MudGrid>
+                @for (var i = 0; i < 6; i++)
+                {
+                    <MudItem xs="12" md="6" lg="4">
+                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="210px" Class="rounded-lg" />
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+        else if (_servers.Count == 0)
+        {
+            <MudPaper Class="pa-8 d-flex flex-column align-center" Elevation="0">
+                <MudIcon Icon="@Icons.Material.Filled.CloudOff" Size="Size.Large" Class="mud-text-secondary mb-2" />
+                <MudText Class="mud-text-secondary">@L["hub-menu-server-list-empty"]</MudText>
+            </MudPaper>
+        }
+        else
+        {
+            <MudGrid>
+                @foreach (var server in _servers)
+                {
+                    <MudItem xs="12" md="6" lg="4">
+                        <MudCard Elevation="2" Class="server-card d-flex flex-column" Style="height:100%">
+                            <MudCardContent Class="flex-grow-1">
+
+                                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                    <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                                        <MudText Typo="Typo.h6">@ParseDescription(server.Title)</MudText>
+                                        @if (server.IsAdultOnly)
+                                        {
+                                            <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="Color.Error">@L["hub-menu-server-adult-tag"]</MudChip>
+                                        }
+                                    </MudStack>
+
+                                    <MudChip T="string"
+                                             Size="Size.Small"
+                                             Variant="Variant.Filled"
+                                             Color="@GetStatusColor(server.Status)"
+                                             Icon="@GetStatusIcon(server.Status)">
+                                        @(server.Status?.ToString() ?? "Unknown")
+                                    </MudChip>
+                                </MudStack>
+
+                                @if (!string.IsNullOrWhiteSpace(server.Description))
+                                {
+                                    <MudText Typo="Typo.body2" Class="mud-text-secondary mt-1">
+                                        @ParseDescription(server.Description)
+                                    </MudText>
+                                }
+
+                                <MudDivider Class="my-3" />
+
+                                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-1">
+                                    <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                                        <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Small" />
+                                        <MudText Typo="Typo.body2">@(server.Players ?? 0) / @(server.MaxPlayers ?? 0)</MudText>
+                                    </MudStack>
+
+                                    @if (server.CurrentStateStartedAt is not null)
+                                    {
+                                        <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center" Class="mud-text-secondary">
+                                            <MudIcon Icon="@Icons.Material.Filled.Schedule" Size="Size.Small" />
+                                            <MudText Typo="Typo.caption">@FormatUptime(server.CurrentStateStartedAt)</MudText>
+                                        </MudStack>
+                                    }
+                                </MudStack>
+
+                                <MudProgressLinear Value="@GetPopulation(server)"
+                                                   Color="@GetPopulationColor(server)"
+                                                   Rounded="true"
+                                                   Size="Size.Medium" />
+
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Class="mt-3">
+                                    @FormatType(server.Type)
+                                </MudChip>
+
+                            </MudCardContent>
+
+                            <MudCardActions Class="px-4 pb-4">
+                                <MudButton Variant="Variant.Filled"
+                                           Color="Color.Primary"
+                                           FullWidth="true"
+                                           StartIcon="@Icons.Material.Filled.Login"
+                                           Disabled="@(server.Status == ServerStatus.Offline)"
+                                           OnClick="@(() => Connect(server))">
+                                    @L["hub-menu-server-connect-button"]
+                                </MudButton>
+
+                                <MudIconButton Icon="@(IsFavorite(server) ? Icons.Material.Filled.Star : Icons.Material.Filled.StarBorder)"
+                                               Color="@(IsFavorite(server) ? Color.Warning : Color.Default)"
+                                               OnClick="@(() => ToggleFavorite(server))"
+                                               Class="ml-2" />
+                            </MudCardActions>
+                        </MudCard>
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+    </div>
+</div>

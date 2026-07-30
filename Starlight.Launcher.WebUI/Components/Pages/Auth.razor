@@ -1,0 +1,62 @@
+@page "/auth"
+@using Starlight.Launcher.WebUI.Components.Atoms.Auth
+@using Starlight.Launcher.WebUI.Localization;
+
+@inherits LocalizedComponentBase
+
+<div class="auth-bg">
+    <MudContainer MaxWidth="MaxWidth.Small" Class="auth-wrapper">
+        <MudPaper Class="pa-8 auth-card" Elevation="0">
+            <div @key="_mode" class="mode-fade">
+                @switch (_mode)
+                {
+                    case Mode.AccountList:
+                        <AccountListView OnAccountRelogin="x => Task.Run(async () => await BeginRelogin(x))" OnDiscordLink="x => LinkDiscord(x)" OnLink="x => LinkAccount(x)" OnSignIn="() => SwitchMode(Mode.SignIn)" />
+                        break;
+
+                    case Mode.SignIn:
+                        <SignInView OnModeSwitch="x => SwitchMode(x)" RelogUserId="_relogUserId" Username="@_signInUsername" />
+                        break;
+
+                case Mode.Register:
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+                        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Class="icon-btn-ghost"
+                                       OnClick="() => SwitchMode(Mode.SignIn)"
+                                       Disabled="_busy" />
+                        <MudText Typo="Typo.h5">@L["auth-menu-registration"]</MudText>
+                    </MudStack>
+
+
+                    <div class="reg-disabled">
+                        <div class="reg-disabled-badge">
+                            <MudIcon Icon="@Icons.Material.Filled.PersonOff" Class="reg-disabled-icon" />
+                        </div>
+                        <MudText Typo="Typo.h6" Class="mb-1">
+                            @L["auth-menu-registration-disabled-title"]
+                        </MudText>
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
+                            @L["auth-menu-registration-disabled-hint"]
+                        </MudText>
+                        <MudButton Variant="Variant.Filled"
+                                    Color="Color.Primary"
+                                    FullWidth="true"
+                                    StartIcon="@Icons.Material.Filled.Login"
+                                    Class="cta-btn-primary"
+                                    OnClick="() => SwitchMode(Mode.SignIn)">
+                            @L["auth-menu-registration-back-to-signin"]
+                        </MudButton>
+                    </div>
+                    break;
+
+                    case Mode.ForgotPassword:
+                        <ForgotPasswordView OnModeSwitch="x => SwitchMode(x)" />
+                        break;
+
+                    case Mode.LinkAccount:
+                        <LinkAccountView OnModeSwitch="x => SwitchMode(x)" Username="@_linkUsername" UserId="@_linkUserId" />
+                        break;
+                }
+            </div>
+        </MudPaper>
+    </MudContainer>
+</div>

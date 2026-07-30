@@ -9,15 +9,27 @@ namespace Starlight.Launcher.Services.Settings;
 public sealed partial class SettingsService
 {
     private volatile bool _loginsLoaded;
+    private readonly TaskCompletionSource _loginsLoadedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
     public event Action? LoginsUnrecoverable;
+
+    public Task WaitForLoginsLoadedAsync() => _loginsLoadedTcs.Task;
 
     public async Task InitializeLoginsAsync()
     {
         var loaded = await LoadLoginsAsync();
         await _loginsLock.WaitAsync();
-        try { _logins = loaded; }
-        finally { _loginsLock.Release(); }
+        try
+        {
+            foreach (var (id, info) in loaded)
+                if (!_logins.ContainsKey(id))
+                    _logins[id] = info;
+        }
+        finally { _ = _loginsLock.Release(); }
         _loginsLoaded = true;
+        _ = _loginsLoadedTcs.TrySetResult();
+
+        ScheduleSaveInternal(ref _loginsSaveCts, SaveLoginsEncryptedAsync, "logins");
+        LoginsChanged?.Invoke();
     }
 
     public Dictionary<Guid, LoginInfo> GetLogins()
@@ -29,7 +41,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _loginsLock.Release();
+            _ = _loginsLock.Release();
         }
     }
 
@@ -49,7 +61,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _loginsLock.Release();
+            _ = _loginsLock.Release();
         }
 
         LoginsChanged?.Invoke();
@@ -66,7 +78,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _loginsLock.Release();
+            _ = _loginsLock.Release();
         }
 
         LoginsChanged?.Invoke();
@@ -83,7 +95,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _loginsLock.Release();
+            _ = _loginsLock.Release();
         }
     }
 
@@ -96,7 +108,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _loginsLock.Release();
+            _ = _loginsLock.Release();
         }
 
         LoginsChanged?.Invoke();
@@ -106,7 +118,7 @@ public sealed partial class SettingsService
 
     private static async Task WriteBytesSafeAsync(byte[] content, string dir, string filePath)
     {
-        Directory.CreateDirectory(dir);
+        _ = Directory.CreateDirectory(dir);
         var tempFile = filePath + ".tmp";
         await File.WriteAllBytesAsync(tempFile, content);
         File.Move(tempFile, filePath, true);
@@ -120,17 +132,24 @@ public sealed partial class SettingsService
             return;
         }
 
-        await _loginsLock.WaitAsync();
         try { await WriteLoginsCoreAsync(); }
         catch (Exception ex) { _logger.LogError(ex, "Failed to save encrypted logins"); }
-        finally { _loginsLock.Release(); }
     }
 
     private async Task WriteLoginsCoreAsync()
     {
-        var json = JsonSerializer.Serialize(_logins.Values, _jsonOptions);
-        var encrypted = await EncryptAsync(Encoding.UTF8.GetBytes(json));
-        await WriteBytesSafeAsync(encrypted, Path.GetDirectoryName(_loginsPath)!, _loginsPath);
+        await _loginsLock.WaitAsync();
+        try
+        {
+            var json = JsonSerializer.Serialize(_logins.Values, _jsonOptions);
+            var encrypted = await EncryptAsync(Encoding.UTF8.GetBytes(json));
+            _logger.LogInformation("Successfully encrypted {Number} logins!", _logins.Count);
+            await WriteBytesSafeAsync(encrypted, Path.GetDirectoryName(_loginsPath)!, _loginsPath);
+        }
+        finally
+        {
+            _ = _loginsLock.Release();
+        }
     }
 
     private async Task<Dictionary<Guid, LoginInfo>> LoadLoginsAsync()
@@ -146,6 +165,9 @@ public sealed partial class SettingsService
             {
                 var json = Encoding.UTF8.GetString(await DecryptAsync(raw));
                 var list = JsonSerializer.Deserialize<List<LoginInfo>>(json) ?? new();
+
+                _logger.LogInformation("Successfully loaded {Number} logins from file {File}!", list.Count, _loginsPath);
+
                 return list.ToDictionary(x => x.UserId);
             }
             catch (CryptographicException ex)
@@ -162,10 +184,15 @@ public sealed partial class SettingsService
         {
             var json = Encoding.UTF8.GetString(raw);
             var list = JsonSerializer.Deserialize<List<LoginInfo>>(json) ?? new();
-            _logins = list.ToDictionary(x => x.UserId);
             await _loginsLock.WaitAsync();
-            try { await WriteLoginsCoreAsync(); }
-            finally { _loginsLock.Release(); }
+
+            try { _logins = list.ToDictionary(x => x.UserId); }
+            finally { _ = _loginsLock.Release(); }
+
+            await WriteLoginsCoreAsync();
+
+            _logger.LogInformation("Successfuly loaded logins from file {File}!", _loginsPath);
+
             return _logins;
         }
         catch (Exception ex)

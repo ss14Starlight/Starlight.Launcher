@@ -1,11 +1,12 @@
-using Microsoft.Maui.ApplicationModel;
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Security.Cryptography;
+using System.Web;
 using Robust.Launcher.Api.Models;
 using Robust.Launcher.Api.Models.Data;
 using Serilog;
-using Starlight.Launcher.Api.Models;
-using System.Collections.Concurrent;
-using System.Security.Cryptography;
-using System.Web;
+using Starlight.Launcher.WebUI.Models.Auth;
+using Starlight.Launcher.WebUI.Models.DiscordAuthService;
 
 namespace Starlight.Launcher.Services.Auth;
 
@@ -22,8 +23,18 @@ public sealed class DiscordAuthService(StarlightAuthApi api, LoginManager loginM
         _pending[state] = tcs;
         try
         {
-            if (!await Browser.Default.OpenAsync(api.BuildLauncherLoginUrl(state), BrowserLaunchMode.SystemPreferred))
+            try
+            {
+                _ = Process.Start(new ProcessStartInfo
+                {
+                    FileName = api.BuildLauncherLoginUrl(state).ToString(),
+                    UseShellExecute = true
+                });
+            }
+            catch
+            {
                 throw new DiscordAuthException("Unable to open the browser to log in.");
+            }
 
             using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancel);
             timeoutCts.CancelAfter(_flowTimeout);
@@ -38,7 +49,7 @@ public sealed class DiscordAuthService(StarlightAuthApi api, LoginManager loginM
         }
         finally
         {
-            _pending.TryRemove(state, out _);
+            _ = _pending.TryRemove(state, out _);
         }
     }
 
@@ -87,11 +98,11 @@ public sealed class DiscordAuthService(StarlightAuthApi api, LoginManager loginM
         loginManager.ActiveAccountId = newLoginInfo.UserId;
     }
 
-    public bool HandleDeepLink(Uri uri)
+    public void HandleDeepLink(Uri uri)
     {
         if (!uri.Scheme.Equals("starlight", StringComparison.OrdinalIgnoreCase) ||
             !uri.Host.Equals("auth", StringComparison.OrdinalIgnoreCase))
-            return false;
+            return;
 
         var query = HttpUtility.ParseQueryString(uri.Query);
         var state = query["state"];
@@ -99,25 +110,24 @@ public sealed class DiscordAuthService(StarlightAuthApi api, LoginManager loginM
         if (string.IsNullOrEmpty(state) || !_pending.TryRemove(state, out var tcs))
         {
             Log.Warning("Discord deep link with an unknown state");
-            return false;
+            return;
         }
 
         var error = query["error"];
         if (!string.IsNullOrEmpty(error))
         {
-            tcs.TrySetException(new DiscordAuthException(MapError(error)));
-            return true;
+            _ = tcs.TrySetException(new DiscordAuthException(MapError(error)));
+            return;
         }
 
         var token = query["token"];
         if (string.IsNullOrEmpty(token))
         {
-            tcs.TrySetException(new DiscordAuthException("No token in the response."));
-            return true;
+            _ = tcs.TrySetException(new DiscordAuthException("No token in the response."));
+            return;
         }
 
-        tcs.TrySetResult(new HandoffResult(token, query["refresh"], query["session"]));
-        return true;
+        _ = tcs.TrySetResult(new HandoffResult(token, query["refresh"], query["session"]));
     }
 
     private static string MapError(string error) => error switch
@@ -133,7 +143,3 @@ public sealed class DiscordAuthService(StarlightAuthApi api, LoginManager loginM
         return Convert.ToHexString(bytes);
     }
 }
-
-public sealed record HandoffResult(string Token, string? RefreshToken, string? SessionId);
-
-public sealed class DiscordAuthException(string message) : Exception(message);

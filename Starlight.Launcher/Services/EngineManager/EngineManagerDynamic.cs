@@ -8,8 +8,8 @@ using Robust.Launcher.Api.Models;
 using Robust.Launcher.Api.Models.Data;
 using Robust.Launcher.Api.Utility;
 using Serilog;
-using Starlight.Launcher.Models.Settings;
 using Starlight.Launcher.Services.Settings;
+using Starlight.Launcher.WebUI.Models.Settings;
 
 namespace Starlight.Launcher.Services.EngineManager;
 
@@ -172,7 +172,7 @@ public sealed partial class EngineManagerDynamic : IEngineManager
     {
         foreach (var cdn in AppSettings.RobustCdns)
         {
-            stream.Seek(0, SeekOrigin.Begin);
+            _ = stream.Seek(0, SeekOrigin.Begin);
             if (VerifySignature(stream, signature, cdn.PublicKey))
                 return true;
         }
@@ -460,11 +460,11 @@ public sealed partial class EngineManagerDynamic : IEngineManager
         {
             if (name == "Robust" && await GetVersionInfo(version) is { } redirect)
             {
-                modulesUsed.Add(("Robust", redirect.Version));
+                _ = modulesUsed.Add(("Robust", redirect.Version));
             }
             else
             {
-                modulesUsed.Add((name, version));
+                _ = modulesUsed.Add((name, version));
             }
         }
 

@@ -1,0 +1,30 @@
+@using Starlight.Launcher.WebUI.Localization;
+
+@inherits LocalizedComponentBase
+
+<div class="bottom-nav">
+    <NavLink href="/" Match="NavLinkMatch.All" class="bottom-nav-item" ActiveClass="active">
+        <div class="nav-inner">
+            <MudIcon Icon="@Icons.Material.Filled.Home" Color="@(IsActive("/", NavLinkMatch.All) ? Color.Primary : Color.Default)" Size="Size.Medium" />
+            <span>@L["main-layout-home-tab"]</span>
+        </div>
+    </NavLink>
+    <NavLink href="/servers" Match="NavLinkMatch.All" class="bottom-nav-item" ActiveClass="active">
+        <div class="nav-inner">
+            <MudIcon Icon="@Icons.Material.Filled.Computer" Color="@(IsActive("/servers", NavLinkMatch.All) ? Color.Primary : Color.Default)" Size="Size.Medium" />
+            <span>@L["main-layout-servers-tab"]</span>
+        </div>
+    </NavLink>
+    <NavLink href="/hub" Match="NavLinkMatch.All" class="bottom-nav-item" ActiveClass="active">
+        <div class="nav-inner">
+            <MudIcon Icon="@Icons.Material.Filled.Link" Color="@(IsActive("/hub", NavLinkMatch.All) ? Color.Primary : Color.Default)" Size="Size.Medium" />
+            <span>@L["main-layout-hub-tab"]</span>
+        </div>
+    </NavLink>
+    <NavLink href="/settings" Match="NavLinkMatch.Prefix" class="bottom-nav-item" ActiveClass="active">
+        <div class="nav-inner">
+            <MudIcon Icon="@Icons.Material.Filled.Settings" Color="@(IsActive("/settings", NavLinkMatch.All) ? Color.Primary : Color.Default)" Size="Size.Medium" />
+            <span>@L["main-layout-settings-tab"]</span>
+        </div>
+    </NavLink>
+</div>

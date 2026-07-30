@@ -1,13 +1,10 @@
 name: build-and-release
-
 on:
   push:
     tags: ['v*']
   workflow_dispatch:
-
 permissions:
   contents: write
-
 env:
   DOTNET_VERSION: '11.0.x'
   MAIN_PROJECT: 'Starlight.Launcher/Starlight.Launcher.csproj'
@@ -22,48 +19,29 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-quality: preview
           dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: Restore Workloads
-        shell: pwsh
-        run: |
-          dotnet workload restore ${{ env.MAIN_PROJECT }}
-          dotnet workload restore ${{ env.LOADER_PROJECT }}
-
       - name: Resolve version
         id: ver
         shell: pwsh
         run: |
           $v = "${{ github.ref_name }}" -replace '^v',''
           echo "version=$v" >> $env:GITHUB_OUTPUT
-
       - name: Publish (win-x64, self-contained)
         shell: pwsh
         run: |
-          dotnet publish ${{ env.MAIN_PROJECT }} -c Release -f net11.0-windows10.0.19041.0 -r win-x64 --self-contained true -p:WindowsAppSDKSelfContained=true -p:FullRelease=true -p:Version=${{ steps.ver.outputs.version }} -o publish/win-x64
+          dotnet publish ${{ env.MAIN_PROJECT }} -c Release -r win-x64 --self-contained true -p:FullRelease=true -p:Version=${{ steps.ver.outputs.version }} -o publish/win-x64
           dotnet publish ${{ env.LOADER_PROJECT }} -c Release -r win-x64 --self-contained true -p:Version=${{ steps.ver.outputs.version }} -o publish/win-x64/loader
-
-      - name: Verify launcher output
-        shell: pwsh
-        run: |
-          Get-ChildItem Starlight.Launcher/bin/Release -Recurse | Select-Object FullName
-
       - name: Inspect output
         shell: pwsh
-        run: |
-          Get-ChildItem publish/win-x64 -Recurse
-
+        run: Get-ChildItem publish/win-x64 -Recurse
       - name: Download WebView2 bootstrapper
         shell: pwsh
         run: Invoke-WebRequest "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile installer/MicrosoftEdgeWebview2Setup.exe
-
       - name: Install Inno Setup
         run: choco install innosetup --no-progress -y
-
       - name: Build installer
         shell: pwsh
         run: >
@@ -73,14 +51,208 @@ jobs:
           /DExeName=${{ env.EXE_NAME }}
           "/DSourceDir=${{ github.workspace }}\publish\win-x64"
           installer\Starlight.iss
-
       - uses: actions/upload-artifact@v4
         with:
           name: windows-installer
           path: installer/Output/*.exe
 
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-quality: preview
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Resolve version
+        id: ver
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+      - name: Publish (linux-x64, self-contained)
+        run: |
+          dotnet publish ${{ env.MAIN_PROJECT }} -c Release -r linux-x64 --self-contained true -p:FullRelease=true -p:Version=${{ steps.ver.outputs.version }} -o publish/linux-x64
+          dotnet publish ${{ env.LOADER_PROJECT }} -c Release -r linux-x64 --self-contained true -p:Version=${{ steps.ver.outputs.version }} -o publish/linux-x64/loader
+      - name: Mark executables +x
+        run: |
+          chmod +x publish/linux-x64/Starlight.Launcher
+          chmod +x publish/linux-x64/loader/Robust.Loader
+
+      - name: Package as tar.gz
+        run: tar -czf Starlight.Launcher-linux-x64-${{ steps.ver.outputs.version }}.tar.gz -C publish/linux-x64 .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-tarball
+          path: Starlight.Launcher-linux-x64-*.tar.gz
+
+      - name: Assemble .deb package tree
+        run: |
+          set -e
+          PKG_VERSION="${{ steps.ver.outputs.version }}"
+          PKG_ROOT="deb/starlight-launcher_${PKG_VERSION}_amd64"
+
+          mkdir -p "$PKG_ROOT/DEBIAN"
+          mkdir -p "$PKG_ROOT/opt/starlight-launcher"
+          mkdir -p "$PKG_ROOT/usr/bin"
+          mkdir -p "$PKG_ROOT/usr/share/applications"
+          mkdir -p "$PKG_ROOT/usr/share/icons/hicolor/256x256/apps"
+
+          cp -R publish/linux-x64/. "$PKG_ROOT/opt/starlight-launcher/"
+          chmod +x "$PKG_ROOT/opt/starlight-launcher/Starlight.Launcher"
+          chmod +x "$PKG_ROOT/opt/starlight-launcher/loader/Robust.Loader"
+
+          ln -s /opt/starlight-launcher/Starlight.Launcher "$PKG_ROOT/usr/bin/starlight-launcher"
+
+          cp PublishFiles/icon.png "$PKG_ROOT/usr/share/icons/hicolor/256x256/apps/starlight-launcher.png" || true
+
+          cat > "$PKG_ROOT/usr/share/applications/starlight-launcher.desktop" << DESKTOP
+          [Desktop Entry]
+          Type=Application
+          Name=Starlight Launcher
+          Comment=Starlight Launcher for Space Station 14
+          Exec=/opt/starlight-launcher/Starlight.Launcher %u
+          Icon=starlight-launcher
+          Terminal=false
+          Categories=Game;
+          MimeType=x-scheme-handler/starlight;
+          DESKTOP
+
+          cat > "$PKG_ROOT/DEBIAN/control" << CONTROL
+          Package: starlight-launcher
+          Version: ${PKG_VERSION}
+          Section: games
+          Priority: optional
+          Architecture: amd64
+          Maintainer: Starlight Team <noreply@example.com>
+          Description: Starlight Launcher for Space Station 14
+           A modern, cross-platform launcher built on Avalonia and Blazor.
+          CONTROL
+
+          cat > "$PKG_ROOT/DEBIAN/postinst" << 'POSTINST'
+          #!/bin/sh
+          set -e
+          # Refreshes the desktop-file and MIME caches so the new app/association
+          # actually shows up without the user having to log out and back in.
+          update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
+          gtk-update-icon-cache /usr/share/icons/hicolor >/dev/null 2>&1 || true
+          exit 0
+          POSTINST
+          chmod 0755 "$PKG_ROOT/DEBIAN/postinst"
+
+      - name: Build .deb
+        run: |
+          dpkg-deb --build --root-owner-group \
+            "deb/starlight-launcher_${{ steps.ver.outputs.version }}_amd64" \
+            "Starlight.Launcher-linux-x64-${{ steps.ver.outputs.version }}.deb"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-deb
+          path: Starlight.Launcher-*.deb
+
+      - name: Build AppImage
+        run: |
+          set -e
+          APPDIR=AppDir
+          mkdir -p "$APPDIR/usr/bin" "$APPDIR/usr/share/applications" "$APPDIR/usr/share/icons/hicolor/256x256/apps"
+
+          cp -R publish/linux-x64/. "$APPDIR/usr/bin/"
+          chmod +x "$APPDIR/usr/bin/Starlight.Launcher"
+          chmod +x "$APPDIR/usr/bin/loader/Robust.Loader"
+
+          cp PublishFiles/icon.png "$APPDIR/usr/share/icons/hicolor/256x256/apps/starlight-launcher.png" || true
+          cp PublishFiles/icon.png "$APPDIR/starlight-launcher.png" || true
+
+          cat > "$APPDIR/starlight-launcher.desktop" << DESKTOP
+          [Desktop Entry]
+          Type=Application
+          Name=Starlight Launcher
+          Exec=Starlight.Launcher %u
+          Icon=starlight-launcher
+          Categories=Game;
+          MimeType=x-scheme-handler/starlight;
+          DESKTOP
+
+          cat > "$APPDIR/AppRun" << 'APPRUN'
+          #!/bin/sh
+          HERE="$(dirname "$(readlink -f "$0")")"
+          exec "$HERE/usr/bin/Starlight.Launcher" "$@"
+          APPRUN
+          chmod +x "$APPDIR/AppRun"
+
+          wget -q https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool
+          chmod +x appimagetool
+
+          ./appimagetool --appimage-extract-and-run "$APPDIR" "Starlight.Launcher-linux-x64-${{ steps.ver.outputs.version }}.AppImage"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-appimage
+          path: Starlight.Launcher-*.AppImage
+
+  macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        rid: [osx-x64, osx-arm64]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-quality: preview
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Resolve version
+        id: ver
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+      - name: Publish (${{ matrix.rid }}, self-contained)
+        run: |
+          dotnet publish ${{ env.MAIN_PROJECT }} -c Release -r ${{ matrix.rid }} --self-contained true -p:FullRelease=true -p:Version=${{ steps.ver.outputs.version }} -o publish/${{ matrix.rid }}
+          dotnet publish ${{ env.LOADER_PROJECT }} -c Release -r ${{ matrix.rid }} --self-contained true -p:Version=${{ steps.ver.outputs.version }} -o publish/${{ matrix.rid }}/loader
+      - name: Assemble .app bundle
+        run: |
+          APP="Starlight Launcher.app"
+          mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+          cp -R publish/${{ matrix.rid }}/. "$APP/Contents/MacOS/"
+          chmod +x "$APP/Contents/MacOS/Starlight.Launcher"
+          chmod +x "$APP/Contents/MacOS/loader/Robust.Loader"
+          cp Starlight.Launcher/Resources/AppIcon/icon.icns "$APP/Contents/Resources/icon.icns" || true
+          cat > "$APP/Contents/Info.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleExecutable</key><string>Starlight.Launcher</string>
+            <key>CFBundleIdentifier</key><string>com.starlight.launcher</string>
+            <key>CFBundleName</key><string>Starlight Launcher</string>
+            <key>CFBundleShortVersionString</key><string>${{ steps.ver.outputs.version }}</string>
+            <key>CFBundleIconFile</key><string>icon.icns</string>
+            <key>CFBundlePackageType</key><string>APPL</string>
+            <key>LSMinimumSystemVersion</key><string>12.0</string>
+            <key>CFBundleURLTypes</key>
+            <array>
+              <dict>
+                <key>CFBundleURLName</key><string>com.starlight.launcher.protocol</string>
+                <key>CFBundleURLSchemes</key><array><string>starlight</string></array>
+              </dict>
+            </array>
+          </dict>
+          </plist>
+          PLIST
+      - name: Package
+        run: ditto -c -k --sequesterRsrc --keepParent "Starlight Launcher.app" Starlight.Launcher-${{ matrix.rid }}-${{ steps.ver.outputs.version }}.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.rid }}-build
+          path: Starlight.Launcher-${{ matrix.rid }}-*.zip
+
   release:
-    needs: [windows]
+    needs: [windows, linux, macos]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
