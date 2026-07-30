@@ -71,7 +71,11 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
 
     private async Task HandleClick()
     {
-        if (string.IsNullOrEmpty(Data.Description) && Data.StatusInfo == ServerStatusInfoCode.Fetched)
+        var needsFetch = Data.Status == ServerStatusCode.Online &&
+            (Data.StatusInfo is ServerStatusInfoCode.NotFetched or ServerStatusInfoCode.Error
+             || (string.IsNullOrEmpty(Data.Description) && Data.StatusInfo == ServerStatusInfoCode.Fetched));
+
+        if (needsFetch)
             _bridge.Request(Data);
 
         _expanded = !_expanded;

@@ -140,7 +140,7 @@ public partial class App : Application
         _ = services.AddSingleton(sp =>
         {
             var fetcher = sp.GetRequiredService<HubServerFetcher>();
-            return new ServerInfoLoader();
+            return new ServerInfoLoader(fetcher.UpdateInfoForAsync);
         });
         _ = services.AddSingleton<ServerStatusCache>();
         _ = services.AddSingleton<ContentManager>();
