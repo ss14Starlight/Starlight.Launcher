@@ -10,6 +10,7 @@
 		<ApplicationIcon>Resources\AppIcon\icon.ico</ApplicationIcon>
 		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<WindowsSdkPackageVersion>10.0.19041.38</WindowsSdkPackageVersion>
 	</PropertyGroup>
 
 	<!-- Hide the console window on Windows only (same as before) -->
