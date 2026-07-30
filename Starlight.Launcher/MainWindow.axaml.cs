@@ -8,9 +8,9 @@ public partial class MainWindow : Window
 {
     private readonly NativeWebView _web;
 
-    public MainWindow() : this(null) { }
+    public MainWindow() : this(null, "") { }
 
-    public MainWindow(Uri? blazorUrl)
+    public MainWindow(Uri? blazorUrl, string pathToWebViewData)
     {
         InitializeComponent();
 
@@ -23,6 +23,14 @@ public partial class MainWindow : Window
             {
                 if (args is LinuxWpeWebViewEnvironmentRequestedEventArgs wpeArgs)
                     wpeArgs.PreferWebKitGtkInstead = true;
+            };
+        }
+        else if (OperatingSystem.IsWindows())
+        {
+            _web.EnvironmentRequested += (_, args) =>
+            {
+                if (args is WindowsWebView2EnvironmentRequestedEventArgs webViewArgs && !string.IsNullOrEmpty(pathToWebViewData))
+                    webViewArgs.UserDataFolder = pathToWebViewData;
             };
         }
 

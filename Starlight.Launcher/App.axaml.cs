@@ -60,7 +60,7 @@ public partial class App : Application
             commands.RunCommandTask();
             messaging.StartServerTask(commands);
 
-            var window = new MainWindow(_blazorHost.Url) { Title = "Starlight.Launcher" };
+            var window = new MainWindow(_blazorHost.Url, settings.GetSettings().DirLauncherData) { Title = "Starlight.Launcher" };
 
             var flushing = false;
 
