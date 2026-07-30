@@ -32,6 +32,8 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
 
     public event Action? LoginsChanged;
 
+    private volatile bool _initialized;
+
     public Guid? ActiveAccountId
     {
         get => _activeLoginId;
@@ -80,19 +82,6 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
 
         Logins = new ReadOnlyObservableCollection<LoggedInAccount>(_loginsView);
 
-        foreach (var loginInfo in _settings.GetLogins().Values)
-        {
-            var data = new ActiveLoginData(loginInfo);
-            _logins[loginInfo.UserId] = data;
-            _loginsView.Add(data);
-        }
-
-        var selectedId = _settings.GetSettings().SelectedLoginId;
-        if (selectedId.HasValue && _logins.ContainsKey(selectedId.Value))
-        {
-            _activeLoginId = selectedId;
-        }
-
         _settings.LoginsChanged += OnSettingsLoginsChanged;
     }
 
@@ -117,6 +106,9 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
 
     private void OnSettingsLoginsChanged()
     {
+        if (!_initialized)
+            return;
+
         var current = _settings.GetLogins();
 
         List<ActiveLoginData> toRemoveFromView = new();
@@ -166,14 +158,35 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
             OnPropertyChanged(nameof(ActiveAccount));
     }
 
-    public void Initialize()
+    public async Task InitializeAsync()
     {
+        await _settings.WaitForLoginsLoadedAsync();
+
+        foreach (var loginInfo in await _settings.GetLoginsAsync())
+        {
+            var data = new ActiveLoginData(loginInfo.Value);
+            _logins[loginInfo.Key] = data;
+            _loginsView.Add(data);
+        }
+
+        var selectedId = (await _settings.GetSettingsAsync()).SelectedLoginId;
+        if (selectedId.HasValue && _logins.ContainsKey(selectedId.Value))
+        {
+            _activeLoginId = selectedId;
+        }
+
         FixStoredDiscordUsernames();
+
+        _initialized = true;
 
         _cts = new CancellationTokenSource();
         _refreshTask = RunRefreshLoop(_cts.Token);
 
-        _ = Task.Run(async () => await RefreshAllTokens());
+        _ = Task.Run(async () =>
+        {
+            try { await RefreshAllTokens(); }
+            catch (Exception ex) { Log.Warning(ex, "Initial token refresh failed"); }
+        });
     }
 
     private async Task RunRefreshLoop(CancellationToken cancellationToken)
@@ -398,6 +411,12 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
 
     private void PersistLogins()
     {
+        if (!_initialized)
+        {
+            Log.Warning("Skipped PersistLogins before initial load completed");
+            return;
+        }
+
         Dictionary<Guid, LoginInfo> snapshot;
         lock (_loginsLock)
         {

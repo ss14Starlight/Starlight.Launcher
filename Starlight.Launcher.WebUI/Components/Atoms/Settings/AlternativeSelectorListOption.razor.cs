@@ -55,7 +55,6 @@ public partial class AlternativeSelectorListOption : LocalizedComponentBase
 
         Values.RemoveAt(index);
 
-        // Корректируем индекс выбранного элемента после удаления.
         if (_selectedIndex == index)
             _selectedIndex = -1;
         else if (_selectedIndex > index)

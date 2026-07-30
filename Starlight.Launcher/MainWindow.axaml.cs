@@ -33,14 +33,6 @@ public partial class MainWindow : Window
 
         if (blazorUrl is not null)
             _web.Source = blazorUrl;
-
-#if DEBUG
-        Opened += (_, _) => Process.Start(new ProcessStartInfo
-        {
-            FileName = _blazorUrl!.ToString(),
-            UseShellExecute = true
-        });
-#endif
     }
 
     private void InitializeComponent() => AvaloniaXamlLoader.Load(this);

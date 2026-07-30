@@ -58,6 +58,7 @@ public sealed partial class SettingsService
 
         using var aes = new AesGcm(key, TagSize);
         aes.Decrypt(nonce, cipher, tag, plaintext);
+
         return plaintext;
     }
 }

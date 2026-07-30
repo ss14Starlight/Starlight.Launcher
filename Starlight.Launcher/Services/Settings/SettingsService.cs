@@ -72,7 +72,6 @@ public sealed partial class SettingsService : IAsyncDisposable
         _favoritesPath = Path.Combine(_settings.DirLauncherData, "favorites.json");
         _enginesPath = Path.Combine(_settings.DirLauncherData, "engines.json");
         _modulesPath = Path.Combine(_settings.DirLauncherData, "modules.json");
-        _ = Task.Run(() => InitializeLoginsAsync());
         _favorites = LoadJson(_favoritesPath, new List<FavoriteServer>());
         _engineInstallations = LoadJson(_enginesPath, new List<InstalledEngineVersion>()).ToDictionary(x => x.Version);
         _engineModules = LoadJson(_modulesPath, new HashSet<(string Version, string Name)>());

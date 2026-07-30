@@ -31,7 +31,7 @@ public partial class App : Application
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
-    public override void OnFrameworkInitializationCompleted()
+    public override async void OnFrameworkInitializationCompleted()
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
@@ -40,18 +40,21 @@ public partial class App : Application
             Services = services.BuildServiceProvider();
 
             _blazorHost = new EmbeddedBlazorHost();
-            _blazorHost.StartAsync(Services).GetAwaiter().GetResult();
+            await _blazorHost.StartAsync(Services);
 
-            Services.GetRequiredService<ILocalizationManager>().Initialize().GetAwaiter().GetResult();
+            await Services.GetRequiredService<ILocalizationManager>().Initialize();
             if (OperatingSystem.IsWindows())
                 Services.GetRequiredService<DiscordRichPresence>().Initialize();
+
+            var settings = Services.GetRequiredService<SettingsService>();
+            _ = Task.Run(async () => await settings.InitializeLoginsAsync());
+
             Services.GetRequiredService<HubServerFetcher>().RequestInitialUpdate();
-            Services.GetRequiredService<LoginManager>().Initialize();
+            _ = Task.Run(async () => Services.GetRequiredService<LoginManager>().InitializeAsync());
             Services.GetRequiredService<ContentManager>().Initialize();
             Services.GetRequiredService<TrayCoordinator>().Initialize();
 
             var commands = Services.GetRequiredService<LauncherCommands>();
-            var settings = Services.GetRequiredService<SettingsService>();
             var messaging = Services.GetRequiredService<LauncherMessaging>();
             commands.RunCommandTask();
             messaging.StartServerTask(commands);
