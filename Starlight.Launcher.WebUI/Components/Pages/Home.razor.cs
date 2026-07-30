@@ -157,7 +157,7 @@ public partial class Home : LocalizedComponentBase, IDisposable
             FullWidth = true
         };
 
-        await _dialogService.ShowAsync<ConnectingDialog>("Loading replay", parameters, options);
+        _ = await _dialogService.ShowAsync<ConnectingDialog>("Loading replay", parameters, options);
     }
 
     private async Task AddDirectFavorite(string address)
