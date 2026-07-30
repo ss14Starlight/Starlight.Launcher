@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Avalonia.Threading;
 using Robust.Launcher.Api.Models;
 using Robust.Launcher.Api.Models.Data;
 using Robust.Launcher.Api.Utility;
@@ -351,14 +352,14 @@ public partial class Connector : ObservableObject
 
                 var settings = _settings.GetSettings();
                 if (settings.CollapseInTrayAfterRun)
-                    _tray.HideWindow();
+                    Dispatcher.UIThread.Post(_tray.HideWindow);
 
                 _presence.UpdatePresence(PresenceState.Idle);
 
                 await waitClient;
 
                 if (settings.UnCollapseFromTrayAfterEnd)
-                    _tray.ShowWindow();
+                    Dispatcher.UIThread.Post(_tray.ShowWindow);
 
                 return;
             }

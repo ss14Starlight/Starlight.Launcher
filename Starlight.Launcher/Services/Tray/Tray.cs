@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
-using Starlight.Launcher.WebUI.Models.Tray;
+using Avalonia.Threading;
+using Starlight.Launcher.Models.Tray;
 using Starlight.Launcher.WebUI.Services;
 
 namespace Starlight.Launcher.Services;
@@ -24,12 +25,12 @@ public sealed class TrayCoordinator
     {
         var menu = new List<TrayMenuItem>
         {
-            new("Open", () => _tray.ShowWindow()),
+            new("Open", () => Dispatcher.UIThread.Post(_tray.ShowWindow)),
             TrayMenuItem.Separator,
             new("Quit", QuitApp),
         };
         _tray.Initialize(new TrayOptions("STARLIGHT.LAUNCHER", "Resources/AppIcon/icon.ico"), menu);
-        _tray.IconActivated += (_, _) => _tray.ShowWindow();
+        _tray.IconActivated += (_, _) => Dispatcher.UIThread.Post(_tray.ShowWindow);
     }
 
     /// <summary>

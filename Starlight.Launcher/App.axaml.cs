@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
@@ -76,6 +77,21 @@ public partial class App : Application
 
                 await settings.FlushPendingSavesAsync();
                 desktop.Shutdown();
+            };
+
+            window.Closing += (_ , e) =>
+            {
+                if (settings.GetSettings().CollapseInTrayOnClose)
+                {
+                    e.Cancel = true;
+                    Avalonia.Threading.Dispatcher.UIThread.Post(Services.GetRequiredService<INativeTray>().HideWindow);
+                }
+            };
+
+            window.PropertyChanged += (_, e) =>
+            {
+                if (settings.GetSettings().CollapseInTrayOnMinimize && e.Property == Window.WindowStateProperty && window.WindowState == WindowState.Minimized)
+                    Avalonia.Threading.Dispatcher.UIThread.Post(Services.GetRequiredService<INativeTray>().HideWindow);
             };
 
             desktop.MainWindow = window;

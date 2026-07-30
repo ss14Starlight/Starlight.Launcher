@@ -1,4 +1,4 @@
-namespace Starlight.Launcher.WebUI.Models.Tray;
+namespace Starlight.Launcher.Models.Tray;
 
 public sealed record TrayMenuItem(string Text, Action? Invoke = null, bool IsSeparator = false)
 {

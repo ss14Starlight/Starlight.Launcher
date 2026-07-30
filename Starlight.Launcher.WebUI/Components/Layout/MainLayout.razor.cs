@@ -19,7 +19,6 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
     [Inject] private IJSRuntime _jS { get; set; } = default!;
     [Inject] private IBrowserViewportService _browserViewportService { get; set; } = default!;
     [Inject] private IBridge _bridge { get; set; } = default!;
-    [Inject] private INativeTray _tray { get; set; } = default!;
     [Inject] private NavigationManager _navigation { get; set; } = default!;
     [Inject] private ISnackbar _snackbar { get; set; } = default!;
     [Inject] private IDialogService _dialogService { get; set; } = default!;
@@ -64,7 +63,7 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
         _bridge.LoginsUnrecoverable += OnLoginsUnrecover;
 
         if (settings.CollapseInTrayOnStart)
-            _tray.HideWindow(); // If layout is initialized - window exists, so we can hide it right away if the user wants that.
+            _bridge.HideWindow(); // If layout is initialized - window exists, so we can hide it right away if the user wants that.
 
         _bridge.CleanupOldInstallers();
         await ShowChangelogIfNeeded();

@@ -1,3 +1,3 @@
-namespace Starlight.Launcher.WebUI.Models.Tray;
+namespace Starlight.Launcher.Models.Tray;
 
 public sealed record TrayOptions(string Tooltip, string IconPath);

@@ -1,6 +1,6 @@
-using Starlight.Launcher.WebUI.Models.Tray;
+using Starlight.Launcher.Models.Tray;
 
-namespace Starlight.Launcher.WebUI.Services;
+namespace Starlight.Launcher.Services;
 
 public interface INativeTray : IDisposable
 {

@@ -23,10 +23,12 @@ public sealed partial class Bridge : IBridge
     private readonly SettingsService _settings;
     private readonly Updater _updater;
     private readonly IFileDialogService _fileDialog;
+    private readonly INativeTray _tray;
 
     public Bridge(LauncherCommands commands, Connector connector, DiscordAuthService discordAuth,
         DiscordRichPresence discordRichPresence, HubServerFetcher hubServerFetcher, LauncherUpdater launcherUpdater,
-        LoginManager loginManager, ServerInfoLoader serverInfoLoader, SettingsService settings, Updater updater, IFileDialogService fileDialog)
+        LoginManager loginManager, ServerInfoLoader serverInfoLoader, SettingsService settings, Updater updater,
+        IFileDialogService fileDialog, INativeTray tray)
     {
         _commands = commands;
         _connector = connector;
@@ -39,6 +41,7 @@ public sealed partial class Bridge : IBridge
         _settings = settings;
         _updater = updater;
         _fileDialog = fileDialog;
+        _tray = tray;
     }
 
     public void OpenBrowser(string url) =>
