@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform;
@@ -9,15 +8,11 @@ public partial class MainWindow : Window
 {
     private readonly NativeWebView _web;
 
-    private readonly Uri? _blazorUrl;
-
     public MainWindow() : this(null) { }
 
     public MainWindow(Uri? blazorUrl)
     {
         InitializeComponent();
-
-        _blazorUrl = blazorUrl;
 
         _web = this.FindControl<NativeWebView>("Web")
             ?? throw new InvalidOperationException("WebView not found.");

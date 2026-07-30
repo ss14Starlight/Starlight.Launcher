@@ -1,0 +1,89 @@
+.empty-state {
+    position: relative;
+    text-align: center;
+}
+
+    .empty-state::before {
+        content: "";
+        position: absolute;
+        top: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(124,92,255,.28), rgba(34,211,238,.12) 55%, transparent 75%);
+        filter: blur(4px);
+        z-index: 0;
+    }
+
+.empty-icon {
+    position: relative;
+    z-index: 1;
+    font-size: 4rem !important;
+    opacity: .65;
+    filter: drop-shadow(0 0 14px rgba(124,92,255,.35));
+}
+
+.account-row {
+    position: relative;
+    padding: 14px !important;
+    margin-bottom: 10px !important;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,.07);
+    background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.015));
+    overflow: hidden;
+    transition: background .18s ease, border-color .18s ease, transform .18s ease, box-shadow .18s ease;
+}
+
+    .account-row:hover {
+        background: linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.025));
+        border-color: rgba(124,92,255,.35);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 26px -12px rgba(124,92,255,.35), 0 0 0 1px rgba(255,255,255,.05) inset;
+    }
+
+    .account-row:last-child {
+        margin-bottom: 0 !important;
+    }
+
+.account-row-active {
+    border-color: rgba(124,92,255,.5);
+    background: linear-gradient(180deg, rgba(124,92,255,.10), rgba(34,211,238,.04));
+}
+
+    .account-row-active::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 8px;
+        bottom: 8px;
+        width: 3px;
+        border-radius: 3px;
+        background: linear-gradient(180deg, #7C5CFF, #22D3EE);
+        box-shadow: 0 0 10px 1px rgba(124,92,255,.6);
+    }
+
+.status-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    display: inline-block;
+    flex: 0 0 auto;
+    transition: box-shadow .2s ease;
+}
+
+.account-avatar {
+    background: linear-gradient(135deg, #7C5CFF, #22D3EE) !important;
+    box-shadow: 0 0 0 2px rgba(255,255,255,.08), 0 4px 14px -4px rgba(124,92,255,.55);
+    font-weight: 600;
+}
+
+.row-menu-btn {
+    border-radius: 10px;
+    transition: background .15s ease;
+}
+
+    .row-menu-btn:hover {
+        background: rgba(255,255,255,.07);
+    }

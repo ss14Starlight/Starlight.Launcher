@@ -1,0 +1,136 @@
+@using Robust.Launcher.Api.Models
+@using Starlight.Launcher.WebUI.Models.Auth;
+@using Starlight.Launcher.WebUI.Localization;
+
+@inherits LocalizedComponentBase
+
+<MudText Typo="Typo.h5" Class="mb-4"> @L["auth-menu-accounts-mode"] </MudText>
+
+@if (_bridge.GetLoginEntries().Count == 0)
+{
+    <MudStack AlignItems="AlignItems.Center" Class="empty-state py-8">
+        <MudIcon Icon="@Icons.Material.Outlined.PersonOff"
+                    Class="empty-icon mb-2" />
+        <MudText Typo="Typo.body1">@L["auth-menu-no-accounts"]</MudText>
+        <MudText Typo="Typo.caption" Class="mud-text-secondary mt-1">
+            @L["auth-menu-no-accounts-hint"]
+        </MudText>
+    </MudStack>
+}
+else
+{
+    <MudList T = "LoggedInAccount" Dense = "true">
+        @foreach (var account in _bridge.GetLoginEntries())
+        {
+            var acc = account;
+            var isActive = _bridge.GetActiveAccountId() == acc.UserId;
+
+            <MudListItem T="LoggedInAccount" Class="@($"account-row {(isActive ? "account-row-active" : "")}")">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Style="width:100%">
+
+                    <MudAvatar Class="account-avatar" Color="Color.Primary" Size="Size.Medium">
+                        @(string.IsNullOrEmpty(acc.LoginInfo.Username)
+                            ? "?"
+                            : char.ToUpperInvariant(acc.LoginInfo.Username[0]).ToString())
+                    </MudAvatar>
+
+                    <MudStack Spacing="0" Style="flex:1 1 auto; min-width:0">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                            <MudText Typo="Typo.body1" Style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap">
+                                @acc.LoginInfo.Username
+                            </MudText>
+                            @if (isActive)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Primary" Class="ml-1 active-chip">
+                                    @L["auth-menu-active-chip"]
+                                </MudChip>
+                            }
+                            @if (acc.LoginInfo.Token != null)
+                            {
+                                <MudTooltip Text="@L["auth-menu-can-play-no-discord"]">
+                                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                                                Size="Size.Small" Color="Color.Success" />
+                                </MudTooltip>
+                            }
+                            else
+                            {
+                                <MudTooltip Text="@L["auth-menu-needs-discord"]">
+                                    <MudIcon Icon="@Icons.Material.Filled.Cancel"
+                                                Size="Size.Small" Color="Color.Error" />
+                                </MudTooltip>
+                            }
+                            @if (acc.LoginInfo.DiscordToken != null)
+                            {
+                                <MudTooltip Text="@L["auth-menu-discord-linked-tooltip"]">
+                                    <MudIcon Icon="@Icons.Custom.Brands.Discord" Size="Size.Small" Color="Color.Info" />
+                                </MudTooltip>
+                            }
+                        </MudStack>
+
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mt-1">
+                            <span class="status-dot"
+                                  style="background:var(--mud-palette-@(StatusCssVar(acc.Status)));
+                                         box-shadow:0 0 8px 1px var(--mud-palette-@(StatusCssVar(acc.Status)))"></span>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                @StatusLabel(acc.Status)
+                            </MudText>
+                        </MudStack>
+                    </MudStack>
+
+                    @if (acc.Status == AccountLoginStatus.Expired)
+                    {
+                        <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Warning"
+                                   Class="cta-btn-warning" Style="flex:0 0 auto"
+                                   OnClick="() => OnAccountRelogin?.Invoke(acc)">
+                            @L["auth-menu-login-again-button"]
+                        </MudButton>
+                    }
+                    else
+                    {
+                        <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary"
+                                   Class="cta-btn-primary" Style="flex:0 0 auto"
+                                   Disabled="@(isActive || Busy)"
+                                   OnClick="() => Task.Run(async () => SelectAccount(acc))">
+                            @L["auth-menu-select-button"]
+                        </MudButton>
+                    }
+
+                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Class="row-menu-btn"
+                                Dense="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight"
+                                Disabled="Busy">
+                        @if (acc.Status != AccountLoginStatus.Expired
+                                && acc.LoginInfo.Token != null
+                                && acc.LoginInfo.DiscordToken == null)
+                        {
+                            <MudMenuItem Icon="@Icons.Custom.Brands.Discord" IconColor="Color.Info"
+                                            OnClick="() => OnDiscordLink?.Invoke(acc)">
+                                @L["auth-menu-link-discord-button"]
+                            </MudMenuItem>
+                        }
+                        @if (acc.Status != AccountLoginStatus.Expired && acc.LoginInfo.Token == null && acc.LoginInfo.DiscordToken != null)
+                        {
+                            <MudMenuItem Icon="@Icons.Material.Filled.Key" IconColor="Color.Info"
+                                            OnClick="() => OnLink?.Invoke(acc)">
+                                @L["auth-menu-link-account-button"]
+                            </MudMenuItem>
+                        }
+                        <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error"
+                                        OnClick="() => RemoveAccount(acc)">
+                            @L["auth-menu-delete-account-button"]
+                        </MudMenuItem>
+                    </MudMenu>
+
+                </MudStack>
+            </MudListItem>
+        }
+    </MudList>
+}
+
+<MudButton Variant = "Variant.Filled"
+    Color = "Color.Primary"
+    FullWidth = "true"
+    StartIcon = "@Icons.Material.Filled.Add"
+    Class="mt-4 cta-btn-primary"
+    OnClick = "(GoToSignIn) => OnSignIn?.Invoke()" >
+    @L["auth-menu-add-account-button"]
+</MudButton>

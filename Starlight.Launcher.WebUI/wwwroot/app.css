@@ -579,3 +579,96 @@ h1:focus {
     .mud-tab-panel::-webkit-scrollbar-thumb:hover {
         background: var(--mud-palette-action-disabled);
     }
+
+.cta-btn-primary {
+    background: linear-gradient(90deg, #7C5CFF, #22D3EE) !important;
+    color: #fff !important;
+    box-shadow: 0 6px 20px -8px rgba(124,92,255,.6);
+    transition: box-shadow .2s ease, transform .15s ease;
+}
+
+    .cta-btn-primary:hover:not(.mud-disabled) {
+        box-shadow: 0 10px 26px -8px rgba(34,211,238,.55);
+        transform: translateY(-1px);
+    }
+
+.cta-btn-warning {
+    background: linear-gradient(90deg, #F59E0B, #FDE047) !important;
+    color: #221a02 !important;
+    box-shadow: 0 6px 20px -8px rgba(245,158,11,.55);
+    transition: box-shadow .2s ease, transform .15s ease;
+}
+
+    .cta-btn-warning:hover:not(.mud-disabled) {
+        box-shadow: 0 10px 26px -8px rgba(245,158,11,.7);
+        transform: translateY(-1px);
+    }
+
+.active-chip {
+    background: linear-gradient(90deg, #7C5CFF, #22D3EE) !important;
+    color: #fff !important;
+    box-shadow: 0 0 10px -2px rgba(124,92,255,.6);
+}
+
+.auth-field .mud-input-outlined-border {
+    border-color: rgba(255,255,255,.15) !important;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.auth-field .mud-input-outlined:hover .mud-input-outlined-border {
+    border-color: rgba(124,92,255,.45) !important;
+}
+
+.auth-field .mud-input.mud-focused .mud-input-outlined-border {
+    border-color: #7C5CFF !important;
+    box-shadow: 0 0 0 3px rgba(124,92,255,.15);
+}
+
+.auth-field .mud-input-label.mud-input-label-inputcontrol {
+
+    .mud-shrink ~ & {
+        color: #22D3EE !important;
+    }
+
+    .mud-input:focus-within ~ & {
+        color: #22D3EE !important;
+    }
+}
+
+.icon-btn-ghost:hover {
+    background: rgba(124,92,255,.12) !important;
+}
+
+.auth-link-btn {
+    color: rgba(255,255,255,.65) !important;
+    transition: color .15s ease;
+}
+
+    .auth-link-btn:hover:not(.mud-disabled) {
+        color: #22D3EE !important;
+    }
+
+.error-alert,
+.success-alert {
+    border-radius: 12px !important;
+    backdrop-filter: blur(6px);
+}
+
+.error-alert {
+    background: rgba(239,68,68,.10) !important;
+    border: 1px solid rgba(239,68,68,.35) !important;
+    box-shadow: 0 0 20px -8px rgba(239,68,68,.35);
+}
+
+.success-alert {
+    background: rgba(34,197,94,.10) !important;
+    border: 1px solid rgba(34,197,94,.35) !important;
+    box-shadow: 0 0 20px -8px rgba(34,197,94,.35);
+}
+
+.starlight-divider {
+    opacity: .6;
+    height: 1px !important;
+    border: none !important;
+    background: linear-gradient(90deg, transparent, rgba(124,92,255,.5), rgba(34,211,238,.5), transparent) !important;
+}

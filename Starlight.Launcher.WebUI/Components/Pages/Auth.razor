@@ -1,6 +1,5 @@
 @page "/auth"
-@using Robust.Launcher.Api.Models
-@using Starlight.Launcher.WebUI.Models.Auth;
+@using Starlight.Launcher.WebUI.Components.Atoms.Auth
 @using Starlight.Launcher.WebUI.Localization;
 
 @inherits LocalizedComponentBase
@@ -12,439 +11,49 @@
                 @switch (_mode)
                 {
                     case Mode.AccountList:
-                        <MudText Typo="Typo.h5" Class="mb-4"> @L["auth-menu-accounts-mode"] </MudText>
-
-                        @if (_bridge.GetLoginEntries().Count == 0)
-                        {
-                            <MudStack AlignItems="AlignItems.Center" Class="empty-state py-8">
-                                <MudIcon Icon="@Icons.Material.Outlined.PersonOff"
-                                         Class="empty-icon mb-2" />
-                                <MudText Typo="Typo.body1">@L["auth-menu-no-accounts"]</MudText>
-                                <MudText Typo="Typo.caption" Class="mud-text-secondary mt-1">
-                                    @L["auth-menu-no-accounts-hint"]
-                                </MudText>
-                            </MudStack>
-                        }
-                        else
-                        {
-                            <MudList T = "LoggedInAccount" Dense = "true">
-                                @foreach (var account in _bridge.GetLoginEntries())
-                                {
-                                    var acc = account;
-                                    var isActive = _bridge.GetActiveAccountId() == acc.UserId;
-
-                                    <MudListItem T="LoggedInAccount" Class="my-1 account-row">
-                                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Style="width:100%">
-
-                                            <MudAvatar Color="Color.Primary" Size="Size.Medium">
-                                                @(string.IsNullOrEmpty(acc.LoginInfo.Username)
-                                                    ? "?"
-                                                    : char.ToUpperInvariant(acc.LoginInfo.Username[0]).ToString())
-                                            </MudAvatar>
-
-                                            <MudStack Spacing="0" Style="flex:1 1 auto; min-width:0">
-                                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                                                    <MudText Typo="Typo.body1" Style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap">
-                                                        @acc.LoginInfo.Username
-                                                    </MudText>
-                                                    @if (isActive)
-                                                    {
-                                                        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Class="ml-1">
-                                                            @L["auth-menu-active-chip"]
-                                                        </MudChip>
-                                                    }
-                                                    @if (acc.LoginInfo.Token != null)
-                                                    {
-                                                        <MudTooltip Text="@L["auth-menu-can-play-no-discord"]">
-                                                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
-                                                                     Size="Size.Small" Color="Color.Success" />
-                                                        </MudTooltip>
-                                                    }
-                                                    else
-                                                    {
-                                                        <MudTooltip Text="@L["auth-menu-needs-discord"]">
-                                                            <MudIcon Icon="@Icons.Material.Filled.Cancel"
-                                                                     Size="Size.Small" Color="Color.Error" />
-                                                        </MudTooltip>
-                                                    }
-                                                    @if (acc.LoginInfo.DiscordToken != null)
-                                                    {
-                                                        <MudTooltip Text="@L["auth-menu-discord-linked-tooltip"]">
-                                                            <MudIcon Icon="@Icons.Custom.Brands.Discord" Size="Size.Small" Color="Color.Info" />
-                                                        </MudTooltip>
-                                                    }
-                                                </MudStack>
-
-                                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mt-1">
-                                                    <span class="status-dot" style="background:var(--mud-palette-@(StatusCssVar(acc.Status)))"></span>
-                                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">
-                                                        @StatusLabel(acc.Status)
-                                                    </MudText>
-                                                </MudStack>
-                                            </MudStack>
-
-                                            @if (acc.Status == AccountLoginStatus.Expired)
-                                            {
-                                                <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Warning"
-                                                           Style="flex:0 0 auto"
-                                                           OnClick="() => BeginRelogin(acc)">
-                                                    @L["auth-menu-login-again-button"]
-                                                </MudButton>
-                                            }
-                                            else
-                                            {
-                                                <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary"
-                                                           Style="flex:0 0 auto"
-                                                           Disabled="@(isActive || _busy)"
-                                                           OnClick="() => SelectAccount(acc)">
-                                                    @L["auth-menu-select-button"]
-                                                </MudButton>
-                                            }
-
-                                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small"
-                                                     Dense="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight"
-                                                     Disabled="_busy">
-                                                @if (acc.Status != AccountLoginStatus.Expired
-                                                     && acc.LoginInfo.Token != null
-                                                     && acc.LoginInfo.DiscordToken == null)
-                                                {
-                                                    <MudMenuItem Icon="@Icons.Custom.Brands.Discord" IconColor="Color.Info"
-                                                                 OnClick="() => LinkDiscord(acc)">
-                                                        @L["auth-menu-link-discord-button"]
-                                                    </MudMenuItem>
-                                                }
-                                                @if (acc.Status != AccountLoginStatus.Expired && acc.LoginInfo.Token == null && acc.LoginInfo.DiscordToken != null)
-                                                {
-                                                    <MudMenuItem Icon="@Icons.Material.Filled.Key" IconColor="Color.Info"
-                                                                 OnClick="() => LinkAccount(acc)">
-                                                        @L["auth-menu-link-account-button"]
-                                                    </MudMenuItem>
-                                                }
-                                                <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error"
-                                                             OnClick="() => RemoveAccount(acc)">
-                                                    @L["auth-menu-delete-account-button"]
-                                                </MudMenuItem>
-                                            </MudMenu>
-
-                                        </MudStack>
-                                    </MudListItem>
-                                    <MudDivider />
-                                }
-                            </MudList>
-                        }
-
-                        <MudButton Variant = "Variant.Filled"
-                          Color = "Color.Primary"
-                          FullWidth = "true"
-                          StartIcon = "@Icons.Material.Filled.Add"
-                          Class = "mt-4"
-                          OnClick = "GoToSignIn" >
-                            @L["auth-menu-add-account-button"]
-                        </MudButton>
+                        <AccountListView OnAccountRelogin="x => Task.Run(async () => await BeginRelogin(x))" OnDiscordLink="x => LinkDiscord(x)" OnLink="x => LinkAccount(x)" OnSignIn="() => SwitchMode(Mode.SignIn)" />
                         break;
 
                     case Mode.SignIn:
-                        <MudStack Row = "true" AlignItems = "AlignItems.Center" Class = "mb-4">
-                            @if (_bridge.GetLoginEntries().Count > 0)
-                            {
-                                <MudIconButton Icon = "@Icons.Material.Filled.ArrowBack"
-                                  OnClick = "BackToAccountList"
-                                  Disabled = "_busy"/>
-                            }
-
-                            <MudText Typo="Typo.h5">
-                                @(_relogUserId.HasValue ? L["auth-menu-signin-login-again"] : L["auth-menu-signin-login"])
-                            </MudText>
-                        </MudStack>
-
-                        <MudTextField @bind-Value = "_signInUsername"
-                          Label="@L["auth-menu-username-label"]"
-                          Variant = "Variant.Outlined"
-                          Immediate = "true"
-                          Disabled = "@(_busy || _relogUserId.HasValue)"
-                          Class = "mb-3"/>
-
-                        <MudTextField @bind-Value = "_signInPassword"
-                          Label="@L["auth-menu-password-label"]"
-                          InputType="@(_showPwd ? InputType.Text : InputType.Password)"
-                          Adornment="Adornment.End"
-                          AdornmentIcon="@(_showPwd ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)"
-                          OnAdornmentClick="() => _showPwd = !_showPwd"
-                          Variant = "Variant.Outlined"
-                          Immediate = "true"
-                          Disabled = "_busy"
-                          Class = "mb-3"
-                          OnKeyDown = "OnSignInKey"/>
-
-                        @if (_signInTfaRequired)
-                        {
-                            <MudTextField @bind-Value = "_signInTfaCode"
-                              Label="@L["auth-menu-2fa-label"]"
-                              Variant = "Variant.Outlined"
-                              Immediate = "true"
-                              Disabled = "_busy"
-                              Class = "mb-3"
-                              OnKeyDown = "OnSignInKey"/>
-                        }
-
-                        @if (!string.IsNullOrEmpty(_signInError))
-                        {
-                            <MudAlert Severity = "Severity.Error" Class = "mb-3"> @_signInError </MudAlert>
-                        }
-
-                        @if (_signInShowResend)
-                        {
-                            <MudButton Variant = "Variant.Text"
-                              Color = "Color.Info"
-                              FullWidth = "true"
-                              Disabled = "_busy"
-                              OnClick = "ResendConfirmation"
-                              Class = "mb-3">
-                                @L["auth-menu-resend-confirmation"]
-                            </MudButton>
-                        }
-
-                        <MudButton Variant = "Variant.Filled"
-                          Color = "Color.Primary"
-                          FullWidth = "true"
-                          Disabled = "_busy"
-                          OnClick = "DoSignIn"
-                          Class = "mb-3">
-                            @if (_busy)
-                            {
-                                <MudProgressCircular Size = "Size.Small" Indeterminate = "true" Class = "mr-2"/>
-                                <span>@L["auth-menu-signin-status-busy"]</span>
-                            }
-                            else
-                            {
-                                <span>@L["auth-menu-signin-status-wait"]</span>
-                            }
-                        </MudButton>
-
-                        <MudDivider Class="my-3" />
-                        <MudButton Variant="Variant.Outlined"
-                                   Color="Color.Default"
-                                   FullWidth="true"
-                                   StartIcon="@Icons.Custom.Brands.Discord"
-                                   Disabled="_busy"
-                                   OnClick="LoginWithDiscord"
-                                   Class="mb-3">
-                            @L["auth-menu-signin-method-discord"]
-                        </MudButton>
-
-                        <MudStack Row = "true" Justify = "Justify.SpaceBetween">
-                            <MudButton Variant = "Variant.Text"
-                              Disabled = "_busy"
-                              OnClick = "() => SwitchMode(Mode.ForgotPassword)">
-                                @L["auth-menu-signin-forgot-password"]
-                            </MudButton>
-                            <MudButton Variant = "Variant.Text"
-                              Disabled = "_busy"
-                              OnClick = "() => SwitchMode(Mode.Register)">
-                                @L["auth-menu-registration"]
-                            </MudButton>
-                        </MudStack>
+                        <SignInView OnModeSwitch="x => SwitchMode(x)" RelogUserId="_relogUserId" Username="@_signInUsername" />
                         break;
 
                 case Mode.Register:
                     <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
-                        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Class="icon-btn-ghost"
                                        OnClick="() => SwitchMode(Mode.SignIn)"
                                        Disabled="_busy" />
                         <MudText Typo="Typo.h5">@L["auth-menu-registration"]</MudText>
                     </MudStack>
 
-                    @if (!RegistrationEnabled)
-                    {
-                        <div class="reg-disabled">
-                            <div class="reg-disabled-badge">
-                                <MudIcon Icon="@Icons.Material.Filled.PersonOff" Class="reg-disabled-icon" />
-                            </div>
-                            <MudText Typo="Typo.h6" Class="mb-1">
-                                @L["auth-menu-registration-disabled-title"]
-                            </MudText>
-                            <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
-                                @L["auth-menu-registration-disabled-hint"]
-                            </MudText>
-                            <MudButton Variant="Variant.Filled"
-                                       Color="Color.Primary"
-                                       FullWidth="true"
-                                       StartIcon="@Icons.Material.Filled.Login"
-                                       OnClick="() => SwitchMode(Mode.SignIn)">
-                                @L["auth-menu-registration-back-to-signin"]
-                            </MudButton>
+
+                    <div class="reg-disabled">
+                        <div class="reg-disabled-badge">
+                            <MudIcon Icon="@Icons.Material.Filled.PersonOff" Class="reg-disabled-icon" />
                         </div>
-                    }
-                    /*
-                    else
-                    {
-                        @if (_registerSuccessMessage != null)
-                        {
-                            <MudAlert Severity="Severity.Success" Class="mb-3">@_registerSuccessMessage</MudAlert>
-                            <MudButton Variant="Variant.Filled"
-                                       Color="Color.Primary"
-                                       FullWidth="true"
-                                       OnClick="() => SwitchMode(Mode.SignIn)">
-                                @L["auth-menu-registration-signin"]
-                            </MudButton>
-                            return;
-                        }
-
-                        <MudTextField @bind-Value="_registerUsername"
-                                      Label="@L["auth-menu-username-label"]"
-                                      Variant="Variant.Outlined"
-                                      Disabled="_busy"
-                                      Class="mb-3" />
-
-                        <MudTextField @bind-Value="_registerEmail"
-                                      Label="@L["auth-menu-email-label"]"
-                                      InputType="InputType.Email"
-                                      Variant="Variant.Outlined"
-                                      Disabled="_busy"
-                                      Class="mb-3" />
-
-                        <MudTextField @bind-Value="_registerPassword"
-                                      Label="@L["auth-menu-password-label"]"
-                                      InputType="InputType.Password"
-                                      Variant="Variant.Outlined"
-                                      Disabled="_busy"
-                                      Class="mb-3" />
-
-                        <MudTextField @bind-Value="_registerPasswordConfirm"
-                                      Label="@L["auth-menu-confirm-label"]"
-                                      InputType="InputType.Password"
-                                      Variant="Variant.Outlined"
-                                      Disabled="_busy"
-                                      Class="mb-3" />
-
-                        @if (_registerErrors != null && _registerErrors.Length > 0)
-                        {
-                            <MudAlert Severity="Severity.Error" Class="mb-3">
-                                @foreach (var err in _registerErrors)
-                                {
-                                    <div>@err</div>
-                                }
-                            </MudAlert>
-                        }
-
+                        <MudText Typo="Typo.h6" Class="mb-1">
+                            @L["auth-menu-registration-disabled-title"]
+                        </MudText>
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">
+                            @L["auth-menu-registration-disabled-hint"]
+                        </MudText>
                         <MudButton Variant="Variant.Filled"
-                                   Color="Color.Primary"
-                                   FullWidth="true"
-                                   Disabled="_busy"
-                                   OnClick="DoRegister">
-                            @if (_busy)
-                            {
-                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                                <span>@L["auth-menu-registration-status-busy"]</span>
-                            }
-                            else
-                            {
-                                <span>@L["auth-menu-registration-status-wait"]</span>
-                            }
+                                    Color="Color.Primary"
+                                    FullWidth="true"
+                                    StartIcon="@Icons.Material.Filled.Login"
+                                    Class="cta-btn-primary"
+                                    OnClick="() => SwitchMode(Mode.SignIn)">
+                            @L["auth-menu-registration-back-to-signin"]
                         </MudButton>
-                    }
-                    */
+                    </div>
                     break;
 
                     case Mode.ForgotPassword:
-                        <MudStack Row = "true" AlignItems = "AlignItems.Center" Class = "mb-4">
-                            <MudIconButton Icon = "@Icons.Material.Filled.ArrowBack"
-                              OnClick = "() => SwitchMode(Mode.SignIn)"
-                              Disabled = "_busy" />
-                            <MudText Typo="Typo.h5">@L["auth-menu-forgotpassword"]</MudText>
-                        </MudStack>
-
-                        @if (_forgotSuccess)
-                        {
-                            <MudAlert Severity = "Severity.Success" Class = "mb-3">
-                                @L["auth-menu-forgotpassword-alert"]
-                            </MudAlert>
-                            <MudButton Variant = "Variant.Filled"
-                              Color = "Color.Primary"
-                              FullWidth = "true"
-                              OnClick = "() => SwitchMode(Mode.SignIn)">
-                                @L["auth-menu-signin"]
-                            </MudButton>
-                            return;
-                        }
-
-                        <MudText Class="mb-3">@L["auth-menu-enter-email-label"]</MudText>
-
-                        <MudTextField @bind-Value = "_forgotEmail"
-                                      Label="@L["auth-menu-email-label"]"
-                          InputType = "InputType.Email"
-                          Variant = "Variant.Outlined"
-                          Disabled = "_busy"
-                          Class = "mb-3"/>
-
-                        @if (!string.IsNullOrEmpty(_forgotError))
-                        {
-                            <MudAlert Severity = "Severity.Error" Class = "mb-3"> @_forgotError </MudAlert>
-                        }
-
-                        <MudButton Variant = "Variant.Filled"
-                          Color = "Color.Primary"
-                          FullWidth = "true"
-                          Disabled = "_busy"
-                          OnClick = "DoForgotPassword">
-                            @if (_busy)
-                            {
-                                <MudProgressCircular Size = "Size.Small" Indeterminate = "true" Class = "mr-2"/>
-                                <span>@L["auth-menu-forgotpassword-status-busy"]</span>
-                            }
-                            else
-                            {
-                                <span>@L["auth-menu-forgotpassword-status-wait"]</span>
-                            }
-                        </MudButton>
+                        <ForgotPasswordView OnModeSwitch="x => SwitchMode(x)" />
                         break;
 
                     case Mode.LinkAccount:
-                        <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
-                            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
-                                           OnClick="BackToAccountList" Disabled="_busy" />
-                            <MudText Typo="Typo.h5">@L["auth-menu-link-account-title"]</MudText>
-                        </MudStack>
-
-                        <MudText Class="mb-3 mud-text-secondary">
-                            @L["auth-menu-link-account-hint"]
-                        </MudText>
-
-                        <MudTextField @bind-Value="_linkUsername"
-                                      Label="@L["auth-menu-username-label"]"
-                                      Variant="Variant.Outlined" Immediate="true" Disabled="_busy" Class="mb-3" />
-
-                        <MudTextField @bind-Value="_linkPassword"
-                                      Label="@L["auth-menu-password-label"]"
-                                      InputType="InputType.Password"
-                                      Variant="Variant.Outlined" Immediate="true" Disabled="_busy" Class="mb-3"
-                                      OnKeyDown="OnLinkKey" />
-
-                        @if (_linkTfaRequired)
-                        {
-                            <MudTextField @bind-Value="_linkTfaCode"
-                                          Label="@L["auth-menu-2fa-label"]"
-                                          Variant="Variant.Outlined" Immediate="true" Disabled="_busy" Class="mb-3"
-                                          OnKeyDown="OnLinkKey" />
-                        }
-
-                        @if (!string.IsNullOrEmpty(_linkError))
-                        {
-                            <MudAlert Severity="Severity.Error" Class="mb-3">@_linkError</MudAlert>
-                        }
-
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                                   FullWidth="true" Disabled="_busy" OnClick="DoLinkAccount">
-                            @if (_busy)
-                            {
-                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                                <span>@L["auth-menu-link-account-busy"]</span>
-                            }
-                            else
-                            {
-                                <span>@L["auth-menu-link-account-confirm"]</span>
-                            }
-                        </MudButton>
+                        <LinkAccountView OnModeSwitch="x => SwitchMode(x)" Username="@_linkUsername" UserId="@_linkUserId" />
                         break;
                 }
             </div>

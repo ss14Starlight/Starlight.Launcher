@@ -148,7 +148,7 @@ public sealed partial class SettingsService
         }
         finally
         {
-            _loginsLock.Release();
+            _ = _loginsLock.Release();
         }
     }
 
