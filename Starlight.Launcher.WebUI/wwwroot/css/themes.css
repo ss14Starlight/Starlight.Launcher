@@ -353,6 +353,176 @@
     color-scheme: light;
 }
 
+[data-theme="citrus-light"] {
+    --c-primary-l: 0.57;
+    --c-primary-c: 0.15;
+    --c-primary-h: 132;
+    --c-secondary-l: 0.58;
+    --c-secondary-c: 0.11;
+    --c-secondary-h: 195;
+    --c-tertiary-l: 0.56;
+    --c-tertiary-c: 0.13;
+    --c-tertiary-h: 275;
+    --c-success-l: 0.58;
+    --c-success-c: 0.13;
+    --c-success-h: 158;
+    --c-warning-l: 0.80;
+    --c-warning-c: 0.15;
+    --c-warning-h: 78;
+    --c-error-l: 0.56;
+    --c-error-c: 0.19;
+    --c-error-h: 25;
+    --c-info-l: 0.58;
+    --c-info-c: 0.12;
+    --c-info-h: 235;
+    --c-bg-l: 0.985;
+    --c-bg-c: 0.008;
+    --c-bg-h: 128;
+    --c-surface-l: 1;
+    --c-surface-c: 0;
+    --c-surface-h: 0;
+    --c-text-l: 0.24;
+    --c-text-c: 0.016;
+    --c-text-h: 140;
+    color-scheme: light;
+}
+
+[data-theme="citrus-dark"] {
+    --c-primary-l: 0.80;
+    --c-primary-c: 0.16;
+    --c-primary-h: 133;
+    --c-secondary-l: 0.78;
+    --c-secondary-c: 0.11;
+    --c-secondary-h: 195;
+    --c-tertiary-l: 0.76;
+    --c-tertiary-c: 0.12;
+    --c-tertiary-h: 278;
+    --c-success-l: 0.76;
+    --c-success-c: 0.14;
+    --c-success-h: 158;
+    --c-warning-l: 0.84;
+    --c-warning-c: 0.14;
+    --c-warning-h: 80;
+    --c-error-l: 0.70;
+    --c-error-c: 0.17;
+    --c-error-h: 25;
+    --c-info-l: 0.78;
+    --c-info-c: 0.12;
+    --c-info-h: 235;
+    --c-bg-l: 0.16;
+    --c-bg-c: 0.014;
+    --c-bg-h: 140;
+    --c-surface-l: 0.20;
+    --c-surface-c: 0.014;
+    --c-surface-h: 140;
+    --c-text-l: 0.93;
+    --c-text-c: 0.012;
+    --c-text-h: 135;
+    color-scheme: dark;
+}
+
+[data-theme="slate-light"] {
+    --c-primary-l: 0.48;
+    --c-primary-c: 0.04;
+    --c-primary-h: 250;
+    --c-secondary-l: 0.56;
+    --c-secondary-c: 0.07;
+    --c-secondary-h: 265;
+    --c-tertiary-l: 0.58;
+    --c-tertiary-c: 0.09;
+    --c-tertiary-h: 200;
+    --c-success-l: 0.58;
+    --c-success-c: 0.13;
+    --c-success-h: 158;
+    --c-warning-l: 0.80;
+    --c-warning-c: 0.15;
+    --c-warning-h: 80;
+    --c-error-l: 0.56;
+    --c-error-c: 0.19;
+    --c-error-h: 25;
+    --c-info-l: 0.58;
+    --c-info-c: 0.12;
+    --c-info-h: 235;
+    --c-bg-l: 0.98;
+    --c-bg-c: 0.004;
+    --c-bg-h: 250;
+    --c-surface-l: 1;
+    --c-surface-c: 0;
+    --c-surface-h: 0;
+    --c-text-l: 0.22;
+    --c-text-c: 0.010;
+    --c-text-h: 250;
+    color-scheme: light;
+}
+
+[data-theme="slate-dark"] {
+    --c-primary-l: 0.78;
+    --c-primary-c: 0.03;
+    --c-primary-h: 250;
+    --c-secondary-l: 0.72;
+    --c-secondary-c: 0.05;
+    --c-secondary-h: 265;
+    --c-tertiary-l: 0.76;
+    --c-tertiary-c: 0.07;
+    --c-tertiary-h: 200;
+    --c-success-l: 0.76;
+    --c-success-c: 0.14;
+    --c-success-h: 158;
+    --c-warning-l: 0.84;
+    --c-warning-c: 0.14;
+    --c-warning-h: 80;
+    --c-error-l: 0.70;
+    --c-error-c: 0.17;
+    --c-error-h: 22;
+    --c-info-l: 0.78;
+    --c-info-c: 0.12;
+    --c-info-h: 235;
+    --c-bg-l: 0.16;
+    --c-bg-c: 0.006;
+    --c-bg-h: 250;
+    --c-surface-l: 0.20;
+    --c-surface-c: 0.006;
+    --c-surface-h: 250;
+    --c-text-l: 0.93;
+    --c-text-c: 0.008;
+    --c-text-h: 250;
+    color-scheme: dark;
+}
+
+[data-theme="ocean-dark"] {
+    --c-primary-l: 0.76;
+    --c-primary-c: 0.12;
+    --c-primary-h: 205;
+    --c-secondary-l: 0.76;
+    --c-secondary-c: 0.12;
+    --c-secondary-h: 250;
+    --c-tertiary-l: 0.78;
+    --c-tertiary-c: 0.10;
+    --c-tertiary-h: 175;
+    --c-success-l: 0.76;
+    --c-success-c: 0.14;
+    --c-success-h: 158;
+    --c-warning-l: 0.84;
+    --c-warning-c: 0.14;
+    --c-warning-h: 80;
+    --c-error-l: 0.70;
+    --c-error-c: 0.17;
+    --c-error-h: 25;
+    --c-info-l: 0.78;
+    --c-info-c: 0.12;
+    --c-info-h: 235;
+    --c-bg-l: 0.16;
+    --c-bg-c: 0.016;
+    --c-bg-h: 220;
+    --c-surface-l: 0.20;
+    --c-surface-c: 0.016;
+    --c-surface-h: 220;
+    --c-text-l: 0.93;
+    --c-text-c: 0.012;
+    --c-text-h: 215;
+    color-scheme: dark;
+}
+
 :root {
     /* PRIMARY */
     --mud-palette-primary: oklch(var(--c-primary));

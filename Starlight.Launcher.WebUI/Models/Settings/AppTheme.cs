@@ -13,4 +13,9 @@ public enum AppTheme
     VioletLight = 8,
     VioletDark = 9,
     OceanLight = 10,
+    OceanDark = 11,
+    CitrusLight = 12,
+    CitrusDark = 13,
+    SlateLight = 14,
+    SlateDark = 15,
 }

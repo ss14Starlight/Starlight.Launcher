@@ -41,6 +41,11 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
         AppTheme.VioletLight => "violet-light",
         AppTheme.VioletDark => "violet-dark",
         AppTheme.OceanLight => "ocean-light",
+        AppTheme.OceanDark => "ocean-dark",
+        AppTheme.CitrusLight => "citrus-light",
+        AppTheme.CitrusDark => "citrus-dark",
+        AppTheme.SlateLight => "slate-light",
+        AppTheme.SlateDark => "slate-dark",
         AppTheme.System => systemPrefersDark ? "emerald-dark" : "emerald-light",
         _ => "emerald-light"
     };

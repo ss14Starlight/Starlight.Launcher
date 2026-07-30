@@ -158,6 +158,8 @@ body {
 
 :root {
     --bottom-nav-height: 64px;
+    --starlight-accent-1: oklch(var(--c-secondary));
+    --starlight-accent-2: oklch(var(--c-tertiary));
 }
 
 /* =============================================
@@ -581,71 +583,71 @@ h1:focus {
     }
 
 .cta-btn-primary {
-    background: linear-gradient(90deg, #7C5CFF, #22D3EE) !important;
-    color: #fff !important;
-    box-shadow: 0 6px 20px -8px rgba(124,92,255,.6);
+    background: linear-gradient(90deg, var(--starlight-accent-1), var(--starlight-accent-2)) !important;
+    color: var(--mud-palette-white, #fff) !important;
+    box-shadow: 0 6px 20px -8px color-mix(in srgb, var(--starlight-accent-1) 60%, transparent);
     transition: box-shadow .2s ease, transform .15s ease;
 }
 
     .cta-btn-primary:hover:not(.mud-disabled) {
-        box-shadow: 0 10px 26px -8px rgba(34,211,238,.55);
+        box-shadow: 0 10px 26px -8px color-mix(in srgb, var(--starlight-accent-2) 55%, transparent);
         transform: translateY(-1px);
     }
 
 .cta-btn-warning {
-    background: linear-gradient(90deg, #F59E0B, #FDE047) !important;
-    color: #221a02 !important;
-    box-shadow: 0 6px 20px -8px rgba(245,158,11,.55);
+    background: linear-gradient(90deg, var(--mud-palette-warning), color-mix(in srgb, var(--mud-palette-warning) 55%, white)) !important;
+    color: color-mix(in srgb, var(--mud-palette-warning) 18%, black) !important;
+    box-shadow: 0 6px 20px -8px color-mix(in srgb, var(--mud-palette-warning) 55%, transparent);
     transition: box-shadow .2s ease, transform .15s ease;
 }
 
     .cta-btn-warning:hover:not(.mud-disabled) {
-        box-shadow: 0 10px 26px -8px rgba(245,158,11,.7);
+        box-shadow: 0 10px 26px -8px color-mix(in srgb, var(--mud-palette-warning) 70%, transparent);
         transform: translateY(-1px);
     }
 
 .active-chip {
-    background: linear-gradient(90deg, #7C5CFF, #22D3EE) !important;
-    color: #fff !important;
-    box-shadow: 0 0 10px -2px rgba(124,92,255,.6);
+    background: linear-gradient(90deg, var(--starlight-accent-1), var(--starlight-accent-2)) !important;
+    color: var(--mud-palette-white, #fff) !important;
+    box-shadow: 0 0 10px -2px color-mix(in srgb, var(--starlight-accent-1) 60%, transparent);
 }
 
 .auth-field .mud-input-outlined-border {
-    border-color: rgba(255,255,255,.15) !important;
+    border-color: var(--mud-palette-lines-inputs, rgba(255,255,255,.15)) !important;
     transition: border-color .15s ease, box-shadow .15s ease;
 }
 
 .auth-field .mud-input-outlined:hover .mud-input-outlined-border {
-    border-color: rgba(124,92,255,.45) !important;
+    border-color: color-mix(in srgb, var(--starlight-accent-1) 45%, transparent) !important;
 }
 
-.auth-field .mud-input.mud-focused .mud-input-outlined-border {
-    border-color: #7C5CFF !important;
-    box-shadow: 0 0 0 3px rgba(124,92,255,.15);
+.auth-field .mud-input:focus-within .mud-input-outlined-border {
+    border-color: var(--starlight-accent-1) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--starlight-accent-1) 15%, transparent);
 }
 
 .auth-field .mud-input-label.mud-input-label-inputcontrol {
 
     .mud-shrink ~ & {
-        color: #22D3EE !important;
+        color: var(--starlight-accent-2) !important;
     }
 
     .mud-input:focus-within ~ & {
-        color: #22D3EE !important;
+        color: var(--starlight-accent-2) !important;
     }
 }
 
 .icon-btn-ghost:hover {
-    background: rgba(124,92,255,.12) !important;
+    background: color-mix(in srgb, var(--starlight-accent-1) 12%, transparent) !important;
 }
 
 .auth-link-btn {
-    color: rgba(255,255,255,.65) !important;
+    color: var(--mud-palette-text-secondary) !important;
     transition: color .15s ease;
 }
 
     .auth-link-btn:hover:not(.mud-disabled) {
-        color: #22D3EE !important;
+        color: var(--starlight-accent-2) !important;
     }
 
 .error-alert,
@@ -655,20 +657,20 @@ h1:focus {
 }
 
 .error-alert {
-    background: rgba(239,68,68,.10) !important;
-    border: 1px solid rgba(239,68,68,.35) !important;
-    box-shadow: 0 0 20px -8px rgba(239,68,68,.35);
+    background: color-mix(in srgb, var(--mud-palette-error) 10%, transparent) !important;
+    border: 1px solid color-mix(in srgb, var(--mud-palette-error) 35%, transparent) !important;
+    box-shadow: 0 0 20px -8px color-mix(in srgb, var(--mud-palette-error) 35%, transparent);
 }
 
 .success-alert {
-    background: rgba(34,197,94,.10) !important;
-    border: 1px solid rgba(34,197,94,.35) !important;
-    box-shadow: 0 0 20px -8px rgba(34,197,94,.35);
+    background: color-mix(in srgb, var(--mud-palette-success) 10%, transparent) !important;
+    border: 1px solid color-mix(in srgb, var(--mud-palette-success) 35%, transparent) !important;
+    box-shadow: 0 0 20px -8px color-mix(in srgb, var(--mud-palette-success) 35%, transparent);
 }
 
 .starlight-divider {
     opacity: .6;
     height: 1px !important;
     border: none !important;
-    background: linear-gradient(90deg, transparent, rgba(124,92,255,.5), rgba(34,211,238,.5), transparent) !important;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--starlight-accent-1) 50%, transparent), color-mix(in srgb, var(--starlight-accent-2) 50%, transparent), transparent) !important;
 }

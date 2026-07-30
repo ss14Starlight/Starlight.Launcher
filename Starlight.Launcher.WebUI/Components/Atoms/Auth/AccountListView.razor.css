@@ -12,7 +12,7 @@
         width: 140px;
         height: 140px;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(124,92,255,.28), rgba(34,211,238,.12) 55%, transparent 75%);
+        background: radial-gradient(circle, color-mix(in srgb, var(--starlight-accent-1) 28%, transparent), color-mix(in srgb, var(--starlight-accent-2) 12%, transparent) 55%, transparent 75%);
         filter: blur(4px);
         z-index: 0;
     }
@@ -22,7 +22,7 @@
     z-index: 1;
     font-size: 4rem !important;
     opacity: .65;
-    filter: drop-shadow(0 0 14px rgba(124,92,255,.35));
+    filter: drop-shadow(0 0 14px color-mix(in srgb, var(--starlight-accent-1) 35%, transparent));
 }
 
 .account-row {
@@ -30,17 +30,17 @@
     padding: 14px !important;
     margin-bottom: 10px !important;
     border-radius: 16px;
-    border: 1px solid rgba(255,255,255,.07);
-    background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.015));
+    border: 1px solid var(--mud-palette-lines-inputs, rgba(255,255,255,.07));
+    background: linear-gradient(180deg, color-mix(in srgb, var(--mud-palette-text-primary) 4.5%, transparent), color-mix(in srgb, var(--mud-palette-text-primary) 1.5%, transparent));
     overflow: hidden;
     transition: background .18s ease, border-color .18s ease, transform .18s ease, box-shadow .18s ease;
 }
 
     .account-row:hover {
-        background: linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.025));
-        border-color: rgba(124,92,255,.35);
+        background: linear-gradient(180deg, color-mix(in srgb, var(--mud-palette-text-primary) 7.5%, transparent), color-mix(in srgb, var(--mud-palette-text-primary) 2.5%, transparent));
+        border-color: color-mix(in srgb, var(--starlight-accent-1) 35%, transparent);
         transform: translateY(-2px);
-        box-shadow: 0 10px 26px -12px rgba(124,92,255,.35), 0 0 0 1px rgba(255,255,255,.05) inset;
+        box-shadow: 0 10px 26px -12px color-mix(in srgb, var(--starlight-accent-1) 35%, transparent), 0 0 0 1px color-mix(in srgb, var(--mud-palette-text-primary) 5%, transparent) inset;
     }
 
     .account-row:last-child {
@@ -48,8 +48,8 @@
     }
 
 .account-row-active {
-    border-color: rgba(124,92,255,.5);
-    background: linear-gradient(180deg, rgba(124,92,255,.10), rgba(34,211,238,.04));
+    border-color: color-mix(in srgb, var(--starlight-accent-1) 50%, transparent);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--starlight-accent-1) 10%, transparent), color-mix(in srgb, var(--starlight-accent-2) 4%, transparent));
 }
 
     .account-row-active::before {
@@ -60,8 +60,8 @@
         bottom: 8px;
         width: 3px;
         border-radius: 3px;
-        background: linear-gradient(180deg, #7C5CFF, #22D3EE);
-        box-shadow: 0 0 10px 1px rgba(124,92,255,.6);
+        background: linear-gradient(180deg, var(--starlight-accent-1), var(--starlight-accent-2));
+        box-shadow: 0 0 10px 1px color-mix(in srgb, var(--starlight-accent-1) 60%, transparent);
     }
 
 .status-dot {
@@ -74,8 +74,8 @@
 }
 
 .account-avatar {
-    background: linear-gradient(135deg, #7C5CFF, #22D3EE) !important;
-    box-shadow: 0 0 0 2px rgba(255,255,255,.08), 0 4px 14px -4px rgba(124,92,255,.55);
+    background: linear-gradient(135deg, var(--starlight-accent-1), var(--starlight-accent-2)) !important;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--mud-palette-text-primary) 8%, transparent), 0 4px 14px -4px color-mix(in srgb, var(--starlight-accent-1) 55%, transparent);
     font-weight: 600;
 }
 
@@ -85,5 +85,5 @@
 }
 
     .row-menu-btn:hover {
-        background: rgba(255,255,255,.07);
+        background: color-mix(in srgb, var(--mud-palette-text-primary) 7%, transparent);
     }

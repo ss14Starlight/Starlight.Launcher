@@ -98,19 +98,19 @@ html, body {
     max-height: calc(100vh - 96px);
     overflow-y: auto;
     border-radius: 20px;
-    background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0) 35%), rgba(16, 19, 34, .82);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--mud-palette-text-primary) 8%, transparent), transparent 35%), color-mix(in srgb, var(--mud-palette-surface) 82%, transparent);
     backdrop-filter: blur(18px) saturate(140%);
-    border: 1px solid rgba(255,255,255,.08);
-    box-shadow: 0 1px 0 rgba(255,255,255,.10) inset, 0 0 0 1px rgba(255,255,255,.03) inset, 0 30px 80px rgba(0,0,0,.55), 0 0 140px -40px rgba(124,92,255,.45);
+    border: 1px solid var(--mud-palette-lines-inputs, rgba(255,255,255,.10));
+    box-shadow: 0 1px 0 color-mix(in srgb, var(--mud-palette-text-primary) 10%, transparent) inset, 0 0 0 1px color-mix(in srgb, var(--mud-palette-text-primary) 3%, transparent) inset, 0 30px 80px rgba(0,0,0,.55), 0 0 140px -40px color-mix(in srgb, var(--starlight-accent-1) 45%, transparent);
     transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
     scrollbar-width: thin;
-    scrollbar-color: rgba(124,92,255,.5) transparent;
+    scrollbar-color: color-mix(in srgb, var(--starlight-accent-1) 50%, transparent) transparent;
 }
 
     .auth-card:hover {
         transform: translateY(-3px);
-        box-shadow: 0 1px 0 rgba(255,255,255,.14) inset, 0 0 0 1px rgba(255,255,255,.05) inset, 0 40px 100px rgba(0,0,0,.6), 0 0 170px -30px rgba(34,211,238,.4);
-        border-color: rgba(255,255,255,.14);
+        box-shadow: 0 1px 0 color-mix(in srgb, var(--mud-palette-text-primary) 14%, transparent) inset, 0 0 0 1px color-mix(in srgb, var(--mud-palette-text-primary) 5%, transparent) inset, 0 40px 100px rgba(0,0,0,.6), 0 0 170px -30px color-mix(in srgb, var(--starlight-accent-2) 40%, transparent);
+        border-color: color-mix(in srgb, var(--mud-palette-text-primary) 14%, transparent);
     }
 
     .auth-card::before {
@@ -121,8 +121,8 @@ html, body {
         right: 0;
         height: 3px;
         border-radius: 20px 20px 0 0;
-        background: linear-gradient(90deg, #7C5CFF, #22D3EE);
-        box-shadow: 0 0 16px 1px rgba(124,92,255,.65), 0 0 24px 4px rgba(34,211,238,.35);
+        background: linear-gradient(90deg, var(--starlight-accent-1), var(--starlight-accent-2));
+        box-shadow: 0 0 16px 1px color-mix(in srgb, var(--starlight-accent-1) 65%, transparent), 0 0 24px 4px color-mix(in srgb, var(--starlight-accent-2) 35%, transparent);
         opacity: .9;
     }
 
@@ -135,7 +135,7 @@ html, body {
     }
 
     .auth-card::-webkit-scrollbar-thumb {
-        background: linear-gradient(180deg, rgba(124,92,255,.55), rgba(34,211,238,.55));
+        background: linear-gradient(180deg, var(--starlight-accent-1), var(--starlight-accent-2));
         border-radius: 8px;
     }
 
@@ -169,12 +169,12 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(circle at 35% 30%, rgba(124,92,255,.35), rgba(34,211,238,.12) 55%, transparent 75%);
-    box-shadow: 0 0 40px -8px rgba(124,92,255,.5), inset 0 0 0 1px rgba(255,255,255,.08);
+    background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--starlight-accent-1) 35%, transparent), color-mix(in srgb, var(--starlight-accent-2) 12%, transparent) 55%, transparent 75%);
+    box-shadow: 0 0 40px -8px color-mix(in srgb, var(--starlight-accent-1) 50%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--mud-palette-text-primary) 8%, transparent);
 }
 
 .reg-disabled-icon {
     font-size: 2.75rem !important;
     opacity: .65;
-    filter: drop-shadow(0 0 12px rgba(124,92,255,.4));
+    filter: drop-shadow(0 0 12px color-mix(in srgb, var(--starlight-accent-1) 40%, transparent));
 }
