@@ -10,6 +10,7 @@
 		<ApplicationIcon>Resources\AppIcon\icon.ico</ApplicationIcon>
 		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
 	</PropertyGroup>
 
 	<!-- Hide the console window on Windows only (same as before) -->
