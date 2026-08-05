@@ -1,4 +1,5 @@
 using Starlight.Launcher.WebUI.Models.Data;
+using Starlight.Launcher.WebUI.Models.DiscordRichPresence;
 using Starlight.Launcher.WebUI.Models.ServerStatus;
 
 namespace Starlight.Launcher.WebUI.Models.Settings;
@@ -74,6 +75,8 @@ public partial record AppSettings
     /// Determines should we show Discord Rich Presence buttons or not. If true, presence buttons won't be shown.
     /// </summary>
     public bool ShowPresenceButtons { get; set; } = true;
+
+    public HashSet<PresenceState> HiddenPresenceStates { get; set; } = [];
     #endregion
 
     #region General

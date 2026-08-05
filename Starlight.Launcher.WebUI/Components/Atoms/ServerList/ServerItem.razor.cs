@@ -6,6 +6,7 @@ using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Services;
 using Starlight.Launcher.WebUI.Localization;
 using Microsoft.AspNetCore.Components;
+using Starlight.Launcher.WebUI.Models.DiscordRichPresence;
 
 namespace Starlight.Launcher.WebUI.Components.Atoms.ServerList;
 
@@ -20,6 +21,7 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
     [Parameter] public bool IsInFavorites { get; set; } = false;
 
     private bool _expanded = false;
+    private IPresenceScope? _viewingScope;
 
     private List<string>? _displayTags;
 
@@ -79,8 +81,17 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
             _bridge.Request(Data);
 
         _expanded = !_expanded;
+
+        if (_expanded)
+        {
+            _viewingScope?.Dispose();
+            _viewingScope = _bridge.Presence.Activate(PresenceState.ViewingServer, new ServerPresence(Data.Name, Data.PlayerCount, Data.SoftMaxPlayerCount));
+        }
+
         await Task.CompletedTask;
     }
+
+    private void HandleBlur() => _viewingScope?.Dispose();
 
     private async Task HandleFavorites() => await OnFavorites.InvokeAsync(Data);
 
@@ -196,5 +207,6 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
 
         _ticker.Tick -= OnTick;
         Data.Changed -= OnDataChanged;
+        _viewingScope?.Dispose();
     }
 }

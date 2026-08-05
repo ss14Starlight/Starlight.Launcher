@@ -7,20 +7,35 @@ using Starlight.Launcher.WebUI.Models.DiscordRichPresence;
 
 namespace Starlight.Launcher.Services.Discord;
 
-public readonly record struct ServerPresence(string? Name = null, int Players = 0, int MaxPlayers = 0);
-
 public readonly record struct PresenceContext(
     PresenceState State,
+    DateTime StartedAt,
     string? ServerName = null,
     int Players = 0,
     int MaxPlayers = 0,
     int ProgressPercent = -1);
 
-public sealed class DiscordRichPresence : IDisposable
+public sealed class DiscordRichPresence : IPresenceController, IDisposable
 {
     private const int MaxFieldLength = 120;
 
     private static readonly TimeSpan _minUpdateInterval = TimeSpan.FromSeconds(15);
+
+    private static readonly PresenceState[] _priorityOrder =
+    [
+        PresenceState.InGame,
+        PresenceState.Reconnecting,
+        PresenceState.LaunchingGame,
+        PresenceState.DownloadingContent,
+        PresenceState.UpdatingLauncher,
+        PresenceState.ViewingServer,
+        PresenceState.ManagesLogins,
+        PresenceState.SettingUp,
+        PresenceState.SearchingServers,
+        PresenceState.Idle
+    ];
+
+    private static readonly int[] _priorityByState = BuildPriorities();
 
     private static readonly Button[] _presenceButtons =
     [
@@ -34,27 +49,27 @@ public sealed class DiscordRichPresence : IDisposable
     private readonly ILogger<DiscordRichPresence> _logger;
     private readonly IDisposable _settingsSubscription;
     private readonly IDisposable _buttonsSubscription;
-    private readonly Timer? _flushTimer;
+    private readonly IDisposable _statesSubscription;
+    private readonly Timer _flushTimer;
     private readonly Lock _gate = new();
     private readonly DateTime _launcherStartedAt = DateTime.UtcNow;
+    private readonly StateEntry[] _entries;
 
     private DiscordRpcClient? _client;
+    private PresenceState? _navigation;
     private string _applicationId = "";
     private bool _started;
     private bool _showButtons = true;
 
-    private PresenceState _ambient = PresenceState.Idle;
-    private ServerSession? _session;
-
-    private PresenceContext _current = new(PresenceState.Idle);
+    private PresenceContext? _current;
     private PresenceContext? _pending;
-    private DateTime _stateEnteredAt = DateTime.UtcNow;
+    private bool _hasPending;
     private DateTime _lastSentAt = DateTime.MinValue;
     private bool _disposed;
 
-    public PresenceState CurrentState
+    public PresenceState? ResolvedState
     {
-        get { lock (_gate) return _current.State; }
+        get { lock (_gate) return _current?.State; }
     }
 
     public bool IsActive
@@ -67,13 +82,27 @@ public sealed class DiscordRichPresence : IDisposable
         _settingsService = settingsService;
         _http = http;
         _logger = logger;
+
+        _entries = new StateEntry[_priorityByState.Length];
+        for (var i = 0; i < _entries.Length; i++)
+            _entries[i] = new StateEntry();
+
         _flushTimer = new Timer(_ => Flush(), null, Timeout.Infinite, Timeout.Infinite);
 
         _settingsSubscription = settingsService.Subscribe(
             s => (Hidden: s.HidePresence, ApplicationId: s.DiscordRichPresenceID),
             OnPresenceSettingsChanged);
 
-        _buttonsSubscription = settingsService.Subscribe( s => s.ShowPresenceButtons, OnButtonsSettingsChanged, true);
+        _buttonsSubscription = settingsService.Subscribe(
+            s => s.ShowPresenceButtons,
+            OnButtonsSettingsChanged,
+            fireImmediately: true);
+
+        _statesSubscription = settingsService.Subscribe(
+            s => s.HiddenPresenceStates,
+            OnHiddenStatesChanged,
+            fireImmediately: true,
+            HashSet<PresenceState>.CreateSetComparer());
     }
 
     public void Initialize()
@@ -90,96 +119,171 @@ public sealed class DiscordRichPresence : IDisposable
         ApplySettings(settings.HidePresence, settings.DiscordRichPresenceID);
     }
 
-    public void Apply(PresenceState state)
+    public void SetNavigation(PresenceState state)
     {
         lock (_gate)
         {
-            _ambient = state;
-
-            if (_session is not null)
+            if (_navigation == state)
                 return;
 
-            Rebuild();
+            if (_navigation is { } previous)
+            {
+                var old = _entries[(int)previous];
+                old.NavActive = false;
+
+                if (!old.IsActive)
+                    old.Reset();
+            }
+
+            _navigation = state;
+
+            var entry = _entries[(int)state];
+
+            if (!entry.IsActive)
+                entry.ActivatedAt = DateTime.UtcNow;
+
+            entry.NavActive = true;
+            Resolve();
         }
     }
 
-    public void ApplyViewingServer(string name, int players = 0, int maxPlayers = 0)
+    public IPresenceScope Activate(PresenceState state)
     {
         lock (_gate)
         {
-            _ambient = PresenceState.ViewingServer;
+            var entry = _entries[(int)state];
 
-            if (_session is not null)
+            if (!entry.IsActive)
+                entry.ActivatedAt = DateTime.UtcNow;
+
+            entry.ScopeCount++;
+            Resolve();
+        }
+
+        return new PresenceScope(this, state);
+    }
+
+    public IPresenceScope Activate(PresenceState state, ServerPresence server)
+    {
+        var scope = Activate(state);
+        scope.SetServer(server);
+        return scope;
+    }
+
+    public void SetActive(PresenceState state, bool active)
+    {
+        lock (_gate)
+        {
+            var entry = _entries[(int)state];
+            if (entry.ManualActive == active)
                 return;
 
-            Push(new PresenceContext(PresenceState.ViewingServer, name, players, maxPlayers));
+            if (active && !entry.IsActive)
+                entry.ActivatedAt = DateTime.UtcNow;
+
+            entry.ManualActive = active;
+
+            if (!entry.IsActive)
+                entry.Reset();
+
+            Resolve();
         }
     }
 
-    public ServerSession BeginServerSession(Uri statusAddress, string? fallbackName = null)
-    {
-        var session = new ServerSession(this, _logger, statusAddress, fallbackName);
-        AttachSession(session);
-        return session;
-    }
-
-    public ServerSession BeginLocalSession(string displayName)
-    {
-        var session = new ServerSession(this, _logger, statusAddress: null, displayName);
-        AttachSession(session);
-        return session;
-    }
-
-    private void AttachSession(ServerSession session)
-    {
-        ServerSession? previous;
-
-        lock (_gate)
-        {
-            previous = _session;
-            _session = session;
-        }
-
-        previous?.Dispose();
-        session.Start();
-    }
-
-    private void DetachSession(ServerSession session)
+    public void SetServer(PresenceState state, ServerPresence server)
     {
         lock (_gate)
         {
-            if (!ReferenceEquals(_session, session))
+            var entry = _entries[(int)state];
+            if (entry.Server == server)
                 return;
 
-            _session = null;
-            Rebuild();
+            entry.Server = server;
+            Resolve();
         }
     }
 
-    private void Rebuild()
+    public void SetProgress(PresenceState state, int percent)
     {
-        if (_session is { } session)
+        lock (_gate)
         {
-            var server = session.Server;
-            Push(new PresenceContext(
-                session.State,
-                server.Name,
-                server.Players,
-                server.MaxPlayers,
-                session.ProgressPercent));
+            var entry = _entries[(int)state];
+            if (entry.ProgressPercent == percent)
+                return;
+
+            entry.ProgressPercent = percent;
+            Resolve();
+        }
+    }
+
+    internal void ExitScope(PresenceState state)
+    {
+        lock (_gate)
+        {
+            var entry = _entries[(int)state];
+            if (entry.ScopeCount > 0)
+                entry.ScopeCount--;
+
+            if (!entry.IsActive)
+                entry.Reset();
+
+            Resolve();
+        }
+    }
+
+    public ServerSession BeginServerSession(Uri statusAddress, string? fallbackName = null) =>
+        new(this, _http, _logger, statusAddress, fallbackName);
+
+    public ServerSession BeginLocalSession(string displayName) =>
+        new(this, _http, _logger, statusAddress: null, displayName);
+
+    private void Resolve()
+    {
+        StateEntry? winner = null;
+        var winnerState = PresenceState.Idle;
+        var bestPriority = int.MaxValue;
+
+        for (var i = 0; i < _entries.Length; i++)
+        {
+            var entry = _entries[i];
+            if (!entry.Enabled || !entry.IsActive)
+                continue;
+
+            var priority = _priorityByState[i];
+            if (priority >= bestPriority)
+                continue;
+
+            winner = entry;
+            winnerState = (PresenceState)i;
+            bestPriority = priority;
+        }
+
+        if (winner is null)
+        {
+            Push(_entries[(int)PresenceState.Idle].Enabled
+                ? new PresenceContext(PresenceState.Idle, _launcherStartedAt)
+                : null);
             return;
         }
 
-        Push(new PresenceContext(_ambient));
+        Push(new PresenceContext(
+            winnerState,
+            UsesOwnTimer(winnerState) ? winner.ActivatedAt : _launcherStartedAt,
+            winner.Server.Name,
+            winner.Server.Players,
+            winner.Server.MaxPlayers,
+            winner.ProgressPercent));
     }
 
-    private void Push(PresenceContext ctx)
+    private static bool UsesOwnTimer(PresenceState state) => state
+        is PresenceState.InGame
+        or PresenceState.DownloadingContent
+        or PresenceState.UpdatingLauncher;
+
+    private void Push(PresenceContext? ctx)
     {
         if (_disposed || ctx == _current)
             return;
-
-        if (ctx.State != _current.State || ctx.ServerName != _current.ServerName)
-            _stateEnteredAt = DateTime.UtcNow;
 
         _current = ctx;
 
@@ -190,37 +294,29 @@ public sealed class DiscordRichPresence : IDisposable
         if (wait > TimeSpan.Zero)
         {
             _pending = ctx;
-            _ = _flushTimer?.Change(wait, Timeout.InfiniteTimeSpan);
+            _hasPending = true;
+            _ = _flushTimer.Change(wait, Timeout.InfiniteTimeSpan);
             return;
         }
 
         Send(ctx);
     }
 
-    private void ResendCurrent()
-    {
-        lock (_gate)
-        {
-            if (_disposed || _client is null)
-                return;
-
-            Send(_current);
-        }
-    }
-
     private void Flush()
     {
         lock (_gate)
         {
-            if (_disposed || _client is null || _pending is not { } ctx)
+            if (_disposed || _client is null || !_hasPending)
                 return;
 
+            var ctx = _pending;
             _pending = null;
+            _hasPending = false;
             Send(ctx);
         }
     }
 
-    private void Send(in PresenceContext ctx)
+    private void Send(PresenceContext? ctx)
     {
         var client = _client;
         if (client is null)
@@ -230,7 +326,10 @@ public sealed class DiscordRichPresence : IDisposable
 
         try
         {
-            _client!.SetPresence(Build(ctx));
+            if (ctx is { } value)
+                client.SetPresence(Build(value));
+            else
+                client.ClearPresence();
         }
         catch (Exception ex)
         {
@@ -245,10 +344,8 @@ public sealed class DiscordRichPresence : IDisposable
             Details = Truncate(BuildDetails(ctx)),
             State = Truncate(BuildStateText(ctx)),
             Assets = _assetsByState[(int)ctx.State],
-            Timestamps = new Timestamps(ctx.State is PresenceState.InGame or PresenceState.DownloadingContent
-                ? _stateEnteredAt
-                : _launcherStartedAt),
-            Buttons = _showButtons ? _presenceButtons : null,
+            Timestamps = new Timestamps(ctx.StartedAt),
+            Buttons = _showButtons ? _presenceButtons : null
         };
 
         if (ctx is { Players: > 0, MaxPlayers: > 0, ServerName: { Length: > 0 } name })
@@ -303,6 +400,26 @@ public sealed class DiscordRichPresence : IDisposable
         _ => "Space Station 14"
     };
 
+    private static int[] BuildPriorities()
+    {
+        var states = Enum.GetValues<PresenceState>();
+        var priorities = new int[states.Length];
+
+        for (var i = 0; i < priorities.Length; i++)
+            priorities[i] = -1;
+
+        for (var i = 0; i < _priorityOrder.Length; i++)
+            priorities[(int)_priorityOrder[i]] = i;
+
+        for (var i = 0; i < priorities.Length; i++)
+        {
+            if (priorities[i] < 0)
+                throw new InvalidOperationException($"PresenceState.{(PresenceState)i} отсутствует в _priorityOrder");
+        }
+
+        return priorities;
+    }
+
     private static Assets[] BuildAssets()
     {
         var states = Enum.GetValues<PresenceState>();
@@ -321,9 +438,10 @@ public sealed class DiscordRichPresence : IDisposable
                     PresenceState.DownloadingContent or PresenceState.UpdatingLauncher => "icon_download",
                     PresenceState.LaunchingGame or PresenceState.Reconnecting => "icon_rocket",
                     PresenceState.InGame => "icon_play",
-                    _ => ""
+                    PresenceState.ManagesLogins => "icon_account",
+                    _ => null
                 },
-                SmallImageText = BuildStateText(new PresenceContext(state))
+                SmallImageText = BuildStateText(new PresenceContext(state, DateTime.UtcNow))
             };
         }
 
@@ -351,9 +469,22 @@ public sealed class DiscordRichPresence : IDisposable
                 return;
 
             _showButtons = showButtons;
-        }
 
-        ResendCurrent();
+            var ctx = _current;
+            _current = null;
+            Push(ctx);
+        }
+    }
+
+    private void OnHiddenStatesChanged(HashSet<PresenceState>? hidden)
+    {
+        lock (_gate)
+        {
+            for (var i = 0; i < _entries.Length; i++)
+                _entries[i].Enabled = hidden is null || !hidden.Contains((PresenceState)i);
+
+            Resolve();
+        }
     }
 
     private void ApplySettings(bool hidden, string applicationId)
@@ -406,10 +537,7 @@ public sealed class DiscordRichPresence : IDisposable
             if (_disposed || !_started || _client is not null)
                 return;
 
-            client = new DiscordRpcClient(applicationId)
-            {
-                SkipIdenticalPresence = true
-            };
+            client = new DiscordRpcClient(applicationId) { SkipIdenticalPresence = true };
 
             client.OnReady += (_, e) =>
                 _logger.LogInformation("Discord RPC connected as {User}", e.User.Username);
@@ -425,6 +553,7 @@ public sealed class DiscordRichPresence : IDisposable
 
             _lastSentAt = DateTime.MinValue;
             _pending = null;
+            _hasPending = false;
         }
 
         if (!client.Initialize())
@@ -433,7 +562,11 @@ public sealed class DiscordRichPresence : IDisposable
             return;
         }
 
-        ResendCurrent();
+        lock (_gate)
+        {
+            if (ReferenceEquals(_client, client))
+                Send(_current);
+        }
     }
 
     private void StopClient()
@@ -445,7 +578,8 @@ public sealed class DiscordRichPresence : IDisposable
             client = _client;
             _client = null;
             _pending = null;
-            _ = _flushTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+            _hasPending = false;
+            _ = _flushTimer.Change(Timeout.Infinite, Timeout.Infinite);
         }
 
         if (client is null)
@@ -456,41 +590,67 @@ public sealed class DiscordRichPresence : IDisposable
             if (client.IsInitialized)
                 client.ClearPresence();
         }
-#if DEBUG
         catch (Exception ex)
         {
             _logger.LogDebug(ex, "Failed to clear Discord presence");
         }
-#elif RELEASE
-        catch
-        {
-            // ignore
-        }
-#endif
 
         client.Dispose();
     }
 
     public void Dispose()
     {
-        ServerSession? session;
-
         lock (_gate)
         {
             if (_disposed)
                 return;
 
             _disposed = true;
-            session = _session;
-            _session = null;
         }
-
-        session?.Dispose();
 
         _settingsSubscription.Dispose();
         _buttonsSubscription.Dispose();
-        _flushTimer?.Dispose();
+        _statesSubscription.Dispose();
+        _flushTimer.Dispose();
         StopClient();
+    }
+
+    private sealed class StateEntry
+    {
+        public bool Enabled = true;
+        public bool NavActive;
+        public bool ManualActive;
+        public int ScopeCount;
+        public DateTime ActivatedAt;
+        public ServerPresence Server;
+        public int ProgressPercent = -1;
+
+        public bool IsActive => NavActive || ManualActive || ScopeCount > 0;
+
+        public void Reset()
+        {
+            Server = default;
+            ProgressPercent = -1;
+        }
+    }
+
+    public sealed class PresenceScope : IPresenceScope
+    {
+        private DiscordRichPresence? _owner;
+
+        public PresenceState State { get; }
+
+        internal PresenceScope(DiscordRichPresence owner, PresenceState state)
+        {
+            _owner = owner;
+            State = state;
+        }
+
+        public void SetServer(ServerPresence server) => _owner?.SetServer(State, server);
+
+        public void SetProgress(int percent) => _owner?.SetProgress(State, percent);
+
+        public void Dispose() => Interlocked.Exchange(ref _owner, null)?.ExitScope(State);
     }
 
     public sealed class ServerSession : IDisposable
@@ -498,70 +658,64 @@ public sealed class DiscordRichPresence : IDisposable
         private static readonly TimeSpan _pollInterval = TimeSpan.FromSeconds(30);
 
         private readonly DiscordRichPresence _owner;
-        private readonly ILogger<DiscordRichPresence> _logger;
+        private readonly HttpClient _http;
+        private readonly ILogger _logger;
         private readonly Uri? _statusAddress;
         private readonly CancellationTokenSource _cts = new();
+        private readonly Lock _sessionGate = new();
 
+        private IPresenceScope? _scope;
+        private ServerPresence _server;
         private int _disposed;
 
-        internal PresenceState State { get; private set; } = PresenceState.LaunchingGame;
-        internal ServerPresence Server { get; private set; }
-        internal int ProgressPercent { get; private set; } = -1;
-
-        internal ServerSession(DiscordRichPresence owner, ILogger<DiscordRichPresence> logger, Uri? statusAddress, string? fallbackName)
+        internal ServerSession(
+            DiscordRichPresence owner,
+            HttpClient http,
+            ILogger logger,
+            Uri? statusAddress,
+            string? fallbackName)
         {
             _owner = owner;
+            _http = http;
             _logger = logger;
             _statusAddress = statusAddress;
-            Server = new ServerPresence(string.IsNullOrWhiteSpace(fallbackName) ? null : fallbackName);
-        }
+            _server = new ServerPresence(string.IsNullOrWhiteSpace(fallbackName) ? null : fallbackName);
 
-        internal void Start()
-        {
-            lock (_owner._gate)
-                _owner.Rebuild();
+            SetState(PresenceState.LaunchingGame);
 
-            if (_statusAddress is not null)
+            if (statusAddress is not null)
                 _ = PollAsync(_cts.Token);
         }
 
         public void SetState(PresenceState state)
         {
-            lock (_owner._gate)
+            lock (_sessionGate)
             {
-                if (State == state)
+                if (_disposed != 0 || _scope?.State == state)
                     return;
 
-                State = state;
+                var previous = _scope;
 
-                if (state != PresenceState.DownloadingContent)
-                    ProgressPercent = -1;
+                var scope = _owner.Activate(state);
+                scope.SetServer(_server);
+                _scope = scope;
 
-                _owner.Rebuild();
+                previous?.Dispose();
             }
         }
 
         public void SetProgress(int percent)
         {
-            lock (_owner._gate)
-            {
-                if (ProgressPercent == percent)
-                    return;
-
-                ProgressPercent = percent;
-                _owner.Rebuild();
-            }
+            lock (_sessionGate)
+                _scope?.SetProgress(percent);
         }
 
         public void SetServer(ServerPresence server)
         {
-            lock (_owner._gate)
+            lock (_sessionGate)
             {
-                if (Server == server)
-                    return;
-
-                Server = server;
-                _owner.Rebuild();
+                _server = server;
+                _scope?.SetServer(server);
             }
         }
 
@@ -573,12 +727,12 @@ public sealed class DiscordRichPresence : IDisposable
             {
                 try
                 {
-                    var status = await _owner._http.GetFromJsonAsync<StatusDto>(_statusAddress, cancel);
+                    var status = await _http.GetFromJsonAsync<StatusDto>(_statusAddress, cancel);
 
                     if (status is not null)
                     {
                         SetServer(new ServerPresence(
-                            string.IsNullOrWhiteSpace(status.Name) ? Server.Name : status.Name,
+                            string.IsNullOrWhiteSpace(status.Name) ? _server.Name : status.Name,
                             status.Players,
                             status.SoftMaxPlayers > 0 ? status.SoftMaxPlayers : status.MaxPlayers));
                     }
@@ -587,10 +741,16 @@ public sealed class DiscordRichPresence : IDisposable
                 {
                     return;
                 }
+#if DEBUG
                 catch (Exception ex)
                 {
                     _logger.LogDebug(ex, "Can't get /status for presence");
                 }
+#elif RELEASE
+                catch
+                {
+                }
+#endif
             }
             while (await SafeWaitAsync(timer, cancel));
         }
@@ -614,7 +774,12 @@ public sealed class DiscordRichPresence : IDisposable
 
             _cts.Cancel();
             _cts.Dispose();
-            _owner.DetachSession(this);
+
+            lock (_sessionGate)
+            {
+                _scope?.Dispose();
+                _scope = null;
+            }
         }
 
         private sealed record StatusDto(

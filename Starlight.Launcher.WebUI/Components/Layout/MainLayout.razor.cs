@@ -169,23 +169,13 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         var uri = new Uri(e.Location);
-        switch (uri.AbsolutePath)
+        _bridge.Presence.SetNavigation(uri.AbsolutePath switch
         {
-            case "/":
-            case "/hub":
-            case "/servers":
-                _bridge.Apply(PresenceState.SearchingServers);
-                break;
-            case "/settings":
-                _bridge.Apply(PresenceState.SettingUp);
-                break;
-            case "/auth":
-                _bridge.Apply(PresenceState.ManagesLogins);
-                break;
-            default:
-                _bridge.Apply(PresenceState.Idle);
-                break;
-        }
+            "/" or "/hub" or "/servers" => PresenceState.SearchingServers,
+            "/settings" => PresenceState.SettingUp,
+            "/auth" => PresenceState.ManagesLogins,
+            _ => PresenceState.Idle
+        });
     }
 
     private async Task ApplyThemeAsync()

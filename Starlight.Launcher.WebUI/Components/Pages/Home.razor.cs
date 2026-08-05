@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using Robust.Launcher.Api.Models.ServerStatus;
-using Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 using Starlight.Launcher.WebUI.Bridge;
+using Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Models.Data;
 using Starlight.Launcher.WebUI.Models.HubServerFetcher;
@@ -116,8 +116,7 @@ public partial class Home : LocalizedComponentBase, IDisposable
         }
     }
 
-    private void HandleInfoNeeded(ServerStatusData server) 
-        => _bridge.UpdateInfoFor(server);
+    private void HandleInfoNeeded(ServerStatusData server) => _bridge.UpdateInfoFor(server);
 
     private async Task OpenDirectConnect()
     {

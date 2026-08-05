@@ -70,7 +70,7 @@ public sealed partial class LauncherUpdateDialog : ComponentBase, IDisposable
     {
         try
         {
-            _bridge.Apply(PresenceState.UpdatingLauncher);
+            _ = _bridge.Presence.Activate(PresenceState.UpdatingLauncher);
             var path = await _bridge.DownloadAsset(Asset, _cts.Token);
 
             _phase = Phase.Done;

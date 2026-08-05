@@ -67,7 +67,7 @@ public sealed partial class Updater
             throw new InvalidOperationException("Update already in progress.");
 
         _updating = true;
-        _presence.Apply(PresenceState.DownloadingContent);
+        _presence.SetActive(PresenceState.DownloadingContent, true);
         UpdateException = null;
 
         try
@@ -91,8 +91,7 @@ public sealed partial class Updater
             Progress = null;
             Speed = null;
             _updating = false;
-            if (_presence.CurrentState == PresenceState.DownloadingContent)
-                _presence.Apply(PresenceState.Idle);
+            _presence.SetActive(PresenceState.DownloadingContent, false);
         }
 
         return null;
@@ -810,7 +809,11 @@ public sealed partial class Updater
         return changedVersion;
     }
 
-    private void DownloadProgressCallback(long downloaded, long total) => Dispatcher.UIThread.Post(() => Progress = (downloaded, total, ProgressUnit.Bytes));
+    private void DownloadProgressCallback(long downloaded, long total)
+    {
+        _presence.SetProgress(PresenceState.DownloadingContent, (int)((double)downloaded / total * 100));
+        Dispatcher.UIThread.Post(() => Progress = (downloaded, total, ProgressUnit.Bytes));
+    }
 
     internal static byte[] HashFileSha256(Stream stream)
     {
