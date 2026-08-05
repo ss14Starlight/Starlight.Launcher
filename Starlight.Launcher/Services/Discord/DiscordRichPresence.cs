@@ -2,7 +2,6 @@ using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using DiscordRPC;
 using Microsoft.Extensions.Logging;
-using Serilog;
 using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI.Models.DiscordRichPresence;
 
@@ -119,14 +118,14 @@ public sealed class DiscordRichPresence : IDisposable
 
     public ServerSession BeginServerSession(Uri statusAddress, string? fallbackName = null)
     {
-        var session = new ServerSession(this, statusAddress, fallbackName);
+        var session = new ServerSession(this, _logger, statusAddress, fallbackName);
         AttachSession(session);
         return session;
     }
 
     public ServerSession BeginLocalSession(string displayName)
     {
-        var session = new ServerSession(this, statusAddress: null, displayName);
+        var session = new ServerSession(this, _logger, statusAddress: null, displayName);
         AttachSession(session);
         return session;
     }
@@ -249,7 +248,7 @@ public sealed class DiscordRichPresence : IDisposable
             Timestamps = new Timestamps(ctx.State is PresenceState.InGame or PresenceState.DownloadingContent
                 ? _stateEnteredAt
                 : _launcherStartedAt),
-            Buttons = _showButtons ? _presenceButtons : []
+            Buttons = _showButtons ? _presenceButtons : null,
         };
 
         if (ctx is { Players: > 0, MaxPlayers: > 0, ServerName: { Length: > 0 } name })
@@ -322,7 +321,7 @@ public sealed class DiscordRichPresence : IDisposable
                     PresenceState.DownloadingContent or PresenceState.UpdatingLauncher => "icon_download",
                     PresenceState.LaunchingGame or PresenceState.Reconnecting => "icon_rocket",
                     PresenceState.InGame => "icon_play",
-                    _ => null
+                    _ => ""
                 },
                 SmallImageText = BuildStateText(new PresenceContext(state))
             };
@@ -346,7 +345,14 @@ public sealed class DiscordRichPresence : IDisposable
 
     private void OnButtonsSettingsChanged(bool showButtons)
     {
-        _showButtons = showButtons;
+        lock (_gate)
+        {
+            if (_showButtons == showButtons)
+                return;
+
+            _showButtons = showButtons;
+        }
+
         ResendCurrent();
     }
 
@@ -492,6 +498,7 @@ public sealed class DiscordRichPresence : IDisposable
         private static readonly TimeSpan _pollInterval = TimeSpan.FromSeconds(30);
 
         private readonly DiscordRichPresence _owner;
+        private readonly ILogger<DiscordRichPresence> _logger;
         private readonly Uri? _statusAddress;
         private readonly CancellationTokenSource _cts = new();
 
@@ -501,9 +508,10 @@ public sealed class DiscordRichPresence : IDisposable
         internal ServerPresence Server { get; private set; }
         internal int ProgressPercent { get; private set; } = -1;
 
-        internal ServerSession(DiscordRichPresence owner, Uri? statusAddress, string? fallbackName)
+        internal ServerSession(DiscordRichPresence owner, ILogger<DiscordRichPresence> logger, Uri? statusAddress, string? fallbackName)
         {
             _owner = owner;
+            _logger = logger;
             _statusAddress = statusAddress;
             Server = new ServerPresence(string.IsNullOrWhiteSpace(fallbackName) ? null : fallbackName);
         }
@@ -533,7 +541,6 @@ public sealed class DiscordRichPresence : IDisposable
             }
         }
 
-        /// <summary>Можно дёргать хоть на каждый пакет — лишнее схлопнёт троттлинг.</summary>
         public void SetProgress(int percent)
         {
             lock (_owner._gate)
@@ -582,8 +589,7 @@ public sealed class DiscordRichPresence : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    // Сервер может лежать/рестартовать — это не повод шуметь в логах.
-                    Log.Debug(ex, "Не удалось получить /status для пресенса");
+                    _logger.LogDebug(ex, "Can't get /status for presence");
                 }
             }
             while (await SafeWaitAsync(timer, cancel));

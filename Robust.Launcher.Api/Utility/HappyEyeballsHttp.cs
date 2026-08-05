@@ -49,6 +49,7 @@ public static class HappyEyeballsHttp
             PooledConnectionLifetime = TimeSpan.FromMinutes(5),
             PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
             MaxConnectionsPerServer = 8,
+            EnableMultipleHttp2Connections = true,
         };
 
         return new HttpClient(handler);
