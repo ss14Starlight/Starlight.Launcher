@@ -24,7 +24,7 @@ public sealed partial class Bridge : IBridge
 
     public void LaunchContentBundle(IFileResult file, CancellationToken cancel = default) => _connector.LaunchContentBundle(file, cancel);
 
-    public void Connect(string address, CancellationToken cancel = default) => _connector.Connect(address, cancel);
+    public void Connect(string address, string? displayName, CancellationToken cancel = default) => _connector.Connect(address, displayName, cancel);
 
     public void ConfirmPrivacyPolicy(PrivacyPolicyAcceptResult result) => _connector.ConfirmPrivacyPolicy(result);
 }

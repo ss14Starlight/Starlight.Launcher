@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using Starlight.Launcher.WebUI.Bridge;
+using Starlight.Launcher.WebUI.Models.DiscordRichPresence;
 using Starlight.Launcher.WebUI.Models.LauncherUpdater;
 
 namespace Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
@@ -69,6 +70,7 @@ public sealed partial class LauncherUpdateDialog : ComponentBase, IDisposable
     {
         try
         {
+            _bridge.Apply(PresenceState.UpdatingLauncher);
             var path = await _bridge.DownloadAsset(Asset, _cts.Token);
 
             _phase = Phase.Done;

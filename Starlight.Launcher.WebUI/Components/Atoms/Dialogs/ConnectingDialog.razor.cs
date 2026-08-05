@@ -114,7 +114,7 @@ public sealed partial class ConnectingDialog : LocalizedComponentBase, IDisposab
         if (ContentBundle is { } bundle)
             _bridge.LaunchContentBundle(bundle, _cts.Token);
         else
-            _bridge.Connect(Address, _cts.Token);
+            _bridge.Connect(Address, Title, _cts.Token);
     }
 
     // Recompute speed from the displayed counter so the two can never disagree.

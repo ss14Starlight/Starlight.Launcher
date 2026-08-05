@@ -67,7 +67,7 @@ public sealed partial class Updater
             throw new InvalidOperationException("Update already in progress.");
 
         _updating = true;
-        _presence.UpdatePresence(PresenceState.DownloadingContent);
+        _presence.Apply(PresenceState.DownloadingContent);
         UpdateException = null;
 
         try
@@ -91,8 +91,8 @@ public sealed partial class Updater
             Progress = null;
             Speed = null;
             _updating = false;
-            if (_presence.CurrentPresenceState == PresenceState.DownloadingContent)
-                _presence.UpdatePresence(PresenceState.Idle);
+            if (_presence.CurrentState == PresenceState.DownloadingContent)
+                _presence.Apply(PresenceState.Idle);
         }
 
         return null;

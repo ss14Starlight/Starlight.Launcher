@@ -14,12 +14,11 @@ public sealed class ServerInfoLoader : IDisposable
     private readonly ConcurrentDictionary<string, byte> _inFlight = new(StringComparer.OrdinalIgnoreCase);
     private readonly SemaphoreSlim _gate = new(MaxConcurrent, MaxConcurrent);
     private readonly CancellationTokenSource _cts = new();
-    private readonly Task _pump;
 
     public ServerInfoLoader(Func<ServerStatusData, Task> fetch)
     {
         _fetch = fetch;
-        _pump = Task.Run(() => PumpAsync(_cts.Token));
+        _ = Task.Run(() => PumpAsync(_cts.Token));
     }
     public void Request(ServerStatusData? data)
     {
@@ -58,8 +57,8 @@ public sealed class ServerInfoLoader : IDisposable
         catch { }
         finally
         {
-            _gate.Release();
-            _inFlight.TryRemove(data.Address, out _);
+            _ = _gate.Release();
+            _ = _inFlight.TryRemove(data.Address, out _);
         }
     }
 

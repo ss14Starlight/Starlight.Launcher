@@ -171,14 +171,19 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
         var uri = new Uri(e.Location);
         switch (uri.AbsolutePath)
         {
+            case "/":
+            case "/hub":
             case "/servers":
-                _bridge.UpdatePresence(PresenceState.SearchingServers);
+                _bridge.Apply(PresenceState.SearchingServers);
                 break;
             case "/settings":
-                _bridge.UpdatePresence(PresenceState.SettingUp);
+                _bridge.Apply(PresenceState.SettingUp);
+                break;
+            case "/auth":
+                _bridge.Apply(PresenceState.ManagesLogins);
                 break;
             default:
-                _bridge.UpdatePresence(PresenceState.Idle);
+                _bridge.Apply(PresenceState.Idle);
                 break;
         }
     }

@@ -5,7 +5,6 @@ using Robust.Launcher.Api.Models.ContentManagement;
 using Robust.Launcher.Api.Utility;
 using Serilog;
 using SharpZstd.Interop;
-using Starlight.Launcher.Utility;
 using Starlight.Launcher.WebUI.Models.Updater;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;

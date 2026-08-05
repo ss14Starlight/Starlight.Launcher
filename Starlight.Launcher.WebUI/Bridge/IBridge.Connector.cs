@@ -20,7 +20,7 @@ public partial interface IBridge
 
     void LaunchContentBundle(IFileResult file, CancellationToken cancel = default);
 
-    void Connect(string address, CancellationToken cancel = default);
+    void Connect(string address, string? displayName, CancellationToken cancel = default);
 
     void ConfirmPrivacyPolicy(PrivacyPolicyAcceptResult result);
 

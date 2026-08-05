@@ -3,8 +3,6 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform;
 using Starlight.Launcher.Models.Tray;
-using Starlight.Launcher.Models.Tray;
-using Starlight.Launcher.WebUI.Services;
 
 namespace Starlight.Launcher.Services;
 

@@ -4,5 +4,5 @@ namespace Starlight.Launcher.WebUI.Bridge;
 
 public partial interface IBridge
 {
-    void UpdatePresence(PresenceState state, string? serverName = null);
+    void Apply(PresenceState state);
 }

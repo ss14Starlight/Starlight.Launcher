@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using Robust.Launcher.Api.Utility;
 using static Robust.Launcher.Api.Utility.HttpUtility;
 
 namespace Starlight.Launcher.Utility;

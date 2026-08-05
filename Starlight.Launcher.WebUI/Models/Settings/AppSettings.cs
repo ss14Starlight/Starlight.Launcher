@@ -61,14 +61,19 @@ public partial record AppSettings
     public bool CollapseInTrayOnMinimize { get; init; } = false;
 
     /// <summary>
-    /// Determines which Discord Reach Presense will be used by default, should be a key from DiscordReachPresencesIndex.
+    /// Determines which Discord Rich Presence will be used by default, should be a key from DiscordRichPresencesIndex.
     /// </summary>
-    public string DiscordReachPresenceID { get; set; } = "1512750736927228005";
+    public string DiscordRichPresenceID { get; set; } = "1512750736927228005";
 
     /// <summary>
-    /// Determines should we hide Discord Reach Presence or not. If true, presence won't be started. So this requires restart.
+    /// Determines should we hide Discord Rich Presence or not. If true, presence won't be started.
     /// </summary>
     public bool HidePresence { get; set; } = false;
+
+    /// <summary>
+    /// Determines should we show Discord Rich Presence buttons or not. If true, presence buttons won't be shown.
+    /// </summary>
+    public bool ShowPresenceButtons { get; set; } = true;
     #endregion
 
     #region General

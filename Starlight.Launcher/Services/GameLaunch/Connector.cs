@@ -18,7 +18,7 @@ using Starlight.Launcher.WebUI.Models.Connector;
 using Starlight.Launcher.WebUI.Models.DiscordRichPresence;
 using Starlight.Launcher.WebUI.Models.Helpers;
 using Starlight.Launcher.WebUI.Models.Settings;
-using Starlight.Launcher.WebUI.Services;
+using static Starlight.Launcher.Services.Discord.DiscordRichPresence;
 
 namespace Starlight.Launcher.Services;
 
@@ -87,7 +87,7 @@ public partial class Connector : ObservableObject
 
     private void EndLaunch() => Interlocked.Decrement(ref _activeLaunches);
 
-    public async void Connect(string address, CancellationToken cancel = default)
+    public async void Connect(string address, string? displayName, CancellationToken cancel = default)
     {
         if (!TryBeginLaunch())
         {
@@ -97,7 +97,7 @@ public partial class Connector : ObservableObject
 
         try
         {
-            await ConnectInternalAsync(address, cancel);
+            await ConnectInternalAsync(address, displayName, cancel);
         }
         catch (ConnectException e)
         {
@@ -147,16 +147,21 @@ public partial class Connector : ObservableObject
         }
     }
 
-    private async Task ConnectInternalAsync(string address, CancellationToken cancel)
+    private async Task ConnectInternalAsync(string address, string? displayName, CancellationToken cancel)
     {
         Status = ConnectionStatus.Connecting;
 
         var (info, parsedAddr, infoAddr) = await GetServerInfoAsync(address, cancel);
 
+        using var session = _presence.BeginServerSession(
+            UriHelper.GetServerStatusAddress(parsedAddr),
+            displayName);
+
         await HandlePrivacyPolicyAsync(info, cancel);
 
         // Run update.
         Status = ConnectionStatus.Updating;
+        session.SetState(PresenceState.DownloadingContent);
 
         // Must have been set when retrieving build info (inferred to be automatic zipping).
         Debug.Assert(info.BuildInformation != null, "info.BuildInformation != null");
@@ -165,7 +170,7 @@ public partial class Connector : ObservableObject
 
         var connectAddress = GetConnectAddress(info, infoAddr);
 
-        await LaunchClientWrap(installation, info, info.BuildInformation, connectAddress, parsedAddr, false, cancel);
+        await LaunchClientWrap(session, installation, info, info.BuildInformation, connectAddress, parsedAddr, false, cancel);
     }
 
     private async Task HandlePrivacyPolicyAsync(ServerInfo info, CancellationToken cancel)
@@ -321,10 +326,11 @@ public partial class Connector : ObservableObject
 
         // I originally wanted to pass through build info,
         // but then realized I'd need to pipe the entries in the SQLite DB ("AnonymousContentBundle") up and ehhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh.
-        await LaunchClientWrap(installation, null, null, null, null, true, cancel);
+        await LaunchClientWrap(null, installation, null, null, null, null, true, cancel);
     }
 
     private async Task LaunchClientWrap(
+        ServerSession? session,
         ContentLaunchInfo launchInfo,
         ServerInfo? info = null,
         ServerBuildInformation? buildInfo = null,
@@ -334,7 +340,7 @@ public partial class Connector : ObservableObject
         CancellationToken cancel = default)
     {
         Status = ConnectionStatus.StartingClient;
-        _presence.UpdatePresence(PresenceState.LaunchingGame);
+        session?.SetState(PresenceState.LaunchingGame);
 
         var clientProc = await ConnectLaunchClient(launchInfo, info, buildInfo, connectAddress, parsedAddr, contentBundle);
 
@@ -354,13 +360,12 @@ public partial class Connector : ObservableObject
                 if (settings.CollapseInTrayAfterRun)
                     Dispatcher.UIThread.Post(_tray.HideWindow);
 
-                _presence.UpdatePresence(PresenceState.Idle);
+                session?.SetState(PresenceState.InGame);
 
                 await waitClient;
 
                 if (settings.UnCollapseFromTrayAfterEnd)
                     Dispatcher.UIThread.Post(_tray.ShowWindow);
-
                 return;
             }
 
