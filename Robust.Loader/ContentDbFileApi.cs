@@ -15,7 +15,6 @@ using Robust.Launcher.Api.Models.ContentManagement;
 using Robust.Launcher.Api.Utility;
 using static SQLitePCL.raw;
 using static SharpZstd.Interop.Zstd;
-using Starlight.Launcher.Utility;
 
 namespace SS14.Loader;
 

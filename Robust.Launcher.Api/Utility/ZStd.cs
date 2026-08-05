@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using SharpZstd.Interop;
 
-namespace Starlight.Launcher.Utility;
+namespace Robust.Launcher.Api.Utility;
 
 /// <summary>
 /// Provides helper methods for Zstandard compression.
