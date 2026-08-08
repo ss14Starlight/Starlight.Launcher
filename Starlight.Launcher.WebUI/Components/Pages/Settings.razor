@@ -2,9 +2,10 @@
 
 @using System.Globalization
 @using Starlight.Launcher.WebUI.Components.Atoms.Settings
-@using Starlight.Launcher.WebUI.Models.Data
-@using Starlight.Launcher.WebUI.Models.Settings
 @using Starlight.Launcher.WebUI.Localization
+@using Starlight.Launcher.WebUI.Models.Data
+@using Starlight.Launcher.WebUI.Models.Logging
+@using Starlight.Launcher.WebUI.Models.Settings
 
 @inherits LocalizedComponentBase
 
@@ -18,29 +19,25 @@
                 <SelectorListOption Title="@L["settings-menu-language-option"]" Description="@L["settings-menu-language-option-description"]" EmptyOption="true" EmptyOptionName="@L["settings-menu-language-option-system"]" Icon="@Icons.Material.Filled.Language" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings<string?>(s => s.SelectedLanguage)" SelfValueControlAction="x => OnLanguageChanged(x, null, (s, v) => s with { SelectedLanguage = v })" Values="_availableLanguages" DisplayTextSelector="@(x => new CultureInfo(x).EnglishName)" />
                 <BoolOption Title="@L["settings-menu-multiple-clients-option"]" Description="@L["settings-menu-multiple-clients-option-description"]" Icon="@Icons.Material.Filled.MultipleStop" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.PreventMultipleClients)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { PreventMultipleClients = v })" />
                 <FilePathOption Title="@L["settings-menu-data-folder-option"]" Description="@L["settings-menu-data-folder-option-description"]" Icon="@Icons.Material.Filled.FolderOpen" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.DirLauncherData)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { DirLauncherData = v })" AllowManualInput="false" PickAction="() => _fileDialog.PickFolderAsync()" ShowOpenButton="true" />
+                <FilePathOption Title="@L["settings-menu-logs-folder-option"]" Description="@L["settings-menu-logs-folder-option-description"]" Icon="@Icons.Material.Filled.TableChart" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.ClientLogDirectory ?? s.DirClientLogsDefault)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { ClientLogDirectory = v })" AllowManualInput="false" PickAction="() => _fileDialog.PickFolderAsync()" ShowOpenButton="true" />
+                <EnumOption Title="@L["settings-menu-logs-split-mode-option"]" Description="@L["settings-menu-logs-split-mode-option-description"]" Icon="@Icons.Material.Filled.ModeEdit" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => (int)s.ClientLogSplitMode)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { ClientLogSplitMode = (ClientLogSplitMode)v }, true)" Values="new ClientLogSplitMode()" />
+                <BoolOption Title="@L["settings-menu-logs-combine-streams-option"]" Description="@L["settings-menu-logs-combine-streams-option-description"]" Icon="@Icons.Material.Filled.Merge" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.ClientLogCombineStreams)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { ClientLogCombineStreams = v })" />
+                <NumericFieldOption Title="@L["settings-menu-log-retain-amount-option"]" Description="@L["settings-menu-log-retain-amount-option-description"]" Icon="@Icons.Material.Filled._30fpsSelect" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.ClientLogRetainFiles)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { ClientLogRetainFiles = v })" />
                 <MudButton StartIcon="@Icons.Material.Filled.BrowserUpdated"
                             Variant="Variant.Filled"
                             FullWidth=true
                             OnClick="CheckUpdate">
                     @L["settings-menu-update-option"]
                 </MudButton>
-                <MudText Typo="Typo.overline" Class="mud-text-secondary mt-4">@L["settings-menu-discord-rpc-category"]</MudText>
-                <BoolOption Title="@L["settings-menu-discord-presence-option"]" Description="@L["settings-menu-discord-presence-option-description"]" Icon="@Icons.Custom.Brands.Discord" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => !s.HidePresence)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { HidePresence = !v })" />
-                <BoolOption Title="@L["settings-menu-discord-presence-buttons-option"]" Description="@L["settings-menu-discord-presence-buttons-option-description"]" Icon="@Icons.Custom.Brands.Discord" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.ShowPresenceButtons)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { ShowPresenceButtons = v })" />
-                <PresenceStateListOption Icon="@Icons.Material.Filled.Sort"
-                                         Title="@L["settings-menu-discord-presence-states-option"]"
-                                         Description="@L["settings-menu-discord-presence-states-option-description"]"
-                                         SelfValueControlInitialization="async () => await FetchSettings(s => s.PresenceStates)"
-                                         SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { PresenceStates = v })" />
             </MudContainer>
         </MudTabPanel>
         <MudTabPanel Text="@L["settings-menu-servers-category"]">
-                <MudContainer MaxWidth="MaxWidth.Small" Class="pa-0">
+            <MudContainer MaxWidth="MaxWidth.Small" Class="pa-0">
                 <MudText Typo="Typo.overline" Class="mud-text-secondary">@L["settings-menu-general-category"]</MudText>
                 <AlternativeListOption Title="@L["settings-menu-hub-list-option"]" Description="@L["settings-menu-hub-list-option-description"]" AddButtonTooltip="@L["settings-menu-hub-list-option-add-tooltip"]" EmptyValuesString="@L["settings-menu-hub-list-option-empty-values"]" TextFieldLabel="@L["settings-menu-hub-list-option-text-label"]" Icon="@Icons.Material.Filled.Hub" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings<List<(string Url, long Priority)>>(s => [.. s.Hubs.Select(h => (h.HubUri.ToString(), h.Priority))])" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { Hubs = ConvertToHubList(v) })" />
                 <AlternativeSelectorListOption Title="@L["settings-menu-auth-list-option"]" Description="@L["settings-menu-auth-list-option-description"]" AddButtonTooltip="@L["settings-menu-auth-list-option-add-tooltip"]" EmptyValuesString="@L["settings-menu-auth-list-option-empty-values"]" TextFieldLabel="@L["settings-menu-auth-list-option-text-label"]" Icon="@Icons.Material.Filled.Key" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings<(List<string>, string?)>(s => (s.AuthServerUrls, s.SelectedAuthServer))" SelfValueControlAction="(a, b) => OnSettingChanged((a, b), null, (s, v) => s with { AuthServerUrls = v.a, SelectedAuthServer = v.b })" />
                 <BoolOption Title="@L["settings-menu-deauth-onchange-option"]" Description="@L["settings-menu-deauth-onchange-option-description"]" Icon="@Icons.Material.Filled.KeyOff" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.DeauthOnChange)" SelfValueControlAction="x => { OnSettingChanged(x, null, (s, v) => s with { DeauthOnChange = !v }); if (_bridge.GetSettings() is { } settings && settings.DeauthOnChange) { _bridge.WriteLogins(new()); _bridge.WriteSettings(settings with { SelectedLoginId = null }); } }" />
-                </MudContainer>
+            </MudContainer>
         </MudTabPanel>
         <MudTabPanel Text="@L["settings-menu-appearance-category"]">
             <MudContainer MaxWidth="MaxWidth.Small" Class="pa-0">
@@ -58,7 +55,18 @@
                 <BoolOption Title="@L["settings-menu-tray-uncollapse-end-option"]" Description="@L["settings-menu-tray-uncollapse-end-option-description"]" Icon="@Icons.Material.Filled.VideogameAssetOff" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.UnCollapseFromTrayAfterEnd)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { UnCollapseFromTrayAfterEnd = v })" />
                 <BoolOption Title="@L["settings-menu-tray-collapse-close-option"]" Description="@L["settings-menu-tray-collapse-close-option-description"]" Icon="@Icons.Material.Filled.Close" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.CollapseInTrayOnClose)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { CollapseInTrayOnClose = v })" />
                 <BoolOption Title="@L["settings-menu-tray-collapse-minimize-option"]" Description="@L["settings-menu-tray-collapse-minimize-option-description"]" Icon="@Icons.Material.Filled.Minimize" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.CollapseInTrayOnMinimize)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { CollapseInTrayOnMinimize = v })" />
-                <MudSpacer />
+            </MudContainer>
+        </MudTabPanel>
+        <MudTabPanel Text="@L["settings-menu-discord-rpc-category"]">
+            <MudContainer MaxWidth="MaxWidth.Small" Class="pa-0">
+                <MudText Typo="Typo.overline" Class="mud-text-secondary">@L["settings-menu-general-category"]</MudText>
+                <BoolOption Title="@L["settings-menu-discord-presence-option"]" Description="@L["settings-menu-discord-presence-option-description"]" Icon="@Icons.Custom.Brands.Discord" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => !s.HidePresence)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { HidePresence = !v })" />
+                <BoolOption Title="@L["settings-menu-discord-presence-buttons-option"]" Description="@L["settings-menu-discord-presence-buttons-option-description"]" Icon="@Icons.Custom.Brands.Discord" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.ShowPresenceButtons)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { ShowPresenceButtons = v })" />
+                <PresenceStateListOption Icon="@Icons.Material.Filled.Sort"
+                                         Title="@L["settings-menu-discord-presence-states-option"]"
+                                         Description="@L["settings-menu-discord-presence-states-option-description"]"
+                                         SelfValueControlInitialization="async () => await FetchSettings(s => s.PresenceStates)"
+                                         SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { PresenceStates = v })" />
             </MudContainer>
         </MudTabPanel>
         <MudTabPanel @ref="_developmentTab" Text="@L["settings-menu-development-category"]">

@@ -6,7 +6,7 @@ settings-menu-appearance-category = Appearance
 settings-menu-server-list-category = Server List
 settings-menu-tray-category = Tray
 settings-menu-development-category = Development
-settings-menu-discord-rpc-category = Discord Rich Presence
+settings-menu-discord-rpc-category = Rich Presence
 
 # General
 
@@ -26,17 +26,17 @@ settings-menu-multiple-clients-option-description = Prevents launch of multiple 
 settings-menu-data-folder-option = Data Folder
 settings-menu-data-folder-option-description = Select folder which will be used to store data.
 
-settings-menu-deauth-onchange-option = Deauth On Change
-settings-menu-deauth-onchange-option-description = Should we deauth launcher after changing auth server?
+settings-menu-logs-folder-option = Logs Folder
+settings-menu-logs-folder-option-description = Select folder which will be used to store logs.
 
-settings-menu-discord-presence-option = Discord Presence
-settings-menu-discord-presence-option-description = Show status in your Discord.
+settings-menu-logs-split-mode-option = Logs Split Mode
+settings-menu-logs-split-mode-option-description = Determines how logs are split into separate files.
 
-settings-menu-discord-presence-buttons-option = Show presence buttons
-settings-menu-discord-presence-buttons-option-description = Should we show "Download" and other "ad" buttons in Discord Rich Presence?
+settings-menu-logs-combine-streams-option = Combine Logs Streams
+settings-menu-logs-combine-streams-option-description = Combines stdout and stderr streams into a single log file.
 
-settings-menu-discord-presence-states-option = Presence States
-settings-menu-discord-presence-states-option-description = You can manage different states and it's priority to change your Discord Presence.
+settings-menu-log-retain-amount-option = Log Retention Amount
+settings-menu-log-retain-amount-option-description = Determines how many log files to keep.
 
 settings-menu-update-option = Check for update
 settings-menu-update-latest = You are already on the latest version.
@@ -56,6 +56,9 @@ settings-menu-auth-list-option-description = Manage the list of auth and select 
 settings-menu-auth-list-option-add-tooltip = Add auth server
 settings-menu-auth-list-option-empty-values = No auth servers configurated. Click + to add one.
 settings-menu-auth-list-option-text-label = Auth Server URL
+
+settings-menu-deauth-onchange-option = Deauth On Change
+settings-menu-deauth-onchange-option-description = Should we deauth launcher after changing auth server?
 
 # Appearance
 
@@ -93,6 +96,17 @@ settings-menu-tray-collapse-close-option-description = Minimize the app to the s
 
 settings-menu-tray-collapse-minimize-option = Collapse on Minimize
 settings-menu-tray-collapse-minimize-option-description = Minimize the app to the system tray when minimizing it.
+
+# Discord RPC
+
+settings-menu-discord-presence-option = Discord Presence
+settings-menu-discord-presence-option-description = Show status in your Discord.
+
+settings-menu-discord-presence-buttons-option = Show presence buttons
+settings-menu-discord-presence-buttons-option-description = Should we show "Download" and other "ad" buttons in Discord Rich Presence?
+
+settings-menu-discord-presence-states-option = Presence States
+settings-menu-discord-presence-states-option-description = You can manage different states and it's priority to change your Discord Presence.
 
 # Development(Advanced)
 

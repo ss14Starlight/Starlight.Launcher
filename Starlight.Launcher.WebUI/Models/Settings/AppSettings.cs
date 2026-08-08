@@ -30,7 +30,7 @@ public partial record AppSettings
     /// <summary>
     /// A list of hub urls to use for server lists
     /// </summary>
-    public List<Hub> Hubs { get; init; } = [new Hub() { HubUri = new Uri("https://hub.playss14.com/"), Priority = 0 }];
+    public List<Hub> Hubs { get; init; } = [ new Hub() { HubUri = new Uri("https://hub.playss14.com/"), Priority = 0} ];
     /// <summary>
     /// Currently selected language. Should be a key from LocalizationsIndex. Default is "en-US"
     /// </summary>
