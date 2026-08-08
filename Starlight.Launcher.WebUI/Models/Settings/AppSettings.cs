@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text.Json.Serialization;
 using Starlight.Launcher.WebUI.Models.Data;
 using Starlight.Launcher.WebUI.Models.DiscordRichPresence;
@@ -8,7 +9,8 @@ namespace Starlight.Launcher.WebUI.Models.Settings;
 
 public partial record AppSettings
 {
-    #region General
+    #region Paths
+
     /// <summary>
     /// Base directory for all launcher data. This is currently the one "real" hardcoded path.
     /// </summary>
@@ -22,6 +24,28 @@ public partial record AppSettings
 
         return Path.Combine(baseDir, "Starlight.Launcher");
     }
+
+    /// <summary>
+    /// Where the launcher itself is installed. Used to locate the loader/engine (release builds).
+    /// </summary>
+    [JsonIgnore]
+    public string DirLauncherInstall { get; init; } = AppContext.BaseDirectory;
+
+    /// <summary>
+    /// SQLite content DB the loader reads versions/blobs from.
+    /// <remark>
+    /// IMPORTANT: this MUST point at the same file that ContentManager.GetSqliteConnection() uses,
+    /// otherwise the loader won't find the version the Updater just wrote.
+    /// </remark>
+    /// </summary>
+    public string PathContentDb => Path.Combine(DirLauncherData, "content.db");
+
+    public string DirEngineInstallations => Path.Combine(DirLauncherData, "engines");
+    public string DirModuleInstallations => Path.Combine(DirLauncherData, "modules");
+
+    #endregion
+
+    #region General
 
     /// <summary>
     /// Save interval in milliseconds
@@ -247,4 +271,40 @@ public partial record AppSettings
     [JsonIgnore] // This is a computed property, not a setting.
     public string DirClientLogsDefault => Path.Combine(DirLauncherData, "client-logs");
     #endregion
+
+    #region Cdns
+
+    /// <summary>
+    /// Path to loader signing key, i.e. where we need to "unpack" signing key from launcher.
+    /// </summary>
+    public string PathLoaderSigningKey => Path.Combine(DirLauncherData, "loader_signing_key");
+
+    private const string PrimaryCdnPublicKey = """
+        -----BEGIN PUBLIC KEY-----
+        MCowBQYDK2VwAyEAvF9h6FVrVhh9cYoSk0g/XluUVIrg40PQy8VPNaGu1vQ=
+        -----END PUBLIC KEY-----
+        """;
+
+    private const string SecondaryCdnPublicKey = """
+        -----BEGIN PUBLIC KEY-----
+        MCowBQYDK2VwAyEApQ9mAhMLbmhQqRH7itgNo75S5rCSMsMXvVRmMv1d9NQ=
+        -----END PUBLIC KEY-----
+        """;
+
+    /// <summary>
+    /// User's configured CDN list. If empty, <see cref="DefaultRobustCdns"/> will be used.
+    /// </summary>
+    public List<RobustCdnConfig> RobustCdns { get; set; } = [];
+
+    /// <summary>
+    /// Internal default CDN list. Used if <see cref="RobustCdns"/> is empty.
+    /// </summary>
+    public static ImmutableArray<RobustCdnConfig> DefaultRobustCdns { get; } =
+    [
+        new() { Name = "Starlight", Urls = ["https://robust-builds.starlight.network/"], PublicKey = PrimaryCdnPublicKey },
+        new() { Name = "PlaySS14",  Urls = ["https://robust-builds.playss14.com/"],      PublicKey = SecondaryCdnPublicKey },
+    ];
+
+    #endregion
+
 }

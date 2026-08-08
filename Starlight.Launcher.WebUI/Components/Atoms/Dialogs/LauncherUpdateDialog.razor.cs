@@ -98,7 +98,7 @@ public sealed partial class LauncherUpdateDialog : ComponentBase, IDisposable
         _downloaded = p.downloaded;
         _total = p.total;
 
-        _bridge.Presence.SetProgress(PresenceState.UpdatingLauncher, (int)(_total > 0 ? (double)_downloaded / _total : 0));
+        _bridge.Presence.SetProgress(PresenceState.UpdatingLauncher, (int) (_total > 0 ? (double)_downloaded / _total : 0));
         // StateHasChanged is driven by the poll timer to avoid flooding the UI thread.
     }
 

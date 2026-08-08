@@ -15,7 +15,7 @@ public sealed partial class EngineManagerDynamic
 
     // One cache entry per CDN. Keyed by the CDN instance (stable while the list is static;
     // a reconfigured list yields new instances -> fresh caches, which is correct).
-    private readonly Dictionary<RobustCdn, CdnManifestCache> _manifestCaches = new();
+    private readonly Dictionary<string, CdnManifestCache> _manifestCaches = new();
 
     /// <summary>
     /// Look up information about an engine version across all CDNs, in priority order.
@@ -48,7 +48,14 @@ public sealed partial class EngineManagerDynamic
         bool followRedirects,
         CancellationToken cancel)
     {
-        var cdns = AppSettings.RobustCdns;
+        if (_manifestCachesDirty)
+        {
+            _manifestCachesDirty = false;
+            _manifestCaches.Clear();
+            Log.Debug("CDN list has changed, manifest caches cleared.");
+        }
+
+        var cdns = _cdns.Cdns;
 
         // Pass 1: use already-valid caches, honoring CDN priority.
         foreach (var cdn in cdns)
@@ -116,12 +123,9 @@ public sealed partial class EngineManagerDynamic
 
     private CdnManifestCache GetOrCreateCache(RobustCdn cdn)
     {
-        if (!_manifestCaches.TryGetValue(cdn, out var cache))
-        {
-            cache = new CdnManifestCache();
-            _manifestCaches[cdn] = cache;
-        }
-
+        var key = string.Join('|', cdn.BaseUrl.Urls);
+        if (!_manifestCaches.TryGetValue(key, out var cache))
+            _manifestCaches[key] = cache = new CdnManifestCache();
         return cache;
     }
 

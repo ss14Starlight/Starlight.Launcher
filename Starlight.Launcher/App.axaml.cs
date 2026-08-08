@@ -8,6 +8,7 @@ using Robust.Launcher.Api.Api;
 using Robust.Launcher.Api.Models.ServerStatus;
 using Robust.Launcher.Api.Utility;
 using Serilog;
+using Starlight.Launcher.Models.EngineManager;
 using Starlight.Launcher.Services;
 using Starlight.Launcher.Services.Auth;
 using Starlight.Launcher.Services.Bridge;
@@ -145,6 +146,7 @@ public partial class App : Application
         });
         _ = services.AddSingleton<ServerStatusCache>();
         _ = services.AddSingleton<ContentManager>();
+        _ = services.AddSingleton<ICdnRegistry, CdnRegistry>();
         _ = services.AddSingleton<IEngineManager, EngineManagerDynamic>();
         _ = services.AddSingleton<Updater>();
         _ = services.AddSingleton<LoginManager>();

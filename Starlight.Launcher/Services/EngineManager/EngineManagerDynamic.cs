@@ -8,6 +8,7 @@ using Robust.Launcher.Api.Models;
 using Robust.Launcher.Api.Models.Data;
 using Robust.Launcher.Api.Utility;
 using Serilog;
+using Starlight.Launcher.Models.EngineManager;
 using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI.Models.Settings;
 
@@ -22,11 +23,16 @@ public sealed partial class EngineManagerDynamic : IEngineManager
 
     private readonly SettingsService _settings;
     private readonly HttpClient _http;
+    private readonly ICdnRegistry _cdns;
+    private volatile bool _manifestCachesDirty;
 
-    public EngineManagerDynamic(HttpClient http, SettingsService settings)
+
+    public EngineManagerDynamic(HttpClient http, SettingsService settings, ICdnRegistry cdns)
     {
         _settings = settings;
         _http = http;
+        _cdns = cdns;
+        _cdns.Changed += () => _manifestCachesDirty = true;
     }
 
     public string GetEnginePath(string engineVersion)
@@ -170,7 +176,7 @@ public sealed partial class EngineManagerDynamic : IEngineManager
     /// </summary>
     private bool VerifyAgainstAnyCdn(FileStream stream, string signature)
     {
-        foreach (var cdn in AppSettings.RobustCdns)
+        foreach (var cdn in _cdns.Cdns)
         {
             _ = stream.Seek(0, SeekOrigin.Begin);
             if (VerifySignature(stream, signature, cdn.PublicKey))
@@ -374,7 +380,7 @@ public sealed partial class EngineManagerDynamic : IEngineManager
     /// </summary>
     public string GetEnginePublicKeyPath(string engineVersion)
     {
-        var cdns = AppSettings.RobustCdns;
+        var cdns = _cdns.Cdns;
         var settings = _settings.GetSettings();
 
 #if DEVELOPMENT
@@ -422,7 +428,7 @@ public sealed partial class EngineManagerDynamic : IEngineManager
     {
         Exception? lastError = null;
 
-        foreach (var cdn in AppSettings.RobustCdns)
+        foreach (var cdn in _cdns.Cdns)
         {
             try
             {
