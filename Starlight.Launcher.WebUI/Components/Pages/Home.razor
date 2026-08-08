@@ -34,7 +34,6 @@
                        OverscanCount="3">
             <ServerItem @key="server.Address" Data="server"
                         IsInFavorites="@(_favoriteServers.Contains(server))"
-                        OnInfoNeeded="HandleInfoNeeded"
                         OnFavorites="async x => await HandleFavorite(x)" />
         </MudVirtualize>
     </div>

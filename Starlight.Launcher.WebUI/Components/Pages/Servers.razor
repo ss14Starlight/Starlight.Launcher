@@ -99,7 +99,6 @@
                                     OverscanCount="3">
                             <ServerItem @key="server.Address" Data="server"
                                         IsInFavorites="@(_favoriteAddresses.Contains(server.Address))"
-                                        OnInfoNeeded="HandleInfoNeeded"
                                         OnFavorites="async x => await HandleFavorite(x)" />
                         </Virtualize>
                     </div>

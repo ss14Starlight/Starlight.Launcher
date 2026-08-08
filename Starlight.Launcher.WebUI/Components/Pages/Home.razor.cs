@@ -116,8 +116,6 @@ public partial class Home : LocalizedComponentBase, IDisposable
         }
     }
 
-    private void HandleInfoNeeded(ServerStatusData server) => _bridge.UpdateInfoFor(server);
-
     private async Task OpenDirectConnect()
     {
         var dialog = await _dialogService.ShowAsync<DirectConnectDialog>(

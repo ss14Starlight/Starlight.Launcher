@@ -13,10 +13,10 @@ namespace Starlight.Launcher.WebUI.Components.Atoms.ServerList;
 public partial class ServerItem : LocalizedComponentBase, IDisposable
 {
     [Inject] private IBridge _bridge { get; set; } = default!;
+    [Inject] private ServerStatusCache _cache { get; set; } = default!;
     [Inject] private IDialogService _dialogService { get; set; } = default!;
     [Inject] private UiTicker _ticker { get; set; } = default!;
     [Parameter, EditorRequired] public ServerStatusData Data { get; set; } = default!;
-    [Parameter] public EventCallback<ServerStatusData> OnInfoNeeded { get; set; }
     [Parameter] public EventCallback<ServerStatusData> OnFavorites { get; set; }
     [Parameter] public bool IsInFavorites { get; set; } = false;
 
@@ -62,7 +62,10 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
     {
         base.OnAfterRender(firstRender);
         if (firstRender)
+        {
             _bridge.Request(Data);
+            _cache.TryInitialPing(Data);
+        }
     }
 
     private async void OnDataChanged()

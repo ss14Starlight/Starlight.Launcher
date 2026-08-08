@@ -16,7 +16,6 @@ public partial class Servers : LocalizedComponentBase, IDisposable
     private const int FilterDebounceMs = 150;
     private const int FilterPersistDelayMs = 500;
 
-    [Inject] private ServerStatusCache _cache { get; set; } = default!;
     [Inject] private IBridge _bridge { get; set; } = default!;
 
     private ServerListFilters _filters = new();
@@ -205,12 +204,6 @@ public partial class Servers : LocalizedComponentBase, IDisposable
             _ = favorites.Remove(alreadyExist);
             await _bridge.WriteFavoritesAsync(favorites);
         }
-    }
-
-    private void HandleInfoNeeded(ServerStatusData server)
-    {
-        _bridge.UpdateInfoFor(server);
-        _ = _cache.TryInitialPing(server);
     }
 
     private static void ExtractTags(IEnumerable<ServerStatusData> servers, out IReadOnlyList<string> rpTags, out IReadOnlyList<string> langTags, out IReadOnlyList<string> regionTags)
