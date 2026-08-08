@@ -1,11 +1,53 @@
+using System.Text.Json.Serialization;
 using Starlight.Launcher.WebUI.Models.Data;
 using Starlight.Launcher.WebUI.Models.DiscordRichPresence;
+using Starlight.Launcher.WebUI.Models.Logging;
 using Starlight.Launcher.WebUI.Models.ServerStatus;
 
 namespace Starlight.Launcher.WebUI.Models.Settings;
 
 public partial record AppSettings
 {
+    #region General
+    /// <summary>
+    /// Base directory for all launcher data. This is currently the one "real" hardcoded path.
+    /// </summary>
+    public string DirLauncherData { get; init; } = GetDefaultDataDirectory();
+
+    private static string GetDefaultDataDirectory()
+    {
+        var baseDir = OperatingSystem.IsMacOS()
+            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Library", "Application Support")
+            : Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+        return Path.Combine(baseDir, "Starlight.Launcher");
+    }
+
+    /// <summary>
+    /// Save interval in milliseconds
+    /// </summary>
+    public int SaveIntervalMs { get; init; } = 500;
+    /// <summary>
+    /// A list of hub urls to use for server lists
+    /// </summary>
+    public List<Hub> Hubs { get; init; } = [new Hub() { HubUri = new Uri("https://hub.playss14.com/"), Priority = 0 }];
+    /// <summary>
+    /// Currently selected language. Should be a key from LocalizationsIndex. Default is "en-US"
+    /// </summary>
+    public string? SelectedLanguage { get; init; } = null;
+
+    /// <summary>
+    /// Prevents launch of multiple game instances
+    /// </summary>
+    public bool PreventMultipleClients { get; set; } = true;
+
+    /// <summary>
+    /// Last version for which the changelog popup was shown to the user.
+    /// Empty means never shown.
+    /// </summary>
+    public string LastSeenChangelogVersion { get; set; } = "";
+    #endregion
+
     #region Appearance
     /// <summary>
     /// App theme
@@ -77,32 +119,6 @@ public partial record AppSettings
     public bool ShowPresenceButtons { get; set; } = true;
 
     public List<PresenceStateOption> PresenceStates { get; set; } = DiscordRichPresence.PresenceStates.CreateDefault();
-    #endregion
-
-    #region General
-    /// <summary>
-    /// Save interval in milliseconds
-    /// </summary>
-    public int SaveIntervalMs { get; init; } = 500;
-    /// <summary>
-    /// A list of hub urls to use for server lists
-    /// </summary>
-    public List<Hub> Hubs { get; init; } = [ new Hub() { HubUri = new Uri("https://hub.playss14.com/"), Priority = 0} ];
-    /// <summary>
-    /// Currently selected language. Should be a key from LocalizationsIndex. Default is "en-US"
-    /// </summary>
-    public string? SelectedLanguage { get; init; } = null;
-
-    /// <summary>
-    /// Prevents launch of multiple game instances
-    /// </summary>
-    public bool PreventMultipleClients { get; set; } = true;
-
-    /// <summary>
-    /// Last version for which the changelog popup was shown to the user.
-    /// Empty means never shown.
-    /// </summary>
-    public string LastSeenChangelogVersion { get; set; } = "";
     #endregion
 
     #region Cache
@@ -205,5 +221,30 @@ public partial record AppSettings
     /// </summary>
     public bool DeauthOnChange = true;
 
+    #endregion
+
+    #region Logs
+
+    /// <summary>
+    /// Where client logs are written. If null, client logs will be written to AppSettings.DirClientLogsDefault.
+    /// </summary>
+    public string? ClientLogDirectory { get; set; }
+    /// <summary>
+    /// How to split client logs into multiple files. If set to "Single", the logs will be written to client.stdout.log and client.stderr.log. If set to "Date", the logs will be split by date, e.g. client-2024-06-01.stdout.log and client-2024-06-01.stderr.log. If set to "Launch", the logs will be split by launch, e.g. client-launch-1.stdout.log and client-launch-2.stderr.log.
+    /// </summary>
+    public ClientLogSplitMode ClientLogSplitMode { get; set; } = ClientLogSplitMode.Launch;
+    /// <summary>
+    /// If true, client stdout/stderr logs will be combined into a single file instead of split into two.
+    /// </summary>
+    public bool ClientLogCombineStreams { get; set; }
+    /// <summary>
+    /// How many client log files to retain. Older files will be deleted when this limit is exceeded.
+    /// </summary>
+    public int ClientLogRetainFiles { get; set; } = 20;
+    /// <summary>
+    /// Default directory for client logs if <see cref="ClientLogDirectory"/> is null.
+    /// </summary>
+    [JsonIgnore] // This is a computed property, not a setting.
+    public string DirClientLogsDefault => Path.Combine(DirLauncherData, "client-logs");
     #endregion
 }

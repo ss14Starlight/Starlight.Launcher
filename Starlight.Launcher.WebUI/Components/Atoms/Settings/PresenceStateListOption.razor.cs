@@ -12,9 +12,9 @@ public partial class PresenceStateListOption : LocalizedComponentBase
     [Parameter] public string Title { get; set; } = default!;
     [Parameter] public string Description { get; set; } = default!;
     [Parameter] public string Icon { get; set; } = default!;
-    [Parameter] public string ResetButtonTooltip { get; set; } = L["settings-presence-state-list-option-reset"];
-    [Parameter] public string PriorityTooltip { get; set; } = L["settings-presence-state-list-option-priority-tooltip"];
-    [Parameter] public string PinnedTooltip { get; set; } = L["settings-presence-state-list-option-idle-tooltip"];
+    [Parameter] public string ResetButtonTooltip { get; set; } = "";
+    [Parameter] public string PriorityTooltip { get; set; } = "";
+    [Parameter] public string PinnedTooltip { get; set; } = "";
 
     /// <summary>
     /// Means that this component will control value change by itself.
@@ -31,6 +31,13 @@ public partial class PresenceStateListOption : LocalizedComponentBase
             Value = await SelfValueControlInitialization.Invoke();
 
         Value = PresenceStates.Normalize(Value);
+
+        if (string.IsNullOrEmpty(ResetButtonTooltip))
+            ResetButtonTooltip = L["settings-presence-state-list-option-reset"];
+        if (string.IsNullOrEmpty(PriorityTooltip))
+            PriorityTooltip = L["settings-presence-state-list-option-priority-tooltip"];
+        if (string.IsNullOrEmpty(PinnedTooltip))
+            PinnedTooltip = L["settings-presence-state-list-option-idle-tooltip"];
     }
 
     private string StateTitle(PresenceState state) =>

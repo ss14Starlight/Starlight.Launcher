@@ -9,20 +9,6 @@ public partial record AppSettings
     #region Paths
 
     /// <summary>
-    /// Base directory for all launcher data. This is currently the one "real" hardcoded path.
-    /// </summary>
-    public string DirLauncherData { get; init; } = GetDefaultDataDirectory();
-
-    private static string GetDefaultDataDirectory()
-    {
-        var baseDir = OperatingSystem.IsMacOS()
-            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Library", "Application Support")
-            : Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-
-        return Path.Combine(baseDir, "Starlight.Launcher");
-    }
-
-    /// <summary>
     /// Where the launcher itself is installed. Used to locate the loader/engine (release builds).
     /// </summary>
     [JsonIgnore]
@@ -37,12 +23,6 @@ public partial record AppSettings
     /// </summary>
     public string PathContentDb => Path.Combine(DirLauncherData, "content.db");
 
-    /// <summary>
-    /// Client log outputs.
-    /// </summary>
-    public string PathClientMacLog => Path.Combine(DirLauncherData, "client.mac.log");
-    public string PathClientStdoutLog => Path.Combine(DirLauncherData, "client.stdout.log");
-    public string PathClientStderrLog => Path.Combine(DirLauncherData, "client.stderr.log");
     public string DirEngineInstallations => Path.Combine(DirLauncherData, "engines");
     public string DirModuleInstallations => Path.Combine(DirLauncherData, "modules");
 

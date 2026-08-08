@@ -1,5 +1,6 @@
 using Avalonia;
 using Serilog;
+using Serilog.Events;
 using Starlight.Launcher.Services;
 
 namespace Starlight.Launcher;
@@ -33,7 +34,7 @@ internal static class Program
 
             var logger = new LoggerConfiguration()
                 .WriteTo.Console()
-                .WriteTo.File(Path.Combine(AppPaths.AppDataDirectory, "log.txt"), rollingInterval: RollingInterval.Day)
+                .WriteTo.File(Path.Combine(AppPaths.AppDataDirectory, "launcher-logs", "log-.log"), restrictedToMinimumLevel: LogEventLevel.Information, rollingInterval: RollingInterval.Day)
                 .CreateLogger();
             Log.Logger = logger;
 

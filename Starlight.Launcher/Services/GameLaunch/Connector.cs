@@ -10,9 +10,11 @@ using Robust.Launcher.Api.Models;
 using Robust.Launcher.Api.Models.Data;
 using Robust.Launcher.Api.Utility;
 using Serilog;
+using Starlight.Launcher.Models.Logging;
 using Starlight.Launcher.Services.Auth;
 using Starlight.Launcher.Services.Discord;
 using Starlight.Launcher.Services.EngineManager;
+using Starlight.Launcher.Services.Logging;
 using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI.Models.Connector;
 using Starlight.Launcher.WebUI.Models.DiscordRichPresence;
@@ -35,13 +37,14 @@ public partial class Connector : ObservableObject
     private readonly HttpClient _http;
     private readonly INativeTray _tray;
     private readonly DiscordRichPresence _presence;
+    private readonly ClientLogManager _clientLogs;
     private TaskCompletionSource<PrivacyPolicyAcceptResult>? _acceptPrivacyPolicyTcs;
 
     private int _activeLaunches;
 
     public int ActiveLaunches => _activeLaunches;
 
-    public Connector(Updater updater, IEngineManager engineManager, HttpClient http, LoginManager login, SettingsService settings, INativeTray tray, DiscordRichPresence presence)
+    public Connector(Updater updater, IEngineManager engineManager, HttpClient http, LoginManager login, SettingsService settings, INativeTray tray, DiscordRichPresence presence, ClientLogManager clientLogs)
     {
         _updater = updater;
         _engineManager = engineManager;
@@ -50,6 +53,7 @@ public partial class Connector : ObservableObject
         _settings = settings;
         _tray = tray;
         _presence = presence;
+        _clientLogs = clientLogs;
     }
 
     public ConnectionStatus Status
@@ -612,14 +616,6 @@ public partial class Connector : ObservableObject
 
         EnvVar("SS14_LAUNCHER_PATH", Process.GetCurrentProcess().MainModule!.FileName);
 
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            EnvVar("SS14_LOG_CLIENT", settings.PathClientMacLog);
-        }
-
-        startInfo.RedirectStandardOutput = true;
-        startInfo.RedirectStandardError = true;
-
         // Performance tweaks
         EnvVar("DOTNET_TieredPGO", "1");
         EnvVar("DOTNET_ReadyToRun", "0");
@@ -652,30 +648,33 @@ public partial class Connector : ObservableObject
 
         Log.Debug("Launch command: {LaunchCommand}", commandBuilder.ToString());
 
-        var process = Process.Start(startInfo);
+        var logSession = await _clientLogs.BeginSessionAsync(new ClientLogContext(
+            Target: launchInfo.OverlayZip ?? "content-db",
+            EngineVersion: engineVersion.ToString()));
 
-        if (process != null)
+        startInfo.RedirectStandardOutput = true;
+        startInfo.RedirectStandardError = true;
+
+        Process? process;
+        try
         {
-            Log.Debug("Setting up manual-pipe logging for new client with PID {pid}.", process.Id);
-
-            var fileStdout = new FileStream(
-                settings.PathClientStdoutLog,
-                FileMode.Create,
-                FileAccess.Write,
-                FileShare.Delete | FileShare.ReadWrite,
-                4096,
-                FileOptions.Asynchronous);
-
-            var fileStderr = new FileStream(
-                settings.PathClientStderrLog,
-                FileMode.Create,
-                FileAccess.Write,
-                FileShare.Delete | FileShare.ReadWrite,
-                4096,
-                FileOptions.Asynchronous);
-
-            PipeOutput(process, fileStdout, fileStderr);
+            process = Process.Start(startInfo);
         }
+        catch
+        {
+            await logSession.DisposeAsync();
+            throw;
+        }
+
+        if (process == null)
+        {
+            await logSession.DisposeAsync();
+            return null;
+        }
+
+        await logSession.WriteProcessStartedAsync(process.Id);
+        Log.Debug("Setting up manual-pipe logging for new client with PID {pid}.", process.Id);
+        PipeOutput(process, logSession);
 
         return process;
 
@@ -693,7 +692,7 @@ public partial class Connector : ObservableObject
     }
     */
 
-    private static async void PipeOutput(Process process, Stream targetStdout, Stream targetStderr)
+    private static async void PipeOutput(Process process, ClientLogSession session)
     {
         async Task DoPipe(StreamReader reader, Stream writer)
         {
@@ -712,9 +711,40 @@ public partial class Connector : ObservableObject
             }
         }
 
-        await Task.WhenAll(
-            DoPipe(process.StandardOutput, targetStdout),
-            DoPipe(process.StandardError, targetStderr));
+        try
+        {
+            await Task.WhenAll(
+                DoPipe(process.StandardOutput, session.Stdout),
+                DoPipe(process.StandardError, session.Stderr));
+        }
+        catch (Exception e)
+        {
+            Log.Warning(e, "Error while piping client output for {pid}", process.Id);
+        }
+        finally
+        {
+            int? exitCode = null;
+            try
+            {
+                await process.WaitForExitAsync();
+                exitCode = process.ExitCode;
+            }
+            catch (Exception e)
+            {
+                Log.Warning(e, "Failed to await client exit for {pid}", process.Id);
+            }
+
+            try
+            {
+                await session.WriteExitAsync(exitCode);
+            }
+            catch (Exception e)
+            {
+                Log.Warning(e, "Failed to write client log footer");
+            }
+
+            await session.DisposeAsync();
+        }
     }
 
     private static void PipeLogOutput(Process process)

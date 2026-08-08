@@ -14,6 +14,7 @@ using Starlight.Launcher.Services.Bridge;
 using Starlight.Launcher.Services.Discord;
 using Starlight.Launcher.Services.EngineManager;
 using Starlight.Launcher.Services.Localization;
+using Starlight.Launcher.Services.Logging;
 using Starlight.Launcher.Services.ServerStatus;
 using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI.Bridge;
@@ -149,6 +150,7 @@ public partial class App : Application
         _ = services.AddSingleton<LoginManager>();
         _ = services.AddSingleton<StarlightAuthApi>();
         _ = services.AddSingleton<DiscordAuthService>();
+        _ = services.AddSingleton<ClientLogManager>();
         _ = services.AddTransient<Connector>();
         _ = services.AddSingleton<UiTicker>();
         _ = services.AddSingleton<LauncherUpdater>();
