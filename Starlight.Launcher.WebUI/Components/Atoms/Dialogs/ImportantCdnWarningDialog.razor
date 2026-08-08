@@ -1,0 +1,27 @@
+@using Starlight.Launcher.WebUI.Localization
+@inherits LocalizedComponentBase
+
+<MudDialog>
+    <DialogContent>
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Dense="true" Class="mb-3">
+            @L["settings-cdns-option-important-warning-body"]
+        </MudAlert>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">
+            @L.GetString("settings-cdns-option-important-warning-hint", ("name", CdnName))
+        </MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L["settings-cdns-option-important-warning-cancel"]</MudButton>
+        <MudButton Color="Color.Warning" Variant="Variant.Filled" OnClick="Confirm">
+            @L["settings-cdns-option-important-warning-confirm"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public string CdnName { get; set; } = "";
+
+    private void Confirm() => MudDialog.Close(DialogResult.Ok(true));
+    private void Cancel() => MudDialog.Cancel();
+}

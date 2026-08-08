@@ -10,7 +10,6 @@ using Robust.Launcher.Api.Utility;
 using Serilog;
 using Starlight.Launcher.Models.EngineManager;
 using Starlight.Launcher.Services.Settings;
-using Starlight.Launcher.WebUI.Models.Settings;
 
 namespace Starlight.Launcher.Services.EngineManager;
 
@@ -25,7 +24,6 @@ public sealed partial class EngineManagerDynamic : IEngineManager
     private readonly HttpClient _http;
     private readonly ICdnRegistry _cdns;
     private volatile bool _manifestCachesDirty;
-
 
     public EngineManagerDynamic(HttpClient http, SettingsService settings, ICdnRegistry cdns)
     {

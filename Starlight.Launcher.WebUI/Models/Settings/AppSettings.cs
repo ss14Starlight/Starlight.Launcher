@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using System.Text.Json.Serialization;
 using Starlight.Launcher.WebUI.Models.Data;
 using Starlight.Launcher.WebUI.Models.DiscordRichPresence;
@@ -294,14 +293,14 @@ public partial record AppSettings
     /// <summary>
     /// User's configured CDN list. If empty, <see cref="DefaultRobustCdns"/> will be used.
     /// </summary>
-    public List<RobustCdnConfig> RobustCdns { get; set; } = [];
+    public List<RobustCdnConfig>? RobustCdns { get; set; } = null;
 
     /// <summary>
     /// Internal default CDN list. Used if <see cref="RobustCdns"/> is empty.
     /// </summary>
-    public static ImmutableArray<RobustCdnConfig> DefaultRobustCdns { get; } =
+    public static List<RobustCdnConfig> DefaultRobustCdns { get; } =
     [
-        new() { Name = "Starlight", Urls = ["https://robust-builds.starlight.network/"], PublicKey = PrimaryCdnPublicKey },
+        new() { Name = "Starlight", Urls = ["https://robust-builds.starlight.network/"], PublicKey = PrimaryCdnPublicKey, Important=true },
         new() { Name = "PlaySS14",  Urls = ["https://robust-builds.playss14.com/"],      PublicKey = SecondaryCdnPublicKey },
     ];
 

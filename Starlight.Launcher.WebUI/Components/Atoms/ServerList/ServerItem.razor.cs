@@ -64,7 +64,7 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
         if (firstRender)
         {
             _bridge.Request(Data);
-            _cache.TryInitialPing(Data);
+            _ = _cache.TryInitialPing(Data);
         }
     }
 

@@ -10,7 +10,7 @@ public sealed record RobustCdnConfig
     /// <summary>
     /// URLs of the CDN endpoints. The launcher will try them in order until one succeeds.
     /// </summary>
-    public string[] Urls { get; init; } = [];
+    public List<string> Urls { get; init; } = [];
 
     /// <summary>
     /// Public key used to verify the integrity of the content downloaded from this CDN.

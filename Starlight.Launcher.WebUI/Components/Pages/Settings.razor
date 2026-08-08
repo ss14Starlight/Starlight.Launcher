@@ -37,6 +37,14 @@
                 <AlternativeListOption Title="@L["settings-menu-hub-list-option"]" Description="@L["settings-menu-hub-list-option-description"]" AddButtonTooltip="@L["settings-menu-hub-list-option-add-tooltip"]" EmptyValuesString="@L["settings-menu-hub-list-option-empty-values"]" TextFieldLabel="@L["settings-menu-hub-list-option-text-label"]" Icon="@Icons.Material.Filled.Hub" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings<List<(string Url, long Priority)>>(s => [.. s.Hubs.Select(h => (h.HubUri.ToString(), h.Priority))])" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { Hubs = ConvertToHubList(v) })" />
                 <AlternativeSelectorListOption Title="@L["settings-menu-auth-list-option"]" Description="@L["settings-menu-auth-list-option-description"]" AddButtonTooltip="@L["settings-menu-auth-list-option-add-tooltip"]" EmptyValuesString="@L["settings-menu-auth-list-option-empty-values"]" TextFieldLabel="@L["settings-menu-auth-list-option-text-label"]" Icon="@Icons.Material.Filled.Key" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings<(List<string>, string?)>(s => (s.AuthServerUrls, s.SelectedAuthServer))" SelfValueControlAction="(a, b) => OnSettingChanged((a, b), null, (s, v) => s with { AuthServerUrls = v.a, SelectedAuthServer = v.b })" />
                 <BoolOption Title="@L["settings-menu-deauth-onchange-option"]" Description="@L["settings-menu-deauth-onchange-option-description"]" Icon="@Icons.Material.Filled.KeyOff" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.DeauthOnChange)" SelfValueControlAction="x => { OnSettingChanged(x, null, (s, v) => s with { DeauthOnChange = !v }); if (_bridge.GetSettings() is { } settings && settings.DeauthOnChange) { _bridge.WriteLogins(new()); _bridge.WriteSettings(settings with { SelectedLoginId = null }); } }" />
+                <RobustCdnListOption Title="@L["settings-cdns-option"]"
+                                     Description="@L["settings-cdns-option-description"]"
+                                     Icon="@Icons.Material.Filled.CloudDownload"
+                                     EmptyValuesString="@L["settings-cdns-option-empty"]"
+                                     AddButtonTooltip="@L["settings-cdns-option-add"]"
+                                     SelfValueControl="true"
+                                     SelfValueControlInitialization="@(async () => (await _bridge.GetSettingsAsync()).RobustCdns)"
+                                     SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { RobustCdns = v })" />
             </MudContainer>
         </MudTabPanel>
         <MudTabPanel Text="@L["settings-menu-appearance-category"]">

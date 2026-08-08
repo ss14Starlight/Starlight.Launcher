@@ -18,9 +18,8 @@ public interface ICdnRegistry
 public sealed class CdnRegistry : ICdnRegistry, IDisposable
 {
     private readonly IDisposable _subscription;
-    private ImmutableArray<RobustCdn> _cdns = [];
 
-    public ImmutableArray<RobustCdn> Cdns => _cdns;
+    public ImmutableArray<RobustCdn> Cdns { get; private set; } = [];
     public event Action? Changed;
 
     public CdnRegistry(SettingsService settings)
@@ -30,11 +29,11 @@ public sealed class CdnRegistry : ICdnRegistry, IDisposable
             fireImmediately: true,
             comparer: CdnListComparer.Instance);
 
-    private void OnConfigChanged(List<RobustCdnConfig> configs)
+    private void OnConfigChanged(List<RobustCdnConfig>? configs)
     {
-        var resolved = Resolve(configs);
-        var previous = _cdns;
-        _cdns = resolved;
+        var resolved = Resolve(configs ?? AppSettings.DefaultRobustCdns);
+        var previous = Cdns;
+        Cdns = resolved;
 
         if (previous.IsDefaultOrEmpty)
             return;
@@ -103,17 +102,17 @@ public sealed class CdnRegistry : ICdnRegistry, IDisposable
 
     public void Dispose() => _subscription.Dispose();
 
-    private sealed class CdnListComparer : IEqualityComparer<List<RobustCdnConfig>>
+    private sealed class CdnListComparer : IEqualityComparer<List<RobustCdnConfig>?>
     {
         public static readonly CdnListComparer Instance = new();
 
         public bool Equals(List<RobustCdnConfig>? x, List<RobustCdnConfig>? y)
             => ReferenceEquals(x, y) || (x is not null && y is not null && x.SequenceEqual(y));
 
-        public int GetHashCode(List<RobustCdnConfig> obj)
+        public int GetHashCode(List<RobustCdnConfig>? obj)
         {
             var hash = new HashCode();
-            foreach (var c in obj)
+            foreach (var c in obj ?? [])
                 hash.Add(c);
             return hash.ToHashCode();
         }

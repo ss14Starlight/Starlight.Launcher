@@ -60,6 +60,27 @@ settings-menu-auth-list-option-text-label = Auth Server URL
 settings-menu-deauth-onchange-option = Deauth On Change
 settings-menu-deauth-onchange-option-description = Should we deauth launcher after changing auth server?
 
+settings-cdns-option = Cdns
+settings-cdns-option-description = Manage the list of cdn servers used for downloading client engine.
+settings-cdns-option-add = Add CDN
+settings-cdns-option-empty = No CDNs configured. Click + to add one.
+settings-cdns-option-name-label = CDN Name
+settings-cdns-option-important-tooltip = Important
+settings-cdns-option-enabled-tooltip = Enabled
+settings-cdns-option-key-label = CDN Public Key
+settings-cdns-option-mirrors-label = CDN Mirrors
+settings-cdns-option-add-mirror = Add CDN Mirror
+settings-cdns-option-important-warning-title = Important Change Warning
+settings-cdns-option-important-warning-body = 
+    You are about to change a CDN server marked as important. 
+    This action will break some futures of application.
+    Please ensure that you know what you're doing.
+settings-cdns-option-important-warning-hint = 
+    This will break discord auth.
+    Proceed with caution.
+settings-cdns-option-important-warning-cancel = Cancel
+settings-cdns-option-important-warning-confirm = Confirm
+
 # Appearance
 
 settings-menu-theme-option = Theme
