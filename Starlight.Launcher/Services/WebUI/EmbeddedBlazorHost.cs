@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Robust.Launcher.Api.Api;
 using Robust.Launcher.Api.Models.ServerStatus;
 using Starlight.Launcher.Services.Auth;
@@ -48,6 +49,7 @@ public sealed class EmbeddedBlazorHost : IAsyncDisposable
                 _ = services.AddSingleton(nativeServices.GetRequiredService<IBridge>());
                 _ = services.AddSingleton(nativeServices.GetRequiredService<HttpClient>());
                 _ = services.AddSingleton(nativeServices.GetRequiredService<AppState>());
+                _ = services.AddSingleton(nativeServices.GetRequiredService<ILoggerFactory>());
             });
 
         await _app.StartAsync();

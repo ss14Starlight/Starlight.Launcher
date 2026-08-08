@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
 using Starlight.Launcher.WebUI.Components;
 
@@ -29,6 +30,8 @@ public static class WebHostFactory
         _ = builder.Services.Configure<HostOptions>(options => options.ShutdownTimeout = TimeSpan.FromSeconds(2));
 
         _ = builder.Services.AddMudServices();
+
+        _ = builder.Logging.ClearProviders();
 
         configureServices?.Invoke(builder.Services);
 
