@@ -24,6 +24,14 @@
                             OnClick="CheckUpdate">
                     @L["settings-menu-update-option"]
                 </MudButton>
+                <MudText Typo="Typo.overline" Class="mud-text-secondary mt-4">@L["settings-menu-discord-rpc-category"]</MudText>
+                <BoolOption Title="@L["settings-menu-discord-presence-option"]" Description="@L["settings-menu-discord-presence-option-description"]" Icon="@Icons.Custom.Brands.Discord" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => !s.HidePresence)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { HidePresence = !v })" />
+                <BoolOption Title="@L["settings-menu-discord-presence-buttons-option"]" Description="@L["settings-menu-discord-presence-buttons-option-description"]" Icon="@Icons.Custom.Brands.Discord" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.ShowPresenceButtons)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { ShowPresenceButtons = v })" />
+                <PresenceStateListOption Icon="@Icons.Material.Filled.Sort"
+                                         Title="@L["settings-menu-discord-presence-states-option"]"
+                                         Description="@L["settings-menu-discord-presence-states-option-description"]"
+                                         SelfValueControlInitialization="async () => await FetchSettings(s => s.PresenceStates)"
+                                         SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { PresenceStates = v })" />
             </MudContainer>
         </MudTabPanel>
         <MudTabPanel Text="@L["settings-menu-servers-category"]">
@@ -39,8 +47,6 @@
                 <MudText Typo="Typo.overline" Class="mud-text-secondary">@L["settings-menu-general-category"]</MudText>
                 <EnumOption Title="@L["settings-menu-theme-option"]" Description="@L["settings-menu-theme-option-description"]" Icon="@Icons.Material.Filled.DarkMode" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => (int)s.Theme)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { Theme = (AppTheme)v }, true)" Values="new AppTheme()" />
                 <EnumOption Title="@L["settings-menu-navigation-bar-option"]" Description="@L["settings-menu-navigation-bar-option-description"]" Icon="@Icons.Material.Filled.Menu" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => (int)s.Navigation)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { Navigation = (ElementPosition)v }, true)" Values="new ElementPosition()" />
-                <BoolOption Title="@L["settings-menu-discord-presence-option"]" Description="@L["settings-menu-discord-presence-option-description"]" Icon="@Icons.Custom.Brands.Discord" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => !s.HidePresence)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { HidePresence = !v })" />
-                <BoolOption Title="@L["settings-menu-discord-presence-buttons-option"]" Description="@L["settings-menu-discord-presence-buttons-option-description"]" Icon="@Icons.Custom.Brands.Discord" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.ShowPresenceButtons)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { ShowPresenceButtons = v })" />
                 <MudText Typo="Typo.overline" Class="mud-text-secondary mt-4">@L["settings-menu-server-list-category"]</MudText>
                 <BoolOption Title="@L["settings-menu-bottom-search-option"]" Description="@L["settings-menu-bottom-search-option-description"]" Icon="@Icons.Material.Filled.Search" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.ServerListToolbarBottomSearch)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { ServerListToolbarBottomSearch = v })" />
                 <EnumOption Title="@L["settings-menu-bottom-search-bar-option"]" Description="@L["settings-menu-bottom-search-bar-option-description"]" Icon="@Icons.Material.Filled.YoutubeSearchedFor" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => (int)s.ServerListToolBarSearchPosition)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { ServerListToolBarSearchPosition = (ElementPosition)v })" Values="new ElementPosition()" />

@@ -21,21 +21,7 @@ public sealed class DiscordRichPresence : IPresenceController, IDisposable
 
     private static readonly TimeSpan _minUpdateInterval = TimeSpan.FromSeconds(15);
 
-    private static readonly PresenceState[] _priorityOrder =
-    [
-        PresenceState.InGame,
-        PresenceState.Reconnecting,
-        PresenceState.LaunchingGame,
-        PresenceState.DownloadingContent,
-        PresenceState.UpdatingLauncher,
-        PresenceState.ViewingServer,
-        PresenceState.ManagesLogins,
-        PresenceState.SettingUp,
-        PresenceState.SearchingServers,
-        PresenceState.Idle
-    ];
-
-    private static readonly int[] _priorityByState = BuildPriorities();
+    private readonly int[] _priorityByState;
 
     private static readonly Button[] _presenceButtons =
     [
@@ -83,6 +69,7 @@ public sealed class DiscordRichPresence : IPresenceController, IDisposable
         _http = http;
         _logger = logger;
 
+        _priorityByState = new int[Enum.GetValues<PresenceState>().Length];
         _entries = new StateEntry[_priorityByState.Length];
         for (var i = 0; i < _entries.Length; i++)
             _entries[i] = new StateEntry();
@@ -99,10 +86,10 @@ public sealed class DiscordRichPresence : IPresenceController, IDisposable
             fireImmediately: true);
 
         _statesSubscription = settingsService.Subscribe(
-            s => s.HiddenPresenceStates,
-            OnHiddenStatesChanged,
+            s => s.PresenceStates,
+            OnPresenceStatesChanged,
             fireImmediately: true,
-            HashSet<PresenceState>.CreateSetComparer());
+            PresenceStates.ListComparer);
     }
 
     public void Initialize()
@@ -400,26 +387,6 @@ public sealed class DiscordRichPresence : IPresenceController, IDisposable
         _ => "Space Station 14"
     };
 
-    private static int[] BuildPriorities()
-    {
-        var states = Enum.GetValues<PresenceState>();
-        var priorities = new int[states.Length];
-
-        for (var i = 0; i < priorities.Length; i++)
-            priorities[i] = -1;
-
-        for (var i = 0; i < _priorityOrder.Length; i++)
-            priorities[(int)_priorityOrder[i]] = i;
-
-        for (var i = 0; i < priorities.Length; i++)
-        {
-            if (priorities[i] < 0)
-                throw new InvalidOperationException($"PresenceState.{(PresenceState)i} отсутствует в _priorityOrder");
-        }
-
-        return priorities;
-    }
-
     private static Assets[] BuildAssets()
     {
         var states = Enum.GetValues<PresenceState>();
@@ -476,12 +443,18 @@ public sealed class DiscordRichPresence : IPresenceController, IDisposable
         }
     }
 
-    private void OnHiddenStatesChanged(HashSet<PresenceState>? hidden)
+    private void OnPresenceStatesChanged(List<PresenceStateOption>? options)
     {
+        var normalized = PresenceStates.Normalize(options);
+
         lock (_gate)
         {
-            for (var i = 0; i < _entries.Length; i++)
-                _entries[i].Enabled = hidden is null || !hidden.Contains((PresenceState)i);
+            for (var i = 0; i < normalized.Count; i++)
+            {
+                var option = normalized[i];
+                _priorityByState[(int)option.State] = i;
+                _entries[(int)option.State].Enabled = option.Enabled;
+            }
 
             Resolve();
         }

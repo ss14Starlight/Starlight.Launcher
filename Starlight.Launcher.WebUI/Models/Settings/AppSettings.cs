@@ -20,7 +20,7 @@ public partial record AppSettings
     /// <summary>
     /// Determines should we place search bar at the bottom of TOOLBAR or at the top
     /// </summary>
-    public bool ServerListToolbarBottomSearch { get; init; } = false;
+    public bool ServerListToolbarBottomSearch { get; init; }
 
     /// <summary>
     /// Determines should we place search bar at the bottom of APP or at the top
@@ -39,27 +39,27 @@ public partial record AppSettings
     /// <summary>
     /// Determines should we collapse app to tray on start or not
     /// </summary>
-    public bool CollapseInTrayOnStart { get; init; } = false;
+    public bool CollapseInTrayOnStart { get; init; }
 
     /// <summary>
     /// Determines should we collapse app to tray after launching game or not
     /// </summary>
-    public bool CollapseInTrayAfterRun { get; init; } = false;
+    public bool CollapseInTrayAfterRun { get; init; }
 
     /// <summary>
     /// Determines should we uncollapse app from tray after game closing or not
     /// </summary>
-    public bool UnCollapseFromTrayAfterEnd { get; init; } = false;
+    public bool UnCollapseFromTrayAfterEnd { get; init; }
 
     /// <summary>
     /// Determines should we collapse app to tray on close or not
     /// </summary>
-    public bool CollapseInTrayOnClose { get; init; } = false;
+    public bool CollapseInTrayOnClose { get; init; }
 
     /// <summary>
     /// Determines should we collapse app to tray on minimize or not
     /// </summary>
-    public bool CollapseInTrayOnMinimize { get; init; } = false;
+    public bool CollapseInTrayOnMinimize { get; init; }
 
     /// <summary>
     /// Determines which Discord Rich Presence will be used by default, should be a key from DiscordRichPresencesIndex.
@@ -69,14 +69,14 @@ public partial record AppSettings
     /// <summary>
     /// Determines should we hide Discord Rich Presence or not. If true, presence won't be started.
     /// </summary>
-    public bool HidePresence { get; set; } = false;
+    public bool HidePresence { get; set; }
 
     /// <summary>
     /// Determines should we show Discord Rich Presence buttons or not. If true, presence buttons won't be shown.
     /// </summary>
     public bool ShowPresenceButtons { get; set; } = true;
 
-    public HashSet<PresenceState> HiddenPresenceStates { get; set; } = [];
+    public List<PresenceStateOption> PresenceStates { get; set; } = DiscordRichPresence.PresenceStates.CreateDefault();
     #endregion
 
     #region General
@@ -113,12 +113,12 @@ public partial record AppSettings
     /// <summary>
     /// Force render compatibility mode (GLES2).
     /// </summary>
-    public bool CompatMode { get; init; } = false;
+    public bool CompatMode { get; init; }
 
     /// <summary>
     /// Disable engine signature verification. For debugging/development only.
     /// </summary>
-    public bool DisableSigning { get; init; } = false;
+    public bool DisableSigning { get; init; }
 
     /// <summary>
     /// Enable local overriding of engine versions.
@@ -128,7 +128,7 @@ public partial record AppSettings
     /// the launcher will pull all engine versions and modules from <see cref="EngineOverridePath"/>.
     /// This can be set to <c>RobustToolbox/release/</c> to instantly pull in packaged engine builds.
     /// </remarks>
-    public bool EngineOverrideEnabled { get; init; } = false;
+    public bool EngineOverrideEnabled { get; init; }
 
     public string EngineOverridePath { get; init; } = "";
 

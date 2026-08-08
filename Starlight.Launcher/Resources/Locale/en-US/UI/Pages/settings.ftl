@@ -6,6 +6,7 @@ settings-menu-appearance-category = Appearance
 settings-menu-server-list-category = Server List
 settings-menu-tray-category = Tray
 settings-menu-development-category = Development
+settings-menu-discord-rpc-category = Discord Rich Presence
 
 # General
 
@@ -27,6 +28,15 @@ settings-menu-data-folder-option-description = Select folder which will be used 
 
 settings-menu-deauth-onchange-option = Deauth On Change
 settings-menu-deauth-onchange-option-description = Should we deauth launcher after changing auth server?
+
+settings-menu-discord-presence-option = Discord Presence
+settings-menu-discord-presence-option-description = Show status in your Discord.
+
+settings-menu-discord-presence-buttons-option = Show presence buttons
+settings-menu-discord-presence-buttons-option-description = Should we show "Download" and other "ad" buttons in Discord Rich Presence?
+
+settings-menu-discord-presence-states-option = Presence States
+settings-menu-discord-presence-states-option-description = You can manage different states and it's priority to change your Discord Presence.
 
 settings-menu-update-option = Check for update
 settings-menu-update-latest = You are already on the latest version.
@@ -54,9 +64,6 @@ settings-menu-theme-option-description = Select the theme for the app.
 
 settings-menu-navigation-bar-option = Navigation Position
 settings-menu-navigation-bar-option-description = Select the position of the navigation bar.
-
-settings-menu-discord-presence-option = Discord Presence
-settings-menu-discord-presence-option-description = Show status in your Discord. (Requires restart)
 
 settings-menu-bottom-search-option = Bottom Search
 settings-menu-bottom-search-option-description = Place search bar at the bottom of the toolbar(when tags bar and search bar together).
