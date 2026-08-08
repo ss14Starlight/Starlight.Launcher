@@ -137,7 +137,7 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
             config =>
             {
                 config.Action = L["settings-menu-update-download"];
-                config.ActionColor = MudBlazor.Color.Primary;
+                config.ActionColor = MudBlazor.Color.Info;
                 config.OnClick = __ =>
                 {
                     if (info.Asset is { } asset)
