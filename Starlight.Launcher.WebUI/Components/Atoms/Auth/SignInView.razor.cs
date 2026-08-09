@@ -126,7 +126,7 @@ public partial class SignInView : LocalizedComponentBase
         await InvokeAsync(StateHasChanged);
         try
         {
-            _ = await _bridge.LoginAsync();
+            _ = await _bridge.LoginAsync(false);
             OnModeSwitch?.Invoke(Mode.AccountList);
         }
         catch (OperationCanceledException)
@@ -141,6 +141,36 @@ public partial class SignInView : LocalizedComponentBase
         {
             Log.Warning(ex, "Discord login failed");
             Error = L["auth-menu-discord-connect-fail"];
+        }
+        finally
+        {
+            Busy = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task LoginWithSteam()
+    {
+        Busy = true;
+        Error = null;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            _ = await _bridge.LoginAsync(true);
+            OnModeSwitch?.Invoke(Mode.AccountList);
+        }
+        catch (OperationCanceledException)
+        {
+            Error = L["auth-menu-steam-login-error"];
+        }
+        catch (DiscordAuthException ex)
+        {
+            Error = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Steam login failed");
+            Error = L["auth-menu-steam-connect-fail"];
         }
         finally
         {
