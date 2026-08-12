@@ -12,6 +12,7 @@ public partial class AccountListView : LocalizedComponentBase
 {
     [Parameter, EditorRequired] public Action<LoggedInAccount>? OnAccountRelogin { get; set; }
     [Parameter, EditorRequired] public Action<LoggedInAccount>? OnDiscordLink { get; set; }
+    [Parameter, EditorRequired] public Action<LoggedInAccount>? OnSteamLink { get; set; }
     [Parameter, EditorRequired] public Action<LoggedInAccount>? OnLink { get; set; }
     [Parameter, EditorRequired] public Action? OnSignIn { get; set; }
     [Inject] private IBridge _bridge { get; set; } = default!;

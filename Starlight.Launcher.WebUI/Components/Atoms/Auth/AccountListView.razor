@@ -65,6 +65,12 @@ else
                                     <MudIcon Icon="@Icons.Custom.Brands.Discord" Size="Size.Small" Color="Color.Info" />
                                 </MudTooltip>
                             }
+                            @if (acc.LoginInfo.SteamToken != null)
+                            {
+                                <MudTooltip Text="@L["auth-menu-steam-linked-tooltip"]">
+                                    <MudIcon Icon="@Icons.Custom.Brands.Steam" Size="Size.Small" Color="Color.Info" />
+                                </MudTooltip>
+                            }
                         </MudStack>
 
                         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mt-1">
@@ -105,6 +111,15 @@ else
                             <MudMenuItem Icon="@Icons.Custom.Brands.Discord" IconColor="Color.Info"
                                             OnClick="() => OnDiscordLink?.Invoke(acc)">
                                 @L["auth-menu-link-discord-button"]
+                            </MudMenuItem>
+                        }
+                        @if (acc.Status != AccountLoginStatus.Expired
+                                && acc.LoginInfo.Token != null
+                                && acc.LoginInfo.SteamToken == null)
+                        {
+                            <MudMenuItem Icon="@Icons.Custom.Brands.Steam" IconColor="Color.Info"
+                                            OnClick="() => OnSteamLink?.Invoke(acc)">
+                                @L["auth-menu-link-steam-button"]
                             </MudMenuItem>
                         }
                         @if (acc.Status != AccountLoginStatus.Expired && acc.LoginInfo.Token == null && acc.LoginInfo.DiscordToken != null)

@@ -6,5 +6,5 @@ public partial interface IBridge
 {
     Task<LoggedInAccount> LoginAsync(bool steam, CancellationToken cancel = default);
 
-    Task AttachToAccountAsync(LoggedInAccount account, CancellationToken cancel = default);
+    Task AttachToAccountAsync(bool steam, LoggedInAccount account, CancellationToken cancel = default);
 }

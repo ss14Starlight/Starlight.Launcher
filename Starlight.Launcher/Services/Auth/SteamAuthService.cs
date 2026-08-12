@@ -68,9 +68,7 @@ public sealed class SteamAuthService(StarlightAuthApi api, LoginManager loginMan
             UserId = info.UserId,
             Username = moderation.Username,
             Token = null,
-            DiscordToken = new LoginToken { Token = handoff.Token, ExpireTime = DateTime.UtcNow.AddDays(2) },
-            DiscordRefreshToken = handoff.RefreshToken,
-            DiscordSessionId = handoff.SessionId,
+            SteamToken = new LoginToken { Token = handoff.Token, ExpireTime = DateTime.UtcNow.AddDays(2) },
         };
         loginManager.AddFreshLogin(newLoginInfo);
         loginManager.ActiveAccountId = newLoginInfo.UserId;
