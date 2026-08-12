@@ -28,7 +28,7 @@ public sealed class SteamAuthService(StarlightAuthApi api, LoginManager loginMan
             {
                 _ = Process.Start(new ProcessStartInfo
                 {
-                    FileName = api.BuildLauncherLoginUrl(state).ToString(),
+                    FileName = api.BuildLauncherLoginUrl(true, state).ToString(),
                     UseShellExecute = true
                 });
             }

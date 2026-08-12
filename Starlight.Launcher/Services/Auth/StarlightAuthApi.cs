@@ -11,8 +11,8 @@ public sealed class StarlightAuthApi(HttpClient http, SettingsService settings)
 {
     public readonly Uri apiUrl = new(settings.GetSettings().StarlightAPIUrl);
 
-    public string BuildLauncherLoginUrl(string state)
-        => new Uri(apiUrl, $"api/discord-auth/launcher-login?state={Uri.EscapeDataString(state)}").ToString();
+    public string BuildLauncherLoginUrl(bool steam, string state)
+        => new Uri(apiUrl, $"api/{(steam ? "steam" : "discord")}-auth/launcher-login?state={Uri.EscapeDataString(state)}").ToString();
 
     public async Task<DiscordUserResponse> GetDiscordUserAsync(
         string discordToken,

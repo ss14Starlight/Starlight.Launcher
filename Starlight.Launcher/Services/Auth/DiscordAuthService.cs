@@ -27,7 +27,7 @@ public sealed class DiscordAuthService(StarlightAuthApi api, LoginManager loginM
             {
                 _ = Process.Start(new ProcessStartInfo
                 {
-                    FileName = api.BuildLauncherLoginUrl(state).ToString(),
+                    FileName = api.BuildLauncherLoginUrl(false, state).ToString(),
                     UseShellExecute = true
                 });
             }

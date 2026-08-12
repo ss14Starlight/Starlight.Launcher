@@ -151,6 +151,7 @@ public partial class App : Application
         _ = services.AddSingleton<Updater>();
         _ = services.AddSingleton<LoginManager>();
         _ = services.AddSingleton<StarlightAuthApi>();
+        _ = services.AddSingleton<SteamAuthService>();
         _ = services.AddSingleton<DiscordAuthService>();
         _ = services.AddSingleton<ClientLogManager>();
         _ = services.AddTransient<Connector>();
