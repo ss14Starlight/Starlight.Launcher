@@ -178,31 +178,17 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
         _ => null,
     };
 
-    private string? ParseIcon(string? icon)
+    private string? ParseIcon(string? icon) => icon switch
     {
-        if (icon == null)
-            return null;
-
-        if (icon == "discord")
-            return Icons.Custom.Brands.Discord;
-
-        if (icon == "telegram")
-            return Icons.Custom.Brands.Telegram;
-
-        if (icon == "github")
-            return Icons.Custom.Brands.GitHub;
-
-        if (icon == "web")
-            return Icons.Material.Outlined.Web;
-
-        if (icon == "forum")
-            return Icons.Material.Outlined.Forum;
-
-        if (icon == "wiki")
-            return Icons.Material.Outlined.Book;
-
-        return icon;
-    }
+        null => null,
+        "discord" => Icons.Custom.Brands.Discord,
+        "telegram" => Icons.Custom.Brands.Telegram,
+        "github" => Icons.Custom.Brands.GitHub,
+        "web" => Icons.Material.Outlined.Web,
+        "forum" => Icons.Material.Outlined.Forum,
+        "wiki" => Icons.Material.Outlined.Book,
+        _ => Icons.Material.Outlined.Link,
+    };
 
     public override void Dispose()
     {

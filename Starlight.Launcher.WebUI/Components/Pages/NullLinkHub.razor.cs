@@ -3,6 +3,7 @@ using MudBlazor;
 using Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Localization;
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using Color = MudBlazor.Color;
@@ -209,11 +210,11 @@ public sealed partial class NullLinkHub : LocalizedComponentBase, IAsyncDisposab
         if (string.IsNullOrWhiteSpace(text))
             return new MarkupString("");
 
-        var html = text;
+        var html = WebUtility.HtmlEncode(text);
 
         html = Regex.Replace(
             html,
-            @"\[color=(.*?)\](.*?)\[/color\]",
+            @"\[color=([a-zA-Z0-9#(),.%\s]{1,32})\](.*?)\[/color\]",
             "<span style=\"color:$1\">$2</span>",
             RegexOptions.IgnoreCase | RegexOptions.Singleline);
 

@@ -85,7 +85,7 @@
 
                                 <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
                                     <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
-                                        <MudText Typo="Typo.h6">@ParseDescription(server.Title)</MudText>
+                                        <MudText Typo="Typo.h6">@server.Title</MudText>
                                         @if (server.IsAdultOnly)
                                         {
                                             <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="Color.Error">@L["hub-menu-server-adult-tag"]</MudChip>
