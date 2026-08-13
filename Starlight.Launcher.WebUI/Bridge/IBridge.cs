@@ -6,6 +6,8 @@ public partial interface IBridge
 {
     void OpenBrowser(string url);
 
+    void OpenPath(string path);
+
     Task<IFileResult?> PickFileAsync(
         string filter = "Content bundles / replays\0*.zip;*.rt\0All Files\0*.*\0\0",
         CancellationToken cancel = default);

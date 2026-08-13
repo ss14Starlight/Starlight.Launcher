@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Avalonia.Threading;
+using Serilog;
 using Starlight.Launcher.Services.Auth;
 using Starlight.Launcher.Services.Discord;
 using Starlight.Launcher.Services.ServerStatus;
@@ -44,12 +45,36 @@ public sealed partial class Bridge : IBridge
         _tray = tray;
     }
 
-    public void OpenBrowser(string url) =>
-        Process.Start(new ProcessStartInfo
+    public void OpenBrowser(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
         {
-            FileName = url,
+            Log.Warning("Refusing to open non-http(s) URL: {Url}", url);
+            return;
+        }
+
+        _ = Process.Start(new ProcessStartInfo
+        {
+            FileName = uri.AbsoluteUri,
             UseShellExecute = true
         });
+    }
+
+    public void OpenPath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || (!File.Exists(path) && !Directory.Exists(path)))
+        {
+            Log.Warning("Refusing to open path that does not exist: {Path}", path);
+            return;
+        }
+
+        _ = Process.Start(new ProcessStartInfo
+        {
+            FileName = path,
+            UseShellExecute = true
+        });
+    }
 
     public async Task<IFileResult?> PickFileAsync(
         string filter = "Content bundles / replays\0*.zip;*.rt\0All Files\0*.*\0\0",

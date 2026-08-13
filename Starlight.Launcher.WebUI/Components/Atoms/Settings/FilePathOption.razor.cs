@@ -51,7 +51,7 @@ public partial class FilePathOption : LocalizedComponentBase
         Value = await SelfValueControlInitialization.Invoke();
     }
 
-    private async Task OpenFolderAsync() => _bridge.OpenBrowser(Value);
+    private async Task OpenFolderAsync() => _bridge.OpenPath(Value);
 
     private Task OnValueChanged(string value) => ApplyValueAsync(value);
 
