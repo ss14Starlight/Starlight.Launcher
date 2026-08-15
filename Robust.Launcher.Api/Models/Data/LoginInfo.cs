@@ -11,6 +11,7 @@ public class LoginInfo
     public string? DiscordRefreshToken { get; set; }
     public string? DiscordSessionId { get; set; }
     public LoginToken? SteamToken { get; set; }
+    public string? SteamRefreshToken { get; set; }
     public string? SteamSessionId { get; set; }
     public string? AuthServerUrl { get; set; }
 

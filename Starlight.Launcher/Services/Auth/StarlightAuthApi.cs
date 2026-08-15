@@ -70,6 +70,22 @@ public sealed class StarlightAuthApi(HttpClient http, SettingsService settings)
         return resp.IsSuccessStatusCode;
     }
 
+    public async Task<bool> ValidateSteamToken(string steamToken)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, new Uri(apiUrl, "api/discord-auth/validate"));
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", steamToken);
+
+        var resp = await http.SendAsync(request);
+
+        if (!resp.IsSuccessStatusCode)
+        {
+            var body = await resp.Content.ReadAsStringAsync();
+            throw new SteamAuthException($"validate failed: {(int)resp.StatusCode} {body}");
+        }
+
+        return resp.IsSuccessStatusCode;
+    }
+
     public async Task<StarlightRefreshResult?> RefreshTokenAsync(
         string sessionId, string refreshToken, CancellationToken cancel = default)
     {

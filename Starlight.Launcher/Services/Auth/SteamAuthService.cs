@@ -69,6 +69,7 @@ public sealed class SteamAuthService(StarlightAuthApi api, LoginManager loginMan
             Username = moderation.Username,
             Token = null,
             SteamToken = new LoginToken { Token = handoff.Token, ExpireTime = DateTime.UtcNow.AddDays(2) },
+            SteamRefreshToken = handoff.RefreshToken,
             SteamSessionId = handoff.SessionId,
         };
         loginManager.AddFreshLogin(newLoginInfo);
@@ -90,6 +91,7 @@ public sealed class SteamAuthService(StarlightAuthApi api, LoginManager loginMan
             Username = account.LoginInfo.Username,
             Token = account.LoginInfo.Token,
             SteamToken = new LoginToken { Token = handoff.Token, ExpireTime = DateTime.UtcNow.AddDays(2) },
+            SteamRefreshToken = handoff.RefreshToken,
             SteamSessionId = handoff.SessionId,
             AuthServerUrl = account.LoginInfo.AuthServerUrl
         };
