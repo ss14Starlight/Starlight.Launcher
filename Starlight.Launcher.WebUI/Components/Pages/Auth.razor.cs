@@ -66,10 +66,10 @@ public partial class Auth : LocalizedComponentBase, IDisposable
     }
 
     private void LinkSteam(LoggedInAccount account) =>
-        Task.Run(async () => await RunAttach(true, account, L.GetString("auth-menu-linked-status", ("account", account.LoginInfo.Username))));
+        Task.Run(async () => await RunAttach(true, account, L.GetString("auth-menu-steam-linked-status", ("account", account.LoginInfo.Username))));
 
     private void LinkDiscord(LoggedInAccount account) =>
-        Task.Run(async () => await RunAttach(false, account, L.GetString("auth-menu-linked-status", ("account", account.LoginInfo.Username))));
+        Task.Run(async () => await RunAttach(false, account, L.GetString("auth-menu-discord-linked-status", ("account", account.LoginInfo.Username))));
 
     private void ReloginDiscord(LoggedInAccount account) =>
         Task.Run(async () => await RunAttach(false, account, L["auth-menu-discord-renewed"], navigateHome: true));
