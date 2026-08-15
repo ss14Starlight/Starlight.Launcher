@@ -401,6 +401,8 @@ public partial class Connector : ObservableObject
                 cVars.Add(("ROBUST_AUTH_TOKEN", account.LoginInfo.Token.Token));
             if (account.LoginInfo.DiscordToken != null && !string.IsNullOrWhiteSpace(account.LoginInfo.DiscordToken.Token))
                 cVars.Add(("STARLIGHT_AUTH_DISCORDTOKEN", account.LoginInfo.DiscordToken.Token));
+            if (account.LoginInfo.SteamToken != null && !string.IsNullOrWhiteSpace(account.LoginInfo.SteamToken.Token))
+                cVars.Add(("STARLIGHT_AUTH_STEAMTOKEN", account.LoginInfo.SteamToken.Token));
             cVars.Add(("ROBUST_AUTH_USERID", account.LoginInfo.UserId.ToString()));
             cVars.Add(("ROBUST_AUTH_PUBKEY", info.AuthInformation.PublicKey));
             if (settings.SelectedAuthServer != null)
