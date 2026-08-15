@@ -62,6 +62,7 @@ auth-menu-confirm-label = Confirm Password
 auth-menu-2fa-label = 2FA Code
 auth-menu-resend-confirmation = Resend the confirmation email
 auth-menu-signin-method-discord = Login with Discord
+auth-menu-signin-method-steam = Login with Steam
 auth-menu-signin-forgot-password = Forgot your password?
 auth-menu-signin = Sign In
 

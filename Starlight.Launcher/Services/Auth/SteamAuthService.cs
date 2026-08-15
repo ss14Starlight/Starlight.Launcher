@@ -99,8 +99,7 @@ public sealed class SteamAuthService(StarlightAuthApi api, LoginManager loginMan
 
     public void HandleDeepLink(Uri uri)
     {
-        if (!uri.Scheme.Equals("starlight", StringComparison.OrdinalIgnoreCase) ||
-            !uri.Host.Equals("auth", StringComparison.OrdinalIgnoreCase))
+        if (!IsProvider(uri, "steam"))
             return;
 
         var query = HttpUtility.ParseQueryString(uri.Query);
@@ -141,4 +140,11 @@ public sealed class SteamAuthService(StarlightAuthApi api, LoginManager loginMan
         RandomNumberGenerator.Fill(bytes);
         return Convert.ToHexString(bytes);
     }
+
+    private static bool IsProvider(Uri uri, string provider) =>
+        uri.Scheme.Equals("starlight", StringComparison.OrdinalIgnoreCase) &&
+        uri.Host.Equals("auth", StringComparison.OrdinalIgnoreCase) &&
+        string.Equals(
+            uri.Segments.Select(s => s.Trim('/')).FirstOrDefault(s => !string.IsNullOrEmpty(s)) ?? "discord",
+            provider, StringComparison.OrdinalIgnoreCase);
 }

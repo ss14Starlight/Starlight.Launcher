@@ -9,25 +9,16 @@ using Starlight.Launcher.WebUI.Models.Auth;
 
 namespace Starlight.Launcher.Services;
 
-public partial class LauncherCommands
+public partial class LauncherCommands(ILogger<LauncherCommands> logger, LoginManager loginManager, Connector connector, DiscordAuthService discordAuth, SteamAuthService steamAuth)
 {
-    private readonly ILogger<LauncherCommands> _logger;
-    private readonly LoginManager _loginManager;
-    private readonly Connector _connector;
-    private readonly DiscordAuthService _discordAuth;
-    public readonly Channel<LauncherActivationMessage> CommandChannel;
+    private readonly ILogger<LauncherCommands> _logger = logger;
+    private readonly LoginManager _loginManager = loginManager;
+    private readonly Connector _connector = connector;
+    private readonly DiscordAuthService _discordAuth = discordAuth;
+    private readonly SteamAuthService _steamAuth = steamAuth;
+    public readonly Channel<LauncherActivationMessage> CommandChannel = Channel.CreateUnbounded<LauncherActivationMessage>();
 
     public event Func<string, Task>? ConnectRequested;
-
-    public LauncherCommands(ILogger<LauncherCommands> logger, LoginManager loginManager, Connector connector, DiscordAuthService discordAuth)
-    {
-        _logger = logger;
-        _loginManager = loginManager;
-        _connector = connector;
-        _discordAuth = discordAuth;
-
-        CommandChannel = Channel.CreateUnbounded<LauncherActivationMessage>();
-    }
 
     private void ActivateWindow()
     {
@@ -123,10 +114,22 @@ public partial class LauncherCommands
                 break;
 
             case { Kind: LauncherActivationKind.DiscordAuth, Payload: { } uriString }:
-                if (Uri.TryCreate(uriString, UriKind.Absolute, out var uri))
+                if (Uri.TryCreate(uriString, UriKind.Absolute, out var discordUri))
                 {
-                    _logger.LogInformation("Dispatching Discord auth deep link: {uri}", uri);
-                    _discordAuth.HandleDeepLink(uri);
+                    _logger.LogInformation("Dispatching Discord auth deep link: {uri}", discordUri);
+                    _discordAuth.HandleDeepLink(discordUri);
+                }
+                else
+                {
+                    _logger.LogError("Bad auth deep link payload: {Payload}", uriString);
+                }
+                break;
+
+            case { Kind: LauncherActivationKind.SteamAuth, Payload: { } uriString }:
+                if (Uri.TryCreate(uriString, UriKind.Absolute, out var steamUri))
+                {
+                    _logger.LogInformation("Dispatching Steam auth deep link: {uri}", steamUri);
+                    _steamAuth.HandleDeepLink(steamUri);
                 }
                 else
                 {

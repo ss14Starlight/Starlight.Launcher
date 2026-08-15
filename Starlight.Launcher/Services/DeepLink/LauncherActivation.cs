@@ -5,6 +5,7 @@ public enum LauncherActivationKind
     Ping,
     Connect,
     DiscordAuth,
+    SteamAuth,
     RedialWait,
 }
 
@@ -14,12 +15,25 @@ public sealed record LauncherActivationMessage(LauncherActivationKind Kind, stri
     public static LauncherActivationMessage RedialWait() => new(LauncherActivationKind.RedialWait);
     public static LauncherActivationMessage Connect(Uri uri, string? reason = null) => new(LauncherActivationKind.Connect, uri.ToString(), reason);
     public static LauncherActivationMessage DiscordAuth(Uri uri) => new(LauncherActivationKind.DiscordAuth, uri.ToString());
+    public static LauncherActivationMessage SteamAuth(Uri uri) => new(LauncherActivationKind.SteamAuth, uri.ToString());
 }
 
 public static class LauncherUriRouter
 {
-    public static LauncherActivationMessage Classify(Uri uri) =>
-        uri.Host.Equals("auth", StringComparison.OrdinalIgnoreCase)
-            ? LauncherActivationMessage.DiscordAuth(uri)
-            : LauncherActivationMessage.Connect(uri);
+    public static LauncherActivationMessage Classify(Uri uri)
+    {
+        if (!uri.Host.Equals("auth", StringComparison.OrdinalIgnoreCase))
+            return LauncherActivationMessage.Connect(uri);
+
+        var provider = uri.Segments
+            .Select(s => s.Trim('/'))
+            .FirstOrDefault(s => !string.IsNullOrEmpty(s));
+
+        return provider?.ToLowerInvariant() switch
+        {
+            "steam" => LauncherActivationMessage.SteamAuth(uri),
+            "discord" or null => LauncherActivationMessage.DiscordAuth(uri),
+            _ => LauncherActivationMessage.Connect(uri),
+        };
+    }
 }

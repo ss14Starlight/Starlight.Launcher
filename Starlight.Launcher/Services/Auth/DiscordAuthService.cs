@@ -100,8 +100,7 @@ public sealed class DiscordAuthService(StarlightAuthApi api, LoginManager loginM
 
     public void HandleDeepLink(Uri uri)
     {
-        if (!uri.Scheme.Equals("starlight", StringComparison.OrdinalIgnoreCase) ||
-            !uri.Host.Equals("auth", StringComparison.OrdinalIgnoreCase))
+        if (!IsProvider(uri, "discord"))
             return;
 
         var query = HttpUtility.ParseQueryString(uri.Query);
@@ -142,4 +141,11 @@ public sealed class DiscordAuthService(StarlightAuthApi api, LoginManager loginM
         RandomNumberGenerator.Fill(bytes);
         return Convert.ToHexString(bytes);
     }
+
+    private static bool IsProvider(Uri uri, string provider) =>
+        uri.Scheme.Equals("starlight", StringComparison.OrdinalIgnoreCase) &&
+        uri.Host.Equals("auth", StringComparison.OrdinalIgnoreCase) &&
+        string.Equals(
+            uri.Segments.Select(s => s.Trim('/')).FirstOrDefault(s => !string.IsNullOrEmpty(s)) ?? "discord",
+            provider, StringComparison.OrdinalIgnoreCase);
 }

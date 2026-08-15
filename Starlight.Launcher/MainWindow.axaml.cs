@@ -59,12 +59,12 @@ public partial class MainWindow : Window
         => EnumChildWindows(root, (h, _) =>
         {
             var sb = new StringBuilder(256);
-            GetClassName(h, sb, sb.Capacity);
+            _ = GetClassName(h, sb, sb.Capacity);
             if (sb.ToString().Contains("AvaloniaDumbWindow"))
             {
                 var ex = GetWindowLong(h, GWL_EXSTYLE);
                 if ((ex & WS_EX_LAYERED) != 0)
-                    SetWindowLong(h, GWL_EXSTYLE, ex & ~WS_EX_LAYERED);
+                    _ = SetWindowLong(h, GWL_EXSTYLE, ex & ~WS_EX_LAYERED);
             }
             return true;
         }, IntPtr.Zero);
