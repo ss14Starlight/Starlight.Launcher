@@ -5,6 +5,7 @@ using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Models.Auth;
 using Starlight.Launcher.WebUI.Models.DiscordAuthService;
+using Starlight.Launcher.WebUI.Models.StarlightAuthService;
 
 namespace Starlight.Launcher.WebUI.Components.Pages;
 
@@ -42,11 +43,11 @@ public partial class Auth : LocalizedComponentBase, IDisposable
         _bridge.LoginEntriesChanged -= OnLoginsChanged;
     }
 
-    private async Task BeginRelogin(LoggedInAccount account)
+    private void BeginRelogin(LoggedInAccount account)
     {
         if (account.LoginInfo.DiscordToken != null && account.LoginInfo.Token == null)
         {
-            await ReloginDiscord(account);
+            ReloginDiscord(account);
             return;
         }
 
@@ -64,19 +65,22 @@ public partial class Auth : LocalizedComponentBase, IDisposable
         StateHasChanged();
     }
 
-    private Task LinkDiscord(LoggedInAccount account) =>
-        RunDiscordAttach(account, L.GetString("auth-menu-linked-status", ("account", account.LoginInfo.Username)));
+    private void LinkSteam(LoggedInAccount account) =>
+        Task.Run(async () => await RunAttach(true, account, L.GetString("auth-menu-steam-linked-status", ("account", account.LoginInfo.Username))));
 
-    private Task ReloginDiscord(LoggedInAccount account) =>
-        RunDiscordAttach(account, L["auth-menu-discord-renewed"], navigateHome: true);
+    private void LinkDiscord(LoggedInAccount account) =>
+        Task.Run(async () => await RunAttach(false, account, L.GetString("auth-menu-discord-linked-status", ("account", account.LoginInfo.Username))));
 
-    private async Task RunDiscordAttach(LoggedInAccount account, string success, bool navigateHome = false)
+    private void ReloginDiscord(LoggedInAccount account) =>
+        Task.Run(async () => await RunAttach(false, account, L["auth-menu-discord-renewed"], navigateHome: true));
+
+    private async Task RunAttach(bool steam, LoggedInAccount account, string success, bool navigateHome = false)
     {
         _busy = true;
         await InvokeAsync(StateHasChanged);
         try
         {
-            await _bridge.AttachToAccountAsync(account);
+            await _bridge.AttachToAccountAsync(steam, account);
             _ = _snackbar.Add(success, Severity.Success);
             if (navigateHome)
             {
@@ -86,16 +90,20 @@ public partial class Auth : LocalizedComponentBase, IDisposable
         }
         catch (OperationCanceledException)
         {
-            _ = _snackbar.Add(L["auth-menu-discord-login-error"], Severity.Warning);
+            _ = _snackbar.Add(L["auth-menu-attach-login-error"], Severity.Warning);
         }
         catch (DiscordAuthException ex)
         {
             _ = _snackbar.Add(ex.Message, Severity.Error);
         }
+        catch (SteamAuthException ex)
+        {
+            _ = _snackbar.Add(ex.Message, Severity.Error);
+        }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Discord attach failed");
-            _ = _snackbar.Add(L["auth-menu-discord-connect-fail"], Severity.Error);
+            Log.Warning(ex, "{Type} attach failed", steam ? "Steam" : "Discord");
+            _ = _snackbar.Add(L["auth-menu-attach-connect-fail"], Severity.Error);
         }
         finally
         {
@@ -107,7 +115,6 @@ public partial class Auth : LocalizedComponentBase, IDisposable
     private void SwitchMode(Mode mode)
     {
         if (mode == Mode.SignIn) { _signInUsername = ""; }
-        //if (mode == Mode.Register) { _registerErrors = null; _registerSuccessMessage = null; }
 
         _mode = mode;
 

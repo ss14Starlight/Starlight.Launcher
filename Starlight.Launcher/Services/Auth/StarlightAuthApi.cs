@@ -1,5 +1,6 @@
 using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI.Models.DiscordAuthService;
+using Starlight.Launcher.WebUI.Models.StarlightAuthService;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -10,8 +11,8 @@ public sealed class StarlightAuthApi(HttpClient http, SettingsService settings)
 {
     public readonly Uri apiUrl = new(settings.GetSettings().StarlightAPIUrl);
 
-    public string BuildLauncherLoginUrl(string state)
-        => new Uri(apiUrl, $"api/discord-auth/launcher-login?state={Uri.EscapeDataString(state)}").ToString();
+    public string BuildLauncherLoginUrl(bool steam, string state)
+        => new Uri(apiUrl, $"api/{(steam ? "steam" : "discord")}-auth/launcher-login?state={Uri.EscapeDataString(state)}").ToString();
 
     public async Task<DiscordUserResponse> GetDiscordUserAsync(
         string discordToken,
@@ -33,6 +34,26 @@ public sealed class StarlightAuthApi(HttpClient http, SettingsService settings)
                ?? throw new DiscordAuthException("Empty response.");
     }
 
+    public async Task<SteamUserResponse> GetSteamUserAsync(
+        string steamToken,
+        CancellationToken cancel)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, new Uri(apiUrl, $"api/steam-auth/find-user"));
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", steamToken);
+
+        var resp = await http.SendAsync(request, cancel);
+
+        if (!resp.IsSuccessStatusCode)
+        {
+            var body = await resp.Content.ReadAsStringAsync(cancel);
+            throw new DiscordAuthException($"find-user failed: {(int)resp.StatusCode} {body}");
+        }
+
+        return await resp.Content.ReadFromJsonAsync<SteamUserResponse>(
+                   cancellationToken: cancel)
+               ?? throw new SteamAuthException("Empty response.");
+    }
+
     public async Task<bool> ValidateDiscordToken(string discordToken)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, new Uri(apiUrl, "api/discord-auth/validate"));
@@ -44,6 +65,22 @@ public sealed class StarlightAuthApi(HttpClient http, SettingsService settings)
         {
             var body = await resp.Content.ReadAsStringAsync();
             throw new DiscordAuthException($"validate failed: {(int)resp.StatusCode} {body}");
+        }
+
+        return resp.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> ValidateSteamToken(string steamToken)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, new Uri(apiUrl, "api/discord-auth/validate"));
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", steamToken);
+
+        var resp = await http.SendAsync(request);
+
+        if (!resp.IsSuccessStatusCode)
+        {
+            var body = await resp.Content.ReadAsStringAsync();
+            throw new SteamAuthException($"validate failed: {(int)resp.StatusCode} {body}");
         }
 
         return resp.IsSuccessStatusCode;
@@ -66,3 +103,5 @@ public sealed record StarlightRefreshResult(
     string AccessToken, DateTime AccessExpiresUtc, string RefreshToken, string SessionId);
 
 public sealed record DiscordUserResponse(Guid UserId, string Username);
+
+public sealed record SteamUserResponse(Guid UserId, string Username);

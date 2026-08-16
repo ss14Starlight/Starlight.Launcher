@@ -1,6 +1,6 @@
 using Avalonia;
+using Avalonia.Logging;
 using Serilog;
-using Serilog.Events;
 using Starlight.Launcher.Services;
 
 namespace Starlight.Launcher;
@@ -34,7 +34,7 @@ internal static class Program
 
             var logger = new LoggerConfiguration()
                 .WriteTo.Console()
-                .WriteTo.File(Path.Combine(AppPaths.AppDataDirectory, "launcher-logs", "log-.log"), restrictedToMinimumLevel: LogEventLevel.Information, rollingInterval: RollingInterval.Day)
+                .WriteTo.File(Path.Combine(AppPaths.AppDataDirectory, "launcher-logs", "log-.log"), restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug, rollingInterval: RollingInterval.Day)
                 .CreateLogger();
             Log.Logger = logger;
 
@@ -48,7 +48,7 @@ internal static class Program
                 {
                     var classified = LauncherUriRouter.Classify(uri);
                     logger.Information("Classified activation URI {uri} as {kind}", uri, classified.Kind);
-                    messages = new[] { classified };
+                    messages = [classified];
                     sendAnyway = true;
                 }
                 else
@@ -87,7 +87,7 @@ internal static class Program
         AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .WithInterFont()
-            .LogToTrace();
+            .LogToTrace(LogEventLevel.Debug, LogArea.Control, LogArea.Visual);
 }
 
 internal static class AppPaths

@@ -19,7 +19,8 @@ auth-menu-register-dont-match-pass = The passwords do not match
 # Snackbars(not including errors/warnings)
 
 auth-menu-account-deleted = Account { $account } deleted.
-auth-menu-linked-status = Discord linked to { $account }.
+auth-menu-discord-linked-status = Discord linked to { $account }.
+auth-menu-steam-linked-status = Steam linked to { $account }.
 auth-menu-discord-renewed = Discord session renewed.
 auth-menu-welcome-message = Welcome, { $username }!
 auth-menu-email-resent = The email has been resent.
@@ -40,6 +41,7 @@ auth-menu-active-chip = Active
 auth-menu-no-accounts = You haven't added any accounts yet.
 auth-menu-no-accounts-hint = Press "Add Account" to login or register in system
 auth-menu-discord-linked-tooltip = Discord linked
+auth-menu-steam-linked-tooltip = Steam linked
 auth-menu-login-again-button = Login again
 auth-menu-select-button = Select
 auth-menu-link-discord-button = Link Discord
@@ -62,6 +64,7 @@ auth-menu-confirm-label = Confirm Password
 auth-menu-2fa-label = 2FA Code
 auth-menu-resend-confirmation = Resend the confirmation email
 auth-menu-signin-method-discord = Login with Discord
+auth-menu-signin-method-steam = Login with Steam
 auth-menu-signin-forgot-password = Forgot your password?
 auth-menu-signin = Sign In
 

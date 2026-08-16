@@ -7,16 +7,17 @@ using Robust.Launcher.Api.Models.Data;
 using Serilog;
 using Starlight.Launcher.WebUI.Models.Auth;
 using Starlight.Launcher.WebUI.Models.DiscordAuthService;
+using Starlight.Launcher.WebUI.Models.StarlightAuthService;
 
 namespace Starlight.Launcher.Services.Auth;
 
-public sealed class DiscordAuthService(StarlightAuthApi api, LoginManager loginManager)
+public sealed class SteamAuthService(StarlightAuthApi api, LoginManager loginManager)
 {
     private static readonly TimeSpan _flowTimeout = TimeSpan.FromMinutes(5);
 
     private readonly ConcurrentDictionary<string, TaskCompletionSource<HandoffResult>> _pending = new();
 
-    private async Task<(HandoffResult handoff, DiscordUserResponse info)> AuthorizeAsync(CancellationToken cancel)
+    private async Task<(HandoffResult handoff, SteamUserResponse info)> AuthorizeAsync(CancellationToken cancel)
     {
         var state = GenerateState();
         var tcs = new TaskCompletionSource<HandoffResult>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -27,13 +28,13 @@ public sealed class DiscordAuthService(StarlightAuthApi api, LoginManager loginM
             {
                 _ = Process.Start(new ProcessStartInfo
                 {
-                    FileName = api.BuildLauncherLoginUrl(false, state).ToString(),
+                    FileName = api.BuildLauncherLoginUrl(true, state).ToString(),
                     UseShellExecute = true
                 });
             }
             catch
             {
-                throw new DiscordAuthException("Unable to open the browser to log in.");
+                throw new SteamAuthException("Unable to open the browser to log in.");
             }
 
             using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancel);
@@ -43,8 +44,8 @@ public sealed class DiscordAuthService(StarlightAuthApi api, LoginManager loginM
             await using (timeoutCts.Token.Register(() => tcs.TrySetCanceled(timeoutCts.Token)))
                 handoff = await tcs.Task;
 
-            var info = await api.GetDiscordUserAsync(handoff.Token, cancel)
-                       ?? throw new DiscordAuthException("Failed to retrieve user information.");
+            var info = await api.GetSteamUserAsync(handoff.Token, cancel)
+                       ?? throw new SteamAuthException("Failed to retrieve user information.");
             return (handoff, info);
         }
         finally
@@ -59,17 +60,17 @@ public sealed class DiscordAuthService(StarlightAuthApi api, LoginManager loginM
 
         var moderation = UsernameModerator.Moderate(info.Username);
         if (!moderation.IsUsable)
-            throw new DiscordAuthException(
-                moderation.Reason ?? "Your Discord username can't be used. Please set a normal name and try again.");
+            throw new SteamAuthException(
+                moderation.Reason ?? "Your Steam username can't be used. Please set a normal name and try again.");
 
         var newLoginInfo = new LoginInfo
         {
             UserId = info.UserId,
             Username = moderation.Username,
             Token = null,
-            DiscordToken = new LoginToken { Token = handoff.Token, ExpireTime = DateTime.UtcNow.AddDays(2) },
-            DiscordRefreshToken = handoff.RefreshToken,
-            DiscordSessionId = handoff.SessionId,
+            SteamToken = new LoginToken { Token = handoff.Token, ExpireTime = DateTime.UtcNow.AddDays(2) },
+            SteamRefreshToken = handoff.RefreshToken,
+            SteamSessionId = handoff.SessionId,
         };
         loginManager.AddFreshLogin(newLoginInfo);
         loginManager.ActiveAccountId = newLoginInfo.UserId;
@@ -81,17 +82,17 @@ public sealed class DiscordAuthService(StarlightAuthApi api, LoginManager loginM
         var (handoff, info) = await AuthorizeAsync(cancel);
 
         if (info.UserId != account.UserId)
-            throw new DiscordAuthException(
-                "This Discord account isn't linked to this player on the server yet.");
+            throw new SteamAuthException(
+                "This Steam account isn't linked to this player on the server yet.");
 
         var newLoginInfo = new LoginInfo
         {
             UserId = info.UserId,
             Username = account.LoginInfo.Username,
             Token = account.LoginInfo.Token,
-            DiscordToken = new LoginToken { Token = handoff.Token, ExpireTime = DateTime.UtcNow.AddDays(2) },
-            DiscordRefreshToken = handoff.RefreshToken,
-            DiscordSessionId = handoff.SessionId,
+            SteamToken = new LoginToken { Token = handoff.Token, ExpireTime = DateTime.UtcNow.AddDays(2) },
+            SteamRefreshToken = handoff.RefreshToken,
+            SteamSessionId = handoff.SessionId,
             AuthServerUrl = account.LoginInfo.AuthServerUrl
         };
         loginManager.AddFreshLogin(newLoginInfo);
@@ -100,7 +101,7 @@ public sealed class DiscordAuthService(StarlightAuthApi api, LoginManager loginM
 
     public void HandleDeepLink(Uri uri)
     {
-        if (!IsProvider(uri, "discord"))
+        if (!IsProvider(uri, "steam"))
             return;
 
         var query = HttpUtility.ParseQueryString(uri.Query);
@@ -108,21 +109,21 @@ public sealed class DiscordAuthService(StarlightAuthApi api, LoginManager loginM
 
         if (string.IsNullOrEmpty(state) || !_pending.TryRemove(state, out var tcs))
         {
-            Log.Warning("Discord deep link with an unknown state");
+            Log.Warning("Steam deep link with an unknown state");
             return;
         }
 
         var error = query["error"];
         if (!string.IsNullOrEmpty(error))
         {
-            _ = tcs.TrySetException(new DiscordAuthException(MapError(error)));
+            _ = tcs.TrySetException(new SteamAuthException(MapError(error)));
             return;
         }
 
         var token = query["token"];
         if (string.IsNullOrEmpty(token))
         {
-            _ = tcs.TrySetException(new DiscordAuthException("No token in the response."));
+            _ = tcs.TrySetException(new SteamAuthException("No token in the response."));
             return;
         }
 

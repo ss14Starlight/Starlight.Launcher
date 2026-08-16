@@ -3,6 +3,6 @@
         x:Class="Starlight.Launcher.MainWindow"
         Width="1280" Height="800">
 
-	<NativeWebView x:Name="Web" />
+    <NativeWebView x:Name="Web" />
 
 </Window>

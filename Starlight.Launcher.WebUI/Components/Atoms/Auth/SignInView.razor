@@ -91,6 +91,16 @@
     @L["auth-menu-signin-method-discord"]
 </MudButton>
 
+<MudButton Variant="Variant.Outlined"
+            Color="Color.Default"
+            FullWidth="true"
+            StartIcon="@Icons.Custom.Brands.Steam"
+            Disabled="Busy"
+            OnClick="LoginWithSteam"
+            Class="mb-3 steam-btn">
+    @L["auth-menu-signin-method-steam"]
+</MudButton>
+
 <MudStack Row = "true" Justify = "Justify.SpaceBetween">
     <MudButton Variant = "Variant.Text"
         Disabled="Busy" Class="auth-link-btn"

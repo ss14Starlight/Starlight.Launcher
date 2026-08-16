@@ -11,7 +11,7 @@
                 @switch (_mode)
                 {
                     case Mode.AccountList:
-                        <AccountListView OnAccountRelogin="x => Task.Run(async () => await BeginRelogin(x))" OnDiscordLink="x => LinkDiscord(x)" OnLink="x => LinkAccount(x)" OnSignIn="() => SwitchMode(Mode.SignIn)" />
+                        <AccountListView OnAccountRelogin="BeginRelogin" OnDiscordLink="LinkDiscord" OnSteamLink="LinkSteam" OnLink="LinkAccount" OnSignIn="() => SwitchMode(Mode.SignIn)" />
                         break;
 
                     case Mode.SignIn:

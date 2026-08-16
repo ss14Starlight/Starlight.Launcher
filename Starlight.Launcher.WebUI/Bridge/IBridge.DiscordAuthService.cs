@@ -4,7 +4,7 @@ namespace Starlight.Launcher.WebUI.Bridge;
 
 public partial interface IBridge
 {
-    Task<LoggedInAccount> LoginAsync(CancellationToken cancel = default);
+    Task<LoggedInAccount> LoginAsync(bool steam, CancellationToken cancel = default);
 
-    Task AttachToAccountAsync(LoggedInAccount account, CancellationToken cancel = default);
+    Task AttachToAccountAsync(bool steam, LoggedInAccount account, CancellationToken cancel = default);
 }

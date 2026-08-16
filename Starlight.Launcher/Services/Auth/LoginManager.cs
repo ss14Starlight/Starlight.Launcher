@@ -227,7 +227,7 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
                 return;
             }
 
-            if (l.LoginInfo.Token == null && l.LoginInfo.DiscordToken == null)
+            if (l.LoginInfo.Token == null && l.LoginInfo.DiscordToken == null && l.LoginInfo.SteamToken == null)
             {
                 Log.Warning("Token for {login} doesn't have any access tokens", l.LoginInfo);
                 l.SetStatus(AccountLoginStatus.Expired);
@@ -236,6 +236,14 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
 
             if (l.LoginInfo.DiscordToken != null && l.LoginInfo.DiscordToken.IsTimeExpired()
                 && string.IsNullOrEmpty(l.LoginInfo.DiscordRefreshToken))
+            {
+                Log.Warning("Discord token for {login} expired and no refresh token", l.LoginInfo);
+                l.SetStatus(AccountLoginStatus.Expired);
+                return;
+            }
+
+            if (l.LoginInfo.SteamToken != null && l.LoginInfo.SteamToken.IsTimeExpired()
+                && string.IsNullOrEmpty(l.LoginInfo.SteamRefreshToken))
             {
                 Log.Warning("Discord token for {login} expired and no refresh token", l.LoginInfo);
                 l.SetStatus(AccountLoginStatus.Expired);
@@ -278,6 +286,9 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
                 existing.LoginInfo.DiscordToken = info.DiscordToken;
                 existing.LoginInfo.DiscordRefreshToken = info.DiscordRefreshToken;
                 existing.LoginInfo.DiscordSessionId = info.DiscordSessionId;
+                existing.LoginInfo.SteamToken = info.SteamToken;
+                existing.LoginInfo.SteamSessionId = info.SteamSessionId;
+                existing.LoginInfo.SteamRefreshToken = info.SteamRefreshToken;
                 data = existing;
             }
             else
@@ -395,6 +406,33 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
                 Log.Debug("Refreshed Starlight token for {login}", data.LoginInfo);
             }
         }
+        else if (data.LoginInfo.SteamToken != null && data.LoginInfo.SteamToken.ShouldRefresh())
+        {
+            Log.Debug("Refreshing Starlight token for {login}", data.LoginInfo);
+            var result = await _starlightAuthApi.RefreshTokenAsync(
+                data.LoginInfo.SteamSessionId!, data.LoginInfo.SteamRefreshToken!);
+
+            if (result == null)
+            {
+                data.SetStatus(AccountLoginStatus.Expired);
+                Log.Debug("Starlight token for {login} expired/revoked while refreshing", data.LoginInfo);
+            }
+            else
+            {
+                data.LoginInfo.SteamToken = new LoginToken
+                {
+                    Token = result.AccessToken,
+                    ExpireTime = result.AccessExpiresUtc,
+                };
+                data.LoginInfo.SteamRefreshToken = result.RefreshToken;
+                data.LoginInfo.SteamSessionId = result.SessionId;
+
+                data.SetStatus(AccountLoginStatus.Available);
+                _settings.UpdateLogin(data.LoginInfo);
+
+                Log.Debug("Refreshed Starlight token for {login}", data.LoginInfo);
+            }
+        }
         else if (data.Status == AccountLoginStatus.Unsure && data.LoginInfo.Token != null && data.LoginInfo.AuthServerUrl != null)
         {
             var valid = await _authApi.CheckTokenAsync(data.LoginInfo.Token.Token, new UrlFallbackSet(data.LoginInfo.AuthServerUrl));
@@ -404,6 +442,12 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
         else if (data.Status == AccountLoginStatus.Unsure && data.LoginInfo.DiscordToken != null)
         {
             var valid = await _starlightAuthApi.ValidateDiscordToken(data.LoginInfo.DiscordToken.Token);
+            Log.Debug("Discord token for {login} still valid? {valid}", data.LoginInfo, valid);
+            data.SetStatus(valid ? AccountLoginStatus.Available : AccountLoginStatus.Expired);
+        }
+        else if (data.Status == AccountLoginStatus.Unsure && data.LoginInfo.SteamToken != null)
+        {
+            var valid = await _starlightAuthApi.ValidateSteamToken(data.LoginInfo.SteamToken.Token);
             Log.Debug("Discord token for {login} still valid? {valid}", data.LoginInfo, valid);
             data.SetStatus(valid ? AccountLoginStatus.Available : AccountLoginStatus.Expired);
         }
