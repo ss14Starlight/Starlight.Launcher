@@ -10,7 +10,7 @@
 <ConnectingDialogHost />
 
 <MudLayout>
-    <MudAppBar Elevation="1">
+    <MudAppBar Elevation="1" Class="app-titlebar">
         @if (_elementPosition == ElementPosition.Bottom || _isSmallScreen)
         {
             <MudText Typo="Typo.h5" Class="ml-3">STARLIGHT</MudText>
@@ -25,6 +25,20 @@
         else if (_elementPosition == ElementPosition.Top)
         {
             <HorizontalNavBar />
+        }
+
+        @if (_shouldShowAppBar)
+        {
+            <div class="window-controls" data-no-drag>
+                <MudIconButton Icon="@Icons.Material.Filled.Minimize"
+                               Size="Size.Small" OnClick="@(() => _bridge.MinimizeWindow())" />
+                <MudIconButton Icon="@(_bridge.IsWindowMaximized
+                                                             ? Icons.Material.Filled.FilterNone
+                                                     : Icons.Material.Filled.CropSquare)"
+                               Size="Size.Small" OnClick="@(() => _bridge.ToggleMaximizeWindow())" />
+                <MudIconButton Icon="@Icons.Material.Filled.Close" Class="window-close"
+                               Size="Size.Small" OnClick="@(() => _bridge.CloseWindow())" />
+            </div>
         }
     </MudAppBar>
 

@@ -1,4 +1,9 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Reactive;
 using Avalonia.Threading;
 using Serilog;
 using Starlight.Launcher.Services.Auth;
@@ -26,6 +31,7 @@ public sealed partial class Bridge : IBridge
     private readonly Updater _updater;
     private readonly IFileDialogService _fileDialog;
     private readonly INativeTray _tray;
+    private Window? _window;
 
     public Bridge(LauncherCommands commands, Connector connector, DiscordAuthService discordAuth,
         SteamAuthService steamAuth, DiscordRichPresence discordRichPresence, HubServerFetcher hubServerFetcher,
@@ -82,4 +88,38 @@ public sealed partial class Bridge : IBridge
     public async Task<IFileResult?> PickFileAsync(
         string filter = "Content bundles / replays\0*.zip;*.rt\0All Files\0*.*\0\0",
         CancellationToken cancel = default) => await Dispatcher.UIThread.InvokeAsync(async () => await _fileDialog.PickFileAsync());
+
+    public void InitializeWindow()
+    {
+        _window = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+
+        _ = _window?.GetObservable(Window.WindowStateProperty).Subscribe(new AnonymousObserver<WindowState>(_ => WindowStateChanged?.Invoke()));
+    }
+
+    public void MinimizeWindow() => Dispatcher.UIThread.Invoke(() => _window?.WindowState = WindowState.Minimized);
+
+    public void ToggleMaximizeWindow() => Dispatcher.UIThread.Invoke(() =>
+        _window?.WindowState = _window?.WindowState == WindowState.Maximized
+            ? WindowState.Normal
+            : WindowState.Maximized);
+
+    public void CloseWindow() => Dispatcher.UIThread.Invoke(() => _window?.Close());
+
+    public bool IsWindowMaximized => Dispatcher.UIThread.Invoke(() => _window?.WindowState == WindowState.Maximized);
+
+    public event Action? WindowStateChanged;
+
+    [DllImport("user32.dll")] private static extern bool ReleaseCapture();
+    [DllImport("user32.dll")] private static extern IntPtr SendMessage(IntPtr h, uint m, IntPtr w, IntPtr l);
+    private const uint WM_NCLBUTTONDOWN = 0x00A1;
+    private const int HTCAPTION = 2;
+
+    public void BeginWindowDrag() => Dispatcher.UIThread.Post(() =>
+    {
+        if (!OperatingSystem.IsWindows()) { return; }
+        if (_window?.TryGetPlatformHandle()?.Handle is not { } hwnd) return;
+
+        _ = ReleaseCapture();
+        _ = SendMessage(hwnd, WM_NCLBUTTONDOWN, HTCAPTION, IntPtr.Zero);
+    });
 }
