@@ -33,6 +33,10 @@ public partial class LauncherUpdater
         var currentVersion = NormalizeVersion(GetVersion());
         var current = ParseVersion(currentVersion);
 
+#if DEBUG
+        return new UpdateInfo(false, currentVersion, string.Empty, string.Empty, string.Empty, null);
+#endif
+
         var releases = await GetReleases();
 
         var (Release, Parsed) = releases

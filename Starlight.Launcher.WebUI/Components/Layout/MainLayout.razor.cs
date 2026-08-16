@@ -24,6 +24,11 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
     [Inject] private IDialogService _dialogService { get; set; } = default!;
     [Inject] private AppState _state { get; set; } = default!;
 
+    private IJSObjectReference? _titleBar;
+    private DotNetObjectReference<MainLayout>? _selfRef;
+
+    private bool _shouldShowAppBar => OperatingSystem.IsWindows();
+
     Guid IBrowserViewportObserver.Id { get; } = Guid.NewGuid();
 
     private bool _isSmallScreen = false;
@@ -216,12 +221,21 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
         await _browserViewportService.UnsubscribeAsync(this);
         _state.OnChange -= AppCalledRepaint;
         _navigation.LocationChanged -= OnLocationChanged;
+        if (_titleBar is not null) await _titleBar.DisposeAsync();
+        _selfRef?.Dispose();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
+            if (_shouldShowAppBar)
+            {
+                _selfRef = DotNetObjectReference.Create(this);
+                _titleBar = await _jS.InvokeAsync<IJSObjectReference>("import", "./js/titlebar.js");
+                await _titleBar.InvokeVoidAsync("init", _selfRef);
+            }
+
             await ApplyThemeAsync();
             await _browserViewportService.SubscribeAsync(this, fireImmediately: true);
             await _jS.InvokeVoidAsync("eval", "document.getElementById('app')?.classList.add('loaded')");
@@ -229,6 +243,9 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
 
         await base.OnAfterRenderAsync(firstRender);
     }
+
+    [JSInvokable] public void BeginDrag() => _bridge.BeginWindowDrag();
+    [JSInvokable] public void ToggleMaximize() => _bridge.ToggleMaximizeWindow();
 
     ResizeOptions IBrowserViewportObserver.ResizeOptions { get; } = new()
     {

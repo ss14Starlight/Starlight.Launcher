@@ -90,7 +90,7 @@ public partial class App : Application
                 }
             };
 
-            WindowState previousState = window.WindowState;
+            var previousState = window.WindowState;
 
             window.PropertyChanged += (_, e) =>
             {
@@ -110,6 +110,8 @@ public partial class App : Application
             };
 
             desktop.MainWindow = window;
+
+            Services.GetRequiredService<IBridge>().InitializeWindow();
         }
 
         base.OnFrameworkInitializationCompleted();

@@ -11,4 +11,12 @@ public partial interface IBridge
     Task<IFileResult?> PickFileAsync(
         string filter = "Content bundles / replays\0*.zip;*.rt\0All Files\0*.*\0\0",
         CancellationToken cancel = default);
+
+    void InitializeWindow();
+    void MinimizeWindow();
+    void ToggleMaximizeWindow();
+    void CloseWindow();
+    void BeginWindowDrag();
+    bool IsWindowMaximized { get; }
+    event Action? WindowStateChanged;
 }

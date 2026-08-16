@@ -23,6 +23,10 @@ public partial class MainWindow : Window
         }
         else if (OperatingSystem.IsWindows())
         {
+            WindowDecorations = WindowDecorations.BorderOnly;
+            ExtendClientAreaToDecorationsHint = true;
+            ExtendClientAreaTitleBarHeightHint = 64;
+
             Web.EnvironmentRequested += (_, args) =>
             {
                 if (args is WindowsWebView2EnvironmentRequestedEventArgs w)
