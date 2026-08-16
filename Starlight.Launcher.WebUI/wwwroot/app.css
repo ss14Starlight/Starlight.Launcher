@@ -674,3 +674,116 @@ h1:focus {
     border: none !important;
     background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--starlight-accent-1) 50%, transparent), color-mix(in srgb, var(--starlight-accent-2) 50%, transparent), transparent) !important;
 }
+
+:root[data-theme="pumpkin"] .app-bg {
+    --bg-paint: paint(sprite-field), paint(animated-lines);
+    --sprite-a-path: "M0 -14 C11 -14 19 -7 19 1 C19 10 11 17 0 17 C-11 17 -19 10 -19 1 C-19 -7 -11 -14 0 -14 Z M-2 -14 L-2 -21 C-2 -24 2 -25 5 -23 L4 -20 C2 -21 1 -20 1 -18 L1 -14 Z";
+    --sprite-a-fill: oklch(from oklch(var(--c-primary)) l c h / .55);
+    --sprite-a-detail: "M-10 -4 L-4 -4 L-7 3 Z M10 -4 L4 -4 L7 3 Z M-11 6 L-7 9 L-4 6 L0 9 L4 6 L7 9 L11 6 L8 12 L-8 12 Z";
+    --sprite-a-detail-fill: oklch(from oklch(var(--c-bg)) calc(l - .04) c h / .85);
+    --sprite-b-path: "M0 -12 C9 -12 16 -6 16 1 C16 8 9 14 0 14 C-9 14 -16 8 -16 1 C-16 -6 -9 -12 0 -12 Z";
+    --sprite-b-fill: oklch(from oklch(var(--c-secondary)) l c h / .30);
+    --sprite-weights: 3 1;
+    --sprite-count: 18;
+    --sprite-size: .9;
+    --sprite-size-var: .7;
+    --sprite-speed: 1;
+    --sprite-dx: .12;
+    --sprite-dy: -.30;
+    --sprite-spin: .6;
+    --sprite-sway: 6;
+    --sprite-sway-speed: .8;
+    --sprite-opacity: .5;
+    --sprite-twinkle: .25;
+    --sprite-glow: .6;
+    --sprite-seed: 31;
+}
+
+:root[data-theme="skeleton"] .app-bg {
+    --bg-paint: paint(sprite-field), paint(animated-lines);
+    --sprite-a-path: "M0 -20 C13 -20 20 -10 20 1 C20 8 16 13 13 16 L13 21 C13 24 10 26 7 26 L-7 26 C-10 26 -13 24 -13 21 L-13 16 C-16 13 -20 8 -20 1 C-20 -10 -13 -20 0 -20 Z";
+    --sprite-a-fill: oklch(from oklch(var(--c-primary)) l c h / .45);
+    --sprite-a-detail: "M-8 -3 m-6 0 a6 7 0 1 0 12 0 a6 7 0 1 0 -12 0 Z M8 -3 m-6 0 a6 7 0 1 0 12 0 a6 7 0 1 0 -12 0 Z M0 5 L-3.5 12 L3.5 12 Z M-9 17 L9 17 L9 25 L7 25 L7 19 L4 19 L4 25 L2 25 L2 19 L-2 19 L-2 25 L-4 25 L-4 19 L-7 19 L-7 25 L-9 25 Z";
+    --sprite-a-detail-fill: oklch(from oklch(var(--c-bg)) calc(l - .05) c h / .9);
+    --sprite-b-path: "M-16 -3 L16 -3 A5 5 0 0 1 16 3 L-16 3 A5 5 0 0 1 -16 -3 Z M-18 -6 m-5 0 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0 Z M-18 6 m-5 0 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0 Z M18 -6 m-5 0 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0 Z M18 6 m-5 0 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0 Z";
+    --sprite-b-fill: oklch(from oklch(var(--c-primary)) l c h / .32);
+    --sprite-weights: 2 3;
+    --sprite-count: 16;
+    --sprite-size: .75;
+    --sprite-size-var: .6;
+    --sprite-speed: 1;
+    --sprite-dx: -.05;
+    --sprite-dy: -.18;
+    --sprite-spin: 1;
+    --sprite-sway: 10;
+    --sprite-sway-speed: .5;
+    --sprite-opacity: .4;
+    --sprite-twinkle: .15;
+    --sprite-glow: 0;
+    --sprite-seed: 13;
+}
+
+:root[data-theme="newyear"] .app-bg {
+    --bg-paint: paint(sprite-field), paint(animated-lines);
+    --sprite-a-path: "M0 -18 V18 M-15.6 -9 L15.6 9 M-15.6 9 L15.6 -9 M0 -18 l-4.5 5.5 M0 -18 l4.5 5.5 M0 18 l-4.5 -5.5 M0 18 l4.5 -5.5 M-15.6 -9 l.6 7 M-15.6 -9 l6.4 -1.6 M15.6 9 l-.6 -7 M15.6 9 l-6.4 1.6 M-15.6 9 l6.4 -1.6 M-15.6 9 l.6 -7 M15.6 -9 l-6.4 1.6 M15.6 -9 l-.6 7";
+    --sprite-a-stroke: oklch(from oklch(var(--c-tertiary)) l c h / .55);
+    --sprite-a-stroke-width: 2;
+    --sprite-b-path: "M0 -14 L3.5 -4.5 L13 -4.5 L5.5 1.5 L8.5 11 L0 5 L-8.5 11 L-5.5 1.5 L-13 -4.5 L-3.5 -4.5 Z";
+    --sprite-b-fill: oklch(from oklch(var(--c-primary)) l c h / .50);
+    --sprite-c-path: "M0 0 m-2.5 0 a2.5 2.5 0 1 0 5 0 a2.5 2.5 0 1 0 -5 0 Z";
+    --sprite-c-fill: oklch(from oklch(var(--c-tertiary)) calc(l + .1) c h / .45);
+    --sprite-weights: 3 1 4;
+    --sprite-count: 34;
+    --sprite-size: .8;
+    --sprite-size-var: .8;
+    --sprite-speed: 1;
+    --sprite-dx: -.06;
+    --sprite-dy: .28;
+    --sprite-spin: .35;
+    --sprite-sway: 14;
+    --sprite-sway-speed: 1.1;
+    --sprite-opacity: .55;
+    --sprite-twinkle: .5;
+    --sprite-twinkle-speed: 1.2;
+    --sprite-glow: .8;
+    --sprite-seed: 5;
+}
+
+:root[data-theme="birthday"] .app-bg {
+    --bg-paint: paint(sprite-field), paint(animated-lines);
+    --sprite-a-path: "M0 -22 C11 -22 18 -13 18 -3 C18 8 9 20 0 24 C-9 20 -18 8 -18 -3 C-18 -13 -11 -22 0 -22 Z M-3.5 24 L3.5 24 L0 29 Z";
+    --sprite-a-fill: oklch(from oklch(var(--c-primary)) l c h / .45);
+    --sprite-b-path: "M-7 -2.5 L7 -2.5 L7 2.5 L-7 2.5 Z";
+    --sprite-b-fill: oklch(from oklch(var(--c-secondary)) l c h / .7);
+    --sprite-c-path: "M-6 -3 C-6 -7 0 -7 0 -3 C0 -7 6 -7 6 -3 C6 1 0 6 0 6 C0 6 -6 1 -6 -3 Z";
+    --sprite-c-fill: oklch(from oklch(var(--c-tertiary)) l c h / .65);
+    --sprite-weights: 1 5 2;
+    --sprite-count: 40;
+    --sprite-size: .7;
+    --sprite-size-var: .9;
+    --sprite-speed: 1;
+    --sprite-dx: .08;
+    --sprite-dy: 1.6;
+    --sprite-spin: 6;
+    --sprite-sway: 16;
+    --sprite-sway-speed: 1.4;
+    --sprite-opacity: .55;
+    --sprite-twinkle: .45;
+    --sprite-glow: .5;
+    --sprite-seed: 21;
+}
+
+@supports not (background-image: paint(sprite-field)) {
+    :root[data-theme="pumpkin"] .app-bg,
+    :root[data-theme="skeleton"] .app-bg,
+    :root[data-theme="newyear"] .app-bg,
+    :root[data-theme="birthday"] .app-bg {
+        --bg-paint: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .app-bg {
+        animation: none !important;
+    }
+}
