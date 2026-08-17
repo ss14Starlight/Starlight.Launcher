@@ -51,7 +51,8 @@ registerPaint('sprite-field', class {
                 `--sprite-${k}-detail`,
                 `--sprite-${k}-detail-fill`,
                 `--sprite-${k}-stroke`,
-                `--sprite-${k}-stroke-width`
+                `--sprite-${k}-stroke-width`,
+                `--sprite-${k}-stroke-linecap`
             );
         }
         return props;
@@ -73,7 +74,8 @@ registerPaint('sprite-field', class {
                 detail: toPath(str(`--sprite-${k}-detail`)),
                 detailFill: str(`--sprite-${k}-detail-fill`) || 'black',
                 stroke: str(`--sprite-${k}-stroke`),
-                strokeWidth: num(`--sprite-${k}-stroke-width`, 2)
+                strokeWidth: num(`--sprite-${k}-stroke-width`, 2),
+                lineCap: str(`--sprite-${k}-stroke-linecap`) || 'round'
             });
         }
         if (!kinds.length) return;
@@ -174,7 +176,7 @@ registerPaint('sprite-field', class {
                 if (kind.stroke) {
                     ctx.strokeStyle = kind.stroke;
                     ctx.lineWidth = kind.strokeWidth;
-                    ctx.lineCap = 'round';
+                    ctx.lineCap = kind.lineCap;
                     ctx.lineJoin = 'round';
                     ctx.stroke(kind.path);
                 } else {
