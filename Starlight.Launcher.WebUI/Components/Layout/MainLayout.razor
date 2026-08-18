@@ -18,13 +18,15 @@
                 @_bridge.GetVersion()
             </MudChip>
             <MudSpacer />
-            <MudTooltip Text="@L["main-layout-auth-tab"]">
-                <MudIconButton Href="/auth" Icon="@Icons.Material.Filled.People" Size="Size.Medium" />
-            </MudTooltip>
+            <div data-no-drag>
+                <MudTooltip Text="@L["main-layout-auth-tab"]">
+                    <MudIconButton Href="/auth" Icon="@Icons.Material.Filled.People" Size="Size.Medium" />
+                </MudTooltip>
+            </div>
         }
         else if (_elementPosition == ElementPosition.Top)
         {
-            <HorizontalNavBar />
+            <HorizontalNavBar data-no-drag />
         }
 
         @if (_shouldShowAppBar)
