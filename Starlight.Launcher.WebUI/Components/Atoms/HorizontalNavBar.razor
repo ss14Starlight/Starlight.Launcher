@@ -2,7 +2,7 @@
 
 @inherits LocalizedComponentBase
 
-<div class="bottom-nav">
+<div class="bottom-nav" data-no-drag>
     <NavLink href="/" Match="NavLinkMatch.All" class="bottom-nav-item" ActiveClass="active">
         <div class="nav-inner">
             <MudIcon Icon="@Icons.Material.Filled.Home" Color="@(IsActive("/", NavLinkMatch.All) ? Color.Primary : Color.Default)" Size="Size.Medium" />
