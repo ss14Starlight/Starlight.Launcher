@@ -565,6 +565,35 @@ h1:focus {
     flex-shrink: 0;
 }
 
+.sl-ignored-server-row {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--mud-palette-action-default-hover);
+    transition: background-color 120ms ease;
+}
+
+    .sl-ignored-server-row:hover {
+        background: var(--mud-palette-action-selected);
+    }
+
+.sl-ignored-server-row__icon {
+    color: var(--mud-palette-text-disabled);
+    flex-shrink: 0;
+}
+
+.sl-ignored-server-row__info {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+    .sl-ignored-server-row__info .mud-typography-body2 {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
 .mud-tab-panel::-webkit-scrollbar {
     width: 8px;
 }

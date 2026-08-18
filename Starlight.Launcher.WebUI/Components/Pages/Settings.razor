@@ -89,6 +89,12 @@
                 <NumericFieldOption Title="@L["settings-menu-development-max-fork-versions-option"]" Description="@L["settings-menu-development-max-fork-versions-option-description"]" Icon="@Icons.Material.Filled.Numbers" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.MaxForkVersionsToKeep)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { MaxForkVersionsToKeep = v })" />
             </MudContainer>
         </MudTabPanel>
+        <MudTabPanel @ref="_developmentTab" Text="@L["settings-menu-ignored-category"]">
+            <MudContainer MaxWidth="MaxWidth.Small" Class="pa-0">
+                <MudText Typo="Typo.overline" Class="mud-text-secondary">@L["settings-menu-general-category"]</MudText>
+                <IgnoredServersOption Title="@L["settings-menu-ignored-servers-option"]" Description="@L["settings-menu-ignored-servers-option-description"]" Icon="@Icons.Material.Filled.VisibilityOff" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.IgnoredServers)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { IgnoredServers = v })" />
+            </MudContainer>
+        </MudTabPanel>
     </MudTabs>
 
     <div class="settings-reset-button">

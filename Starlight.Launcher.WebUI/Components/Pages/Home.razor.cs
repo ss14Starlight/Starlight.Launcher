@@ -6,6 +6,7 @@ using Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Models.Data;
 using Starlight.Launcher.WebUI.Models.HubServerFetcher;
+using Starlight.Launcher.WebUI.Models.Settings;
 
 namespace Starlight.Launcher.WebUI.Components.Pages;
 
@@ -71,12 +72,33 @@ public partial class Home : LocalizedComponentBase, IDisposable
         foreach (var s in _favoriteServers ?? Enumerable.Empty<ServerStatusData>())
             s.Changed -= OnServerDataChanged;
 
-        _favoriteServers = servers.Select(x =>
+        var settings = _bridge.GetSettings();
+
+        var filteredServers = servers.Where(x => !settings.IgnoredServers.Any(s => s.Name == x.Name || s.Address == x.Address));
+
+        _favoriteServers = filteredServers.Select(x =>
         {
             var data = _statusCache.GetStatusFor(x.Address, x.HubAddress);
             _ = _statusCache.TryInitialUpdateStatus(data);
             data.Changed += OnServerDataChanged;
             return data;
+        }).ToList();
+    }
+
+    private void UpdateFavorites(List<ServerStatusData> servers)
+    {
+        foreach (var s in _favoriteServers ?? Enumerable.Empty<ServerStatusData>())
+            s.Changed -= OnServerDataChanged;
+
+        var settings = _bridge.GetSettings();
+
+        var filteredServers = servers.Where(x => !settings.IgnoredServers.Any(s => s.Name == x.Name || s.Address == x.Address));
+
+        _favoriteServers = filteredServers.Select(x =>
+        {
+            _ = _statusCache.TryInitialUpdateStatus(x);
+            x.Changed += OnServerDataChanged;
+            return x;
         }).ToList();
     }
 
@@ -114,6 +136,18 @@ public partial class Home : LocalizedComponentBase, IDisposable
             _ = favorites.Remove(alreadyExist);
             await _bridge.WriteFavoritesAsync(favorites);
         }
+    }
+
+    private void HandleIgnore(ServerStatusData server)
+    {
+        var settings = _bridge.GetSettings();
+
+        if (settings.IgnoredServers.Any(x => x.Name == server.Name || x.Address == server.Address))
+            return;
+        settings.IgnoredServers.Add(new IgnoredServer(server.Name, server.Address));
+        _bridge.WriteSettings(settings);
+
+        UpdateFavorites(_favoriteServers);
     }
 
     private async Task OpenDirectConnect()

@@ -7,6 +7,7 @@ settings-menu-server-list-category = Server List
 settings-menu-tray-category = Tray
 settings-menu-development-category = Development
 settings-menu-discord-rpc-category = Rich Presence
+settings-menu-ignored-category = Ignored
 
 # General
 
@@ -159,3 +160,10 @@ settings-development-tab-alert-description =
     You're trying to access the tab created only for advanced users or development. 
     To proceed, you must agree to the condition that after changing any settings, 
     STARLIGHT does not guarantee that the software will function properly, nor does it guarantee that it will not cause damage to your equipment.
+
+# Ignored
+
+settings-menu-ignored-servers-option = Ignored servers
+settings-menu-ignored-servers-option-description = Allows to remove some servers from ignore list.
+
+settings-ignored-servers-option-remove = Remove

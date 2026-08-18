@@ -72,10 +72,16 @@
             </MudButton>
         </div>
 
-        <div class="server-card__fav" @onclick:stopPropagation="true">
+        <div class="server-card__actions" @onclick:stopPropagation="true">
             <MudTooltip Color="Color.Primary" Text="@L["servers-list-item-favorites"]">
                 <MudIconButton Icon="@(IsInFavorites ? Icons.Material.Rounded.Star : Icons.Material.Rounded.StarBorder)"
                                Color="Color.Primary" OnClick="HandleFavorites" />
+            </MudTooltip>
+
+            <MudTooltip Color="Color.Error" Text="@L["servers-list-item-ignore"]">
+                <MudIconButton Icon="@Icons.Material.Rounded.VisibilityOff"
+                               Class="server-card__ignore-btn"
+                               OnClick="HandleIgnore" />
             </MudTooltip>
         </div>
     </div>

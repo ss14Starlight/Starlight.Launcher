@@ -34,7 +34,7 @@
                        OverscanCount="3">
             <ServerItem @key="server.Address" Data="server"
                         IsInFavorites="@(_favoriteServers.Contains(server))"
-                        OnFavorites="async x => await HandleFavorite(x)" />
+                        OnFavorites="async x => await HandleFavorite(x)" OnIgnore="HandleIgnore" />
         </MudVirtualize>
     </div>
 </div>

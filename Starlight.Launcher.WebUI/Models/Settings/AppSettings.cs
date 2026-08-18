@@ -55,6 +55,10 @@ public partial record AppSettings
     /// </summary>
     public List<Hub> Hubs { get; init; } = [ new Hub() { HubUri = new Uri("https://hub.playss14.com/"), Priority = 0} ];
     /// <summary>
+    /// List of server names and IPs which will be ignored in servers list.
+    /// </summary>
+    public List<IgnoredServer> IgnoredServers { get; init; } = [];
+    /// <summary>
     /// Currently selected language. Should be a key from LocalizationsIndex. Default is "en-US"
     /// </summary>
     public string? SelectedLanguage { get; init; } = null;
@@ -304,6 +308,17 @@ public partial record AppSettings
         new() { Name = "PlaySS14",  Urls = ["https://robust-builds.playss14.com/"],      PublicKey = SecondaryCdnPublicKey },
     ];
 
+    /// <summary>
+    /// Determines should we allow user to change cdn's public/verify key.
+    /// </summary>
+    public bool AllowCdnsKeyChange { get; set; }
+
     #endregion
 
+}
+
+public struct IgnoredServer(string name, string address)
+{
+    public string Name { get; set; } = name;
+    public string Address { get; set; } = address;
 }

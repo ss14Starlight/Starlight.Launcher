@@ -1,0 +1,63 @@
+@using Starlight.Launcher.WebUI.Localization;
+
+@inherits LocalizedComponentBase
+
+<MudPaper Class="sl-option-card pa-4 mb-2" Outlined="true" Elevation="0">
+    <div class="d-flex align-center">
+        <div class="sl-option-icon mr-4">
+            <MudIcon Icon="@Icon" Size="Size.Small" />
+        </div>
+        <div class="flex-grow-1">
+            <MudText Typo="Typo.body1">@Title</MudText>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                @Description
+            </MudText>
+        </div>
+        @if (Value.Count > 0)
+        {
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Default">
+                @Value.Count
+            </MudChip>
+        }
+    </div>
+
+    @if (Value.Count == 0)
+    {
+        <MudPaper Class="pa-4 d-flex align-center justify-center"
+                  Outlined="true"
+                  Elevation="0"
+                  Style="border-style: dashed;">
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                @EmptyValuesString
+            </MudText>
+        </MudPaper>
+    }
+    else
+    {
+        <MudStack Spacing="2">
+            @for (var i = 0; i < Value.Count; i++)
+            {
+                var index = i;
+                var server = Value[index];
+
+                <div class="d-flex align-center gap-2 sl-ignored-server-row">
+                    <MudIcon Icon="@Icons.Material.Rounded.VisibilityOff"
+                             Size="Size.Small"
+                             Class="sl-ignored-server-row__icon" />
+
+                    <div class="flex-grow-1 sl-ignored-server-row__info">
+                        <MudText Typo="Typo.body2">@server.Name</MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">@server.Address</MudText>
+                    </div>
+
+                    <MudTooltip Text="@L["settings-ignored-servers-option-remove"]">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                       Size="Size.Small"
+                                       Color="Color.Error"
+                                       OnClick="@(() => RemoveAt(index))" />
+                    </MudTooltip>
+                </div>
+            }
+        </MudStack>
+    }
+</MudPaper>

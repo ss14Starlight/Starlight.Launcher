@@ -18,6 +18,7 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
     [Inject] private UiTicker _ticker { get; set; } = default!;
     [Parameter, EditorRequired] public ServerStatusData Data { get; set; } = default!;
     [Parameter] public EventCallback<ServerStatusData> OnFavorites { get; set; }
+    [Parameter] public EventCallback<ServerStatusData> OnIgnore { get; set; }
     [Parameter] public bool IsInFavorites { get; set; } = false;
 
     private bool _expanded = false;
@@ -97,6 +98,8 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
     private void HandleBlur() => _viewingScope?.Dispose();
 
     private async Task HandleFavorites() => await OnFavorites.InvokeAsync(Data);
+
+    private async Task HandleIgnore() => await OnIgnore.InvokeAsync(Data);
 
     private void OnInfoClick(string Url)
         => _bridge.OpenBrowser(Url);

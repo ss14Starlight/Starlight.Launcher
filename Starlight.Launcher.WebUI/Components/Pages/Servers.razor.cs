@@ -7,6 +7,7 @@ using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Models.Data;
 using Starlight.Launcher.WebUI.Models.HubServerFetcher;
 using Starlight.Launcher.WebUI.Models.ServerStatus;
+using Starlight.Launcher.WebUI.Models.Settings;
 
 namespace Starlight.Launcher.WebUI.Components.Pages;
 
@@ -165,6 +166,10 @@ public partial class Servers : LocalizedComponentBase, IDisposable
         if (_filters.HideFull)
             query = query.Where(s => GetPlayers(s) < GetMaxPlayers(s));
 
+        var settings = _bridge.GetSettings();
+
+        query = query.Where(s => !settings.IgnoredServers.Any(x => x.Name == s.Name || x.Address == s.Address));
+
         query = _filters.SortBy switch
         {
             ServerSortMode.Players => query.OrderByDescending(GetPlayers),
@@ -204,6 +209,18 @@ public partial class Servers : LocalizedComponentBase, IDisposable
             _ = favorites.Remove(alreadyExist);
             await _bridge.WriteFavoritesAsync(favorites);
         }
+    }
+
+    private void HandleIgnore(ServerStatusData server)
+    {
+        var settings = _bridge.GetSettings();
+
+        if (settings.IgnoredServers.Any(x => x.Name == server.Name || x.Address == server.Address))
+            return;
+        settings.IgnoredServers.Add(new IgnoredServer(server.Name, server.Address));
+        _bridge.WriteSettings(settings);
+
+        ApplyFilters();
     }
 
     private static void ExtractTags(IEnumerable<ServerStatusData> servers, out IReadOnlyList<string> rpTags, out IReadOnlyList<string> langTags, out IReadOnlyList<string> regionTags)
