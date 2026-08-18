@@ -33,8 +33,9 @@ public partial class MainWindow : Window
                 {
                     if (!string.IsNullOrEmpty(pathToWebViewData))
                         w.UserDataFolder = pathToWebViewData;
-
+#if DEBUG
                     w.AdditionalBrowserArguments = "--auto-open-devtools-for-tabs --remote-debugging-port=9222";
+#endif
                 }
             };
         }
