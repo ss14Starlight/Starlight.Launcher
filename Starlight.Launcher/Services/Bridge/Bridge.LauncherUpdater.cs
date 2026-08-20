@@ -30,6 +30,8 @@ public sealed partial class Bridge : IBridge
 
     public async Task<IReadOnlyList<ChangelogEntry>> GetChangelogsToShow() => await _launcherUpdater.GetChangelogsToShow();
 
+    public async Task<IReadOnlyList<ChangelogEntry>> GetAllChangelogs() => await _launcherUpdater.GetAllChangelogs();
+
     public void MarkChangelogSeen() => _launcherUpdater.MarkChangelogSeen();
 
     public string GetVersion() => LauncherUpdater.GetVersion();

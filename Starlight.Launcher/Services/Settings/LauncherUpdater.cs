@@ -41,6 +41,9 @@ public partial class LauncherUpdater
 
         var releases = await GetReleases();
 
+        if (releases is null)
+            throw new InvalidOperationException("Failed to fetch releases.");
+
         var (Release, Parsed) = releases
             .Select(r => (Release: r, Parsed: ParseVersion(NormalizeVersion(r.TagName))))
             .Where(r => r.Parsed is not null)
@@ -89,7 +92,9 @@ public partial class LauncherUpdater
 
         var releases = await GetReleases();
 
-        return releases
+        return releases is null
+            ? throw new InvalidOperationException("Failed to fetch releases.")
+            : (IReadOnlyList<ChangelogEntry>)releases
             .Select(r => (r.TagName, r.Body, Parsed: ParseVersion(NormalizeVersion(r.TagName))))
             .Where(r => r.Parsed is not null)
             .Where(r => lastSeen is null || r.Parsed! > lastSeen)
@@ -101,7 +106,7 @@ public partial class LauncherUpdater
 
     private sealed record GhReleaseInfo(string TagName, string HtmlUrl, string? Body, IReadOnlyList<ReleaseAsset> Assets);
 
-    private async Task<IReadOnlyList<GhReleaseInfo>> GetReleases()
+    private async Task<IReadOnlyList<GhReleaseInfo>?> GetReleases()
     {
         using var httpClient = new HttpClient();
         httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Starlight.Launcher");
@@ -147,8 +152,22 @@ public partial class LauncherUpdater
         }
         catch
         {
-            return Array.Empty<GhReleaseInfo>();
+            return null;
         }
+    }
+
+    public async Task<IReadOnlyList<ChangelogEntry>> GetAllChangelogs()
+    {
+        var releases = await GetReleases();
+
+        return releases is null
+            ? throw new InvalidOperationException("Failed to fetch releases.")
+            : (IReadOnlyList<ChangelogEntry>)releases
+            .Select(r => (r.TagName, r.Body, Parsed: ParseVersion(NormalizeVersion(r.TagName))))
+            .Where(r => r.Parsed is not null)
+            .OrderByDescending(r => r.Parsed)
+            .Select(r => new ChangelogEntry(NormalizeVersion(r.TagName), r.Body))
+            .ToList();
     }
 
     private static string NormalizeVersion(string? version)

@@ -4,13 +4,14 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using MudBlazor;
 using MudBlazor.Services;
-using Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 using Starlight.Launcher.WebUI.Bridge;
+using Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
+using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Models.Data;
+using Starlight.Launcher.WebUI.Models.DiscordRichPresence;
+using Starlight.Launcher.WebUI.Models.LauncherUpdater;
 using Starlight.Launcher.WebUI.Models.Settings;
 using Starlight.Launcher.WebUI.Services;
-using Starlight.Launcher.WebUI.Localization;
-using Starlight.Launcher.WebUI.Models.DiscordRichPresence;
 
 namespace Starlight.Launcher.WebUI.Components.Layout;
 
@@ -32,6 +33,8 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
     Guid IBrowserViewportObserver.Id { get; } = Guid.NewGuid();
 
     private bool _isSmallScreen = false;
+
+    private bool _changelogLoading;
 
     private static string ToDataTheme(AppTheme t, bool systemPrefersDark) => t switch
     {
@@ -78,8 +81,6 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
             _bridge.HideWindow(); // If layout is initialized - window exists, so we can hide it right away if the user wants that.
 
         _bridge.CleanupOldInstallers();
-        await ShowChangelogIfNeeded();
-        await CheckUpdate();
     }
 
     private void OnLoginsUnrecover() =>
@@ -113,9 +114,15 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
         if (!_bridge.ShouldShowChangelog())
             return;
 
-        var entries = await _bridge.GetChangelogsToShow();
-
-        _bridge.MarkChangelogSeen();
+        IReadOnlyList<ChangelogEntry> entries;
+        try
+        {
+            entries = await _bridge.GetChangelogsToShow();
+        }
+        catch
+        {
+            return;
+        }
 
         if (entries.Count == 0)
             return;
@@ -125,7 +132,7 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
             { x => x.Entries, entries }
         };
 
-        _ = await _dialogService.ShowAsync<ChangelogDialog>(
+        var dialog = await _dialogService.ShowAsync<ChangelogDialog>(
             null,
             parameters,
             new DialogOptions
@@ -135,46 +142,99 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
                 MaxWidth = MaxWidth.Medium,
                 FullWidth = true
             });
+
+        _ = await dialog.Result;
+
+        _bridge.MarkChangelogSeen();
     }
 
     private async Task CheckUpdate()
     {
-        var info = await _bridge.IsUpdateAvailable();
-        if (!info.IsUpdateAvailable)
+        try
+        {
+            var info = await _bridge.IsUpdateAvailable();
+
+            if (!info.IsUpdateAvailable)
+                return;
+
+            _ = _snackbar.Add(
+                L.GetString("settings-menu-update-found", ("latest", info.LatestVersion)),
+                Severity.Warning,
+                config =>
+                {
+                    config.Action = L["settings-menu-update-download"];
+                    config.ActionColor = MudBlazor.Color.Info;
+                    config.OnClick = __ =>
+                    {
+                        if (info.Asset is { } asset)
+                        {
+                            var parameters = new DialogParameters<LauncherUpdateDialog>
+                            {
+                        { x => x.Asset, asset }
+                            };
+                            _ = _dialogService.ShowAsync<LauncherUpdateDialog>(
+                                null,
+                                parameters,
+                                new DialogOptions
+                                {
+                                    CloseOnEscapeKey = false,
+                                    BackdropClick = false,
+                                    CloseButton = false
+                                });
+                        }
+                        else
+                        {
+                            // No installer for this OS in the release — fall back to the release page.
+                            _bridge.OpenBrowser(info.ReleasePageUrl);
+                        }
+                        return Task.CompletedTask;
+                    };
+                });
+        }
+        catch
+        {
+        }
+    }
+
+    private async Task ShowAllChangelogs()
+    {
+        if (_changelogLoading)
             return;
 
-        _ = _snackbar.Add(
-            L.GetString("settings-menu-update-found", ("latest", info.LatestVersion)),
-            Severity.Warning,
-            config =>
+        _changelogLoading = true;
+        StateHasChanged();
+
+        IReadOnlyList<ChangelogEntry> entries;
+        try
+        {
+            entries = await _bridge.GetAllChangelogs();
+        }
+        catch
+        {
+            _ = _snackbar.Add(L["changelog-fetch-failed"], Severity.Error);
+            return;
+        }
+        finally
+        {
+            _changelogLoading = false;
+            StateHasChanged();
+        }
+
+        if (entries.Count == 0)
+        {
+            _ = _snackbar.Add(L["changelog-empty"], Severity.Info);
+            return;
+        }
+
+        _ = await _dialogService.ShowAsync<ChangelogDialog>(
+            null,
+            new DialogParameters<ChangelogDialog> { { x => x.Entries, entries } },
+            new DialogOptions
             {
-                config.Action = L["settings-menu-update-download"];
-                config.ActionColor = MudBlazor.Color.Info;
-                config.OnClick = __ =>
-                {
-                    if (info.Asset is { } asset)
-                    {
-                        var parameters = new DialogParameters<LauncherUpdateDialog>
-                        {
-                        { x => x.Asset, asset }
-                        };
-                        _ = _dialogService.ShowAsync<LauncherUpdateDialog>(
-                            null,
-                            parameters,
-                            new DialogOptions
-                            {
-                                CloseOnEscapeKey = false,
-                                BackdropClick = false,
-                                CloseButton = false
-                            });
-                    }
-                    else
-                    {
-                        // No installer for this OS in the release — fall back to the release page.
-                        _bridge.OpenBrowser(info.ReleasePageUrl);
-                    }
-                    return Task.CompletedTask;
-                };
+                CloseOnEscapeKey = true,
+                BackdropClick = true,
+                MaxWidth = MaxWidth.Medium,
+                FullWidth = true
             });
     }
 
@@ -239,6 +299,9 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
             await ApplyThemeAsync();
             await _browserViewportService.SubscribeAsync(this, fireImmediately: true);
             await _jS.InvokeVoidAsync("eval", "document.getElementById('app')?.classList.add('loaded')");
+
+            await ShowChangelogIfNeeded();
+            await CheckUpdate();
         }
 
         await base.OnAfterRenderAsync(firstRender);

@@ -3,6 +3,7 @@ main-layout-servers-tab = Servers
 main-layout-hub-tab = NullLink Hub
 main-layout-settings-tab = Settings
 main-layout-auth-tab = Auth
+main-layout-changelog = Changelog
 
 settings-logins-unrecoverable = Login Unrecoverable!
 settings-logins-unrecoverable-action = More Information

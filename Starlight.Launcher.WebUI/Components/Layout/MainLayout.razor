@@ -19,6 +19,12 @@
             </MudChip>
             <MudSpacer />
             <div data-no-drag>
+                <MudTooltip Text="@L["main-layout-changelog"]">
+                    <MudIconButton Icon="@Icons.Material.Filled.NewReleases"
+                                   Size="Size.Medium"
+                                   Disabled="_changelogLoading"
+                                   OnClick="ShowAllChangelogs" />
+                </MudTooltip>
                 <MudTooltip Text="@L["main-layout-auth-tab"]">
                     <MudIconButton Href="/auth" Icon="@Icons.Material.Filled.People" Size="Size.Medium" />
                 </MudTooltip>
@@ -71,6 +77,12 @@
             {
                 <MudTooltip Text="@L["main-layout-auth-tab"]">
                     <MudIconButton Href="/auth" Icon="@Icons.Material.Filled.People" Size="Size.Medium" />
+                </MudTooltip>
+                <MudTooltip Text="@L["main-layout-changelog"]">
+                    <MudIconButton Icon="@Icons.Material.Filled.NewReleases"
+                                   Size="Size.Medium"
+                                   Disabled="_changelogLoading"
+                                   OnClick="ShowAllChangelogs" />
                 </MudTooltip>
                 <MudSpacer />
                 <MudText Typo="Typo.h5" Class="mr-3">STARLIGHT</MudText>

@@ -21,6 +21,8 @@ public partial interface IBridge
 
     Task<IReadOnlyList<ChangelogEntry>> GetChangelogsToShow();
 
+    Task<IReadOnlyList<ChangelogEntry>> GetAllChangelogs();
+
     void MarkChangelogSeen();
 
     string GetVersion();
