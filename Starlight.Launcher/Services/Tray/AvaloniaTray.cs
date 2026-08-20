@@ -48,8 +48,8 @@ public sealed class AvaloniaTray : INativeTray
         var window = GetWindow();
         if (window is null) return;
 
-        window.Show();
         window.WindowState = WindowState.Normal;
+        window.Show();
         window.Activate();
     }
 

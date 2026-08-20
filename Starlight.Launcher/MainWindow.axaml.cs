@@ -2,11 +2,15 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Avalonia.Controls;
 using Avalonia.Platform;
+using Starlight.Launcher.Services.WebUI;
 
 namespace Starlight.Launcher;
 
 public partial class MainWindow : Window
 {
+    private WebViewSuspender? _suspender;
+
+
     public MainWindow() : this(null, "") { }
 
     public MainWindow(Uri? blazorUrl, string pathToWebViewData)
@@ -48,7 +52,11 @@ public partial class MainWindow : Window
             await Task.Delay(500);
             if (TryGetPlatformHandle()?.Handle is { } hwnd)
                 UnlayerChildren(hwnd);
+
+            _suspender ??= new WebViewSuspender(this, Web);
         };
+
+        Closed += (_, _) => { _suspender?.Dispose(); _suspender = null; };
     }
 
     const int GWL_EXSTYLE = -20;
