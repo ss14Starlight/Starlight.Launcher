@@ -37,6 +37,8 @@ public partial class LauncherUpdater
         return new UpdateInfo(false, currentVersion, string.Empty, string.Empty, string.Empty, null);
 #endif
 
+#if RELEASE
+
         var releases = await GetReleases();
 
         var (Release, Parsed) = releases
@@ -60,6 +62,7 @@ public partial class LauncherUpdater
             Release.HtmlUrl,
             Release.Body ?? string.Empty,
             asset);
+#endif
     }
 
     public bool ShouldShowChangelog()
@@ -160,6 +163,7 @@ public partial class LauncherUpdater
         return Version.TryParse(core, out var v) ? v : null;
     }
 
+#if RELEASE
     private static ReleaseAsset? PickAssetForCurrentOs(IReadOnlyList<ReleaseAsset> assets)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -186,6 +190,7 @@ public partial class LauncherUpdater
 
         return null;
     }
+#endif
 
     /// <summary>
     /// Downloads the asset to the launcher data folder and returns the local path.

@@ -1,13 +1,16 @@
 @using Starlight.Launcher.WebUI.Localization
 @inherits LocalizedComponentBase
 
-<MudDialog>
+<MudDialog Class="changelog-dialog">
     <TitleContent>
-        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-            <MudIcon Icon="@Icons.Material.Filled.NewReleases" Color="Color.Primary" />
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+            <div class="changelog-title__icon">
+                <MudIcon Icon="@Icons.Material.Filled.NewReleases" Size="Size.Small" />
+            </div>
             <MudText Typo="Typo.h6">@L["changelog-title"]</MudText>
         </MudStack>
     </TitleContent>
+
     <DialogContent>
         @if (Entries.Count == 0)
         {
@@ -15,25 +18,24 @@
         }
         else
         {
-            <MudStack Style="max-height:65vh; overflow-y:auto;" Class="pr-1">
-                <MudExpansionPanels Elevation="0" Gutters="false">
+            <div class="changelog-scroll">
+                <MudExpansionPanels Elevation="0" Gutters="false" Class="changelog-panels">
                     @for (var i = 0; i < Entries.Count; i++)
                     {
                         var entry = Entries[i];
                         var isLatest = i == 0;
 
-                        <MudExpansionPanel @key="entry.Version" Expanded="isLatest" Class="mb-2 rounded-lg border">
+                        <MudExpansionPanel @key="entry.Version"
+                                           Expanded="isLatest"
+                                           Class="@($"changelog-panel{(isLatest ? " changelog-panel--latest" : "")}")">
                             <TitleContent>
                                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                                    <MudChip T="string"
-                                             Color="@(isLatest ? Color.Primary : Color.Default)"
-                                             Variant="@(isLatest ? Variant.Filled : Variant.Outlined)"
-                                             Size="Size.Small">
+                                    <span class="@($"changelog-version{(isLatest ? " changelog-version--latest" : "")}")">
                                         v@(entry.Version)
-                                    </MudChip>
+                                    </span>
                                     @if (isLatest)
                                     {
-                                        <MudText Typo="Typo.caption" Color="Color.Primary">
+                                        <MudText Typo="Typo.caption" Class="changelog-latest-label">
                                             @L["changelog-latest"]
                                         </MudText>
                                     }
@@ -42,7 +44,7 @@
                             <ChildContent>
                                 @if (string.IsNullOrWhiteSpace(entry.Notes))
                                 {
-                                    <MudText Color="Color.Secondary">@L["changelog-empty"]</MudText>
+                                    <MudText Color="Color.Secondary" Typo="Typo.body2">@L["changelog-empty"]</MudText>
                                 }
                                 else
                                 {
@@ -54,29 +56,13 @@
                         </MudExpansionPanel>
                     }
                 </MudExpansionPanels>
-            </MudStack>
+            </div>
         }
     </DialogContent>
+
     <DialogActions>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Close" Class="mr-2 mb-1">
+        <MudButton Variant="Variant.Filled" OnClick="Close" Class="cta-btn-primary mr-3 mb-2">
             @L["changelog-close"]
         </MudButton>
     </DialogActions>
 </MudDialog>
-
-<style>
-    .changelog-markdown h1, .changelog-markdown h2, .changelog-markdown h3 {
-        font-size: 1rem;
-        margin-top: 0.5rem;
-        margin-bottom: 0.25rem;
-    }
-
-    .changelog-markdown ul {
-        margin-block: 0.25rem;
-        padding-inline-start: 1.25rem;
-    }
-
-    .changelog-markdown p {
-        margin-block: 0.25rem;
-    }
-</style>
