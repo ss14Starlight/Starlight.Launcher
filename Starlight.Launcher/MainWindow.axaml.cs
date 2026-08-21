@@ -49,6 +49,8 @@ public partial class MainWindow : Window
 
         Opened += async (_, _) =>
         {
+            if (!OperatingSystem.IsWindows())
+                return;
             await Task.Delay(500);
             if (TryGetPlatformHandle()?.Handle is { } hwnd)
                 UnlayerChildren(hwnd);
