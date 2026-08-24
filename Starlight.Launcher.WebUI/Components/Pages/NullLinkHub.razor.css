@@ -94,3 +94,20 @@
     overflow-x: hidden;
     padding: 0 64px 64px;
 }
+
+    .hub-scroll::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .hub-scroll::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .hub-scroll::-webkit-scrollbar-thumb {
+        background: var(--mud-palette-action-disabled-background);
+        border-radius: 4px;
+    }
+
+        .hub-scroll::-webkit-scrollbar-thumb:hover {
+            background: var(--mud-palette-action-disabled);
+        }

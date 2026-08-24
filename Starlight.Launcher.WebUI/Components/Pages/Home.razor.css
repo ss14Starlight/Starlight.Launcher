@@ -10,10 +10,31 @@
     margin: 8px;
     flex: 0 1 auto;
     min-height: 0;
-    border-radius: 0;
-    background: rgba(20, 24, 41, .62);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,.06);
+    border-radius: 14px;
+    border: 1px solid oklch(from oklch(var(--c-primary)) l c h / 0.12);
+    background: oklch(from oklch(var(--c-bg)) calc(l + 0.03) c h / 0.55);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     overflow-y: auto;
     overflow-x: hidden;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    padding: 6px;
 }
+
+    .server-panel::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .server-panel::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .server-panel::-webkit-scrollbar-thumb {
+        background: var(--mud-palette-action-disabled-background);
+        border-radius: 4px;
+    }
+
+        .server-panel::-webkit-scrollbar-thumb:hover {
+            background: var(--mud-palette-action-disabled);
+        }

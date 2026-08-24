@@ -6,7 +6,9 @@
 <MudDialog>
     <TitleContent>
         <div class="d-flex align-center gap-3">
-            <MudIcon Icon="@_titleIcon" Color="Color.Primary" />
+            <div class="sl-dialog-icon">
+                <MudIcon Icon="@_titleIcon" Size="Size.Small" />
+            </div>
             <MudText Typo="Typo.h6">@Title</MudText>
         </div>
     </TitleContent>
@@ -99,14 +101,14 @@
         @if (_bridge.GetConnectionStatus() == ConnectionStatus.AwaitingPrivacyPolicyAcceptance)
         {
             <MudButton OnClick="@(() => Decide(PrivacyPolicyAcceptResult.Denied))">Decline</MudButton>
-            <MudButton Color="Color.Primary" Variant="Variant.Filled"
+            <MudButton Variant="Variant.Filled" Class="cta-btn-primary"
                        OnClick="@(() => Decide(PrivacyPolicyAcceptResult.Accepted))">
                 Accept &amp; continue
             </MudButton>
         }
         else if (_isTerminal)
         {
-            <MudButton OnClick="Close">@L["general-close"]</MudButton>
+            <MudButton Variant="Variant.Filled" Class="cta-btn-primary" OnClick="Close">@L["general-close"]</MudButton>
         }
         else
         {

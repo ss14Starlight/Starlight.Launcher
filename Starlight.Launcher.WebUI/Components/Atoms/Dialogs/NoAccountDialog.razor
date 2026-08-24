@@ -5,9 +5,9 @@
 <MudDialog>
     <TitleContent>
         <div class="d-flex align-center gap-3">
-            <MudIcon Icon="@Icons.Material.Rounded.AccountCircle"
-                     Color="Color.Primary"
-                     Size="Size.Large" />
+            <div class="sl-dialog-icon">
+                <MudIcon Icon="@Icons.Material.Rounded.AccountCircle" Size="Size.Small" />
+            </div>
             <MudText Typo="Typo.h6">
                 @L["no-account-dialog-title"]
             </MudText>
@@ -16,7 +16,7 @@
     <DialogContent>
         <MudPaper Elevation="0"
                   Class="pa-4 d-flex align-center gap-3"
-                  Style="background-color: var(--mud-palette-background-grey); border-radius: 12px;">
+                  Style="background-color: var(--mud-palette-background-gray); border-radius: 12px;">
             <MudIcon Icon="@Icons.Material.Outlined.Info"
                      Color="Color.Info"
                      Size="Size.Medium" />
@@ -34,7 +34,7 @@
             </MudButton>
             <MudButton OnClick="Success"
                        Variant="Variant.Filled"
-                       Color="Color.Primary"
+                       Class="cta-btn-primary"
                        EndIcon="@Icons.Material.Rounded.ArrowForward">
                 @L["general-ok"]
             </MudButton>

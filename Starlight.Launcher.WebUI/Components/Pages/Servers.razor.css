@@ -7,15 +7,6 @@
     overflow: hidden;
 }
 
-    .server-page::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        z-index: 0;
-        pointer-events: none;
-        background: radial-gradient(1100px 560px at 80% -12%, oklch(from oklch(var(--c-secondary)) calc(l + 0.10) c h / 0.20), transparent), radial-gradient(820px 460px at 5% 112%, oklch(from oklch(var(--c-tertiary)) calc(l + 0.10) c h / 0.15), transparent), oklch(var(--c-bg));
-    }
-
     .server-page > * {
         position: relative;
         z-index: 1;
@@ -40,15 +31,20 @@
 }
 
 .server-bar {
-    background: oklch(from oklch(var(--c-bg)) l c h / 0.55);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, .06);
+    border-radius: 14px;
+    border: 1px solid oklch(from oklch(var(--c-primary)) l c h / 0.12);
+    background: oklch(from oklch(var(--c-bg)) calc(l + 0.03) c h / 0.55);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    transition: border-color 160ms ease, background-color 160ms ease;
 }
 
 .server-bar--side {
     flex: 0 0 280px;
     width: 280px;
-    min-height: 0;
+    align-self: flex-start;
+    max-height: 100%;
+    margin: 10px 0;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -58,15 +54,11 @@
 }
 
 .server-bar--left {
-    border-top: 0;
-    border-bottom: 0;
-    border-left: 0;
+    margin-left: 10px;
 }
 
 .server-bar--right {
-    border-top: 0;
-    border-bottom: 0;
-    border-right: 0;
+    margin-right: 10px;
 }
 
 .server-bar--top,
@@ -75,19 +67,8 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    margin: 10px;
     padding: 10px 12px;
-}
-
-.server-bar--top {
-    border-left: 0;
-    border-right: 0;
-    border-top: 0;
-}
-
-.server-bar--bottom {
-    border-left: 0;
-    border-right: 0;
-    border-bottom: 0;
 }
 
 .server-page__state {
@@ -126,9 +107,10 @@
     overscroll-behavior: contain;
     scrollbar-gutter: stable;
     border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, .06);
-    background: oklch(from oklch(var(--c-bg)) l c h / 0.45);
-    backdrop-filter: blur(10px);
+    border: 1px solid oklch(from oklch(var(--c-primary)) l c h / 0.12);
+    background: oklch(from oklch(var(--c-bg)) calc(l + 0.03) c h / 0.55);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     padding: 6px;
 }
 

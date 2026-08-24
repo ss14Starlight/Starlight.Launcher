@@ -8,6 +8,8 @@
 @implements IDisposable
 @inherits LocalizedComponentBase
 
+<div class="app-bg app-bg--servers"></div>
+
 <div class="server-page">
     @if (_bridge.GetFetchStatus() == RefreshListStatus.NotUpdated || _bridge.GetFetchStatus() == RefreshListStatus.UpdatingMaster)
     {
