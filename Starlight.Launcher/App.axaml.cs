@@ -73,12 +73,23 @@ public partial class App : Application
 
                 e.Cancel = true;
 
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                Log.Information("Shutdown: starting");
+
                 commands.Shutdown();
+                Log.Information("Shutdown: commands stopped at {Elapsed}", sw.Elapsed);
+
                 messaging.StopAndWait();
+                Log.Information("Shutdown: IPC messaging stopped at {Elapsed}", sw.Elapsed);
+
                 await _blazorHost.DisposeAsync();
+                Log.Information("Shutdown: Blazor host disposed at {Elapsed}", sw.Elapsed);
 
                 await settings.FlushPendingSavesAsync();
+                Log.Information("Shutdown: settings flushed at {Elapsed}", sw.Elapsed);
+
                 desktop.Shutdown();
+                Log.Information("Shutdown: complete at {Elapsed}", sw.Elapsed);
             };
 
             window.Closing += (_ , e) =>

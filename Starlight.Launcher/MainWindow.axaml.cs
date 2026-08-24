@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Avalonia.Controls;
 using Avalonia.Platform;
+using Serilog;
 using Starlight.Launcher.Services.WebUI;
 
 namespace Starlight.Launcher;
@@ -10,12 +11,14 @@ public partial class MainWindow : Window
 {
     private WebViewSuspender? _suspender;
 
-
     public MainWindow() : this(null, "") { }
 
     public MainWindow(Uri? blazorUrl, string pathToWebViewData)
     {
         InitializeComponent();
+
+        Web.AdapterCreated += (_, e) => Log.Information("WebView adapter created: {Adapter}", e);
+        Web.AdapterDestroyed += (_, e) => Log.Warning("WebView adapter destroyed: {Adapter}", e);
 
         if (OperatingSystem.IsLinux())
         {

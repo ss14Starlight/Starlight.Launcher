@@ -31,6 +31,18 @@ internal static class Program
                 Directory.CreateDirectory(userData);
                 Environment.SetEnvironmentVariable("WEBVIEW2_USER_DATA_FOLDER", userData);
             }
+            else if (OperatingSystem.IsLinux())
+            {
+                // WebKitGTK's hardware-accelerated compositing (and its DMA-BUF renderer path in
+                // particular) is unreliable outside of mainstream GNOME/KDE sessions - it's a known
+                // source of blank/transparent windows and outright segfaults on Wayland compositors
+                // like Niri, COSMIC, and gamescope (SteamOS). Force the software path unless the
+                // user has already made an explicit choice via the environment.
+                if (Environment.GetEnvironmentVariable("WEBKIT_DISABLE_COMPOSITING_MODE") is null)
+                    Environment.SetEnvironmentVariable("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
+                if (Environment.GetEnvironmentVariable("WEBKIT_DISABLE_DMABUF_RENDERER") is null)
+                    Environment.SetEnvironmentVariable("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+            }
 
             var logger = new LoggerConfiguration()
                 .WriteTo.Console()
