@@ -326,7 +326,7 @@ public partial record AppSettings
     /// <summary>
     /// User-configured manifest sources for local server builds.
     /// </summary>
-    public List<LocalServerSourceConfig> LocalServerSources { get; init; } = [];
+    public List<LocalServerSourceConfig> LocalServerSources { get; init; } = [ new () { Name="Starlight", Url="https://cdn.starlight.network/fork/starlight/manifest", Enabled=true }, new() { Name="Wizdens", Url= "https://wizards.cdn.spacestation14.com/fork/wizards/manifest", Enabled=true }];
 
     #endregion
 

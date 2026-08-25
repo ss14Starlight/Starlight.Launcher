@@ -57,7 +57,7 @@
                                   Value="@source.Url"
                                   ValueChanged="@(v => UpdateSource(index, s => s with { Url = v }))"
                                   Immediate="true" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  Placeholder="https://example.com/manifest.json"
+                                  Placeholder="https://example.com/fork/name/manifest"
                                   Label="@L["local-server-sources-url-label"]"
                                   Validation="@(new Func<string, string?>(ValidateUrl))"
                                   Class="mt-2" />
