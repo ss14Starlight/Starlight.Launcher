@@ -4,237 +4,240 @@
 @using Starlight.Launcher.WebUI.Models.LocalServer
 @inherits LocalizedComponentBase
 
+<div class="app-bg"></div>
+
 <div class="local-server-page">
-<div class="local-server-scroll">
-<MudContainer MaxWidth="MaxWidth.Medium" Class="pa-4">
-    <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Dense="true" Class="mb-4">
-        @L["local-server-page-warning-banner"]
-    </MudAlert>
+    <div class="local-server-scroll">
+        <MudContainer MaxWidth="MaxWidth.Medium" Class="pa-4">
+            <MudPaper Class="sl-option-card pa-4 mb-4" Outlined="true" Elevation="0">
+                <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Dense="true" Class="mb-4">
+                    @L["local-server-page-warning-banner"]
+                </MudAlert>
+            </MudPaper>
 
-    <MudText Typo="Typo.h6" Class="mb-2">@L["local-server-sources-title"]</MudText>
-    <LocalServerSourceListOption Title="@L["local-server-sources-option-title"]"
-                                  Description="@L["local-server-sources-option-description"]"
-                                  Icon="@Icons.Material.Filled.Dns"
-                                  EmptyValuesString="@L["local-server-sources-empty"]"
-                                  AddButtonTooltip="@L["local-server-sources-add-tooltip"]"
-                                  SelfValueControl="true"
-                                  SelfValueControlInitialization="FetchSources"
-                                  SelfValueControlAction="x => _ = OnSourcesChanged(x)" />
+            <MudText Typo="Typo.h6" Class="mb-2" Style="position: relative;">@L["local-server-sources-title"]</MudText>
+            <LocalServerSourceListOption Title="@L["local-server-sources-option-title"]"
+                                          Description="@L["local-server-sources-option-description"]"
+                                          Icon="@Icons.Material.Filled.Dns"
+                                          EmptyValuesString="@L["local-server-sources-empty"]"
+                                          AddButtonTooltip="@L["local-server-sources-add-tooltip"]"
+                                          SelfValueControl="true"
+                                          SelfValueControlInitialization="FetchSources"
+                                          SelfValueControlAction="x => _ = OnSourcesChanged(x)" />
 
-    <MudText Typo="Typo.h6" Class="mt-6 mb-2">@L["local-server-launch-title"]</MudText>
-    <MudPaper Class="sl-option-card pa-4 mb-4" Outlined="true" Elevation="0">
-        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="flex-wrap">
-            <MudSelect T="int" Value="_selectedIndex" ValueChanged="OnSourceIndexSelected"
-                       Label="@L["local-server-source-select-label"]" Variant="Variant.Outlined" Margin="Margin.Dense"
-                       Class="local-server-source-select">
-                @for (var i = 0; i < _sources.Count; i++)
+            <MudText Typo="Typo.h6" Class="mt-6 mb-2" Style="position: relative;">@L["local-server-launch-title"]</MudText>
+            <MudPaper Class="sl-option-card pa-4 mb-4" Outlined="true" Elevation="0">
+                <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="flex-wrap">
+                    <MudSelect T="int" Value="_selectedIndex" ValueChanged="OnSourceIndexSelected"
+                               Label="@L["local-server-source-select-label"]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                               Class="local-server-source-select">
+                        @for (var i = 0; i < _sources.Count; i++)
+                        {
+                            var idx = i;
+                            var source = _sources[i];
+                            <MudSelectItem Value="idx">@(string.IsNullOrWhiteSpace(source.Name) ? source.Url : source.Name)</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    <MudButton StartIcon="@Icons.Material.Filled.Refresh" Variant="Variant.Outlined"
+                               Disabled="@(SelectedSource is null || _refreshing)" OnClick="RefreshLatestBuild">
+                        @L["local-server-refresh-button"]
+                    </MudButton>
+
+                    <MudSpacer />
+
+                    <MudChip T="string" Color="GetStatusColor()" Variant="Variant.Filled">@GetStatusText()</MudChip>
+                </MudStack>
+
+                @if (_latestBuild is not null)
                 {
-                    var idx = i;
-                    var source = _sources[i];
-                    <MudSelectItem Value="idx">@(string.IsNullOrWhiteSpace(source.Name) ? source.Url : source.Name)</MudSelectItem>
+                    <div class="mt-3">
+                        @if (_latestBuild.Supported)
+                        {
+                            <MudText Typo="Typo.body2">
+                                @L.GetString("local-server-latest-build-info",
+                                    ("hash", ShortHash(_latestBuild.BuildHash)),
+                                    ("time", _latestBuild.BuildTime?.ToLocalTime().ToString("g") ?? ""),
+                                    ("size", FormatSize(_latestBuild.DownloadSize)))
+                            </MudText>
+                        }
+                        else
+                        {
+                            <MudAlert Severity="Severity.Error" Dense="true">
+                                @(_latestBuild.ErrorMessage ?? L["local-server-unsupported-platform"])
+                            </MudAlert>
+                        }
+                    </div>
                 }
-            </MudSelect>
 
-            <MudButton StartIcon="@Icons.Material.Filled.Refresh" Variant="Variant.Outlined"
-                       Disabled="@(SelectedSource is null || _refreshing)" OnClick="RefreshLatestBuild">
-                @L["local-server-refresh-button"]
-            </MudButton>
+                <MudStack Row="true" Spacing="2" Class="mt-4 flex-wrap">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow"
+                               Disabled="@(!CanStart())" OnClick="StartServer">
+                        @L["local-server-start-button"]
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Stop"
+                               Disabled="@(!CanStop())" OnClick="StopServer">
+                        @L["local-server-stop-button"]
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Success" StartIcon="@Icons.Material.Filled.Link"
+                               Disabled="@(!CanConnect())" OnClick="ConnectToServer">
+                        @L["local-server-connect-button"]
+                    </MudButton>
+                    <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.FolderOpen"
+                               Disabled="@(_state.BuildHash is null)" OnClick="@(() => _bridge.OpenLocalServerFolder())">
+                        @L["local-server-open-folder-button"]
+                    </MudButton>
+                </MudStack>
 
-            <MudSpacer />
+                <MudDivider Class="my-4" />
 
-            <MudChip T="string" Color="GetStatusColor()" Variant="Variant.Filled">@GetStatusText()</MudChip>
-        </MudStack>
-
-        @if (_latestBuild is not null)
-        {
-            <div class="mt-3">
-                @if (_latestBuild.Supported)
-                {
-                    <MudText Typo="Typo.body2">
-                        @L.GetString("local-server-latest-build-info",
-                            ("hash", ShortHash(_latestBuild.BuildHash)),
-                            ("time", _latestBuild.BuildTime?.ToLocalTime().ToString("g") ?? ""),
-                            ("size", FormatSize(_latestBuild.DownloadSize)))
+                <div class="d-flex align-center gap-2 flex-wrap">
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary flex-grow-1">
+                        @L["local-server-clear-description"]
                     </MudText>
+                    <MudButton Variant="Variant.Text" Color="Color.Error" StartIcon="@Icons.Material.Filled.DeleteSweep"
+                               Disabled="@(!CanClearInstalledServers())" OnClick="ClearInstalledServers">
+                        @if (_clearing)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        }
+                        @L["local-server-clear-button"]
+                    </MudButton>
+                </div>
+            </MudPaper>
+
+            <MudText Typo="Typo.h6" Class="mt-6 mb-2" Style="position: relative;">@L["local-server-config-title"]</MudText>
+            <MudPaper Class="sl-option-card pa-4 mb-4" Outlined="true" Elevation="0">
+                @if (SelectedSource is null)
+                {
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">@L["local-server-config-no-source"]</MudText>
                 }
                 else
                 {
-                    <MudAlert Severity="Severity.Error" Dense="true">
-                        @(_latestBuild.ErrorMessage ?? L["local-server-unsupported-platform"])
-                    </MudAlert>
-                }
-            </div>
-        }
-
-        <MudStack Row="true" Spacing="2" Class="mt-4 flex-wrap">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow"
-                       Disabled="@(!CanStart())" OnClick="StartServer">
-                @L["local-server-start-button"]
-            </MudButton>
-            <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Stop"
-                       Disabled="@(!CanStop())" OnClick="StopServer">
-                @L["local-server-stop-button"]
-            </MudButton>
-            <MudButton Variant="Variant.Outlined" Color="Color.Success" StartIcon="@Icons.Material.Filled.Link"
-                       Disabled="@(!CanConnect())" OnClick="ConnectToServer">
-                @L["local-server-connect-button"]
-            </MudButton>
-            <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.FolderOpen"
-                       Disabled="@(_state.BuildHash is null)" OnClick="@(() => _bridge.OpenLocalServerFolder())">
-                @L["local-server-open-folder-button"]
-            </MudButton>
-        </MudStack>
-
-        <MudDivider Class="my-4" />
-
-        <div class="d-flex align-center gap-2 flex-wrap">
-            <MudText Typo="Typo.body2" Class="mud-text-secondary flex-grow-1">
-                @L["local-server-clear-description"]
-            </MudText>
-            <MudButton Variant="Variant.Text" Color="Color.Error" StartIcon="@Icons.Material.Filled.DeleteSweep"
-                       Disabled="@(!CanClearInstalledServers())" OnClick="ClearInstalledServers">
-                @if (_clearing)
-                {
-                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                }
-                @L["local-server-clear-button"]
-            </MudButton>
-        </div>
-    </MudPaper>
-
-    <MudText Typo="Typo.h6" Class="mt-6 mb-2">@L["local-server-config-title"]</MudText>
-    <MudPaper Class="sl-option-card pa-4 mb-4" Outlined="true" Elevation="0">
-        @if (SelectedSource is null)
-        {
-            <MudText Typo="Typo.body2" Class="mud-text-secondary">@L["local-server-config-no-source"]</MudText>
-        }
-        else
-        {
-            <MudText Typo="Typo.overline" Class="mud-text-secondary">@L["local-server-config-basic-title"]</MudText>
-            <MudExpansionPanels MultiExpansion="true" Class="local-server-cvar-groups" Elevation="0" Gutters="false">
-                @foreach (var group in GroupedKnownCVars)
-                {
-                    <MudExpansionPanel @key="group.Key" Text="@group.Key" Expanded="false">
-                        @foreach (var def in group)
+                    <MudText Typo="Typo.overline" Class="mud-text-secondary">@L["local-server-config-basic-title"]</MudText>
+                    <MudExpansionPanels MultiExpansion="true" Class="local-server-cvar-groups" Elevation="0" Gutters="false">
+                        @foreach (var group in GroupedKnownCVars)
                         {
-                            <div class="d-flex align-center gap-2 mb-2">
-                                <MudText Typo="Typo.body2" Class="local-server-cvar-key">@def.Name</MudText>
-                                @if (def.Options is { Count: > 0 })
+                            <MudExpansionPanel @key="group.Key" Text="@group.Key" Expanded="false">
+                                @foreach (var def in group)
                                 {
-                                    <MudSelect T="string" Value="GetKnownValue(def)" ValueChanged="v => SetKnownValue(def.Key, v)"
-                                               Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1">
-                                        @foreach (var opt in def.Options)
+                                    <div class="d-flex align-center gap-2 mb-2">
+                                        <MudText Typo="Typo.body2" Class="local-server-cvar-key">@def.Name</MudText>
+                                        @if (def.Options is { Count: > 0 })
                                         {
-                                            <MudSelectItem Value="@opt.Value">@opt.Label</MudSelectItem>
+                                            <MudSelect T="string" Value="GetKnownValue(def)" ValueChanged="v => SetKnownValue(def.Key, v)"
+                                                       Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1">
+                                                @foreach (var opt in def.Options)
+                                                {
+                                                    <MudSelectItem Value="@opt.Value">@opt.Label</MudSelectItem>
+                                                }
+                                            </MudSelect>
                                         }
-                                    </MudSelect>
+                                        else if (def.Type == ServerCVarType.Bool)
+                                        {
+                                            <MudSwitch T="bool" Value="GetKnownBool(def.Key)" ValueChanged="v => SetKnownBool(def.Key, v)" Color="Color.Primary" />
+                                        }
+                                        else
+                                        {
+                                            <MudTextField T="string" Value="GetKnownValue(def)" ValueChanged="v => SetKnownValue(def.Key, v)"
+                                                          Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" />
+                                        }
+                                    </div>
                                 }
-                                else if (def.Type == ServerCVarType.Bool)
-                                {
-                                    <MudSwitch T="bool" Value="GetKnownBool(def.Key)" ValueChanged="v => SetKnownBool(def.Key, v)" Color="Color.Primary" />
-                                }
-                                else
-                                {
-                                    <MudTextField T="string" Value="GetKnownValue(def)" ValueChanged="v => SetKnownValue(def.Key, v)"
-                                                  Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" />
-                                }
-                            </div>
+                            </MudExpansionPanel>
                         }
-                    </MudExpansionPanel>
+                    </MudExpansionPanels>
+
+                    <MudDivider Class="my-4" />
+
+                    <div class="d-flex align-center mb-2">
+                        <MudText Typo="Typo.overline" Class="mud-text-secondary flex-grow-1">@L["local-server-config-custom-title"]</MudText>
+                        <MudTooltip Text="@L["local-server-config-add-tooltip"]">
+                            <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Small" Color="Color.Primary" OnClick="AddCustomCVar" />
+                        </MudTooltip>
+                    </div>
+
+                    @if (_customCVars.Count == 0)
+                    {
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">@L["local-server-config-custom-empty"]</MudText>
+                    }
+
+                    @for (var i = 0; i < _customCVars.Count; i++)
+                    {
+                        var index = i;
+                        var cvar = _customCVars[index];
+                        <div class="d-flex align-center gap-2 mb-2 flex-wrap">
+                            <MudTextField T="string" Value="@cvar.Group" ValueChanged="v => SetCustomCVarGroup(index, v)"
+                                          Placeholder="@L["local-server-config-group-placeholder"]" Variant="Variant.Outlined"
+                                          Margin="Margin.Dense" Style="max-width:120px" />
+                            <MudTextField T="string" Value="@cvar.Name" ValueChanged="v => SetCustomCVarName(index, v)"
+                                          Placeholder="@L["local-server-config-name-placeholder"]" Variant="Variant.Outlined"
+                                          Margin="Margin.Dense" Style="max-width:160px" />
+                            <MudSelect T="ServerCVarType" Value="cvar.Type" ValueChanged="v => SetCustomCVarType(index, v)"
+                                       Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:110px">
+                                <MudSelectItem Value="ServerCVarType.String">@L["local-server-config-type-string"]</MudSelectItem>
+                                <MudSelectItem Value="ServerCVarType.Int">@L["local-server-config-type-int"]</MudSelectItem>
+                                <MudSelectItem Value="ServerCVarType.Float">@L["local-server-config-type-float"]</MudSelectItem>
+                                <MudSelectItem Value="ServerCVarType.Bool">@L["local-server-config-type-bool"]</MudSelectItem>
+                            </MudSelect>
+                            @if (cvar.Type == ServerCVarType.Bool)
+                            {
+                                <MudSwitch T="bool" Value="GetCustomCVarBool(index)" ValueChanged="v => SetCustomCVarBool(index, v)" Color="Color.Primary" />
+                            }
+                            else
+                            {
+                                <MudTextField T="string" Value="@cvar.Value" ValueChanged="v => SetCustomCVarValue(index, v)"
+                                              Placeholder="@L["local-server-config-value-placeholder"]" Variant="Variant.Outlined"
+                                              Margin="Margin.Dense" Class="flex-grow-1" />
+                            }
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                                           OnClick="@(() => RemoveCustomCVar(index))" />
+                        </div>
+                    }
+
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save"
+                               Class="mt-3" OnClick="SaveServerConfig">
+                        @L["local-server-config-save-button"]
+                    </MudButton>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mt-2">
+                        @L["local-server-config-hint"]
+                    </MudText>
                 }
-            </MudExpansionPanels>
-
-            <MudDivider Class="my-4" />
-
-            <div class="d-flex align-center mb-2">
-                <MudText Typo="Typo.overline" Class="mud-text-secondary flex-grow-1">@L["local-server-config-custom-title"]</MudText>
-                <MudTooltip Text="@L["local-server-config-add-tooltip"]">
-                    <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Small" Color="Color.Primary" OnClick="AddCustomCVar" />
-                </MudTooltip>
-            </div>
-
-            @if (_customCVars.Count == 0)
-            {
-                <MudText Typo="Typo.body2" Class="mud-text-secondary">@L["local-server-config-custom-empty"]</MudText>
-            }
-
-            @for (var i = 0; i < _customCVars.Count; i++)
-            {
-                var index = i;
-                var cvar = _customCVars[index];
-                <div class="d-flex align-center gap-2 mb-2 flex-wrap">
-                    <MudTextField T="string" Value="@cvar.Group" ValueChanged="v => SetCustomCVarGroup(index, v)"
-                                  Placeholder="@L["local-server-config-group-placeholder"]" Variant="Variant.Outlined"
-                                  Margin="Margin.Dense" Style="max-width:120px" />
-                    <MudTextField T="string" Value="@cvar.Name" ValueChanged="v => SetCustomCVarName(index, v)"
-                                  Placeholder="@L["local-server-config-name-placeholder"]" Variant="Variant.Outlined"
-                                  Margin="Margin.Dense" Style="max-width:160px" />
-                    <MudSelect T="ServerCVarType" Value="cvar.Type" ValueChanged="v => SetCustomCVarType(index, v)"
-                               Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width:110px">
-                        <MudSelectItem Value="ServerCVarType.String">@L["local-server-config-type-string"]</MudSelectItem>
-                        <MudSelectItem Value="ServerCVarType.Int">@L["local-server-config-type-int"]</MudSelectItem>
-                        <MudSelectItem Value="ServerCVarType.Float">@L["local-server-config-type-float"]</MudSelectItem>
-                        <MudSelectItem Value="ServerCVarType.Bool">@L["local-server-config-type-bool"]</MudSelectItem>
-                    </MudSelect>
-                    @if (cvar.Type == ServerCVarType.Bool)
-                    {
-                        <MudSwitch T="bool" Value="GetCustomCVarBool(index)" ValueChanged="v => SetCustomCVarBool(index, v)" Color="Color.Primary" />
-                    }
-                    else
-                    {
-                        <MudTextField T="string" Value="@cvar.Value" ValueChanged="v => SetCustomCVarValue(index, v)"
-                                      Placeholder="@L["local-server-config-value-placeholder"]" Variant="Variant.Outlined"
-                                      Margin="Margin.Dense" Class="flex-grow-1" />
-                    }
-                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
-                                   OnClick="@(() => RemoveCustomCVar(index))" />
+            </MudPaper>
+            <MudText Typo="Typo.h6" Class="mb-2" Style="position: relative;">@L["local-server-console-title"]</MudText>
+            <MudPaper Class="local-server-console" Outlined="true" Elevation="0">
+                <div class="local-server-console-toolbar">
+                    <MudSpacer />
+                    <MudTooltip Text="@L["local-server-console-autoscroll-tooltip"]">
+                        <MudIconButton Icon="@Icons.Material.Filled.VerticalAlignBottom" Size="Size.Small"
+                                       Color="@(_autoScrollEnabled ? Color.Primary : Color.Default)"
+                                       OnClick="ToggleAutoScroll" />
+                    </MudTooltip>
+                    <MudTooltip Text="@L["local-server-console-clear-tooltip"]">
+                        <MudIconButton Icon="@Icons.Material.Filled.ClearAll" Size="Size.Small" OnClick="ClearConsole" />
+                    </MudTooltip>
                 </div>
-            }
-
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save"
-                       Class="mt-3" OnClick="SaveServerConfig">
-                @L["local-server-config-save-button"]
-            </MudButton>
-            <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mt-2">
-                @L["local-server-config-hint"]
-            </MudText>
-        }
-    </MudPaper>
-
-    <MudText Typo="Typo.h6" Class="mb-2">@L["local-server-console-title"]</MudText>
-    <MudPaper Class="local-server-console" Outlined="true" Elevation="0">
-        <div class="local-server-console-toolbar">
-            <MudSpacer />
-            <MudTooltip Text="@L["local-server-console-autoscroll-tooltip"]">
-                <MudIconButton Icon="@Icons.Material.Filled.VerticalAlignBottom" Size="Size.Small"
-                               Color="@(_autoScrollEnabled ? Color.Primary : Color.Default)"
-                               OnClick="ToggleAutoScroll" />
-            </MudTooltip>
-            <MudTooltip Text="@L["local-server-console-clear-tooltip"]">
-                <MudIconButton Icon="@Icons.Material.Filled.ClearAll" Size="Size.Small" OnClick="ClearConsole" />
-            </MudTooltip>
-        </div>
-        <div class="local-server-console-log" id="local-server-console-log">
-            @if (_console.Count == 0)
-            {
-                <div class="log-line log-empty">@L["local-server-console-empty"]</div>
-            }
-            @foreach (var line in _console)
-            {
-                <div class="@(line.IsError ? "log-line log-line-error" : "log-line")">
-                    <span class="log-time">@line.Timestamp.ToString("HH:mm:ss")</span> @line.Text
+                <div class="local-server-console-log" id="local-server-console-log">
+                    @if (_console.Count == 0)
+                    {
+                        <div class="log-line log-empty">@L["local-server-console-empty"]</div>
+                    }
+                    @foreach (var line in _console)
+                    {
+                        <div class="@(line.IsError ? "log-line log-line-error" : "log-line")">
+                            <span class="log-time">@line.Timestamp.ToString("HH:mm:ss")</span> @line.Text
+                        </div>
+                    }
                 </div>
-            }
-        </div>
-        <div class="local-server-console-input">
-            <MudTextField T="string" @bind-Value="_commandInput" Immediate="true" Variant="Variant.Outlined"
-                          Margin="Margin.Dense" Placeholder="@L["local-server-console-input-placeholder"]"
-                          Disabled="@(!CanSendCommand())" OnKeyDown="OnCommandKeyDown" Class="flex-grow-1" />
-            <MudIconButton Icon="@Icons.Material.Filled.Send" Color="Color.Primary"
-                           Disabled="@(!CanSendCommand() || string.IsNullOrWhiteSpace(_commandInput))"
-                           OnClick="SendCommand" />
-        </div>
-    </MudPaper>
-</MudContainer>
-</div>
+                <div class="local-server-console-input">
+                    <MudTextField T="string" @bind-Value="_commandInput" Immediate="true" Variant="Variant.Outlined"
+                                  Margin="Margin.Dense" Placeholder="@L["local-server-console-input-placeholder"]"
+                                  Disabled="@(!CanSendCommand())" OnKeyDown="OnCommandKeyDown" Class="flex-grow-1" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Send" Color="Color.Primary"
+                                   Disabled="@(!CanSendCommand() || string.IsNullOrWhiteSpace(_commandInput))"
+                                   OnClick="SendCommand" />
+                </div>
+            </MudPaper>
+        </MudContainer>
+    </div>
 </div>
