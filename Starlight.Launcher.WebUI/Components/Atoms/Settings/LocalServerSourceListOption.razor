@@ -1,0 +1,68 @@
+@using Starlight.Launcher.WebUI.Localization
+@using Starlight.Launcher.WebUI.Models.Settings
+@inherits LocalizedComponentBase
+
+<MudPaper Class="sl-option-card pa-4 mb-2" Outlined="true" Elevation="0">
+    <div class="d-flex align-center mb-2">
+        <div class="sl-option-icon mr-4">
+            <MudIcon Icon="@Icon" Size="Size.Small" />
+        </div>
+        <div class="flex-grow-1">
+            <MudText Typo="Typo.body1">@Title</MudText>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">@Description</MudText>
+        </div>
+        <MudTooltip Text="@AddButtonTooltip">
+            <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Primary" OnClick="AddSource" />
+        </MudTooltip>
+    </div>
+
+    @if (Value.Count == 0)
+    {
+        <MudPaper Class="pa-4 d-flex align-center justify-center" Outlined="true" Elevation="0"
+                  Style="border-style: dashed;">
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">@EmptyValuesString</MudText>
+        </MudPaper>
+    }
+    else
+    {
+        <MudStack Spacing="2">
+            @for (var i = 0; i < Value.Count; i++)
+            {
+                var index = i;
+                var source = Value[index];
+
+                <MudPaper Outlined="true" Elevation="0" Class="pa-3">
+                    <div class="d-flex align-center gap-2">
+                        <MudTextField T="string"
+                                      Value="@source.Name"
+                                      ValueChanged="@(v => UpdateSource(index, s => s with { Name = v }))"
+                                      Immediate="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                      Label="@L["local-server-sources-name-label"]"
+                                      Class="flex-grow-1" />
+
+                        <MudTooltip Text="@L["settings-cdns-option-enabled-tooltip"]">
+                            <MudSwitch T="bool"
+                                       Value="@source.Enabled"
+                                       ValueChanged="@(v => ToggleEnabled(index, v))"
+                                       Color="Color.Primary" />
+                        </MudTooltip>
+
+                        <MudTooltip Text="@L["settings-alternative-list-option-remove"]">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                           Color="Color.Error" OnClick="@(() => RemoveAt(index))" />
+                        </MudTooltip>
+                    </div>
+
+                    <MudTextField T="string"
+                                  Value="@source.Url"
+                                  ValueChanged="@(v => UpdateSource(index, s => s with { Url = v }))"
+                                  Immediate="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Placeholder="https://example.com/manifest.json"
+                                  Label="@L["local-server-sources-url-label"]"
+                                  Validation="@(new Func<string, string?>(ValidateUrl))"
+                                  Class="mt-2" />
+                </MudPaper>
+            }
+        </MudStack>
+    }
+</MudPaper>

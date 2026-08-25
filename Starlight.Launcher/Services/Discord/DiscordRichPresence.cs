@@ -372,16 +372,16 @@ public sealed class DiscordRichPresence : IPresenceController, IDisposable
         PresenceState.ManagesLogins => "Manages accounts",
         PresenceState.SearchingServers => "Searching for a server",
         PresenceState.ViewingServer => ctx is { Players: > 0, MaxPlayers: > 0 }
-            ? $"Viewing Server — {ctx.Players}/{ctx.MaxPlayers}"
+            ? $"Viewing Server - {ctx.Players}/{ctx.MaxPlayers}"
             : "Viewing Server",
         PresenceState.SettingUp => "Setting up",
         PresenceState.UpdatingLauncher => "Updating launcher",
         PresenceState.DownloadingContent => ctx.ProgressPercent >= 0
-            ? $"Downloading content — {ctx.ProgressPercent}%"
+            ? $"Downloading content - {ctx.ProgressPercent}%"
             : "Downloading content",
         PresenceState.LaunchingGame => "Launching game",
         PresenceState.InGame => ctx is { Players: > 0, MaxPlayers: > 0 }
-            ? $"In Game — {ctx.Players}/{ctx.MaxPlayers}"
+            ? $"In Game - {ctx.Players}/{ctx.MaxPlayers}"
             : "Playing Space Station 14",
         PresenceState.Reconnecting => "Reconnecting",
         _ => "Space Station 14"
@@ -422,7 +422,7 @@ public sealed class DiscordRichPresence : IPresenceController, IDisposable
 
         return value.Length <= MaxFieldLength
             ? value
-            : string.Concat(value.AsSpan(0, MaxFieldLength - 1), "…");
+            : string.Concat(value.AsSpan(0, MaxFieldLength - 1), "...");
     }
 
     private void OnPresenceSettingsChanged((bool Hidden, string ApplicationId) settings) =>

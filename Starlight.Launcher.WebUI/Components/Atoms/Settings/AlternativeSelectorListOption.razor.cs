@@ -81,7 +81,6 @@ public partial class AlternativeSelectorListOption : LocalizedComponentBase
 
         Values[index] = value;
 
-        // Если редактируем активное значение — обновляем SelectedValue.
         if (_selectedIndex == index)
             SyncSelectedValue();
 

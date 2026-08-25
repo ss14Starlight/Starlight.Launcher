@@ -315,10 +315,25 @@ public partial record AppSettings
 
     #endregion
 
+    #region Local Server
+
+    /// <summary>
+    /// Determines if the user has acknowledged the risks of running unsandboxed local server
+    /// builds fetched from a user-supplied manifest URL. Gates the "Local Server" page.
+    /// </summary>
+    public bool LocalServerPolicyAccepted { get; set; } = false;
+
+    /// <summary>
+    /// User-configured manifest sources for local server builds.
+    /// </summary>
+    public List<LocalServerSourceConfig> LocalServerSources { get; init; } = [];
+
+    #endregion
+
 }
 
-public struct IgnoredServer(string name, string address)
+public struct IgnoredServer(string? name, string address)
 {
-    public string Name { get; set; } = name;
+    public string? Name { get; set; } = name;
     public string Address { get; set; } = address;
 }

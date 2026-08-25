@@ -43,7 +43,6 @@ public sealed partial class ConnectingDialog : LocalizedComponentBase, IDisposab
     private bool _hasDeterminateProgress =>
         _bridge.GetConnectionStatus() == ConnectionStatus.Updating && _bridge.GetUpdateProgress() is { total: > 0 };
 
-    // Only these phases report progress as real bytes — gate byte/speed display on them.
     private bool _isByteProgress =>
         _bridge.GetConnectionStatus() == ConnectionStatus.Updating && _bridge.GetUpdateStatus() is
             UpdateStatus.DownloadingEngineVersion
@@ -79,25 +78,25 @@ public sealed partial class ConnectingDialog : LocalizedComponentBase, IDisposab
 
     private string _statusText => _bridge.GetConnectionStatus() switch
     {
-        ConnectionStatus.Connecting => "Contacting server…",
+        ConnectionStatus.Connecting => "Contacting server...",
         ConnectionStatus.Updating => _bridge.GetUpdateStatus() switch
         {
-            UpdateStatus.DownloadingEngineVersion => "Downloading engine…",
-            UpdateStatus.DownloadingEngineModules => "Downloading engine modules…",
-            UpdateStatus.DownloadingClientUpdate => "Downloading game files…",
-            UpdateStatus.LoadingIntoDb => "Installing…",
-            UpdateStatus.LoadingContentBundle => "Loading content bundle…",
-            UpdateStatus.Verifying => "Verifying…",
-            UpdateStatus.CommittingDownload => "Finishing up…",
-            _ => "Checking for updates…"
+            UpdateStatus.DownloadingEngineVersion => "Downloading engine...",
+            UpdateStatus.DownloadingEngineModules => "Downloading engine modules...",
+            UpdateStatus.DownloadingClientUpdate => "Downloading game files...",
+            UpdateStatus.LoadingIntoDb => "Installing...",
+            UpdateStatus.LoadingContentBundle => "Loading content bundle...",
+            UpdateStatus.Verifying => "Verifying...",
+            UpdateStatus.CommittingDownload => "Finishing up...",
+            _ => "Checking for updates..."
         },
-        ConnectionStatus.StartingClient => "Starting the game…",
+        ConnectionStatus.StartingClient => "Starting the game...",
         ConnectionStatus.ClientRunning => "Game is running.",
         ConnectionStatus.ConnectionFailed => "Could not reach the server.",
         ConnectionStatus.UpdateError => "Update failed. See the logs for details.",
         ConnectionStatus.NotAContentBundle => "This file isn't a valid content bundle.",
         ConnectionStatus.Cancelled => "Cancelled.",
-        _ => "Starting…"
+        _ => "Starting..."
     };
 
     protected override void OnInitialized()

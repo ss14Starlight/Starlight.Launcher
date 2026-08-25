@@ -1,0 +1,26 @@
+@using Starlight.Launcher.WebUI.Localization
+@inherits LocalizedComponentBase
+
+<MudDialog>
+    <DialogContent>
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Dense="true" Class="mb-3">
+            @L["local-server-source-warning-body"]
+        </MudAlert>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">
+            @L.GetString("local-server-source-warning-hint")
+        </MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L["local-server-source-warning-cancel"]</MudButton>
+        <MudButton Variant="Variant.Filled" Class="cta-btn-warning" OnClick="Confirm">
+            @L["local-server-source-warning-confirm"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private void Confirm() => MudDialog.Close(DialogResult.Ok(true));
+    private void Cancel() => MudDialog.Cancel();
+}

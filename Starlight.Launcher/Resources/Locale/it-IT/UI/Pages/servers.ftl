@@ -1,6 +1,6 @@
 # General
 
-servers-menu-loading = Caricamento server…
+servers-menu-loading = Caricamento server...
 servers-menu-fetch-failed = Impossibile recuperare la lista dei server
 servers-menu-try-again = Riprova
 servers-menu-cant-reach-hubs = Certe hub sono irraggiungibili. La lista potrebbe essere incompleta.

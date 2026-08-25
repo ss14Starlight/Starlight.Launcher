@@ -21,6 +21,12 @@
             <span>@L["main-layout-hub-tab"]</span>
         </div>
     </NavLink>
+    <NavLink href="/local-server" Match="NavLinkMatch.All" class="bottom-nav-item" ActiveClass="active">
+        <div class="nav-inner">
+            <MudIcon Icon="@Icons.Material.Filled.Terminal" Color="@(IsActive("/local-server", NavLinkMatch.All) ? Color.Primary : Color.Default)" Size="Size.Medium" />
+            <span>@L["main-layout-local-server-tab"]</span>
+        </div>
+    </NavLink>
     <NavLink href="/settings" Match="NavLinkMatch.Prefix" class="bottom-nav-item" ActiveClass="active">
         <div class="nav-inner">
             <MudIcon Icon="@Icons.Material.Filled.Settings" Color="@(IsActive("/settings", NavLinkMatch.All) ? Color.Primary : Color.Default)" Size="Size.Medium" />

@@ -342,6 +342,10 @@ h1:focus {
     margin-bottom: calc(var(--bottom-nav-height) + 10px);
 }
 
+.mud-main-content.has-bottom-nav .local-server-scroll {
+    padding-bottom: var(--bottom-nav-height);
+}
+
 .server-page {
     display: flex;
     flex-direction: column;
@@ -396,7 +400,7 @@ h1:focus {
     --glow: .5;
 }
 
-/* Settings: calmer, sparser drift — fewer points, fainter links, slower */
+/* Settings: calmer, sparser drift - fewer points, fainter links, slower */
 .app-bg--settings {
     --dot-color: oklch(from oklch(var(--c-tertiary)) l c h / .40);
     --line-color: oklch(from oklch(var(--c-secondary)) l c h / .18);

@@ -83,7 +83,6 @@ public sealed partial class LauncherUpdateDialog : ComponentBase, IDisposable
         }
         catch (OperationCanceledException)
         {
-            // User cancelled — dialog already closing.
         }
         catch (Exception ex)
         {

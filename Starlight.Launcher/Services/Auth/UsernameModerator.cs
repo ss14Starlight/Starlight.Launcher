@@ -57,7 +57,7 @@ public static class UsernameModerator
         }
 
         return Reject(runeCount < MinLength
-            ? $"The username is too short — it needs at least {MinLength} characters."
+            ? $"The username is too short - it needs at least {MinLength} characters."
             : "The username doesn't contain enough Latin letters to use.");
     }
 

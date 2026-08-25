@@ -1,6 +1,6 @@
 # General
 
-servers-menu-loading = Loading servers…
+servers-menu-loading = Loading servers...
 servers-menu-fetch-failed = Failed to fetch server list
 servers-menu-try-again = Try again
 servers-menu-cant-reach-hubs = Some hubs could not be reached. The list may be incomplete.

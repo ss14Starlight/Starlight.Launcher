@@ -184,7 +184,6 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
                         }
                         else
                         {
-                            // No installer for this OS in the release — fall back to the release page.
                             _bridge.OpenBrowser(info.ReleasePageUrl);
                         }
                         return Task.CompletedTask;

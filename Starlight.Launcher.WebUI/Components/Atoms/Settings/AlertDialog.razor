@@ -5,7 +5,7 @@
 <MudDialog>
     <DialogContent>
         <MudText Typo="Typo.body1">
-            @L["settings-development-tab-alert-description"]
+            @L[DescriptionKey]
         </MudText>
     </DialogContent>
     <DialogActions>
@@ -16,6 +16,8 @@
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public string DescriptionKey { get; set; } = "settings-development-tab-alert-description";
 
     public event Action? OnCancel;
     public event Action? OnSuccess;

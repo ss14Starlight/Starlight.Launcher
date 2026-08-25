@@ -14,6 +14,7 @@ using Starlight.Launcher.Services.Auth;
 using Starlight.Launcher.Services.Bridge;
 using Starlight.Launcher.Services.Discord;
 using Starlight.Launcher.Services.EngineManager;
+using Starlight.Launcher.Services.LocalServer;
 using Starlight.Launcher.Services.Localization;
 using Starlight.Launcher.Services.Logging;
 using Starlight.Launcher.Services.ServerStatus;
@@ -75,6 +76,9 @@ public partial class App : Application
 
                 var sw = System.Diagnostics.Stopwatch.StartNew();
                 Log.Information("Shutdown: starting");
+
+                await Services.GetRequiredService<LocalServerManager>().StopAndWaitAsync();
+                Log.Information("Shutdown: local server stopped at {Elapsed}", sw.Elapsed);
 
                 commands.Shutdown();
                 Log.Information("Shutdown: commands stopped at {Elapsed}", sw.Elapsed);
@@ -167,6 +171,7 @@ public partial class App : Application
         _ = services.AddSingleton<SteamAuthService>();
         _ = services.AddSingleton<DiscordAuthService>();
         _ = services.AddSingleton<ClientLogManager>();
+        _ = services.AddSingleton<LocalServerManager>();
         _ = services.AddTransient<Connector>();
         _ = services.AddSingleton<UiTicker>();
         _ = services.AddSingleton<LauncherUpdater>();

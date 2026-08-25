@@ -70,7 +70,7 @@ public partial class SearchBar : LocalizedComponentBase
     private (string Text, MudBlazor.Color Color) GetStatusDisplay() => Status switch
     {
         RefreshListStatus.NotUpdated => ("Idle", MudBlazor.Color.Default),
-        RefreshListStatus.UpdatingMaster => ("Updating…", MudBlazor.Color.Info),
+        RefreshListStatus.UpdatingMaster => ("Updating...", MudBlazor.Color.Info),
         RefreshListStatus.Updated => ("Up to date", MudBlazor.Color.Success),
         RefreshListStatus.PartialError => ("Some hubs failed", MudBlazor.Color.Warning),
         RefreshListStatus.Error => ("Error", MudBlazor.Color.Error),

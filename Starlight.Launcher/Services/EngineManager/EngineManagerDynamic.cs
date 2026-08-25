@@ -169,7 +169,7 @@ public sealed partial class EngineManagerDynamic : IEngineManager
     /// <summary>
     /// Verify a downloaded file against a signature using the public key of any
     /// configured CDN. Content is trusted if it is validly signed by ANY trusted
-    /// CDN key — every CDN in the config is equally trusted, and a manifest's
+    /// CDN key - every CDN in the config is equally trusted, and a manifest's
     /// absolute download URL doesn't tell us which CDN it resolved to.
     /// </summary>
     private bool VerifyAgainstAnyCdn(FileStream stream, string signature)

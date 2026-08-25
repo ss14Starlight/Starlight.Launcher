@@ -71,7 +71,7 @@ public sealed partial class EngineManagerDynamic
         // We refresh lazily so that as soon as a higher-priority CDN yields the version,
         // we stop without ever touching the lower-priority ones.
         // (This also re-requests a still-valid manifest on a total miss, which catches a
-        //  freshly-published version within the cache window — same intent as the original code.)
+        //  freshly-published version within the cache window - same intent as the original code.)
         foreach (var cdn in cdns)
         {
             var cache = GetOrCreateCache(cdn);

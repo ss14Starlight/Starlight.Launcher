@@ -6,7 +6,7 @@ public sealed class RobustCdn
 {
     /// <summary>
     /// Mirror URLs for this single CDN. Treated as interchangeable for
-    /// availability (Happy Eyeballs) fallback — they must serve the same content.
+    /// availability (Happy Eyeballs) fallback - they must serve the same content.
     /// </summary>
     public UrlFallbackSet BaseUrl { get; }
 

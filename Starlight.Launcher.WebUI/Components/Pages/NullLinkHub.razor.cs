@@ -176,7 +176,7 @@ public sealed partial class NullLinkHub : LocalizedComponentBase, IAsyncDisposab
     private static string FormatUptime(DateTime? startedAt)
     {
         if (startedAt is null)
-            return "—";
+            return "-";
 
         var start = startedAt.Value.Kind == DateTimeKind.Utc
             ? startedAt.Value
