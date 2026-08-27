@@ -34,6 +34,10 @@
         {
             <HorizontalNavBar />
         }
+        else if (_elementPosition is ElementPosition.Left or ElementPosition.Right)
+        {
+            <MudSpacer />
+        }
 
         @if (_shouldShowAppBar)
         {
