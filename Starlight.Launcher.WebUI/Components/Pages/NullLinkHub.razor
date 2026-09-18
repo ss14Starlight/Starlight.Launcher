@@ -83,28 +83,31 @@
                         <MudCard Elevation="2" Class="server-card d-flex flex-column" Style="height:100%">
                             <MudCardContent Class="flex-grow-1">
 
-                                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                                    <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
-                                        <MudText Typo="Typo.h6">@server.Title</MudText>
+                                <div class="server-card-header">
+                                    <div class="server-card-title">
+                                        <MudText Typo="Typo.h6" Style="overflow-wrap:anywhere;">@ParseMarkup(server.Title)</MudText>
                                         @if (server.IsAdultOnly)
                                         {
                                             <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="Color.Error">@L["hub-menu-server-adult-tag"]</MudChip>
                                         }
-                                    </MudStack>
+                                    </div>
 
-                                    <MudChip T="string"
-                                             Size="Size.Small"
-                                             Variant="Variant.Filled"
-                                             Color="@GetStatusColor(server.Status)"
-                                             Icon="@GetStatusIcon(server.Status)">
-                                        @(server.Status?.ToString() ?? "Unknown")
-                                    </MudChip>
-                                </MudStack>
+                                    <div class="server-card-status">
+                                        <MudChip T="string"
+                                                 Size="Size.Small"
+                                                 Variant="Variant.Filled"
+                                                 Color="@GetStatusColor(server.Status)"
+                                                 Icon="@GetStatusIcon(server.Status)"
+                                                 Style="margin:0;">
+                                            @(server.Status?.ToString() ?? "Unknown")
+                                        </MudChip>
+                                    </div>
+                                </div>
 
                                 @if (!string.IsNullOrWhiteSpace(server.Description))
                                 {
                                     <MudText Typo="Typo.body2" Class="mud-text-secondary mt-1">
-                                        @ParseDescription(server.Description)
+                                        @ParseMarkup(server.Description)
                                     </MudText>
                                 }
 

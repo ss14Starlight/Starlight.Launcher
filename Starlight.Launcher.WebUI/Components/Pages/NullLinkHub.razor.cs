@@ -89,7 +89,7 @@ public sealed partial class NullLinkHub : LocalizedComponentBase, IAsyncDisposab
         var parameters = new DialogParameters<ConnectingDialog>
         {
             { x => x.Address, server.ConnectionString },
-            { x => x.Title, server.Title },
+            { x => x.Title, StripMarkup(server.Title) },
         };
 
         var options = new DialogOptions
@@ -114,7 +114,7 @@ public sealed partial class NullLinkHub : LocalizedComponentBase, IAsyncDisposab
 
         if (alreadyExist is null or default(FavoriteServer?))
         {
-            favorites.Add(new FavoriteServer(server.Title, server.ConnectionString, ""));
+            favorites.Add(new FavoriteServer(StripMarkup(server.Title),server.ConnectionString, ""));
             await _bridge.WriteFavoritesAsync(favorites);
         }
         else if (alreadyExist != null)
@@ -205,23 +205,25 @@ public sealed partial class NullLinkHub : LocalizedComponentBase, IAsyncDisposab
         _bridge.FavoritesChanged -= OnFavoritesChanged;
     }
 
-    private static MarkupString ParseDescription(string? text)
+    private static readonly Regex _colorTagRegex = new(
+        @"\[color=([a-zA-Z0-9#(),.%\s]{1,32})\](.*?)\[/color\]",
+        RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled);
+
+    private static MarkupString ParseMarkup(string? text)
     {
         if (string.IsNullOrWhiteSpace(text))
             return new MarkupString("");
 
         var html = WebUtility.HtmlEncode(text);
 
-        html = Regex.Replace(
-            html,
-            @"\[color=([a-zA-Z0-9#(),.%\s]{1,32})\](.*?)\[/color\]",
-            "<span style=\"color:$1\">$2</span>",
-            RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        html = _colorTagRegex.Replace(html, "<span style=\"color:$1\">$2</span>");
 
         html = html.Replace("\n", "<br>");
 
         return new MarkupString(html);
     }
+
+    private static string StripMarkup(string text) => _colorTagRegex.Replace(text, "$2");
 }
 
 public sealed record ServerListItem
