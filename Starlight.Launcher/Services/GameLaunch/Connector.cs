@@ -113,6 +113,11 @@ public partial class Connector : ObservableObject
             Log.Information(e, "Cancelled connect");
             Status = ConnectionStatus.Cancelled;
         }
+        catch (Exception e)
+        {
+            Status = GetFailureStatus(e, ConnectionStatus.ConnectionFailed);
+            Log.Error(e, "Unexpected error while connecting: {status}", Status);
+        }
         finally
         {
             Cleanup();
@@ -143,6 +148,11 @@ public partial class Connector : ObservableObject
         {
             Log.Information(e, "Cancelled launch");
             Status = ConnectionStatus.Cancelled;
+        }
+        catch (Exception e)
+        {
+            Status = GetFailureStatus(e, ConnectionStatus.UpdateError);
+            Log.Error(e, "Unexpected error while launching content bundle: {status}", Status);
         }
         finally
         {
@@ -505,8 +515,9 @@ public partial class Connector : ObservableObject
             // Launch client.
             return await LaunchClient(launchInfo, args, cVars);
         }
-        catch (Exception e)
+        catch (Exception e) when (!DataDirectoryAccess.IsAccessDenied(e))
         {
+            // Access errors (e.g. an unwritable client logs folder) propagate so the user sees why the launch failed.
             Log.Error(e, "Exception while starting client");
             return null;
         }
@@ -539,8 +550,16 @@ public partial class Connector : ObservableObject
     private async Task<ContentLaunchInfo> RunUpdateAsync(ServerBuildInformation info, CancellationToken cancel)
     {
         var installation = await _updater.RunUpdateForLaunchAsync(info, cancel);
-        return installation ?? throw new ConnectException(ConnectionStatus.UpdateError);
+        return installation ?? throw UpdateFailed();
     }
+
+    private ConnectException UpdateFailed() =>
+        DataDirectoryAccess.IsAccessDenied(_updater.UpdateException)
+            ? new ConnectException(ConnectionStatus.AccessDenied, _updater.UpdateException!)
+            : new ConnectException(ConnectionStatus.UpdateError);
+
+    private static ConnectionStatus GetFailureStatus(Exception e, ConnectionStatus fallback) =>
+        DataDirectoryAccess.IsAccessDenied(e) ? ConnectionStatus.AccessDenied : fallback;
 
     private async Task<ContentLaunchInfo> InstallContentBundleAsync(
         ZipArchive archive,
@@ -549,7 +568,7 @@ public partial class Connector : ObservableObject
         CancellationToken cancel)
     {
         var installation = await _updater.InstallContentBundleForLaunchAsync(archive, zipHash, metadata, cancel);
-        return installation ?? throw new ConnectException(ConnectionStatus.UpdateError);
+        return installation ?? throw UpdateFailed();
     }
 
     private async Task<(ServerInfo, Uri, Uri)> GetServerInfoAsync(string address, CancellationToken cancel)

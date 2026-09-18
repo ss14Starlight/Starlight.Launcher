@@ -34,4 +34,9 @@ public partial interface IBridge
     void WriteLogins(Dictionary<Guid, LoginInfo> logins);
 
     Task CacheFilters(ServerListFilters filters);
+
+    /// <summary>
+    /// Whether the launcher can create and write files in the folder (without admin rights).
+    /// </summary>
+    Task<bool> IsDirectoryWritableAsync(string path);
 }

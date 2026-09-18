@@ -99,6 +99,9 @@ public sealed class ContentManager
 
     public SqliteConnection GetSqliteConnection()
     {
+        // SQLite won't create missing folders, and a failure here gives a clearer access error than SQLITE_CANTOPEN.
+        _ = Directory.CreateDirectory(_settings.GetSettings().DirLauncherData);
+
         var con = new SqliteConnection(GetContentDbConnectionString());
         con.Open();
         return con;

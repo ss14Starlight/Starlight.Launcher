@@ -80,3 +80,6 @@ settings-menu-development-max-versions-option-description = Укажите ма�
 
 settings-menu-development-max-fork-versions-option = Максимальное количество версий форков
 settings-menu-development-max-fork-versions-option-description = Укажите максимальное количество версий форка, которые необходимо сохранить в истории версий. Старые версии форка будут удаляться при превышении этого лимита.
+
+settings-menu-data-folder-no-access-title = Нет доступа к папке
+settings-menu-data-folder-no-access-text = Лаунчер не может записывать в "{ $path }". Скорее всего, эта папка требует прав администратора, поэтому загрузка и обновление файлов игры не будут работать. Выберите другую папку.

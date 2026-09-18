@@ -109,6 +109,28 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
                 };
             });
 
+    private async Task CheckDataFolderAccess()
+    {
+        var path = (await _bridge.GetSettingsAsync()).DirLauncherData;
+        if (await _bridge.IsDirectoryWritableAsync(path))
+            return;
+
+        _ = _snackbar.Add(
+            L.GetString("main-layout-data-folder-no-access", ("path", path)),
+            Severity.Error,
+            config =>
+            {
+                config.RequireInteraction = true;
+                config.Action = L["main-layout-data-folder-no-access-action"];
+                config.ActionColor = MudBlazor.Color.Primary;
+                config.OnClick = __ =>
+                {
+                    _navigation.NavigateTo("/settings");
+                    return Task.CompletedTask;
+                };
+            });
+    }
+
     private async Task ShowChangelogIfNeeded()
     {
         if (!_bridge.ShouldShowChangelog())
@@ -299,6 +321,7 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
             await _browserViewportService.SubscribeAsync(this, fireImmediately: true);
             await _jS.InvokeVoidAsync("eval", "document.getElementById('app')?.classList.add('loaded')");
 
+            await CheckDataFolderAccess();
             await ShowChangelogIfNeeded();
             await CheckUpdate();
         }

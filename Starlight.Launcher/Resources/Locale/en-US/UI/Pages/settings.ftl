@@ -26,6 +26,8 @@ settings-menu-multiple-clients-option-description = Prevents launch of multiple 
 
 settings-menu-data-folder-option = Data Folder
 settings-menu-data-folder-option-description = Select folder which will be used to store data.
+settings-menu-data-folder-no-access-title = No access to the folder
+settings-menu-data-folder-no-access-text = The launcher can't write to "{ $path }". This folder probably requires administrator rights, so downloading and updating game files will fail. Choose another folder.
 
 settings-menu-logs-folder-option = Logs Folder
 settings-menu-logs-folder-option-description = Select folder which will be used to store logs.

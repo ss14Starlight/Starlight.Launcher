@@ -12,5 +12,9 @@ public enum ConnectionStatus
     ClientRunning,
     ClientExited,
     Cancelled,
-    NotAContentBundle
+    NotAContentBundle,
+    /// <summary>
+    /// The launcher couldn't write to the data folder (e.g. it requires admin rights).
+    /// </summary>
+    AccessDenied
 }

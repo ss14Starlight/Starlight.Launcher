@@ -1,4 +1,5 @@
 using Robust.Launcher.Api.Models.Data;
+using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Models.Data;
 using Starlight.Launcher.WebUI.Models.ServerStatus;
@@ -43,5 +44,7 @@ public sealed partial class Bridge : IBridge
     public void WriteLogins(Dictionary<Guid, LoginInfo> logins) => _settings.WriteLogins(logins);
 
     public async Task CacheFilters(ServerListFilters filters) => await _settings.CacheFilters(filters);
+
+    public Task<bool> IsDirectoryWritableAsync(string path) => Task.Run(() => DataDirectoryAccess.CanWrite(path));
 
 }

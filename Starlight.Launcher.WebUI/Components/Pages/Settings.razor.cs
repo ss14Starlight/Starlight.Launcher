@@ -140,6 +140,19 @@ public partial class Settings : LocalizedComponentBase, IDisposable
         return UpdateSetting(s => update(s, value));
     }
 
+    private async Task OnDataFolderChanged(string path)
+    {
+        await UpdateSetting(s => s with { DirLauncherData = path });
+
+        if (await _bridge.IsDirectoryWritableAsync(path))
+            return;
+
+        _ = await _dialog.ShowMessageBoxAsync(
+            L["settings-menu-data-folder-no-access-title"],
+            L.GetString("settings-menu-data-folder-no-access-text", ("path", path)),
+            yesText: L["general-close"]);
+    }
+
     private Task OnSettingChanged<T>(T value, Action<T>? setLocal, Func<AppSettings, T, AppSettings> update, bool callWindowUpdate = false)
     {
         setLocal?.Invoke(value);

@@ -49,6 +49,10 @@
                     <MudAlert Severity="Severity.Error">@_statusText</MudAlert>
                     break;
 
+                case ConnectionStatus.AccessDenied:
+                    <MudAlert Severity="Severity.Error" Icon="@Icons.Material.Filled.FolderOff">@_statusText</MudAlert>
+                    break;
+
                 case ConnectionStatus.ClientExited when _bridge.IsClientExitedBadly():
                     <MudAlert Severity="Severity.Error">The game closed unexpectedly.</MudAlert>
                     break;

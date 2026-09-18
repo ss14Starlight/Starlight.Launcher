@@ -72,6 +72,7 @@ public sealed partial class ConnectingDialog : LocalizedComponentBase, IDisposab
     private bool _isTerminal => _bridge.GetConnectionStatus() is
         ConnectionStatus.ConnectionFailed
         or ConnectionStatus.UpdateError
+        or ConnectionStatus.AccessDenied
         or ConnectionStatus.NotAContentBundle
         or ConnectionStatus.Cancelled
         or ConnectionStatus.ClientExited;
@@ -94,6 +95,7 @@ public sealed partial class ConnectingDialog : LocalizedComponentBase, IDisposab
         ConnectionStatus.ClientRunning => "Game is running.",
         ConnectionStatus.ConnectionFailed => "Could not reach the server.",
         ConnectionStatus.UpdateError => "Update failed. See the logs for details.",
+        ConnectionStatus.AccessDenied => L.GetString("connecting-dialog-access-denied", ("path", _bridge.GetSettings().DirLauncherData)),
         ConnectionStatus.NotAContentBundle => "This file isn't a valid content bundle.",
         ConnectionStatus.Cancelled => "Cancelled.",
         _ => "Starting..."

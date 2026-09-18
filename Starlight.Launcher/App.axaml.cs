@@ -55,7 +55,16 @@ public partial class App : Application
 
             Services.GetRequiredService<HubServerFetcher>().RequestInitialUpdate();
             _ = Task.Run(async () => await Services.GetRequiredService<LoginManager>().InitializeAsync());
-            Services.GetRequiredService<ContentManager>().Initialize();
+            try
+            {
+                Services.GetRequiredService<ContentManager>().Initialize();
+            }
+            catch (Exception e) when (DataDirectoryAccess.IsAccessDenied(e))
+            {
+                // The UI warns about the unwritable data folder; updates will report the access error themselves.
+                Log.Error(e, "Can't initialize content DB: no access to the data folder");
+            }
+
             Services.GetRequiredService<TrayCoordinator>().Initialize();
 
             var commands = Services.GetRequiredService<LauncherCommands>();
@@ -63,7 +72,12 @@ public partial class App : Application
             commands.RunCommandTask();
             messaging.StartServerTask(commands);
 
-            var window = new MainWindow(_blazorHost.Url, settings.GetSettings().DirLauncherData) { Title = "Starlight.Launcher" };
+            // WebView2 can't start in a folder it can't write to, which would leave the window blank
+            // and hide the warning about it. An empty path falls back to the default WebView data folder.
+            var dataDir = settings.GetSettings().DirLauncherData;
+            var webViewDataDir = DataDirectoryAccess.CanWrite(dataDir) ? dataDir : "";
+
+            var window = new MainWindow(_blazorHost.Url, webViewDataDir) { Title = "Starlight.Launcher" };
 
             var flushing = false;
 
