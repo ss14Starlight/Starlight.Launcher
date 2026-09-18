@@ -1,3 +1,5 @@
+using System.Reflection;
+using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Logging;
 using Serilog;
@@ -10,6 +12,7 @@ internal static class Program
     [STAThread]
     public static int Main(string[] args)
     {
+        PinBundledLibsodium();
 
         try
         {
@@ -33,6 +36,10 @@ internal static class Program
             }
             else if (OperatingSystem.IsLinux())
             {
+                // Backend selection and the rest of the Linux WebView wiring live in
+                // Services/WebUI/LinuxWebViewSetup.cs; only the env vars that have to be set before
+                // any WebKit code runs belong here.
+                //
                 // WebKitGTK's hardware-accelerated compositing (and its DMA-BUF renderer path in
                 // particular) is unreliable outside of mainstream GNOME/KDE sessions - it's a known
                 // source of blank/transparent windows and outright segfaults on Wayland compositors
@@ -93,6 +100,49 @@ internal static class Program
 
             throw;
         }
+    }
+
+    // NSec checks the exact libsodium version, so a foreign libsodium found via PATH
+    // (e.g. one shipped with PHP) breaks it. Force our bundled copy for every assembly that P/Invokes it.
+    private static void PinBundledLibsodium()
+    {
+        var fileName = OperatingSystem.IsWindows() ? "libsodium.dll"
+            : OperatingSystem.IsMacOS() ? "libsodium.dylib"
+            : "libsodium.so";
+
+        var baseDir = AppContext.BaseDirectory;
+        var candidates = new[]
+        {
+            Path.Combine(baseDir, fileName),
+            Path.Combine(baseDir, "runtimes", RuntimeInformation.RuntimeIdentifier, "native", fileName),
+            Path.Combine(baseDir, "runtimes", GetPortableRid(), "native", fileName),
+        };
+
+        var path = candidates.FirstOrDefault(File.Exists);
+        if (path == null || !NativeLibrary.TryLoad(path, out var handle))
+            return;
+
+        DllImportResolver resolver = (name, _, _) =>
+            name is "libsodium" or "libsodium.dll" or "libsodium.so" or "libsodium.dylib" ? handle : IntPtr.Zero;
+
+        foreach (var asmName in new[] { "NSec.Cryptography", "SpaceWizards.Sodium.Interop" })
+        {
+            try
+            {
+                NativeLibrary.SetDllImportResolver(Assembly.Load(asmName), resolver);
+            }
+            catch (Exception e) when (e is FileNotFoundException or InvalidOperationException)
+            {
+                // Assembly absent or resolver already set.
+            }
+        }
+    }
+
+    private static string GetPortableRid()
+    {
+        var os = OperatingSystem.IsWindows() ? "win" : OperatingSystem.IsMacOS() ? "osx" : "linux";
+        var arch = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
+        return $"{os}-{arch}";
     }
 
     public static AppBuilder BuildAvaloniaApp() =>

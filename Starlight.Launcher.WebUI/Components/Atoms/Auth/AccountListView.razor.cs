@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using Robust.Launcher.Api.Api;
 using Robust.Launcher.Api.Models;
+using Serilog;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Models.Auth;
@@ -20,20 +20,20 @@ public partial class AccountListView : LocalizedComponentBase
 
     private bool Busy;
 
-    private static string StatusCssVar(AccountLoginStatus s) => s switch
+    private static string StatusCssVar(LoggedInAccount account) => account.Status switch
     {
         AccountLoginStatus.Available => "success",
         AccountLoginStatus.Expired => "warning",
-        AccountLoginStatus.Unsure => "info",
-        _ => "surface"
+        AccountLoginStatus.Unreachable => "error",
+        _ => "info"
     };
 
-    private string StatusLabel(AccountLoginStatus s) => s switch
+    private string StatusLabel(LoggedInAccount account) => account.Status switch
     {
         AccountLoginStatus.Available => L["auth-menu-online-status"],
         AccountLoginStatus.Expired => L["auth-menu-expired-status"],
-        AccountLoginStatus.Unsure => L["auth-menu-unsure-status"],
-        _ => s.ToString()
+        AccountLoginStatus.Unreachable => L["auth-menu-unreachable-status"],
+        _ => L["auth-menu-unsure-status"]
     };
 
     private void RemoveAccount(LoggedInAccount account)
@@ -48,20 +48,29 @@ public partial class AccountListView : LocalizedComponentBase
         await InvokeAsync(StateHasChanged);
         try
         {
+            AccountLoginStatus status;
             try
             {
-                await _bridge.UpdateSingleAccountStatus(account);
+                status = await _bridge.UpdateSingleAccountStatus(account);
             }
-            catch (AuthApiException ex)
+            catch (Exception ex)
             {
-                _ = _snackbar.Add(L.GetString("auth-menu-token-verify-warning", ("ex", ex.Message)), Severity.Warning);
+                // Selecting an account must never dead-end. Fall back to what we already knew.
+                Log.Warning(ex, "Could not verify account {UserId} on selection", account.UserId);
+                status = account.Status;
             }
 
-            if (account.Status == AccountLoginStatus.Expired)
+            if (status == AccountLoginStatus.Expired)
             {
                 _ = _snackbar.Add(L["auth-menu-session-expired-warning"], Severity.Warning);
                 OnAccountRelogin?.Invoke(account);
                 return;
+            }
+
+            if (status == AccountLoginStatus.Unreachable)
+            {
+                // Select it anyway; it will be re-checked in the background.
+                _ = _snackbar.Add(L["auth-menu-token-verify-offline"], Severity.Info);
             }
 
             _bridge.SetActiveAccountId(account.UserId);

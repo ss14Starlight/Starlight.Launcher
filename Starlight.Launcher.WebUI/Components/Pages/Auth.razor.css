@@ -6,7 +6,7 @@ html, body {
 .auth-bg {
     position: relative;
     z-index: 1;
-    overflow-y: hidden;
+    overflow: hidden;
     height: 100%;
     display: flex;
     align-items: center;

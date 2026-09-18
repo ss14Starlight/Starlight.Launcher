@@ -1,7 +1,8 @@
-using System.Collections.ObjectModel;
+using Robust.Launcher.Api.Models;
 using Robust.Launcher.Api.Models.Data;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Models.Auth;
+using System.Collections.ObjectModel;
 
 namespace Starlight.Launcher.Services.Bridge;
 
@@ -21,7 +22,13 @@ public sealed partial class Bridge : IBridge
 
     public ReadOnlyObservableCollection<LoggedInAccount> GetLoginEntries() => _loginManager.Logins;
 
-    public async Task UpdateSingleAccountStatus(LoggedInAccount account) => await _loginManager.UpdateSingleAccountStatus(account);
+    public Task<AccountLoginStatus> UpdateSingleAccountStatus(LoggedInAccount account, CancellationToken cancel = default)
+        => _loginManager.UpdateSingleAccountStatus(account, cancel);
+
+    public Task<AccountLoginStatus> EnsureAccountFreshAsync(LoggedInAccount? account, CancellationToken cancel = default)
+        => _loginManager.EnsureFreshAsync(account, cancel);
+
+    public Task LoginsFirstCheckCompleted => _loginManager.FirstCheckCompleted;
 
     public void RemoveLogin(Guid userId) => _loginManager.RemoveLogin(userId);
 

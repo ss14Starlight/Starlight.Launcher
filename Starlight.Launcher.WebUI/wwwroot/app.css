@@ -4,6 +4,9 @@ body {
     width: 100%;
     height: 100%;
     overflow: hidden;
+    /* WebKitGTK composites the page onto an RGBA surface, so an unpainted root leaves the whole
+       window see-through. WebView2 defaults to opaque, which is why this only showed on Linux. */
+    background-color: oklch(var(--c-bg));
 }
 
 #high {

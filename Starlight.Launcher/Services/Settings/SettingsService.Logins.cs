@@ -16,20 +16,31 @@ public sealed partial class SettingsService
 
     public async Task InitializeLoginsAsync()
     {
-        var loaded = await LoadLoginsAsync();
-        await _loginsLock.WaitAsync();
         try
         {
-            foreach (var (id, info) in loaded)
-                if (!_logins.ContainsKey(id))
-                    _logins[id] = info;
-        }
-        finally { _ = _loginsLock.Release(); }
-        _loginsLoaded = true;
-        _ = _loginsLoadedTcs.TrySetResult();
+            var loaded = await LoadLoginsAsync();
+            await _loginsLock.WaitAsync();
+            try
+            {
+                foreach (var (id, info) in loaded)
+                    if (!_logins.ContainsKey(id))
+                        _logins[id] = info;
+            }
+            finally { _ = _loginsLock.Release(); }
 
-        ScheduleSaveInternal(ref _loginsSaveCts, SaveLoginsEncryptedAsync, "logins");
-        LoginsChanged?.Invoke();
+            _loginsLoaded = true;
+
+            ScheduleSaveInternal(ref _loginsSaveCts, SaveLoginsEncryptedAsync, "logins");
+            LoginsChanged?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to initialize logins");
+        }
+        finally
+        {
+            _ = _loginsLoadedTcs.TrySetResult();
+        }
     }
 
     public Dictionary<Guid, LoginInfo> GetLogins()
@@ -67,6 +78,56 @@ public sealed partial class SettingsService
         LoginsChanged?.Invoke();
 
         ScheduleSaveInternal(ref _loginsSaveCts, SaveLoginsEncryptedAsync, "logins");
+    }
+
+    /// <summary>
+    ///     Applies a change to a login while holding the lock the save path uses.
+    /// </summary>
+    public void UpdateLoginAtomic(LoginInfo login, Action<LoginInfo> mutate)
+    {
+        _loginsLock.Wait();
+        try
+        {
+            mutate(login);
+            _logins[login.UserId] = login;
+        }
+        finally
+        {
+            _ = _loginsLock.Release();
+        }
+
+        LoginsChanged?.Invoke();
+
+        ScheduleSaveInternal(ref _loginsSaveCts, SaveLoginsEncryptedAsync, "logins");
+    }
+
+    /// <inheritdoc cref="UpdateLoginAtomic"/>
+    public async Task UpdateLoginAtomicAsync(LoginInfo login, Action<LoginInfo> mutate)
+    {
+        await _loginsLock.WaitAsync();
+        try
+        {
+            mutate(login);
+            _logins[login.UserId] = login;
+        }
+        finally
+        {
+            _ = _loginsLock.Release();
+        }
+
+        LoginsChanged?.Invoke();
+    }
+
+    /// <summary>
+    ///     Writes the logins to disk right now instead of waiting out the debounce timer.
+    /// </summary>
+    public async Task SaveLoginsNowAsync()
+    {
+        var pending = Interlocked.Exchange(ref _loginsSaveCts, null);
+        pending?.Cancel();
+        pending?.Dispose();
+
+        await SaveLoginsEncryptedAsync();
     }
 
     public void WriteLogins(Dictionary<Guid, LoginInfo> logins)

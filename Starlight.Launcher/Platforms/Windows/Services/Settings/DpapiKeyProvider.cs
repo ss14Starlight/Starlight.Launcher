@@ -41,15 +41,28 @@ public sealed class DpapiKeyProvider : ILoginKeyProvider
 
         if (readPath is not null)
         {
+            byte[] blob;
             try
             {
-                var blob = await File.ReadAllBytesAsync(readPath);
+                blob = await LoginKeyIo.ReadBytesWithRetryAsync(readPath);
+            }
+            catch (Exception ex)
+            {
+                // Antivirus, a locked file, a roaming profile still syncing... Regenerating here
+                // would throw away every saved login, so refuse and let the next start try again.
+                _logger.LogError(ex, "Could not read the login key at {path}; leaving it alone", readPath);
+                throw;
+            }
+
+            try
+            {
                 var key = ProtectedData.Unprotect(blob, _entropy, DataProtectionScope.CurrentUser);
                 _logger.LogInformation("Loaded login key from {path} fp={fp}", readPath, Fp(key));
                 return key;
             }
-            catch (Exception ex) when (ex is CryptographicException or IOException or UnauthorizedAccessException)
+            catch (CryptographicException ex)
             {
+                // DPAPI cannot undo this blob for this user; nothing here is recoverable.
                 _logger.LogError(ex, "Login key at {path} is unusable; regenerating (re-auth required).", readPath);
                 TryDelete(keyPath);
                 TryDelete(_legacyKeyPath);

@@ -5,7 +5,6 @@ using Avalonia.Threading;
 using Microsoft.Extensions.Logging;
 using Robust.Launcher.Api.Models;
 using Starlight.Launcher.Services.Auth;
-using Starlight.Launcher.WebUI.Models.Auth;
 
 namespace Starlight.Launcher.Services;
 
@@ -18,6 +17,11 @@ public partial class LauncherCommands(ILogger<LauncherCommands> logger, LoginMan
     private readonly SteamAuthService _steamAuth = steamAuth;
     public readonly Channel<LauncherActivationMessage> CommandChannel = Channel.CreateUnbounded<LauncherActivationMessage>();
 
+    private static readonly TimeSpan _accountWaitTimeout = TimeSpan.FromSeconds(20);
+
+    /// <summary>
+    ///   Raised when the launcher receives a connect command from another instance or a deep link.
+    /// </summary>
     public event Func<string, Task>? ConnectRequested;
 
     private void ActivateWindow()
@@ -37,20 +41,29 @@ public partial class LauncherCommands(ILogger<LauncherCommands> logger, LoginMan
 
     private async Task Connect(string address, string? reason)
     {
-        LoggedInAccount? activeAccount;
-        while (true)
+        // Wait for the startup token check rather than spinning on Unsure forever:
+        // if the auth server is down that loop never ended and the connect command was lost.
+        try
         {
-            activeAccount = _loginManager.ActiveAccount;
-
-            if (activeAccount == null || activeAccount.Status == AccountLoginStatus.Unsure)
-                await Task.Delay(1000);
-            else
-                break;
+            await _loginManager.FirstCheckCompleted.WaitAsync(_accountWaitTimeout);
+        }
+        catch (TimeoutException)
+        {
+            _logger.LogWarning("Account check did not finish in time; connecting with what we have");
         }
 
-        if (activeAccount!.Status != AccountLoginStatus.Available)
+        var activeAccount = _loginManager.ActiveAccount;
+
+        if (activeAccount == null)
         {
-            _logger.LogWarning("Dropping connect command: Account not available");
+            _logger.LogWarning("Dropping connect command: no account selected");
+            return;
+        }
+
+        // Unreachable means we could not verify the token, not that it is bad. Let them try.
+        if (activeAccount.Status == AccountLoginStatus.Expired)
+        {
+            _logger.LogWarning("Dropping connect command: session for {Account} expired", activeAccount.Username);
             return;
         }
 

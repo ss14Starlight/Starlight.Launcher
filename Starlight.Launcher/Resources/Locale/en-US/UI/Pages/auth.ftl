@@ -1,6 +1,7 @@
 # Errors/Warnings
 
 auth-menu-token-verify-warning = The token could not be verified: { $ex }
+auth-menu-token-verify-offline = Could not reach the auth server. Using the saved session.
 auth-menu-session-expired-warning = Your session has expired. Please log in again.
 auth-menu-discord-login-error = Discord login canceled or expired.
 auth-menu-discord-connect-fail = Failed to connect Discord.
@@ -33,6 +34,7 @@ auth-menu-register-required-confirmation = Registration was successful! An email
 auth-menu-online-status = Online
 auth-menu-expired-status = The session has expired
 auth-menu-unsure-status = Checking...
+auth-menu-unreachable-status = Could not reach the auth server
 
 # Account List
 

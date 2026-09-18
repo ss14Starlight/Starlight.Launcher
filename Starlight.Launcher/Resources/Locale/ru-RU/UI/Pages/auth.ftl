@@ -1,6 +1,7 @@
 # Errors/Warnings
 
 auth-menu-token-verify-warning = Не удалось проверить токен: { $ex }
+auth-menu-token-verify-offline = Сервер авторизации недоступен. Используем сохранённую сессию.
 auth-menu-session-expired-warning = Срок действия вашей сессии истек. Пожалуйста, войдите заново.
 auth-menu-discord-login-error = Вход в Discord отменен или срок его действия истек.
 auth-menu-discord-connect-fail = Не удалось подключиться к Discord.
@@ -32,6 +33,7 @@ auth-menu-register-required-confirmation = Регистрация прошла �
 auth-menu-online-status = Онлайн
 auth-menu-expired-status = Сеанс истек
 auth-menu-unsure-status = Проверка...
+auth-menu-unreachable-status = Сервер авторизации недоступен
 
 # Account List
 

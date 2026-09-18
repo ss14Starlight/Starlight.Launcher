@@ -6,7 +6,9 @@
     --c-warning: var(--c-warning-l) var(--c-warning-c) var(--c-warning-h);
     --c-error: var(--c-error-l) var(--c-error-c) var(--c-error-h);
     --c-info: var(--c-info-l) var(--c-info-c) var(--c-info-h);
-    --c-bg: var(--c-bg-l) var(--c-bg-c) var(--c-bg-h);
+    /* Fallbacks keep the page background opaque even if no [data-theme] block matched - on
+       WebKitGTK an unresolved background makes the whole window see-through. */
+    --c-bg: var(--c-bg-l, 0.16) var(--c-bg-c, 0.01) var(--c-bg-h, 240);
     --c-surface: var(--c-surface-l) var(--c-surface-c) var(--c-surface-h);
     --c-text: var(--c-text-l) var(--c-text-c) var(--c-text-h);
     --bottom-nav-height: 64px;

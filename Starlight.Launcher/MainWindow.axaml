@@ -1,8 +1,63 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="Starlight.Launcher.MainWindow"
-        Width="1280" Height="800">
+        Width="1280" Height="800"
+        Background="{DynamicResource SlShellBackground}">
 
-    <NativeWebView x:Name="Web" />
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <!-- Mirrors the c-bg colour of the web UI themes, so the shell behind the WebView
+                     matches the page instead of showing through to the desktop. -->
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="SlShellBackground" Color="#F7FBF9" />
+                    <SolidColorBrush x:Key="SlShellForeground" Color="#1B1F1D" />
+                    <SolidColorBrush x:Key="SlShellMuted" Color="#5A625E" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="SlShellBackground" Color="#090E11" />
+                    <SolidColorBrush x:Key="SlShellForeground" Color="#E7ECEA" />
+                    <SolidColorBrush x:Key="SlShellMuted" Color="#939E9A" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Panel Background="{DynamicResource SlShellBackground}">
+
+        <NativeWebView x:Name="Web" Background="{DynamicResource SlShellBackground}" />
+
+        <!-- Shown when no WebView adapter ever comes up, so a missing/broken engine reads as an
+             error message rather than an empty window. -->
+        <Border x:Name="WebViewFallback"
+                IsVisible="False"
+                Background="{DynamicResource SlShellBackground}"
+                Padding="48">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="620" Spacing="16">
+                <TextBlock Text="Starlight"
+                           FontSize="28"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Center"
+                           Foreground="{DynamicResource SlShellForeground}" />
+                <TextBlock x:Name="WebViewFallbackTitle"
+                           Text="The launcher interface could not be displayed."
+                           FontSize="16"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center"
+                           Foreground="{DynamicResource SlShellForeground}" />
+                <TextBlock x:Name="WebViewFallbackHint"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center"
+                           Foreground="{DynamicResource SlShellMuted}" />
+                <SelectableTextBlock x:Name="WebViewFallbackDetails"
+                                     FontFamily="Cascadia Mono, Consolas, DejaVu Sans Mono, monospace"
+                                     FontSize="12"
+                                     TextWrapping="Wrap"
+                                     TextAlignment="Center"
+                                     Foreground="{DynamicResource SlShellMuted}" />
+            </StackPanel>
+        </Border>
+
+    </Panel>
 
 </Window>

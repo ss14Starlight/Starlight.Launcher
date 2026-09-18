@@ -8,6 +8,7 @@ using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Components.Pages;
 using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Models.DiscordAuthService;
+using Starlight.Launcher.WebUI.Models.StarlightAuthService;
 
 namespace Starlight.Launcher.WebUI.Components.Atoms.Auth;
 
@@ -163,7 +164,7 @@ public partial class SignInView : LocalizedComponentBase
         {
             Error = L["auth-menu-steam-login-error"];
         }
-        catch (DiscordAuthException ex)
+        catch (SteamAuthException ex)
         {
             Error = ex.Message;
         }

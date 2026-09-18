@@ -1,6 +1,7 @@
 # Errors/Warnings
 
 auth-menu-token-verify-warning = Impossibile verificare il token: { $ex }
+auth-menu-token-verify-offline = Server di autenticazione irraggiungibile. Uso la sessione salvata.
 auth-menu-session-expired-warning = Sessione scaduta. Accedi di nuovo.
 auth-menu-discord-login-error = Login con discord scaduto o annullato.
 auth-menu-discord-connect-fail = Impossibile connettersi a discord.
@@ -32,6 +33,7 @@ auth-menu-register-required-confirmation = Registrazione avvenuta con successo! 
 auth-menu-online-status = Online
 auth-menu-expired-status = Sessione scaduta
 auth-menu-unsure-status = Verificando...
+auth-menu-unreachable-status = Server di autenticazione irraggiungibile
 
 # Account List
 

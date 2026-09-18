@@ -1,5 +1,5 @@
-using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
+using System.Security.Cryptography;
 
 namespace Starlight.Launcher.Services.Settings;
 
@@ -15,16 +15,29 @@ public sealed class FileKeyProvider : ILoginKeyProvider
 
         if (File.Exists(keyPath))
         {
+            string text;
             try
             {
-                var text = await File.ReadAllTextAsync(keyPath);
+                text = await LoginKeyIo.ReadTextWithRetryAsync(keyPath);
+            }
+            catch (Exception ex)
+            {
+                // Antivirus, a locked file, a slow network drive... Regenerating here would throw
+                // away every saved login, so refuse instead and let the next start try again.
+                _logger.LogError(ex, "Could not read the login key at {path}; leaving it alone", keyPath);
+                throw;
+            }
+
+            try
+            {
                 var key = Convert.FromBase64String(text);
                 _logger.LogInformation("Loaded login key from {path} fp={fp}", keyPath, Fp(key));
                 return key;
             }
-            catch (Exception ex) when (ex is FormatException or IOException or UnauthorizedAccessException)
+            catch (FormatException ex)
             {
-                _logger.LogError(ex, "Login key at {path} is unusable; regenerating (re-auth required).", keyPath);
+                // The file really is garbage; there is nothing to preserve.
+                _logger.LogError(ex, "Login key at {path} is corrupt; regenerating (re-auth required).", keyPath);
                 TryDelete(keyPath);
             }
         }

@@ -1,6 +1,7 @@
-using System.Collections.ObjectModel;
+using Robust.Launcher.Api.Models;
 using Robust.Launcher.Api.Models.Data;
 using Starlight.Launcher.WebUI.Models.Auth;
+using System.Collections.ObjectModel;
 
 namespace Starlight.Launcher.WebUI.Bridge;
 
@@ -16,7 +17,11 @@ public partial interface IBridge
 
     ReadOnlyObservableCollection<LoggedInAccount> GetLoginEntries();
 
-    Task UpdateSingleAccountStatus(LoggedInAccount account);
+    Task<AccountLoginStatus> UpdateSingleAccountStatus(LoggedInAccount account, CancellationToken cancel = default);
+
+    Task<AccountLoginStatus> EnsureAccountFreshAsync(LoggedInAccount? account, CancellationToken cancel = default);
+
+    Task LoginsFirstCheckCompleted { get; }
 
     void RemoveLogin(Guid userId);
 

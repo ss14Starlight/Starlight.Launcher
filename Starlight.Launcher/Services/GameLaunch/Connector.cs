@@ -346,6 +346,11 @@ public partial class Connector : ObservableObject
         Status = ConnectionStatus.StartingClient;
         session?.SetState(PresenceState.LaunchingGame);
 
+        // An update can take a long time, and access tokens are short-lived. Renew now so the game
+        // starts with a token that will still be valid when it reaches the server.
+        if (info != null && info.AuthInformation.Mode != AuthMode.Disabled)
+            await EnsureAccountFreshForLaunchAsync(cancel);
+
         var clientProc = await ConnectLaunchClient(launchInfo, info, buildInfo, connectAddress, parsedAddr, contentBundle);
 
         if (clientProc != null)
@@ -381,6 +386,31 @@ public partial class Connector : ObservableObject
         }
 
         Status = ConnectionStatus.ClientExited;
+    }
+
+    /// <summary>
+    ///     Renews the selected account's tokens before they are handed to the client.
+    /// </summary>
+    private async Task EnsureAccountFreshForLaunchAsync(CancellationToken cancel)
+    {
+        if (_loginManager.ActiveAccount is not { } account)
+            return;
+
+        try
+        {
+            var status = await _loginManager.EnsureFreshAsync(account, cancel);
+
+            if (status == AccountLoginStatus.Expired)
+                Log.Warning("Launching for {Account} whose session the auth server rejected", account.Username);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception e)
+        {
+            Log.Warning(e, "Could not renew tokens before launch; using the stored ones");
+        }
     }
 
     private async Task<Process?> ConnectLaunchClient(ContentLaunchInfo launchInfo,

@@ -54,7 +54,7 @@ public partial class App : Application
             _ = Task.Run(async () => await settings.InitializeLoginsAsync());
 
             Services.GetRequiredService<HubServerFetcher>().RequestInitialUpdate();
-            _ = Task.Run(async () => Services.GetRequiredService<LoginManager>().InitializeAsync());
+            _ = Task.Run(async () => await Services.GetRequiredService<LoginManager>().InitializeAsync());
             Services.GetRequiredService<ContentManager>().Initialize();
             Services.GetRequiredService<TrayCoordinator>().Initialize();
 

@@ -75,10 +75,10 @@ else
 
                         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mt-1">
                             <span class="status-dot"
-                                  style="background:var(--mud-palette-@(StatusCssVar(acc.Status)));
-                                         box-shadow:0 0 8px 1px var(--mud-palette-@(StatusCssVar(acc.Status)))"></span>
+                                  style="background:var(--mud-palette-@(StatusCssVar(acc)));
+                                         box-shadow:0 0 8px 1px var(--mud-palette-@(StatusCssVar(acc)))"></span>
                             <MudText Typo="Typo.caption" Class="mud-text-secondary">
-                                @StatusLabel(acc.Status)
+                                @StatusLabel(acc)
                             </MudText>
                         </MudStack>
                     </MudStack>
@@ -96,7 +96,7 @@ else
                         <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary"
                                    Class="cta-btn-primary" Style="flex:0 0 auto"
                                    Disabled="@(isActive || Busy)"
-                                   OnClick="() => Task.Run(async () => SelectAccount(acc))">
+                                   OnClick="@(() => SelectAccount(acc))">
                             @L["auth-menu-select-button"]
                         </MudButton>
                     }
