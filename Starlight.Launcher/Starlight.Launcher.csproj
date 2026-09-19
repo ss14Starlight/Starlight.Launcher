@@ -70,8 +70,10 @@
 		<PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
 		<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
 
-		<!-- restored only for blazor.web.js, which the in-process Blazor host serves at _framework/ -->
-		<PackageReference Include="Microsoft.AspNetCore.App.Internal.Assets" Version="11.0.0-preview.6.26359.118" ExcludeAssets="all" PrivateAssets="all" GeneratePathProperty="true" />
+		<!-- restored only for blazor.web.js, which the in-process Blazor host serves at _framework/.
+		     Must match the ASP.NET runtime we ship: the JS half of components like Virtualize changes between
+		     previews, and a mismatch silently breaks them (e.g. the server list rendering no items). -->
+		<PackageReference Include="Microsoft.AspNetCore.App.Internal.Assets" Version="$(BundledNETCoreAppPackageVersion)" ExcludeAssets="all" PrivateAssets="all" GeneratePathProperty="true" />
 		<PackageReference Include="MudBlazor" Version="9.7.0" GeneratePathProperty="true" />
 		<PackageReference Include="MudBlazor.Markdown" Version="9.0.0" GeneratePathProperty="true" />
 
@@ -89,6 +91,8 @@
 	<Target Name="CopyWebUiStaticAssets" AfterTargets="Build;Publish">
 		<PropertyGroup>
 			<_BlazorFrameworkJs>$(PkgMicrosoft_AspNetCore_App_Internal_Assets)/staticwebassets/_framework/blazor.web.js</_BlazorFrameworkJs>
+			<!-- older packages (up to preview.4) keep it at the package root -->
+			<_BlazorFrameworkJs Condition="!Exists('$(_BlazorFrameworkJs)')">$(PkgMicrosoft_AspNetCore_App_Internal_Assets)/_framework/blazor.web.js</_BlazorFrameworkJs>
 			<_MudBlazorFrameworkCSS>$(PkgMudBlazor)/staticwebassets/MudBlazor.min.css</_MudBlazorFrameworkCSS>
 			<_MudBlazorFrameworkJs>$(PkgMudBlazor)/staticwebassets/MudBlazor.min.js</_MudBlazorFrameworkJs>
 		    <_MudBlazorMarkdownFrameworkJs>$(PkgMudBlazor_Markdown)/staticwebassets/MudBlazor.Markdown.min.js</_MudBlazorMarkdownFrameworkJs>

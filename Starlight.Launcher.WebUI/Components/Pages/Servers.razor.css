@@ -99,9 +99,8 @@
 }
 
 .server-page__list {
-    flex: 1;
+    flex: 0 1 auto;
     min-height: 0;
-    height: 0;
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior: contain;
