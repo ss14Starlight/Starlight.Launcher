@@ -1,5 +1,6 @@
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using Robust.Launcher.Api.Models;
 using Serilog;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Localization;
@@ -24,6 +25,19 @@ public partial class Auth : LocalizedComponentBase, IDisposable
     private string _signInUsername = "";
     private Guid? _relogUserId;
 
+    private Guid? _viewedUserId;
+
+    private LoggedInAccount? ViewedAccount
+    {
+        get
+        {
+            var logins = _bridge.GetLoginEntries();
+            return logins.FirstOrDefault(x => x.UserId == _viewedUserId)
+                ?? logins.FirstOrDefault(x => x.UserId == _bridge.GetActiveAccountId())
+                ?? logins.FirstOrDefault();
+        }
+    }
+
     protected override void OnInitialized()
     {
         _bridge.LoginEntriesChanged += OnLoginsChanged;
@@ -41,6 +55,53 @@ public partial class Auth : LocalizedComponentBase, IDisposable
     {
         base.Dispose();
         _bridge.LoginEntriesChanged -= OnLoginsChanged;
+    }
+
+    private void ViewAccount(LoggedInAccount account)
+    {
+        _viewedUserId = account.UserId;
+        StateHasChanged();
+    }
+
+    private async Task ActivateAccount(LoggedInAccount account)
+    {
+        _busy = true;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            AccountLoginStatus status;
+            try
+            {
+                status = await _bridge.UpdateSingleAccountStatus(account);
+            }
+            catch (Exception ex)
+            {
+                // Selecting an account must never dead-end. Fall back to what we already knew.
+                Log.Warning(ex, "Could not verify account {UserId} on selection", account.UserId);
+                status = account.Status;
+            }
+
+            if (status == AccountLoginStatus.Expired)
+            {
+                _ = _snackbar.Add(L["auth-menu-session-expired-warning"], Severity.Warning);
+                BeginRelogin(account);
+                return;
+            }
+
+            if (status == AccountLoginStatus.Unreachable)
+            {
+                // Select it anyway; it will be re-checked in the background.
+                _ = _snackbar.Add(L["auth-menu-token-verify-offline"], Severity.Info);
+            }
+
+            _bridge.SetActiveAccountId(account.UserId);
+            _viewedUserId = account.UserId;
+        }
+        finally
+        {
+            _busy = false;
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private void BeginRelogin(LoggedInAccount account)

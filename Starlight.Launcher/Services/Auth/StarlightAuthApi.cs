@@ -1,6 +1,7 @@
 using Serilog;
 using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI.Models.DiscordAuthService;
+using Starlight.Launcher.WebUI.Models.NullLink;
 using Starlight.Launcher.WebUI.Models.StarlightAuthService;
 using System.Net;
 using System.Net.Http.Headers;
@@ -139,6 +140,44 @@ public sealed class StarlightAuthApi(HttpClient http, SettingsService settings)
         {
             Log.Warning(e, "Could not reach {Path} to validate a token", path);
             return TokenCheckOutcome.Unavailable;
+        }
+    }
+
+    /// <summary>
+    ///     Asks the backend for the NullLink profile of the token's owner.
+    ///     Returns <see cref="TokenCheckOutcome.Invalid"/> when the token was rejected.
+    /// </summary>
+    public async Task<(TokenCheckOutcome Outcome, NullLinkProfile? Profile)> GetProfileAsync(string token, CancellationToken cancel = default)
+    {
+        try
+        {
+            using var timeout = Linked(cancel);
+
+            using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(ApiUrl, "api/profile"));
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            using var resp = await http.SendAsync(request, timeout.Token);
+
+            if (resp.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+                return (TokenCheckOutcome.Invalid, null);
+
+            if (!resp.IsSuccessStatusCode)
+            {
+                Log.Warning("Profile request failed with {Status}", resp.StatusCode);
+                return (TokenCheckOutcome.Unavailable, null);
+            }
+
+            var profile = await resp.Content.ReadFromJsonAsync<NullLinkProfile>(cancellationToken: timeout.Token);
+            return profile is null ? (TokenCheckOutcome.Unavailable, null) : (TokenCheckOutcome.Valid, profile);
+        }
+        catch (OperationCanceledException) when (cancel.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception e)
+        {
+            Log.Warning(e, "Could not reach the backend to load a profile");
+            return (TokenCheckOutcome.Unavailable, null);
         }
     }
 

@@ -1,4 +1,4 @@
-.empty-state {
+﻿.empty-state {
     position: relative;
     text-align: center;
 }
@@ -25,10 +25,20 @@
     filter: drop-shadow(0 0 14px color-mix(in srgb, var(--starlight-accent-1) 35%, transparent));
 }
 
+.account-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
 .account-row {
     position: relative;
-    padding: 14px !important;
-    margin-bottom: 10px !important;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 10px 12px 14px;
+    cursor: pointer;
+    outline: none;
     border-radius: 16px;
     border: 1px solid var(--mud-palette-lines-inputs, rgba(255,255,255,.07));
     background: linear-gradient(180deg, color-mix(in srgb, var(--mud-palette-text-primary) 4.5%, transparent), color-mix(in srgb, var(--mud-palette-text-primary) 1.5%, transparent));
@@ -43,8 +53,8 @@
         box-shadow: 0 10px 26px -12px color-mix(in srgb, var(--starlight-accent-1) 35%, transparent), 0 0 0 1px color-mix(in srgb, var(--mud-palette-text-primary) 5%, transparent) inset;
     }
 
-    .account-row:last-child {
-        margin-bottom: 0 !important;
+    .account-row:focus-visible {
+        border-color: var(--starlight-accent-1);
     }
 
 .account-row-active {
@@ -87,3 +97,47 @@
     .row-menu-btn:hover {
         background: color-mix(in srgb, var(--mud-palette-text-primary) 7%, transparent);
     }
+
+
+.account-row-viewed {
+    border-color: color-mix(in srgb, var(--starlight-accent-2) 65%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--starlight-accent-2) 45%, transparent) inset, 0 10px 26px -14px color-mix(in srgb, var(--starlight-accent-2) 55%, transparent);
+}
+
+.account-info {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.account-name-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+
+.account-name {
+    font-size: 1rem;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.account-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .75rem;
+}
+
+.account-actions {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}

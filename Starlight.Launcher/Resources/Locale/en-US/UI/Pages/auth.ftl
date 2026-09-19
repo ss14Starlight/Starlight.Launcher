@@ -101,3 +101,33 @@ auth-menu-link-account-hint     = Log in to your authentication server account t
 auth-menu-link-account-confirm  = Link
 auth-menu-link-account-busy     = Linking...
 auth-menu-account-linked        = The { $account } account was linked
+
+# NullLink profile
+
+auth-menu-link-steam-button = Link Steam
+auth-profile-make-active = Play on this account
+auth-profile-refresh = Refresh
+auth-profile-user-id = Account ID
+auth-profile-total-playtime = Total playtime
+auth-profile-servers-played = Servers
+auth-profile-achievements-count = Achievements
+auth-profile-top-role = Top role
+auth-profile-duration-m = { $minutes }m
+auth-profile-duration-hm = { $hours }h { $minutes }m
+auth-profile-playtime-title = Playtime by server
+auth-profile-playtime-empty = NullLink has no playtime recorded for this account yet.
+auth-profile-server-offline = Server is offline or no longer listed
+auth-profile-more-roles = +{ $count } more
+auth-profile-less-roles = Show less
+auth-profile-achievements-title = Achievements
+auth-profile-achievements-empty = No achievements unlocked yet.
+auth-profile-achievement-by = { $character } on { $server }
+auth-profile-achievement-server = On { $server }
+auth-profile-resources-title = Resources
+auth-profile-not-linked-title = NullLink profile is not available
+auth-profile-not-linked-hint = NullLink recognizes players by their Starlight session. Link Discord or Steam to this account to see its playtime and achievements.
+auth-profile-unauthorized-title = Session expired
+auth-profile-unauthorized-hint = Log in again to load the NullLink profile.
+auth-profile-unavailable-title = Could not load the profile
+auth-profile-unavailable-hint = NullLink is unreachable right now. Try again in a moment.
+auth-profile-retry = Try again

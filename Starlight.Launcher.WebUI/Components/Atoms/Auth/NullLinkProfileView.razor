@@ -1,0 +1,244 @@
+@using Robust.Launcher.Api.Models
+@using Starlight.Launcher.WebUI.Models.NullLink
+@using Starlight.Launcher.WebUI.Localization;
+
+@inherits LocalizedComponentBase
+
+<div class="profile">
+    <div class="profile-header">
+        <div class="profile-avatar">
+            @if (_result?.Profile?.AvatarUrl is { } avatar)
+            {
+                <img src="@avatar" alt="" referrerpolicy="no-referrer" />
+            }
+            else
+            {
+                <span>@Initial</span>
+            }
+        </div>
+
+        <div class="profile-identity">
+            <div class="profile-name-row">
+                <span class="profile-name">@Account.Username</span>
+                @if (IsActive)
+                {
+                    <span class="profile-badge profile-badge-active">@L["auth-menu-active-chip"]</span>
+                }
+                @if (Account.LoginInfo.DiscordToken != null)
+                {
+                    <span class="profile-badge"><MudIcon Icon="@Icons.Custom.Brands.Discord" Size="Size.Small" /> Discord</span>
+                }
+                @if (Account.LoginInfo.SteamToken != null)
+                {
+                    <span class="profile-badge"><MudIcon Icon="@Icons.Custom.Brands.Steam" Size="Size.Small" /> Steam</span>
+                }
+            </div>
+            <span class="profile-id" title="@L["auth-profile-user-id"]">@Account.UserId</span>
+        </div>
+
+        <div class="profile-actions">
+            @if (Account.Status == AccountLoginStatus.Expired)
+            {
+                <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Warning" Class="cta-btn-warning"
+                           Disabled="Busy" OnClick="() => OnRelogin?.Invoke(Account)">
+                    @L["auth-menu-login-again-button"]
+                </MudButton>
+            }
+            else if (!IsActive)
+            {
+                <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" Class="cta-btn-primary"
+                           StartIcon="@Icons.Material.Filled.PlayArrow"
+                           Disabled="Busy" OnClick="MakeActive">
+                    @L["auth-profile-make-active"]
+                </MudButton>
+            }
+            <MudTooltip Text="@L["auth-profile-refresh"]">
+                <MudIconButton Icon="@Icons.Material.Filled.Refresh" Size="Size.Small"
+                               Disabled="_loading" OnClick="() => LoadAsync(force: true)" />
+            </MudTooltip>
+        </div>
+    </div>
+
+    <div class="profile-body">
+        @if (_loading && _result?.Profile == null)
+        {
+            <div class="profile-stats">
+                @for (var i = 0; i < 4; i++)
+                {
+                    <div class="stat-tile"><MudSkeleton Width="60%" /><MudSkeleton Height="32px" Width="80%" /></div>
+                }
+            </div>
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="160px" Class="mt-4 rounded-lg" />
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="120px" Class="mt-4 rounded-lg" />
+        }
+        else if (_result is { Status: NullLinkProfileStatus.NotLinked })
+        {
+            <div class="profile-notice">
+                <div class="profile-notice-icon"><MudIcon Icon="@Icons.Material.Filled.LinkOff" Size="Size.Large" /></div>
+                <MudText Typo="Typo.h6">@L["auth-profile-not-linked-title"]</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">@L["auth-profile-not-linked-hint"]</MudText>
+                <div class="profile-notice-actions">
+                    @if (AccountListView.CanLinkDiscord(Account))
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="cta-btn-primary"
+                                   StartIcon="@Icons.Custom.Brands.Discord" Disabled="Busy"
+                                   OnClick="() => OnDiscordLink?.Invoke(Account)">
+                            @L["auth-menu-link-discord-button"]
+                        </MudButton>
+                    }
+                    @if (AccountListView.CanLinkSteam(Account))
+                    {
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                                   StartIcon="@Icons.Custom.Brands.Steam" Disabled="Busy"
+                                   OnClick="() => OnSteamLink?.Invoke(Account)">
+                            @L["auth-menu-link-steam-button"]
+                        </MudButton>
+                    }
+                </div>
+            </div>
+        }
+        else if (_result is { Status: NullLinkProfileStatus.Unauthorized })
+        {
+            <div class="profile-notice">
+                <div class="profile-notice-icon"><MudIcon Icon="@Icons.Material.Filled.LockClock" Size="Size.Large" /></div>
+                <MudText Typo="Typo.h6">@L["auth-profile-unauthorized-title"]</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">@L["auth-profile-unauthorized-hint"]</MudText>
+                <MudButton Variant="Variant.Filled" Color="Color.Warning" Class="cta-btn-warning"
+                           Disabled="Busy" OnClick="() => OnRelogin?.Invoke(Account)">
+                    @L["auth-menu-login-again-button"]
+                </MudButton>
+            </div>
+        }
+        else if (_result?.Profile is { } profile)
+        {
+            var topRole = TopRole(profile);
+
+            <div class="profile-stats">
+                <div class="stat-tile">
+                    <span class="stat-label">@L["auth-profile-total-playtime"]</span>
+                    <span class="stat-value">@FormatMinutes(profile.TotalMinutes)</span>
+                </div>
+                <div class="stat-tile">
+                    <span class="stat-label">@L["auth-profile-servers-played"]</span>
+                    <span class="stat-value">@profile.Servers.Length</span>
+                </div>
+                <div class="stat-tile">
+                    <span class="stat-label">@L["auth-profile-achievements-count"]</span>
+                    <span class="stat-value">@profile.Achievements.Length</span>
+                </div>
+                <div class="stat-tile">
+                    <span class="stat-label">@L["auth-profile-top-role"]</span>
+                    <span class="stat-value stat-value-text" title="@(topRole?.Name)">@(topRole?.Name ?? "—")</span>
+                    @if (topRole != null)
+                    {
+                        <span class="stat-sub">@FormatMinutes(topRole.Value.Minutes)</span>
+                    }
+                </div>
+            </div>
+
+            <section class="profile-section">
+                <h3 class="section-title">@L["auth-profile-playtime-title"]</h3>
+                @if (profile.Servers.Length == 0)
+                {
+                    <p class="section-empty">@L["auth-profile-playtime-empty"]</p>
+                }
+                else
+                {
+                    var max = Math.Max(1, profile.Servers.Max(x => x.OverallMinutes));
+
+                    <div class="server-list">
+                        @foreach (var server in profile.Servers)
+                        {
+                            var srv = server;
+                            var expanded = _expanded.Contains(srv.Id);
+                            var trackers = expanded ? srv.Trackers : srv.Trackers.Take(CollapsedTrackers).ToArray();
+
+                            <div class="server-row" @key="srv.Id">
+                                <div class="server-head">
+                                    <span class="@(srv.Online ? "server-dot online" : "server-dot")"
+                                          title="@(srv.Online ? "" : L["auth-profile-server-offline"])"></span>
+                                    <span class="server-title">@ServerTitle(srv)</span>
+                                    <span class="server-project">@srv.Project</span>
+                                    <span class="server-time">@FormatMinutes(srv.OverallMinutes)</span>
+                                </div>
+                                <div class="server-bar"><span style="width:@((srv.OverallMinutes / max * 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%"></span></div>
+                                @if (srv.Trackers.Length > 0)
+                                {
+                                    <div class="tracker-list">
+                                        @foreach (var tracker in trackers)
+                                        {
+                                            <span class="tracker-chip">@PrettifyTracker(tracker.Tracker) <b>@FormatMinutes(tracker.Minutes)</b></span>
+                                        }
+                                        @if (srv.Trackers.Length > CollapsedTrackers)
+                                        {
+                                            <button class="tracker-more" @onclick="() => ToggleExpanded(srv.Id)">
+                                                @(expanded ? L["auth-profile-less-roles"] : L.GetString("auth-profile-more-roles", ("count", srv.Trackers.Length - CollapsedTrackers)))
+                                            </button>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </section>
+
+            <section class="profile-section">
+                <h3 class="section-title">@L["auth-profile-achievements-title"]</h3>
+                @if (profile.Achievements.Length == 0)
+                {
+                    <p class="section-empty">@L["auth-profile-achievements-empty"]</p>
+                }
+                else
+                {
+                    <div class="achievement-grid">
+                        @foreach (var achievement in profile.Achievements)
+                        {
+                            <div class="achievement" @key="achievement.Id">
+                                <div class="achievement-icon"><MudIcon Icon="@Icons.Material.Filled.EmojiEvents" /></div>
+                                <div class="achievement-info">
+                                    <span class="achievement-name" title="@achievement.Id">@PrettifyId(achievement.Id)</span>
+                                    <span class="achievement-meta">
+                                        @(string.IsNullOrWhiteSpace(achievement.Character)
+                                            ? L.GetString("auth-profile-achievement-server", ("server", achievement.Server))
+                                            : L.GetString("auth-profile-achievement-by", ("character", achievement.Character), ("server", achievement.Server)))
+                                    </span>
+                                    <span class="achievement-meta">@achievement.UnlockTime.ToLocalTime().ToString("d")</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </section>
+
+            @if (profile.Resources.Count > 0)
+            {
+                <section class="profile-section">
+                    <h3 class="section-title">@L["auth-profile-resources-title"]</h3>
+                    @foreach (var (project, resources) in profile.Resources)
+                    {
+                        <div class="resource-group">
+                            <span class="server-project">@project</span>
+                            @foreach (var (key, value) in resources.OrderBy(x => x.Key))
+                            {
+                                <span class="tracker-chip">@PrettifyId(key) <b>@value.ToString("0.##")</b></span>
+                            }
+                        </div>
+                    }
+                </section>
+            }
+        }
+        else
+        {
+            <div class="profile-notice">
+                <div class="profile-notice-icon"><MudIcon Icon="@Icons.Material.Filled.CloudOff" Size="Size.Large" /></div>
+                <MudText Typo="Typo.h6">@L["auth-profile-unavailable-title"]</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">@L["auth-profile-unavailable-hint"]</MudText>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh"
+                           Disabled="_loading" OnClick="() => LoadAsync(force: true)">
+                    @L["auth-profile-retry"]
+                </MudButton>
+            </div>
+        }
+    </div>
+</div>

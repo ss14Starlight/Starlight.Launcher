@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
@@ -33,13 +33,14 @@ public sealed partial class Bridge : IBridge
     private readonly IFileDialogService _fileDialog;
     private readonly INativeTray _tray;
     private readonly LocalServerManager _localServer;
+    private readonly StarlightAuthApi _starlightAuth;
     private Window? _window;
 
     public Bridge(LauncherCommands commands, Connector connector, DiscordAuthService discordAuth,
         SteamAuthService steamAuth, DiscordRichPresence discordRichPresence, HubServerFetcher hubServerFetcher,
         LauncherUpdater launcherUpdater, LoginManager loginManager, ServerInfoLoader serverInfoLoader,
         SettingsService settings, Updater updater, IFileDialogService fileDialog,
-        INativeTray tray, LocalServerManager localServer)
+        INativeTray tray, LocalServerManager localServer, StarlightAuthApi starlightAuth)
     {
         _commands = commands;
         _connector = connector;
@@ -55,6 +56,7 @@ public sealed partial class Bridge : IBridge
         _fileDialog = fileDialog;
         _tray = tray;
         _localServer = localServer;
+        _starlightAuth = starlightAuth;
     }
 
     public void OpenBrowser(string url)

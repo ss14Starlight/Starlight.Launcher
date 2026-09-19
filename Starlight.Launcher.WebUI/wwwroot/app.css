@@ -349,6 +349,10 @@ h1:focus {
     padding-bottom: var(--bottom-nav-height);
 }
 
+.mud-main-content.has-bottom-nav .auth-bg {
+    padding-bottom: calc(var(--bottom-nav-height) + 48px);
+}
+
 .server-page {
     display: flex;
     flex-direction: column;

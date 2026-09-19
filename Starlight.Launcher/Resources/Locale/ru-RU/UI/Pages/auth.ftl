@@ -80,3 +80,36 @@ auth-menu-forgotpassword-alert = Если учетная запись с эти�
 auth-menu-enter-email-label = Введите адрес электронной почты, привязанный к вашей учетной записи.
 auth-menu-forgotpassword-status-busy = Отпрявляем...
 auth-menu-forgotpassword-status-wait = Отправить
+
+# NullLink profile
+
+auth-menu-steam-linked-status = Steam привязан к { $account }.
+auth-menu-steam-linked-tooltip = Steam привязан
+auth-menu-signin-method-steam = Войти через Steam
+auth-menu-link-steam-button = Привязать Steam
+auth-profile-make-active = Играть с этого аккаунта
+auth-profile-refresh = Обновить
+auth-profile-user-id = ID аккаунта
+auth-profile-total-playtime = Всего наиграно
+auth-profile-servers-played = Серверов
+auth-profile-achievements-count = Достижений
+auth-profile-top-role = Любимая роль
+auth-profile-duration-m = { $minutes } мин
+auth-profile-duration-hm = { $hours } ч { $minutes } мин
+auth-profile-playtime-title = Время на серверах
+auth-profile-playtime-empty = NullLink пока не записал время игры для этого аккаунта.
+auth-profile-server-offline = Сервер выключен или больше не в списке
+auth-profile-more-roles = ещё { $count }
+auth-profile-less-roles = Свернуть
+auth-profile-achievements-title = Достижения
+auth-profile-achievements-empty = Пока нет открытых достижений.
+auth-profile-achievement-by = { $character } на { $server }
+auth-profile-achievement-server = На { $server }
+auth-profile-resources-title = Ресурсы
+auth-profile-not-linked-title = Профиль NullLink недоступен
+auth-profile-not-linked-hint = NullLink узнаёт игроков по сессии Starlight. Привяжите к аккаунту Discord или Steam, чтобы видеть время игры и достижения.
+auth-profile-unauthorized-title = Сессия истекла
+auth-profile-unauthorized-hint = Войдите заново, чтобы загрузить профиль NullLink.
+auth-profile-unavailable-title = Не удалось загрузить профиль
+auth-profile-unavailable-hint = NullLink сейчас недоступен. Попробуйте чуть позже.
+auth-profile-retry = Повторить
