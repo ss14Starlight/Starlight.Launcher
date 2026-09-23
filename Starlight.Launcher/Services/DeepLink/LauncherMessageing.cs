@@ -12,6 +12,9 @@ public class LauncherMessaging
     private readonly CancellationTokenSource _pipeServerSelfDestruct = new();
     private static readonly Encoding _noBomUtf8 = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
     private Task? _serverTask;
+    private string _pipeName = "";
+    private const int ConnectAttempts = 5;
+    private const int ConnectTimeoutMs = 500;
 
     public bool SendMessagesOrClaim(LauncherActivationMessage[] messages, bool sendAnyway = true)
     {
@@ -22,36 +25,19 @@ public class LauncherMessaging
         else if (!OperatingSystem.IsMacOS())
             actualPipeName += "_" + Convert.ToHexString(Encoding.UTF8.GetBytes(Environment.UserName));
 
-        try
-        {
-            using (var client = new NamedPipeClientStream(".", actualPipeName, PipeDirection.InOut, PipeOptions.CurrentUserOnly))
-            {
-                client.Connect(150);
+        _pipeName = actualPipeName;
 
-                using var writer = new StreamWriter(client, _noBomUtf8, leaveOpen: true) { AutoFlush = true };
-                foreach (var message in messages)
-                {
-                    var json = JsonSerializer.Serialize(message);
-                    Console.WriteLine($"IPC: relaying {json} to existing instance");
-                    writer.WriteLine(json);
-                }
-            }
-            Console.WriteLine($"IPC: relayed {messages.Length} message(s) to the existing instance");
-            return true;
-        }
-        catch (Exception ex)
+        for (var attempt = 1; attempt <= ConnectAttempts; attempt++)
         {
-            // Must use Console since Serilog isn't wired up yet in pre-init context.
-            Console.WriteLine($"IPC: no existing instance reachable ({ex.GetType().Name}), becoming primary");
-        }
+            if (TrySend(actualPipeName, messages))
+                return true;
 
-        try
-        {
-            _pipeServer = new NamedPipeServerStream(actualPipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine($"IPC: pipe server could not be created: {e}");
+            if (TryCreateServer(out var error))
+                break;
+
+            Console.WriteLine($"IPC: an instance owns the pipe but did not answer (attempt {attempt}): {error?.GetType().Name}");
+            if (attempt == ConnectAttempts)
+                Console.WriteLine("IPC: giving up on the existing instance, becoming primary without a pipe");
         }
 
         if (sendAnyway)
@@ -59,6 +45,50 @@ public class LauncherMessaging
 
         return false;
     }
+
+    private static bool TrySend(string pipeName, LauncherActivationMessage[] messages)
+    {
+        try
+        {
+            using var client = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.CurrentUserOnly);
+            client.Connect(ConnectTimeoutMs);
+
+            using var writer = new StreamWriter(client, _noBomUtf8, leaveOpen: true) { AutoFlush = true };
+            foreach (var message in messages)
+            {
+                var json = JsonSerializer.Serialize(message);
+                Console.WriteLine($"IPC: relaying {json} to existing instance");
+                writer.WriteLine(json);
+            }
+
+            Console.WriteLine($"IPC: relayed {messages.Length} message(s) to the existing instance");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            // Must use Console since Serilog isn't wired up yet in pre-init context.
+            Console.WriteLine($"IPC: no existing instance reachable ({ex.GetType().Name})");
+            return false;
+        }
+    }
+
+    private bool TryCreateServer(out Exception? error)
+    {
+        try
+        {
+            _pipeServer = CreateServer(_pipeName);
+            error = null;
+            return true;
+        }
+        catch (Exception e)
+        {
+            error = e;
+            return false;
+        }
+    }
+
+    private static NamedPipeServerStream CreateServer(string pipeName)
+        => new(pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
 
     public void StartServerTask(LauncherCommands lc) => _serverTask = ServerTask(lc);
 
@@ -100,7 +130,17 @@ public class LauncherMessaging
         {
             while (true)
             {
-                await _pipeServer.WaitForConnectionAsync(token).ConfigureAwait(false);
+                try
+                {
+                    await _pipeServer.WaitForConnectionAsync(token).ConfigureAwait(false);
+                }
+                catch (Exception e) when (e is IOException or InvalidOperationException or ObjectDisposedException && !token.IsCancellationRequested)
+                {
+                    Log.Warning(e, "IPC: pipe server broke, recreating it");
+                    await RecreateServerAsync(token).ConfigureAwait(false);
+                    continue;
+                }
+
                 if (token.IsCancellationRequested) break;
 
                 var reader = new StreamReader(_pipeServer, _noBomUtf8, detectEncodingFromByteOrderMarks: true);
@@ -130,8 +170,6 @@ public class LauncherMessaging
                         if (message is not null)
                             await lc.QueueMessage(message);
                     }
-
-                    _pipeServer.Disconnect();
                 }
                 catch (OperationCanceledException)
                 {
@@ -140,6 +178,18 @@ public class LauncherMessaging
                 catch (Exception e)
                 {
                     Log.Warning(e, "IPC: exception during a connection");
+                }
+
+                // always free the single pipe instance, or the next WaitForConnectionAsync throws
+                try
+                {
+                    if (_pipeServer.IsConnected)
+                        _pipeServer.Disconnect();
+                }
+                catch (Exception e) when (e is IOException or InvalidOperationException or ObjectDisposedException)
+                {
+                    Log.Warning(e, "IPC: could not disconnect the pipe, recreating it");
+                    await RecreateServerAsync(token).ConfigureAwait(false);
                 }
             }
         }
@@ -150,6 +200,26 @@ public class LauncherMessaging
         finally
         {
             await _pipeServer.DisposeAsync();
+        }
+    }
+
+    private async Task RecreateServerAsync(CancellationToken token)
+    {
+        if (_pipeServer != null)
+            await _pipeServer.DisposeAsync().ConfigureAwait(false);
+
+        while (true)
+        {
+            try
+            {
+                _pipeServer = CreateServer(_pipeName);
+                return;
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                Log.Warning(e, "IPC: could not recreate the pipe server, retrying");
+                await Task.Delay(TimeSpan.FromSeconds(1), token).ConfigureAwait(false);
+            }
         }
     }
 }
