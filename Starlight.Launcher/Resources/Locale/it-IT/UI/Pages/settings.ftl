@@ -112,3 +112,22 @@ settings-cdns-option-key-unlock-tooltip = Sblocca la modifica delle chiavi pubbl
 settings-cdns-option-key-lock-tooltip = Blocca la modifica delle chiavi pubbliche
 settings-cdns-option-key-unlock-warning-title = Modificare le chiavi pubbliche dei CDN?
 settings-cdns-option-key-unlock-warning = Le chiavi pubbliche decidono di quali build del motore si fida il launcher. Aggiungi solo chiavi ricevute direttamente dal proprietario del CDN: una chiave sbagliata blocca il download del motore, e una chiave di qualcuno di cui non ti fidi gli permette di eseguire il proprio codice sul tuo computer. Cambiare la chiave del CDN Starlight interrompe l'accesso con Discord e Steam.
+
+# Data
+
+settings-menu-data-category = Dati
+settings-menu-clear-button = Svuota
+settings-menu-clear-confirm-yes = Elimina
+settings-menu-clear-engines-option = Motori scaricati
+settings-menu-clear-engines-option-description = Elimina tutte le versioni del motore e i moduli scaricati. Verranno scaricati di nuovo al prossimo accesso a un server.
+settings-menu-clear-engines-confirm-title = Eliminare i motori scaricati?
+settings-menu-clear-engines-confirm-text = Tutte le versioni del motore e i moduli scaricati verranno eliminati. L'accesso a un server richiederà più tempo mentre il motore viene riscaricato. L'operazione non può essere annullata.
+settings-menu-clear-engines-success = Motori scaricati eliminati.
+settings-menu-clear-content-option = Contenuti di gioco
+settings-menu-clear-content-option-description = Elimina tutti i contenuti dei server scaricati. Verranno scaricati di nuovo al prossimo accesso a un server.
+settings-menu-clear-content-confirm-title = Eliminare i contenuti di gioco?
+settings-menu-clear-content-confirm-text = Tutti i contenuti scaricati di ogni server verranno eliminati. L'accesso a un server richiederà più tempo mentre i contenuti vengono riscaricati. L'operazione non può essere annullata.
+settings-menu-clear-content-success = Contenuti di gioco eliminati.
+settings-menu-clear-busy = Attendi la fine del download in corso e riprova.
+settings-menu-clear-client-running = Chiudi il gioco in esecuzione e riprova.
+settings-menu-clear-failed = Impossibile eliminare i dati. Consulta i log del launcher per i dettagli.

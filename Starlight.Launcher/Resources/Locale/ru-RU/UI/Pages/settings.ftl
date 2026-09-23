@@ -89,3 +89,22 @@ settings-cdns-option-key-unlock-tooltip = Разблокировать реда�
 settings-cdns-option-key-lock-tooltip = Заблокировать редактирование публичных ключей
 settings-cdns-option-key-unlock-warning-title = Редактировать публичные ключи CDN?
 settings-cdns-option-key-unlock-warning = Публичные ключи определяют, каким сборкам движка доверяет лаунчер. Добавляйте только ключи, полученные напрямую от владельца CDN: неверный ключ сломает загрузку движка, а ключ от того, кому вы не доверяете, позволит ему запускать свой код на вашем компьютере. Смена ключа у CDN Starlight сломает вход через Discord и Steam.
+
+# Data
+
+settings-menu-data-category = Данные
+settings-menu-clear-button = Очистить
+settings-menu-clear-confirm-yes = Удалить
+settings-menu-clear-engines-option = Загруженные движки
+settings-menu-clear-engines-option-description = Удаляет все загруженные версии движка и модули. Они будут скачаны заново при следующем подключении к серверу.
+settings-menu-clear-engines-confirm-title = Удалить загруженные движки?
+settings-menu-clear-engines-confirm-text = Все загруженные версии движка и модули будут удалены. Подключение к серверу займёт больше времени, пока движок скачивается заново. Это действие нельзя отменить.
+settings-menu-clear-engines-success = Загруженные движки удалены.
+settings-menu-clear-content-option = Игровой контент
+settings-menu-clear-content-option-description = Удаляет весь загруженный контент серверов. Он будет скачан заново при следующем подключении к серверу.
+settings-menu-clear-content-confirm-title = Удалить игровой контент?
+settings-menu-clear-content-confirm-text = Весь загруженный контент всех серверов будет удалён. Подключение к серверу займёт больше времени, пока контент скачивается заново. Это действие нельзя отменить.
+settings-menu-clear-content-success = Игровой контент удалён.
+settings-menu-clear-busy = Дождитесь окончания текущей загрузки и попробуйте снова.
+settings-menu-clear-client-running = Закройте запущенную игру и попробуйте снова.
+settings-menu-clear-failed = Не удалось удалить данные. Подробности в логах лаунчера.

@@ -1,0 +1,25 @@
+<MudPaper Class="@($"sl-option-card pa-4 mb-2 {(Danger ? "sl-option-card--danger" : "")}")" Outlined="true" Elevation="0">
+    <div class="d-flex align-center">
+        <div class="sl-option-icon mr-4">
+            <MudIcon Icon="@Icon" Size="Size.Small" />
+        </div>
+        <div class="flex-grow-1 mr-4">
+            <MudText Typo="Typo.body1">@Title</MudText>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                @Description
+            </MudText>
+        </div>
+        <MudButton Variant="Variant.Outlined"
+                   Color="@(Danger ? Color.Error : Color.Primary)"
+                   Class="sl-option-action"
+                   StartIcon="@(_running ? null : ButtonIcon)"
+                   Disabled="_running"
+                   OnClick="RunAsync">
+            @if (_running)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="mr-2" Style="width: 16px; height: 16px;" />
+            }
+            @ButtonText
+        </MudButton>
+    </div>
+</MudPaper>

@@ -527,26 +527,21 @@ public sealed partial class EngineManagerDynamic : IEngineManager
 
     public void ClearAllEngines()
     {
-        foreach (var install in _settings.GetEngines())
-        {
-            _settings.RemoveInstalledEngine(install.Key);
-        }
-
-        foreach (var module in _settings.GetModules())
-        {
-            _settings.RemoveInstalledModule(module);
-        }
+        _settings.WriteEngines([]);
+        _settings.WriteModules([]);
 
         var settings = _settings.GetSettings();
 
-        foreach (var file in Directory.EnumerateFiles(settings.DirEngineInstallations))
+        if (Directory.Exists(settings.DirEngineInstallations))
         {
-            File.Delete(file);
+            foreach (var file in Directory.EnumerateFiles(settings.DirEngineInstallations))
+                File.Delete(file);
         }
 
-        foreach (var dir in Directory.EnumerateFiles(settings.DirModuleInstallations))
+        if (Directory.Exists(settings.DirModuleInstallations))
         {
-            Directory.Delete(dir, recursive: true);
+            foreach (var dir in Directory.EnumerateDirectories(settings.DirModuleInstallations))
+                Directory.Delete(dir, recursive: true);
         }
     }
 

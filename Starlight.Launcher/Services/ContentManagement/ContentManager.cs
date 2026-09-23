@@ -37,15 +37,14 @@ public sealed class ContentManager
     /// Clear ALL installed server content and try to truncate the DB.
     /// </summary>
     /// <returns><see langword="false"/> if a client is running and blocking the purge.</returns>
+    /// <exception cref="Exception">The database could not be cleared.</exception>
     public async Task<bool> ClearAll()
         => await Task.Run(() =>
             {
-                try
+                using var con = GetSqliteConnection();
+
+                using (var transact = con.BeginTransaction(deferred: true))
                 {
-                    using var con = GetSqliteConnection();
-
-                    using var transact = con.BeginTransaction(deferred: true);
-
                     if (GetRunningClientVersions(con).Count > 0)
                     {
                         // In case GetRunningClientVersions cleaned anything up.
@@ -57,15 +56,19 @@ public sealed class ContentManager
                     _ = con.Execute("DELETE FROM ContentVersion");
                     _ = con.Execute("DELETE FROM Content");
                     transact.Commit();
+                }
 
+                // The data is already gone at this point; failing to shrink the file is not worth reporting.
+                try
+                {
                     _ = con.Execute("VACUUM");
-                    return true;
                 }
                 catch (Exception e)
                 {
-                    Log.Error(e, "Error while truncating content DB!");
-                    return true;
+                    Log.Warning(e, "Failed to vacuum content DB after clearing it");
                 }
+
+                return true;
             });
 
     /// <summary>

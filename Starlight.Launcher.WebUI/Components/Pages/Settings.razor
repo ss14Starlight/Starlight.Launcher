@@ -29,6 +29,9 @@
                             OnClick="CheckUpdate">
                     @L["settings-menu-update-option"]
                 </MudButton>
+                <MudText Typo="Typo.overline" Class="mud-text-secondary mt-4 d-block">@L["settings-menu-data-category"]</MudText>
+                <ActionOption Title="@L["settings-menu-clear-engines-option"]" Description="@L["settings-menu-clear-engines-option-description"]" Icon="@Icons.Material.Filled.Memory" ButtonText="@L["settings-menu-clear-button"]" ButtonIcon="@Icons.Material.Filled.DeleteSweep" Danger="true" Action="OnClearEngines" />
+                <ActionOption Title="@L["settings-menu-clear-content-option"]" Description="@L["settings-menu-clear-content-option-description"]" Icon="@Icons.Material.Filled.Inventory2" ButtonText="@L["settings-menu-clear-button"]" ButtonIcon="@Icons.Material.Filled.DeleteSweep" Danger="true" Action="OnClearContent" />
             </MudContainer>
         </MudTabPanel>
         <MudTabPanel Text="@L["settings-menu-servers-category"]">

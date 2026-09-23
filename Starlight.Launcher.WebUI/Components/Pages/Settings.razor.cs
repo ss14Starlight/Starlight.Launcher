@@ -5,6 +5,7 @@ using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 using Starlight.Launcher.WebUI.Components.Atoms.Settings;
 using Starlight.Launcher.WebUI.Localization;
+using Starlight.Launcher.WebUI.Models.Data;
 using Starlight.Launcher.WebUI.Models.Settings;
 using Starlight.Launcher.WebUI.Services;
 
@@ -58,6 +59,40 @@ public partial class Settings : LocalizedComponentBase, IDisposable
         _state.CallUpdate();
 
         _navigation.NavigateTo("/settings", forceLoad: true);
+    }
+
+    private Task OnClearEngines() => ClearDataAsync(
+        "settings-menu-clear-engines-confirm-title",
+        "settings-menu-clear-engines-confirm-text",
+        "settings-menu-clear-engines-success",
+        _bridge.ClearEnginesAsync);
+
+    private Task OnClearContent() => ClearDataAsync(
+        "settings-menu-clear-content-confirm-title",
+        "settings-menu-clear-content-confirm-text",
+        "settings-menu-clear-content-success",
+        _bridge.ClearContentAsync);
+
+    private async Task ClearDataAsync(string titleKey, string textKey, string successKey, Func<Task<DataResetResult>> clear)
+    {
+        var confirmed = await _dialog.ShowMessageBoxAsync(
+            L[titleKey],
+            L[textKey],
+            yesText: L["settings-menu-clear-confirm-yes"],
+            cancelText: L["general-cancel"]);
+
+        if (confirmed != true)
+            return;
+
+        var (message, severity) = await clear() switch
+        {
+            DataResetResult.Success => (L[successKey], Severity.Success),
+            DataResetResult.Busy => (L["settings-menu-clear-busy"], Severity.Warning),
+            DataResetResult.ClientRunning => (L["settings-menu-clear-client-running"], Severity.Warning),
+            _ => (L["settings-menu-clear-failed"], Severity.Error),
+        };
+
+        _ = _snackbar.Add(message, severity);
     }
 
     private async Task CheckUpdate()

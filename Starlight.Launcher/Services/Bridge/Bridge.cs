@@ -36,6 +36,8 @@ public sealed partial class Bridge : IBridge
     private readonly LocalServerManager _localServer;
     private readonly StarlightAuthApi _starlightAuth;
     private readonly EngineSourceGuard _engineSourceGuard;
+    private readonly ContentManager _content;
+    private readonly IEngineManager _engineManager;
     private Window? _window;
 
     public Bridge(LauncherCommands commands, Connector connector, DiscordAuthService discordAuth,
@@ -43,7 +45,7 @@ public sealed partial class Bridge : IBridge
         LauncherUpdater launcherUpdater, LoginManager loginManager, ServerInfoLoader serverInfoLoader,
         SettingsService settings, Updater updater, IFileDialogService fileDialog,
         INativeTray tray, LocalServerManager localServer, StarlightAuthApi starlightAuth,
-        EngineSourceGuard engineSourceGuard)
+        EngineSourceGuard engineSourceGuard, ContentManager content, IEngineManager engineManager)
     {
         _commands = commands;
         _connector = connector;
@@ -61,6 +63,8 @@ public sealed partial class Bridge : IBridge
         _localServer = localServer;
         _starlightAuth = starlightAuth;
         _engineSourceGuard = engineSourceGuard;
+        _content = content;
+        _engineManager = engineManager;
     }
 
     public void OpenBrowser(string url)

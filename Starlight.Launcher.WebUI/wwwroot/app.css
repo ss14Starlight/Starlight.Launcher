@@ -660,6 +660,25 @@ h1:focus {
     flex-shrink: 0;
 }
 
+.sl-option-card--danger {
+    border-color: oklch(from oklch(var(--c-error)) l c h / 0.18) !important;
+}
+
+    .sl-option-card--danger:hover {
+        border-color: oklch(from oklch(var(--c-error)) l c h / 0.35) !important;
+    }
+
+    .sl-option-card--danger .sl-option-icon {
+        background: oklch(from oklch(var(--c-error)) l c h / 0.12);
+        color: oklch(var(--c-error));
+    }
+
+.sl-option-action {
+    flex-shrink: 0;
+    border-radius: 10px !important;
+    white-space: nowrap;
+}
+
 .sl-ignored-server-row {
     padding: 8px 10px;
     border-radius: 8px;

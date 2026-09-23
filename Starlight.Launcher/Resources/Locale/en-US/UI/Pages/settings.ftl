@@ -173,3 +173,21 @@ settings-menu-ignored-servers-option = Ignored servers
 settings-menu-ignored-servers-option-description = Allows to remove some servers from ignore list.
 
 settings-ignored-servers-option-remove = Remove
+# Data
+
+settings-menu-data-category = Data
+settings-menu-clear-button = Clear
+settings-menu-clear-confirm-yes = Delete
+settings-menu-clear-engines-option = Downloaded Engines
+settings-menu-clear-engines-option-description = Deletes all downloaded engine versions and modules. They will be downloaded again the next time you join a server.
+settings-menu-clear-engines-confirm-title = Delete downloaded engines?
+settings-menu-clear-engines-confirm-text = All downloaded engine versions and modules will be deleted. Joining a server will take longer while the engine is downloaded again. This can't be undone.
+settings-menu-clear-engines-success = Downloaded engines deleted.
+settings-menu-clear-content-option = Game Content
+settings-menu-clear-content-option-description = Deletes all downloaded server content. It will be downloaded again the next time you join a server.
+settings-menu-clear-content-confirm-title = Delete game content?
+settings-menu-clear-content-confirm-text = All downloaded content of every server will be deleted. Joining a server will take longer while its content is downloaded again. This can't be undone.
+settings-menu-clear-content-success = Game content deleted.
+settings-menu-clear-busy = Wait for the current download to finish and try again.
+settings-menu-clear-client-running = Close the running game and try again.
+settings-menu-clear-failed = Couldn't delete the data. See the launcher logs for details.

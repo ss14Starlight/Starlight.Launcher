@@ -55,6 +55,8 @@ public sealed partial class Updater
     public (long downloaded, long total, ProgressUnit unit)? Progress { get; private set; }
     public long? Speed { get; private set; }
 
+    public bool IsUpdating => _updating;
+
     public Exception? UpdateException;
 
     public async Task<ContentLaunchInfo?> RunUpdateForLaunchAsync(ServerBuildInformation buildInformation, CancellationToken cancel = default) => await GuardUpdateAsync(() => RunUpdate(buildInformation, cancel));
