@@ -10,6 +10,7 @@ using Robust.Launcher.Api.Utility;
 using Serilog;
 using Starlight.Launcher.Models.EngineManager;
 using Starlight.Launcher.Services.Settings;
+using Starlight.Launcher.WebUI.Models.Data;
 
 namespace Starlight.Launcher.Services.EngineManager;
 
@@ -23,13 +24,15 @@ public sealed partial class EngineManagerDynamic : IEngineManager
     private readonly SettingsService _settings;
     private readonly HttpClient _http;
     private readonly ICdnRegistry _cdns;
+    private readonly EngineSourceGuard _sourceGuard;
     private volatile bool _manifestCachesDirty;
 
-    public EngineManagerDynamic(HttpClient http, SettingsService settings, ICdnRegistry cdns)
+    public EngineManagerDynamic(HttpClient http, SettingsService settings, ICdnRegistry cdns, EngineSourceGuard sourceGuard)
     {
         _settings = settings;
         _http = http;
         _cdns = cdns;
+        _sourceGuard = sourceGuard;
         _cdns.Changed += () => _manifestCachesDirty = true;
     }
 
@@ -74,6 +77,26 @@ public sealed partial class EngineManagerDynamic : IEngineManager
         return installedEngine.Signature;
     }
 
+    private async Task ConfirmEngineSourceAsync(FoundVersionInfo found, CancellationToken cancel)
+    {
+        if (found.Cdn.Important)
+            return;
+
+        // Checked against the enabled CDNs only: a player who switched the Starlight CDN off chose this.
+        if (_cdns.Cdns.FirstOrDefault(c => c.Important) is not { } preferred)
+            return;
+
+        var cdnName = string.IsNullOrWhiteSpace(found.Cdn.Name) ? found.Cdn.BaseUrl.Urls[0] : found.Cdn.Name;
+        var preferredName = string.IsNullOrWhiteSpace(preferred.Name) ? preferred.BaseUrl.Urls[0] : preferred.Name;
+
+        Log.Warning(
+            "Engine {Version} is not on the {Preferred} CDN, it will come from {Cdn} and may lack Starlight features",
+            found.Version, preferredName, cdnName);
+
+        if (!await _sourceGuard.ConfirmAsync(new ForeignEngineWarning(found.Version, cdnName, preferredName), cancel))
+            throw new OperationCanceledException($"Player declined engine {found.Version} from {cdnName}");
+    }
+
     public async Task<EngineInstallationResult> DownloadEngineIfNecessary(
         string engineVersion,
         Helpers.DownloadProgressCallback? progress = null,
@@ -92,6 +115,8 @@ public sealed partial class EngineManagerDynamic : IEngineManager
         var foundVersion = await GetVersionInfo(engineVersion, cancel: cancel) ?? throw new UpdateException("Unable to find engine version in manifest!");
         if (foundVersion.Info.Insecure)
             throw new UpdateException("Specified engine version is insecure!");
+
+        await ConfirmEngineSourceAsync(foundVersion, cancel);
 
         Log.Debug(
             "Requested engine version was {RequestedEngien}, redirected to {FoundVersion}",

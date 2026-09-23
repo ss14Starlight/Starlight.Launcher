@@ -178,6 +178,7 @@ public partial class App : Application
         _ = services.AddSingleton<ServerStatusCache>();
         _ = services.AddSingleton<ContentManager>();
         _ = services.AddSingleton<ICdnRegistry, CdnRegistry>();
+        _ = services.AddSingleton<EngineSourceGuard>();
         _ = services.AddSingleton<IEngineManager, EngineManagerDynamic>();
         _ = services.AddSingleton<Updater>();
         _ = services.AddSingleton<LoginManager>();

@@ -83,6 +83,10 @@ settings-cdns-option-important-warning-hint =
     Proceed with caution.
 settings-cdns-option-important-warning-cancel = Cancel
 settings-cdns-option-important-warning-confirm = Confirm
+settings-cdns-option-key-unlock-tooltip = Unlock public key editing
+settings-cdns-option-key-lock-tooltip = Lock public key editing
+settings-cdns-option-key-unlock-warning-title = Edit CDN public keys?
+settings-cdns-option-key-unlock-warning = Public keys decide which engine builds the launcher trusts. Only add keys you got from the CDN owner directly: a wrong key breaks engine downloads, and a key from someone you don't trust lets them run their own code on your computer. Changing the key of the Starlight CDN breaks Discord and Steam login.
 
 # Appearance
 

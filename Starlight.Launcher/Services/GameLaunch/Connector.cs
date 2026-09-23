@@ -439,10 +439,12 @@ public partial class Connector : ObservableObject
 
             if (account.LoginInfo.Token != null && !string.IsNullOrWhiteSpace(account.LoginInfo.Token.Token))
                 cVars.Add(("ROBUST_AUTH_TOKEN", account.LoginInfo.Token.Token));
-            if (account.LoginInfo.DiscordToken != null && !string.IsNullOrWhiteSpace(account.LoginInfo.DiscordToken.Token))
-                cVars.Add(("STARLIGHT_AUTH_DISCORDTOKEN", account.LoginInfo.DiscordToken.Token));
-            if (account.LoginInfo.SteamToken != null && !string.IsNullOrWhiteSpace(account.LoginInfo.SteamToken.Token))
-                cVars.Add(("STARLIGHT_AUTH_STEAMTOKEN", account.LoginInfo.SteamToken.Token));
+            // Older clients always pick the Steam token over the Discord one when both are present, so a
+            // dead Steam token would lock the player out even with a fresh Discord login. Don't hand those over.
+            if (account.LoginInfo.DiscordToken is { } discord && !string.IsNullOrWhiteSpace(discord.Token) && !discord.IsTimeExpired())
+                cVars.Add(("STARLIGHT_AUTH_DISCORDTOKEN", discord.Token));
+            if (account.LoginInfo.SteamToken is { } steam && !string.IsNullOrWhiteSpace(steam.Token) && !steam.IsTimeExpired())
+                cVars.Add(("STARLIGHT_AUTH_STEAMTOKEN", steam.Token));
             cVars.Add(("ROBUST_AUTH_USERID", account.LoginInfo.UserId.ToString()));
             cVars.Add(("ROBUST_AUTH_PUBKEY", info.AuthInformation.PublicKey));
             if (settings.SelectedAuthServer != null)

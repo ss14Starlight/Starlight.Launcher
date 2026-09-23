@@ -83,3 +83,9 @@ settings-menu-development-max-fork-versions-option-description = Укажите 
 
 settings-menu-data-folder-no-access-title = Нет доступа к папке
 settings-menu-data-folder-no-access-text = Лаунчер не может записывать в "{ $path }". Скорее всего, эта папка требует прав администратора, поэтому загрузка и обновление файлов игры не будут работать. Выберите другую папку.
+
+
+settings-cdns-option-key-unlock-tooltip = Разблокировать редактирование публичных ключей
+settings-cdns-option-key-lock-tooltip = Заблокировать редактирование публичных ключей
+settings-cdns-option-key-unlock-warning-title = Редактировать публичные ключи CDN?
+settings-cdns-option-key-unlock-warning = Публичные ключи определяют, каким сборкам движка доверяет лаунчер. Добавляйте только ключи, полученные напрямую от владельца CDN: неверный ключ сломает загрузку движка, а ключ от того, кому вы не доверяете, позволит ему запускать свой код на вашем компьютере. Смена ключа у CDN Starlight сломает вход через Discord и Steam.

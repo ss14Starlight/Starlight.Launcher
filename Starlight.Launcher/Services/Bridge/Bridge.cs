@@ -8,6 +8,7 @@ using Avalonia.Threading;
 using Serilog;
 using Starlight.Launcher.Services.Auth;
 using Starlight.Launcher.Services.Discord;
+using Starlight.Launcher.Services.EngineManager;
 using Starlight.Launcher.Services.LocalServer;
 using Starlight.Launcher.Services.ServerStatus;
 using Starlight.Launcher.Services.Settings;
@@ -34,13 +35,15 @@ public sealed partial class Bridge : IBridge
     private readonly INativeTray _tray;
     private readonly LocalServerManager _localServer;
     private readonly StarlightAuthApi _starlightAuth;
+    private readonly EngineSourceGuard _engineSourceGuard;
     private Window? _window;
 
     public Bridge(LauncherCommands commands, Connector connector, DiscordAuthService discordAuth,
         SteamAuthService steamAuth, DiscordRichPresence discordRichPresence, HubServerFetcher hubServerFetcher,
         LauncherUpdater launcherUpdater, LoginManager loginManager, ServerInfoLoader serverInfoLoader,
         SettingsService settings, Updater updater, IFileDialogService fileDialog,
-        INativeTray tray, LocalServerManager localServer, StarlightAuthApi starlightAuth)
+        INativeTray tray, LocalServerManager localServer, StarlightAuthApi starlightAuth,
+        EngineSourceGuard engineSourceGuard)
     {
         _commands = commands;
         _connector = connector;
@@ -57,6 +60,7 @@ public sealed partial class Bridge : IBridge
         _tray = tray;
         _localServer = localServer;
         _starlightAuth = starlightAuth;
+        _engineSourceGuard = engineSourceGuard;
     }
 
     public void OpenBrowser(string url)

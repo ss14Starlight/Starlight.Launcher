@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using NSec.Cryptography;
 using System.Text;
+using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Models.Settings;
@@ -11,6 +12,7 @@ namespace Starlight.Launcher.WebUI.Components.Atoms.Settings;
 public partial class RobustCdnListOption : LocalizedComponentBase
 {
     [Inject] private IDialogService _dialogService { get; set; } = default!;
+    [Inject] private IBridge _bridge { get; set; } = default!;
 
     [Parameter] public List<RobustCdnConfig> Value { get; set; } = [];
     [Parameter] public EventCallback<List<RobustCdnConfig>> ValueChanged { get; set; }
@@ -28,10 +30,12 @@ public partial class RobustCdnListOption : LocalizedComponentBase
     [Parameter] public Func<Task<List<RobustCdnConfig>?>>? SelfValueControlInitialization { get; set; }
 
     private bool _importantWarningAccepted;
+    private bool _keysUnlocked;
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
+        _keysUnlocked = AllowKeyEditing || (await _bridge.GetSettingsAsync()).AllowCdnsKeyChange;
         if (SelfValueControlInitialization is not null)
             Value = (await SelfValueControlInitialization.Invoke()) ?? AppSettings.DefaultRobustCdns;
     }
@@ -63,6 +67,46 @@ public partial class RobustCdnListOption : LocalizedComponentBase
 
         _importantWarningAccepted = true;
         return true;
+    }
+
+    private async Task ToggleKeyEditing()
+    {
+        if (!_keysUnlocked)
+        {
+            var dialog = await _dialogService.ShowAsync<AlertDialog>(
+                L["settings-cdns-option-key-unlock-warning-title"],
+                new DialogParameters<AlertDialog> { { x => x.DescriptionKey, "settings-cdns-option-key-unlock-warning" } },
+                new DialogOptions
+                {
+                    BackdropClick = false,
+                    CloseOnEscapeKey = true,
+                    MaxWidth = MaxWidth.Small,
+                    FullWidth = true
+                });
+
+            var result = await dialog.Result;
+            if (result is null || result.Canceled)
+                return;
+        }
+
+        _keysUnlocked = !_keysUnlocked;
+        await _bridge.WriteSettingsAsync(await _bridge.GetSettingsAsync() with { AllowCdnsKeyChange = _keysUnlocked });
+        StateHasChanged();
+    }
+
+    private async Task UpdateKey(int index, string key)
+    {
+        if (index < 0 || index >= Value.Count)
+            return;
+
+        // a wrong key on the Starlight CDN makes every engine download from it fail verification
+        if (!await ConfirmImportantAsync(Value[index]))
+        {
+            StateHasChanged();
+            return;
+        }
+
+        await UpdateCdn(index, c => c with { PublicKey = key });
     }
 
     private async Task AddCdn()

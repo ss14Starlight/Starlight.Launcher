@@ -106,3 +106,9 @@ settings-menu-development-max-versions-option-description = Seleziona il numero 
 
 settings-menu-development-max-fork-versions-option = Max Fork Versions
 settings-menu-development-max-fork-versions-option-description = Seleziona il numero massimo di versioni Fork da mantenere nella cronologia delle versioni. Le versioni Fork più vecchie saranno rimosse quando questo limite viene superato.
+
+
+settings-cdns-option-key-unlock-tooltip = Sblocca la modifica delle chiavi pubbliche
+settings-cdns-option-key-lock-tooltip = Blocca la modifica delle chiavi pubbliche
+settings-cdns-option-key-unlock-warning-title = Modificare le chiavi pubbliche dei CDN?
+settings-cdns-option-key-unlock-warning = Le chiavi pubbliche decidono di quali build del motore si fida il launcher. Aggiungi solo chiavi ricevute direttamente dal proprietario del CDN: una chiave sbagliata blocca il download del motore, e una chiave di qualcuno di cui non ti fidi gli permette di eseguire il proprio codice sul tuo computer. Cambiare la chiave del CDN Starlight interrompe l'accesso con Discord e Steam.

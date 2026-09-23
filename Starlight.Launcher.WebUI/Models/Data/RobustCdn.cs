@@ -17,6 +17,16 @@ public sealed class RobustCdn
     /// </summary>
     public required string PublicKey { get; init; }
 
+    /// <summary>
+    /// Display name from the user's CDN config.
+    /// </summary>
+    public string Name { get; init; } = "";
+
+    /// <summary>
+    /// Mirrors <see cref="Models.Settings.RobustCdnConfig.Important"/>: this CDN serves the Starlight engine builds.
+    /// </summary>
+    public bool Important { get; init; }
+
     public UrlFallbackSet BuildsManifest => BaseUrl + "manifest.json";
     public UrlFallbackSet ModulesManifest => BaseUrl + "modules.json";
 

@@ -54,7 +54,7 @@ public sealed class CdnRegistry : ICdnRegistry, IDisposable
             if (!Validate(cfg, out var urls))
                 continue;
 
-            builder.Add(new RobustCdn(urls) { PublicKey = cfg.PublicKey });
+            builder.Add(new RobustCdn(urls) { PublicKey = cfg.PublicKey, Name = cfg.Name, Important = cfg.Important });
         }
 
         if (builder.Count == 0)
@@ -62,7 +62,7 @@ public sealed class CdnRegistry : ICdnRegistry, IDisposable
             Log.Error("There are no valid CDNs available, falling back to default.");
             return [.. AppSettings.DefaultRobustCdns
                 .Where(c => Validate(c, out _))
-                .Select(c => new RobustCdn([.. c.Urls]) { PublicKey = c.PublicKey })];
+                .Select(c => new RobustCdn([.. c.Urls]) { PublicKey = c.PublicKey, Name = c.Name, Important = c.Important })];
         }
 
         return builder.ToImmutable();

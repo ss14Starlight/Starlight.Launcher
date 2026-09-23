@@ -11,6 +11,11 @@
             <MudText Typo="Typo.body1">@Title</MudText>
             <MudText Typo="Typo.caption" Class="mud-text-secondary">@Description</MudText>
         </div>
+        <MudTooltip Text="@(_keysUnlocked ? L["settings-cdns-option-key-lock-tooltip"] : L["settings-cdns-option-key-unlock-tooltip"])">
+            <MudIconButton Icon="@(_keysUnlocked ? Icons.Material.Filled.LockOpen : Icons.Material.Filled.Lock)"
+                           Color="@(_keysUnlocked ? Color.Warning : Color.Default)"
+                           OnClick="ToggleKeyEditing" />
+        </MudTooltip>
         <MudTooltip Text="@AddButtonTooltip">
             <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Primary" OnClick="AddCdn" />
         </MudTooltip>
@@ -75,10 +80,10 @@
 
                     <MudTextField T="string"
                                   Value="@cdn.PublicKey"
-                                  ValueChanged="@(v => UpdateCdn(index, c => c with { PublicKey = v }))"
+                                  ValueChanged="@(v => UpdateKey(index, v))"
                                   Immediate="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Lines="3" Label="@L["settings-cdns-option-key-label"]"
-                                  Disabled="@(!AllowKeyEditing)"
+                                  Disabled="@(!_keysUnlocked)"
                                   Validation="@(new Func<string, string?>(ValidateKey))"
                                   Class="mb-2" />
 

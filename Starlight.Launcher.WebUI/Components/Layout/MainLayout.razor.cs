@@ -76,6 +76,7 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
         _state.OnChange += AppCalledRepaint;
         _navigation.LocationChanged += OnLocationChanged;
         _bridge.LoginsUnrecoverable += OnLoginsUnrecover;
+        _bridge.ConfirmForeignEngine += OnConfirmForeignEngine;
 
         if (settings.CollapseInTrayOnStart)
             _bridge.HideWindow(); // If layout is initialized - window exists, so we can hide it right away if the user wants that.
@@ -108,6 +109,38 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
                     return Task.CompletedTask;
                 };
             });
+
+    // Raised from the updater thread while the connecting dialog is open; the answer decides whether the launch goes on.
+    private Task<bool> OnConfirmForeignEngine(ForeignEngineWarning warning)
+    {
+        var answer = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        _ = InvokeAsync(async () =>
+        {
+            try
+            {
+                var dialog = await _dialogService.ShowAsync<ForeignEngineWarningDialog>(
+                    L["foreign-engine-dialog-title"],
+                    new DialogParameters<ForeignEngineWarningDialog> { { x => x.Warning, warning } },
+                    new DialogOptions
+                    {
+                        BackdropClick = false,
+                        CloseOnEscapeKey = true,
+                        MaxWidth = MaxWidth.Small,
+                        FullWidth = true
+                    });
+
+                var result = await dialog.Result;
+                _ = answer.TrySetResult(result is { Canceled: false });
+            }
+            catch (Exception e)
+            {
+                _ = answer.TrySetException(e);
+            }
+        });
+
+        return answer.Task;
+    }
 
     private async Task CheckDataFolderAccess()
     {
@@ -302,6 +335,8 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
         await _browserViewportService.UnsubscribeAsync(this);
         _state.OnChange -= AppCalledRepaint;
         _navigation.LocationChanged -= OnLocationChanged;
+        _bridge.LoginsUnrecoverable -= OnLoginsUnrecover;
+        _bridge.ConfirmForeignEngine -= OnConfirmForeignEngine;
         if (_titleBar is not null) await _titleBar.DisposeAsync();
         _selfRef?.Dispose();
     }
