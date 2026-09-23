@@ -721,10 +721,12 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
 
         var old = existing.LoginInfo;
 
+        var hasStarlightToken = old.DiscordToken != null || old.SteamToken != null;
+
         var merged = new LoginInfo
         {
             UserId = newUserId,
-            Username = authLogin.Username,
+            Username = hasStarlightToken && !string.IsNullOrWhiteSpace(old.Username) ? old.Username : authLogin.Username,
             Token = authLogin.Token,
             AuthServerUrl = authLogin.AuthServerUrl,
             DiscordToken = old.DiscordToken,

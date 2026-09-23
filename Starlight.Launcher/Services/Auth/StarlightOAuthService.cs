@@ -6,6 +6,7 @@ using Starlight.Launcher.WebUI.Models.DiscordAuthService;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Security.Cryptography;
+using System.Text.Json;
 using System.Web;
 
 namespace Starlight.Launcher.Services.Auth;
@@ -64,12 +65,12 @@ public abstract class StarlightOAuthService(StarlightAuthApi api, LoginManager l
     {
         var (handoff, user) = await AuthorizeAsync(cancel);
 
-        if (user.UserId != account.UserId)
+        if (user.UserId != account.UserId && ReadTokenUserId(GetStoredToken(account.LoginInfo)) != user.UserId)
             throw Error($"This {DisplayName} account isn't linked to this player on the server yet.");
 
         var info = new LoginInfo
         {
-            UserId = user.UserId,
+            UserId = account.UserId,
             Username = account.LoginInfo.Username,
             Token = account.LoginInfo.Token,
             AuthServerUrl = account.LoginInfo.AuthServerUrl,
@@ -117,6 +118,31 @@ public abstract class StarlightOAuthService(StarlightAuthApi api, LoginManager l
         finally
         {
             _ = _pending.TryRemove(state, out _);
+        }
+    }
+
+    private string? GetStoredToken(LoginInfo info)
+        => (IsSteam ? info.SteamToken : info.DiscordToken)?.Token;
+
+    private static Guid? ReadTokenUserId(string? token)
+    {
+        var parts = token?.Split('.');
+        if (parts is not { Length: 3 })
+            return null;
+
+        try
+        {
+            var payload = parts[1].Replace('-', '+').Replace('_', '/');
+            payload += (payload.Length % 4) switch { 2 => "==", 3 => "=", _ => "" };
+
+            using var json = JsonDocument.Parse(Convert.FromBase64String(payload));
+            return json.RootElement.TryGetProperty("ss14_id", out var claim) && Guid.TryParse(claim.GetString(), out var id)
+                ? id
+                : null;
+        }
+        catch (Exception e) when (e is FormatException or JsonException or InvalidOperationException)
+        {
+            return null;
         }
     }
 
