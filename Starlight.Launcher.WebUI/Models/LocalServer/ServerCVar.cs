@@ -61,9 +61,9 @@ public static class ServerCVarCatalog
         new("auth", "mode", ServerCVarType.Int, "2",
             Options:
             [
-                new("0", "Disabled"),
-                new("1", "Optional"),
-                new("2", "Required")
+                new("0", "Optional"),
+                new("1", "Required"),
+                new("2", "Disabled")
             ]),
         new ("auth", "allowlocal", ServerCVarType.Bool, "true")
     ];
