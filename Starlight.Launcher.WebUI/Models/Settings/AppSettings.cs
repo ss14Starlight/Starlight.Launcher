@@ -53,7 +53,7 @@ public partial record AppSettings
     /// <summary>
     /// A list of hub urls to use for server lists
     /// </summary>
-    public List<Hub> Hubs { get; init; } = [ new Hub() { HubUri = new Uri("https://hub.playss14.com/"), Priority = 0} ];
+    public List<Hub> Hubs { get; init; } = [ new Hub() { HubUri = new Uri("https://hub.spacestation14.com/"), Priority = 0} ];
     /// <summary>
     /// List of server names and IPs which will be ignored in servers list.
     /// </summary>
@@ -229,13 +229,13 @@ public partial record AppSettings
     /// <summary>
     /// Auth servers in priority order. User-editable, any count.
     /// </summary>
-    public List<string> AuthServerUrls { get; init; } = ["https://auth.playss14.com/"];
+    public List<string> AuthServerUrls { get; init; } = ["https://auth.spacestation14.com/"];
 
     /// <summary>
     /// Currently selected auth server.
     /// </summary>
 
-    public string? SelectedAuthServer = "https://auth.playss14.com/";
+    public string? SelectedAuthServer = "https://auth.spacestation14.com/";
 
     /// <summary>
     /// Fallback name which will be used if there's no logins.
