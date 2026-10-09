@@ -45,10 +45,12 @@ internal static class Program
                 // source of blank/transparent windows and outright segfaults on Wayland compositors
                 // like Niri, COSMIC, and gamescope (SteamOS). Force the software path unless the
                 // user has already made an explicit choice via the environment.
-                if (Environment.GetEnvironmentVariable("WEBKIT_DISABLE_COMPOSITING_MODE") is null)
-                    Environment.SetEnvironmentVariable("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
-                if (Environment.GetEnvironmentVariable("WEBKIT_DISABLE_DMABUF_RENDERER") is null)
-                    Environment.SetEnvironmentVariable("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+                SetNativeEnvDefault("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
+                SetNativeEnvDefault("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+                // Newer WebKitGTK always uses the DMA-BUF renderer and ignores the variable above, then
+                // fails to allocate GBM buffers on some drivers (NVIDIA) and renders nothing. Hand frames
+                // over through shared memory instead.
+                SetNativeEnvDefault("WEBKIT_DMABUF_RENDERER_FORCE_SHM", "1");
             }
 
             var logger = new LoggerConfiguration()
@@ -137,6 +139,25 @@ internal static class Program
             }
         }
     }
+
+    /// <summary>
+    ///     Sets an environment variable unless the user has already set it. Needed because native libs
+    ///		(seemingly) can't see stuff set by <see cref="Environment.SetEnvironmentVariable(string, string)"/>.
+    /// </summary>
+    private static void SetNativeEnvDefault(string name, string value)
+    {
+        if (Environment.GetEnvironmentVariable(name) is not null)
+            return;
+
+        Environment.SetEnvironmentVariable(name, value);
+        if (!OperatingSystem.IsWindows())
+            _ = setenv(name, value, 0);
+    }
+
+#pragma warning disable CA2101, SYSLIB1054
+    [DllImport("libc", SetLastError = true)]
+    private static extern int setenv(string name, string value, int overwrite);
+#pragma warning restore SYSLIB1054, CA2101
 
     private static string GetPortableRid()
     {
