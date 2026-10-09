@@ -63,7 +63,8 @@ public abstract class StarlightOAuthService(StarlightAuthApi api, LoginManager l
 
     public async Task AttachToAccountAsync(LoggedInAccount account, CancellationToken cancel = default)
     {
-        var (handoff, user) = await AuthorizeAsync(cancel);
+        var proof = (IsSteam ? account.LoginInfo.DiscordToken : account.LoginInfo.SteamToken)?.Token;
+        var (handoff, user) = await AuthorizeAsync(cancel, proof);
 
         if (user.UserId != account.UserId && ReadTokenUserId(GetStoredToken(account.LoginInfo)) != user.UserId)
             throw Error($"This {DisplayName} account isn't linked to this player on the server yet.");
@@ -83,7 +84,7 @@ public abstract class StarlightOAuthService(StarlightAuthApi api, LoginManager l
     }
 
     private async Task<(HandoffResult Handoff, (Guid UserId, string Username) User)> AuthorizeAsync(
-        CancellationToken cancel)
+        CancellationToken cancel, string? attachProof = null)
     {
         var state = GenerateState();
         var tcs = new TaskCompletionSource<HandoffResult>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -91,6 +92,9 @@ public abstract class StarlightOAuthService(StarlightAuthApi api, LoginManager l
 
         try
         {
+            if (attachProof != null && !await Api.RegisterAttachAsync(attachProof, state, cancel))
+                Log.Warning("Could not register the {Provider} attach; the login will only work if the account is already linked", DisplayName);
+
             try
             {
                 _ = Process.Start(new ProcessStartInfo

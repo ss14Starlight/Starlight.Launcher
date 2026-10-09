@@ -54,6 +54,36 @@ public sealed class StarlightAuthApi(HttpClient http, SettingsService settings)
     public string BuildLauncherLoginUrl(bool steam, string state)
         => new Uri(ApiUrl, $"api/{(steam ? "steam" : "discord")}-auth/launcher-login?state={Uri.EscapeDataString(state)}").ToString();
 
+    public async Task<bool> RegisterAttachAsync(string token, string state, CancellationToken cancel)
+    {
+        try
+        {
+            using var timeout = Linked(cancel);
+
+            using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(ApiUrl, "api/auth/attach"))
+            {
+                Content = JsonContent.Create(new { state }),
+            };
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            using var resp = await http.SendAsync(request, timeout.Token);
+            if (resp.IsSuccessStatusCode)
+                return true;
+
+            Log.Warning("Attach registration failed with {Status}", resp.StatusCode);
+            return false;
+        }
+        catch (OperationCanceledException) when (cancel.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception e)
+        {
+            Log.Warning(e, "Could not reach the auth server to register an attach");
+            return false;
+        }
+    }
+
     /// <summary>
     ///    Asks the auth server for the user ID and username associated with a Discord token.
     /// </summary>
