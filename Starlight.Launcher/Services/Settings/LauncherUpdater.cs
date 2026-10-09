@@ -199,6 +199,7 @@ public partial class LauncherUpdater
                 InstallKind.AppImage => ".AppImage",
                 InstallKind.Deb => ".deb",
                 InstallKind.Pacman => ".pkg.tar.zst",
+                InstallKind.Rpm => ".rpm",
                 InstallKind.Flatpak => ".flatpak",
                 _ => ".tar.gz",
             };
@@ -337,6 +338,11 @@ public partial class LauncherUpdater
                 return;
             case InstallKind.Pacman:
                 RunSystemPackageUpdate(downloadedPath, $"pacman -U --noconfirm {Quote(downloadedPath)}");
+                return;
+            case InstallKind.Rpm:
+                RunSystemPackageUpdate(downloadedPath,
+                    $"if command -v dnf >/dev/null; then dnf install -y {Quote(downloadedPath)}; " +
+                    $"else zypper --non-interactive install --allow-unsigned-rpm {Quote(downloadedPath)}; fi");
                 return;
             default:
                 RunTarballUpdate(downloadedPath, installDir);

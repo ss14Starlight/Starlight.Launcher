@@ -14,6 +14,8 @@ public enum InstallKind
 
     Pacman,
 
+    Rpm,
+
     Flatpak,
 }
 
@@ -49,6 +51,8 @@ public static class InstallKindDetector
                         return InstallKind.Deb;
                     case "pacman":
                         return InstallKind.Pacman;
+                    case "rpm":
+                        return InstallKind.Rpm;
                     case "flatpak":
                         return InstallKind.Flatpak;
                     case "appimage":

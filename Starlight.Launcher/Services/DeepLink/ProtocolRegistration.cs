@@ -63,7 +63,7 @@ internal static class ProtocolRegistration
         if (!OperatingSystem.IsLinux())
             return;
 
-        if (InstallKindDetector.Current is InstallKind.Flatpak or InstallKind.Deb or InstallKind.Pacman)
+        if (InstallKindDetector.Current is InstallKind.Flatpak or InstallKind.Deb or InstallKind.Pacman or InstallKind.Rpm)
             return;
 
         try

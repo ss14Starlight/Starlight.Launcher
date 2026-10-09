@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Starlight Launcher
+Comment=Starlight Launcher for Space Station 14
+Exec=/opt/starlight-launcher/Starlight.Launcher %u
+Icon=starlight-launcher
+Terminal=false
+Categories=Game;
+MimeType=x-scheme-handler/starlight;
