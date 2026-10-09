@@ -514,6 +514,20 @@ public partial class Connector : ObservableObject
                 args.Add($"build.{name}={value}");
             }
 
+            if (settings.TracyEnabled)
+            {
+                args.Add("--cvar");
+                args.Add("prof.tracy.enabled=true");
+                if (settings.TracyOnlyLocalhost)
+                    cVars.Add(("TRACY_ONLY_LOCALHOST", "1"));
+            }
+
+            foreach (var (name, value) in ParseCVarOverrides(settings.ClientCVarOverrides))
+            {
+                args.Add("--cvar");
+                args.Add($"{name}={value}");
+            }
+
             // Launch client.
             return await LaunchClient(launchInfo, args, cVars);
         }
@@ -522,6 +536,35 @@ public partial class Connector : ObservableObject
             // Access errors (e.g. an unwritable client logs folder) propagate so the user sees why the launch failed.
             Log.Error(e, "Exception while starting client");
             return null;
+        }
+    }
+
+    internal static IEnumerable<(string Name, string Value)> ParseCVarOverrides(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+            yield break;
+
+        foreach (var entry in raw.Split([';', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (entry.StartsWith('#'))
+                continue;
+
+            var pos = entry.IndexOf('=');
+            if (pos <= 0)
+            {
+                Log.Warning("Ignoring malformed cvar override {Entry}", entry);
+                continue;
+            }
+
+            var name = entry[..pos].Trim();
+            var value = entry[(pos + 1)..].Trim();
+            if (name.Length == 0 || name.Any(char.IsWhiteSpace))
+            {
+                Log.Warning("Ignoring malformed cvar override {Entry}", entry);
+                continue;
+            }
+
+            yield return (name, value);
         }
     }
 

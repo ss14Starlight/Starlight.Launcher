@@ -1,0 +1,7 @@
+.bug-report-target ::deep .mud-toggle-group {
+    border-color: var(--mud-palette-lines-inputs) !important;
+}
+
+.bug-report-target ::deep .mud-toggle-item {
+    border-color: var(--mud-palette-lines-inputs) !important;
+}

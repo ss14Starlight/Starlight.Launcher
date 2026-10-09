@@ -12,6 +12,7 @@ public partial class FieldOption : ComponentBase
     [Parameter] public string Label { get; set; } = "";
     [Parameter] public string Helper { get; set; } = "";
     [Parameter] public bool HelperOnFocus { get; set; } = false;
+    [Parameter] public int Lines { get; set; } = 1;
     /// <summary>
     /// Means that this component will control value change by itself.
     /// </summary>

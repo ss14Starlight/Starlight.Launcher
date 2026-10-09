@@ -1,0 +1,38 @@
+@using Starlight.Launcher.WebUI.Components.Atoms.Dialogs
+
+@inherits Starlight.Launcher.WebUI.Localization.LocalizedComponentBase
+
+@if (NavLink)
+{
+    <MudNavLink Icon="@Icons.Material.Filled.BugReport" OnClick="Open">
+        @L["main-layout-bug-report"]
+    </MudNavLink>
+}
+else
+{
+    <MudTooltip Text="@L["main-layout-bug-report"]">
+        <MudIconButton Icon="@Icons.Material.Filled.BugReport"
+                       Size="Size.Medium"
+                       OnClick="Open" />
+    </MudTooltip>
+}
+
+@code {
+    [Inject] private IDialogService _dialogService { get; set; } = default!;
+
+    [Parameter] public bool NavLink { get; set; }
+
+    private async Task Open()
+    {
+        var options = new DialogOptions
+        {
+            BackdropClick = false,
+            CloseOnEscapeKey = true,
+            CloseButton = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+        };
+
+        _ = await _dialogService.ShowAsync<BugReportDialog>(L["bug-report-dialog-header"], options);
+    }
+}

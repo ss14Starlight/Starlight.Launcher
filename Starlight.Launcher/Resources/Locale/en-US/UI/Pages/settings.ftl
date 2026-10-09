@@ -191,3 +191,12 @@ settings-menu-clear-content-success = Game content deleted.
 settings-menu-clear-busy = Wait for the current download to finish and try again.
 settings-menu-clear-client-running = Close the running game and try again.
 settings-menu-clear-failed = Couldn't delete the data. See the launcher logs for details.
+
+settings-menu-development-client-category = Game client
+settings-menu-development-tracy-option = Tracy Profiler
+settings-menu-development-tracy-option-description = Launch the game with the Tracy profiler enabled (prof.tracy.enabled). Connect to it with the Tracy profiler app while the game is running. Costs some performance.
+settings-menu-development-tracy-localhost-option = Tracy: localhost only
+settings-menu-development-tracy-localhost-option-description = Only accept Tracy connections from this computer. When disabled, Tracy listens on all network interfaces.
+settings-menu-development-cvars-option = Client CVar Overrides
+settings-menu-development-cvars-option-description = Extra cvars passed to the game client on launch. Cvars the server replicates to clients are still overridden by the server.
+settings-menu-development-cvars-option-helper = One key=value per line or separated by ";", lines starting with # are ignored

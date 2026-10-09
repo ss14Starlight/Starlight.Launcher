@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Net.Sockets;
@@ -58,7 +59,8 @@ public sealed class ServerStatusCache : IServerSource
     private async void UpdateStatusFor(CacheReg reg)
     {
         reg.DidInitialStatusUpdate = true;
-        reg.DidInitialPing = true;
+        lock (reg)
+            reg.LastPingAttempt = DateTime.UtcNow;
         await reg.Semaphore.WaitAsync();
         var cancelSource = reg.Cancellation = new CancellationTokenSource();
         var cancel = cancelSource.Token;
@@ -72,37 +74,98 @@ public sealed class ServerStatusCache : IServerSource
         }
     }
 
-    private static async Task MeasurePing(ServerStatusData data, string host, int port, CancellationToken cancel)
+    private const int MaxConcurrentPings = 16;
+    private static readonly TimeSpan PingTimeout = TimeSpan.FromSeconds(3);
+    private static readonly TimeSpan PingRetryDelay = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan PingMaxAge = TimeSpan.FromMinutes(2);
+    private static readonly SemaphoreSlim PingGate = new(MaxConcurrentPings, MaxConcurrentPings);
+
+    private static async Task MeasurePing(ServerStatusData data, Uri address, CancellationToken cancel)
     {
+        var api = UriHelper.GetServerApiAddress(address);
+
+        await PingGate.WaitAsync(cancel).ConfigureAwait(false);
         try
         {
-            using var tcp = new TcpClient();
             using var pingCancel = CancellationTokenSource.CreateLinkedTokenSource(cancel);
-            pingCancel.CancelAfter(TimeSpan.FromSeconds(2));
+            pingCancel.CancelAfter(PingTimeout);
+
+            var addresses = IPAddress.TryParse(api.DnsSafeHost, out var literal)
+                ? [literal]
+                : await Dns.GetHostAddressesAsync(api.DnsSafeHost, pingCancel.Token).ConfigureAwait(false);
+
+            if (addresses.Length == 0)
+            {
+                data.Ping = null;
+                return;
+            }
+
+            using var socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
             var sw = Stopwatch.StartNew();
-            await tcp.ConnectAsync(host, port, pingCancel.Token);
+            await socket.ConnectAsync(addresses, api.Port, pingCancel.Token).ConfigureAwait(false);
             sw.Stop();
             data.Ping = sw.Elapsed;
         }
-        catch { data.Ping = null; }
+        catch (OperationCanceledException) when (cancel.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch
+        {
+            data.Ping = null;
+        }
+        finally
+        {
+            _ = PingGate.Release();
+        }
     }
 
     public bool TryInitialPing(ServerStatusData data)
     {
-        if (!_cachedData.TryGetValue(data.Address, out var reg) || reg.DidInitialPing)
+        if (!_cachedData.TryGetValue(data.Address, out var reg))
             return false;
+
+        lock (reg)
+        {
+            if (reg.PingInFlight)
+                return false;
+
+            if (reg.LastPingAttempt is { } last)
+            {
+                var age = DateTime.UtcNow - last;
+                var retry = data.Ping is null ? age >= PingRetryDelay : age >= PingMaxAge;
+                if (!retry)
+                    return false;
+            }
+
+            reg.PingInFlight = true;
+            reg.LastPingAttempt = DateTime.UtcNow;
+        }
+
         PingFor(reg);
         return true;
     }
 
     private async void PingFor(CacheReg reg)
     {
-        reg.DidInitialPing = true;
         var data = reg.Data;
-        if (!UriHelper.TryParseSs14Uri(data.Address, out var parsed))
-            return;
-        await MeasurePing(data, parsed.Host, parsed.Port, CancellationToken.None);
-        data.NotifyChanged();
+        try
+        {
+            if (!UriHelper.TryParseSs14Uri(data.Address, out var parsed))
+                return;
+
+            await MeasurePing(data, parsed, CancellationToken.None);
+            data.NotifyChanged();
+        }
+        catch (Exception e)
+        {
+            _logger.LogDebug(e, "Ping failed for {Address}", data.Address);
+        }
+        finally
+        {
+            lock (reg)
+                reg.PingInFlight = false;
+        }
     }
 
     public async Task UpdateStatusFor(ServerStatusData data, HttpClient http, CancellationToken cancel)
@@ -117,7 +180,7 @@ public sealed class ServerStatusCache : IServerSource
                 return;
             }
 
-            await MeasurePing(data, parsedAddress.Host, parsedAddress.Port, cancel);
+            await MeasurePing(data, parsedAddress, cancel);
 
             var statusAddr = UriHelper.GetServerStatusAddress(parsedAddress);
             data.Status = ServerStatusCode.FetchingStatus;
@@ -360,7 +423,8 @@ public sealed class ServerStatusCache : IServerSource
         public readonly SemaphoreSlim Semaphore = new(1);
         public CancellationTokenSource? Cancellation;
         public bool DidInitialStatusUpdate;
-        public bool DidInitialPing;
+        public bool PingInFlight;
+        public DateTime? LastPingAttempt;
 
         public CacheReg(ServerStatusData data) => Data = data;
     }

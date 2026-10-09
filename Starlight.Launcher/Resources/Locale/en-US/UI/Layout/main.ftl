@@ -11,3 +11,4 @@ settings-logins-unrecoverable-action = More Information
 
 main-layout-data-folder-no-access = The launcher can't write to the data folder "{ $path }". Downloading and updating game files will fail. Choose another folder in the settings.
 main-layout-data-folder-no-access-action = Settings
+main-layout-bug-report = Report a bug

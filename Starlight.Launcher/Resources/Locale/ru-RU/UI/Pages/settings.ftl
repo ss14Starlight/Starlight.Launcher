@@ -108,3 +108,12 @@ settings-menu-clear-content-success = Игровой контент удалён
 settings-menu-clear-busy = Дождитесь окончания текущей загрузки и попробуйте снова.
 settings-menu-clear-client-running = Закройте запущенную игру и попробуйте снова.
 settings-menu-clear-failed = Не удалось удалить данные. Подробности в логах лаунчера.
+
+settings-menu-development-client-category = Игровой клиент
+settings-menu-development-tracy-option = Профайлер Tracy
+settings-menu-development-tracy-option-description = Запускать игру с включённым профайлером Tracy (prof.tracy.enabled). Подключитесь к нему приложением Tracy, пока игра запущена. Немного снижает производительность.
+settings-menu-development-tracy-localhost-option = Tracy: только localhost
+settings-menu-development-tracy-localhost-option-description = Принимать подключения Tracy только с этого компьютера. Если выключено, Tracy слушает на всех сетевых интерфейсах.
+settings-menu-development-cvars-option = Переопределение CVar клиента
+settings-menu-development-cvars-option-description = Дополнительные cvar, передаваемые игровому клиенту при запуске. Cvar, которые сервер реплицирует клиентам, всё равно будут перезаписаны сервером.
+settings-menu-development-cvars-option-helper = По одной паре key=value на строку или через ";", строки с # игнорируются

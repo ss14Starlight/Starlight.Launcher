@@ -1,0 +1,108 @@
+@using Starlight.Launcher.WebUI.Models.BugReport
+
+@inherits Starlight.Launcher.WebUI.Localization.LocalizedComponentBase
+
+<MudDialog>
+    <DialogContent>
+        @if (!_linked)
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-3">@L["bug-report-dialog-not-linked"]</MudAlert>
+        }
+
+        <MudText Typo="Typo.subtitle2" Class="mb-1">@L["bug-report-dialog-target"]</MudText>
+        <div class="bug-report-target mb-1">
+        <MudToggleGroup T="BugReportTarget"
+                        Value="_target"
+                        ValueChanged="OnTargetChanged"
+                        SelectionMode="SelectionMode.SingleSelection"
+                        Color="Color.Primary"
+                        CheckMark="true"
+                        FixedContent="true"
+                        Disabled="@(_targets is null || _sending)">
+            <MudToggleItem Value="BugReportTarget.Launcher" Disabled="@(!LauncherAvailable)" Text="@L["bug-report-dialog-target-launcher"]" />
+            <MudToggleItem Value="BugReportTarget.Game" Disabled="@(!GameAvailable)" Text="@L["bug-report-dialog-target-game"]" />
+        </MudToggleGroup>
+        </div>
+        @if (_targets is not null && !LauncherAvailable)
+        {
+            <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mb-2">@L["bug-report-dialog-launcher-disabled"]</MudText>
+        }
+
+        @if (_target == BugReportTarget.Game)
+        {
+            <MudSelect T="string"
+                       @bind-Value="_project"
+                       Label="@L["bug-report-dialog-project"]"
+                       Variant="Variant.Outlined"
+                       Disabled="@(!GameAvailable || _sending)"
+                       Class="mt-2 mb-3">
+                @foreach (var project in _targets?.Projects ?? [])
+                {
+                    <MudSelectItem Value="project">@project</MudSelectItem>
+                }
+            </MudSelect>
+        }
+
+        <MudTextField T="string"
+                      @bind-Value="_title"
+                      Label="@L["bug-report-dialog-title"]"
+                      Variant="Variant.Outlined"
+                      Immediate="true"
+                      Counter="BugReportLimits.MaxTitleLength"
+                      Error="TitleTooShort"
+                      ErrorText="@L.GetString("bug-report-dialog-too-short", ("min", BugReportLimits.MinTitleLength))"
+                      MaxLength="BugReportLimits.MaxTitleLength"
+                      Disabled="_sending"
+                      AutoFocus="true"
+                      Class="mt-2 mb-3" />
+
+        <MudTextField T="string"
+                      @bind-Value="_description"
+                      Label="@L["bug-report-dialog-description"]"
+                      HelperText="@L["bug-report-dialog-description-helper"]"
+                      Variant="Variant.Outlined"
+                      Immediate="true"
+                      Lines="6"
+                      Counter="BugReportLimits.MaxDescriptionLength"
+                      Error="DescriptionTooShort"
+                      ErrorText="@L.GetString("bug-report-dialog-too-short", ("min", BugReportLimits.MinDescriptionLength))"
+                      MaxLength="BugReportLimits.MaxDescriptionLength"
+                      Disabled="_sending"
+                      Class="mb-3" />
+
+        @if (_target == BugReportTarget.Game)
+        {
+            <MudTextField T="string"
+                          @bind-Value="_server"
+                          Label="@L["bug-report-dialog-server"]"
+                          Placeholder="ss14://..."
+                          Variant="Variant.Outlined"
+                          Disabled="_sending"
+                          Class="mb-1" />
+        }
+
+        <MudCheckBox T="bool"
+                     @bind-Value="_includeSystemInfo"
+                     Label="@L["bug-report-dialog-system-info"]"
+                     Disabled="_sending" />
+
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mt-2">@_error</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_sending">@L["bug-report-dialog-cancel"]</MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Class="cta-btn-primary"
+                   Disabled="@(!CanSend)"
+                   StartIcon="@(_sending ? null : Icons.Material.Filled.Send)"
+                   OnClick="Send">
+            @if (_sending)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="mr-2" />
+            }
+            @L["bug-report-dialog-send"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>

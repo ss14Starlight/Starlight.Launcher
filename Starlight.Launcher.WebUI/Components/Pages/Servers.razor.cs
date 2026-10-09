@@ -331,7 +331,7 @@ public partial class Servers : LocalizedComponentBase, IDisposable
 
     private static int GetPlayers(ServerStatusData s) => s.PlayerCount;
     private static int GetMaxPlayers(ServerStatusData s) => s.SoftMaxPlayerCount;
-    private static int GetPing(ServerStatusData s) => (int?)(s.Ping?.TotalMilliseconds) ?? 0;
+    private static int GetPing(ServerStatusData s) => (int?)(s.Ping?.TotalMilliseconds) ?? int.MaxValue;
     private static IEnumerable<string> GetTags(ServerStatusData s) => s.Tags.Where(t => !string.IsNullOrWhiteSpace(t))!;
     private static string? GetLanguage(ServerStatusData s) => s.Tags.FirstOrDefault(x => x.StartsWith("lang:"));
     private static string? GetRegion(ServerStatusData s) => s.Tags.FirstOrDefault(x => x.StartsWith("region:"));

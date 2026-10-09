@@ -192,6 +192,21 @@ public partial record AppSettings
     public int MaxForkVersionsToKeep { get; init; } = 3;
 
     /// <summary>
+    /// Launch the client with the Tracy profiler enabled (<c>prof.tracy.enabled</c>).
+    /// </summary>
+    public bool TracyEnabled { get; init; }
+
+    /// <summary>
+    /// Only accept Tracy connections from localhost (<c>TRACY_ONLY_LOCALHOST</c>). Tracy listens on all interfaces otherwise.
+    /// </summary>
+    public bool TracyOnlyLocalhost { get; init; } = true;
+
+    /// <summary>
+    /// Extra client cvars passed on launch, as <c>key=value</c> pairs separated by <c>;</c> or new lines.
+    /// </summary>
+    public string ClientCVarOverrides { get; init; } = "";
+
+    /// <summary>
     /// If a download gets interrupted, keep the files for a week.
     /// </summary>
     public int InterruptibleDownloadKeepHours = 7 * 24;

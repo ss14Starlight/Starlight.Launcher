@@ -1,5 +1,6 @@
 using Serilog;
 using Starlight.Launcher.Services.Settings;
+using Starlight.Launcher.WebUI.Models.BugReport;
 using Starlight.Launcher.WebUI.Models.DiscordAuthService;
 using Starlight.Launcher.WebUI.Models.NullLink;
 using Starlight.Launcher.WebUI.Models.StarlightAuthService;
@@ -181,6 +182,79 @@ public sealed class StarlightAuthApi(HttpClient http, SettingsService settings)
         }
     }
 
+    public async Task<BugReportTargets?> GetBugReportTargetsAsync(CancellationToken cancel = default)
+    {
+        try
+        {
+            using var timeout = Linked(cancel);
+            return await http.GetFromJsonAsync<BugReportTargets>(new Uri(ApiUrl, "api/bugreport/targets"), timeout.Token);
+        }
+        catch (OperationCanceledException) when (cancel.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception e)
+        {
+            Log.Warning(e, "Could not load bug report targets");
+            return null;
+        }
+    }
+
+    public async Task<(TokenCheckOutcome Outcome, BugReportResult Result)> SendBugReportAsync(
+        string token, StarlightBugReportRequest report, CancellationToken cancel = default)
+    {
+        try
+        {
+            using var timeout = Linked(cancel);
+
+            using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(ApiUrl, "api/bugreport"))
+            {
+                Content = JsonContent.Create(report),
+            };
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            using var resp = await http.SendAsync(request, timeout.Token);
+
+            if (resp.IsSuccessStatusCode)
+                return (TokenCheckOutcome.Valid, new BugReportResult(BugReportStatus.Sent));
+
+            if (resp.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+                return (TokenCheckOutcome.Invalid, new BugReportResult(BugReportStatus.Unauthorized));
+
+            var error = await ReadErrorAsync(resp, timeout.Token);
+
+            if (resp.StatusCode == HttpStatusCode.TooManyRequests)
+                return (TokenCheckOutcome.Valid, new BugReportResult(BugReportStatus.RateLimited, resp.Headers.RetryAfter?.Delta, error));
+
+            if (resp.StatusCode == HttpStatusCode.BadRequest)
+                return (TokenCheckOutcome.Valid, new BugReportResult(BugReportStatus.Invalid, Error: error));
+
+            Log.Warning("Bug report failed with {Status} ({Error})", resp.StatusCode, error);
+            return (TokenCheckOutcome.Unavailable, new BugReportResult(BugReportStatus.Unavailable, Error: error));
+        }
+        catch (OperationCanceledException) when (cancel.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception e)
+        {
+            Log.Warning(e, "Could not reach the backend to send a bug report");
+            return (TokenCheckOutcome.Unavailable, new BugReportResult(BugReportStatus.Unavailable));
+        }
+    }
+
+    private static async Task<string?> ReadErrorAsync(HttpResponseMessage resp, CancellationToken cancel)
+    {
+        try
+        {
+            return (await resp.Content.ReadFromJsonAsync<StarlightApiError>(cancellationToken: cancel))?.Error;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     /// <summary>
     ///     Exchanges a refresh token for a new token pair.
     /// </summary>
@@ -259,3 +333,7 @@ public sealed record DiscordUserResponse(Guid UserId, string Username);
 ///     The user ID and username associated with a Steam token.
 /// </summary>
 public sealed record SteamUserResponse(Guid UserId, string Username);
+
+public sealed record StarlightBugReportRequest(string Target, string? Project, string Title, string Description, Dictionary<string, string> Metadata);
+
+public sealed record StarlightApiError(string? Error);
