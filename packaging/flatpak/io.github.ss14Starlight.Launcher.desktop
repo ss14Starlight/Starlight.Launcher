@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Starlight Launcher
+Comment=Starlight Launcher for Space Station 14
+Exec=starlight-launcher %u
+Icon=io.github.ss14Starlight.Launcher
+Terminal=false
+Categories=Game;
+MimeType=x-scheme-handler/starlight;
+StartupWMClass=Starlight.Launcher

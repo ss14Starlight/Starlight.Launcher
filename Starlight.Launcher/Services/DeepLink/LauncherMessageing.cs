@@ -21,7 +21,12 @@ public class LauncherMessaging
         var actualPipeName = "Starlight.Launcher.CommandPipe";
 
         if (OperatingSystem.IsLinux() && Environment.GetEnvironmentVariable("XDG_RUNTIME_DIR") is { } runtimeDir && !string.IsNullOrEmpty(runtimeDir))
+        {
+            if (Environment.GetEnvironmentVariable("FLATPAK_ID") is { Length: > 0 } flatpakId)
+                runtimeDir = Path.Combine(runtimeDir, "app", flatpakId);
+
             actualPipeName = Path.Combine(runtimeDir, actualPipeName);
+        }
         else if (!OperatingSystem.IsMacOS())
             actualPipeName += "_" + Convert.ToHexString(Encoding.UTF8.GetBytes(Environment.UserName));
 

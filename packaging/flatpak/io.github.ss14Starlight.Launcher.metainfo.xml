@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.ss14Starlight.Launcher</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>Starlight Launcher</name>
+  <summary>Community launcher for Space Station 14</summary>
+  <description>
+    <p>
+      A modern launcher for Space Station 14 by the Starlight Team: multiple accounts and auth servers,
+      configurable build CDNs, Discord integration and a fully localized UI.
+    </p>
+  </description>
+  <launchable type="desktop-id">io.github.ss14Starlight.Launcher.desktop</launchable>
+  <url type="homepage">https://github.com/ss14Starlight/Starlight.Launcher</url>
+  <url type="bugtracker">https://github.com/ss14Starlight/Starlight.Launcher/issues</url>
+  <developer id="io.github.ss14Starlight">
+    <name>Starlight Team</name>
+  </developer>
+  <content_rating type="oars-1.1"/>
+  <categories>
+    <category>Game</category>
+  </categories>
+</component>

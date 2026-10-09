@@ -1,0 +1,44 @@
+id: io.github.ss14Starlight.Launcher
+runtime: org.gnome.Platform
+runtime-version: '51'
+sdk: org.gnome.Sdk
+command: starlight-launcher
+
+finish-args:
+  - --share=network
+  - --share=ipc
+  - --socket=x11
+  - --socket=pulseaudio
+  - --device=dri
+  - --filesystem=xdg-run/discord-ipc-0
+  - --filesystem=xdg-run/app/com.discordapp.Discord:create
+  - --talk-name=org.kde.StatusNotifierWatcher
+  - --own-name=org.kde.StatusNotifierItem-2-0
+  - --own-name=org.kde.StatusNotifierItem-2-1
+  - --own-name=org.kde.StatusNotifierItem-2-2
+  - --talk-name=org.freedesktop.Flatpak
+
+modules:
+  - name: starlight-launcher
+    buildsystem: simple
+    build-commands:
+      - mkdir -p /app/lib/starlight-launcher
+      - cp -a publish/. /app/lib/starlight-launcher/
+      - chmod +x /app/lib/starlight-launcher/Starlight.Launcher /app/lib/starlight-launcher/loader/Robust.Loader
+      - echo flatpak > /app/lib/starlight-launcher/install-kind
+      - install -Dm755 starlight-launcher.sh /app/bin/starlight-launcher
+      - install -Dm644 icon.png /app/share/icons/hicolor/256x256/apps/${FLATPAK_ID}.png
+      - install -Dm644 ${FLATPAK_ID}.desktop -t /app/share/applications
+      - install -Dm644 ${FLATPAK_ID}.metainfo.xml -t /app/share/metainfo
+    sources:
+      - type: dir
+        path: ../../publish/linux-x64
+        dest: publish
+      - type: file
+        path: starlight-launcher.sh
+      - type: file
+        path: ../../PublishFiles/icon.png
+      - type: file
+        path: io.github.ss14Starlight.Launcher.desktop
+      - type: file
+        path: io.github.ss14Starlight.Launcher.metainfo.xml

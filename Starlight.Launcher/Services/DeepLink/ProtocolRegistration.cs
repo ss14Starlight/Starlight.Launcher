@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.Win32;
 using Serilog;
+using Starlight.Launcher.Services;
 
 namespace Starlight.Launcher;
 
@@ -60,6 +61,9 @@ internal static class ProtocolRegistration
     public static void RegisterLinux()
     {
         if (!OperatingSystem.IsLinux())
+            return;
+
+        if (InstallKindDetector.Current is InstallKind.Flatpak or InstallKind.Deb or InstallKind.Pacman)
             return;
 
         try

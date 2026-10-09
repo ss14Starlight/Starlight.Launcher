@@ -194,9 +194,18 @@ public partial class LauncherUpdater
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
+            var extension = InstallKindDetector.Current switch
+            {
+                InstallKind.AppImage => ".AppImage",
+                InstallKind.Deb => ".deb",
+                InstallKind.Pacman => ".pkg.tar.zst",
+                InstallKind.Flatpak => ".flatpak",
+                _ => ".tar.gz",
+            };
+
             return assets.FirstOrDefault(a =>
                 a.Name.Contains("linux-x64", StringComparison.OrdinalIgnoreCase) &&
-                a.Name.EndsWith(".AppImage", StringComparison.OrdinalIgnoreCase));
+                a.Name.EndsWith(extension, StringComparison.OrdinalIgnoreCase));
         }
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -313,7 +322,115 @@ public partial class LauncherUpdater
     public static string GetMacAppBundleRoot(string baseDirectory) =>
         Path.GetFullPath(Path.Combine(baseDirectory, "..", ".."));
 
-    private static void RunLinuxUpdate(string archivePath, string installDir)
+    private static void RunLinuxUpdate(string downloadedPath, string installDir)
+    {
+        switch (InstallKindDetector.Current)
+        {
+            case InstallKind.Flatpak:
+                RunFlatpakUpdate(downloadedPath);
+                return;
+            case InstallKind.AppImage:
+                RunAppImageUpdate(downloadedPath);
+                return;
+            case InstallKind.Deb:
+                RunSystemPackageUpdate(downloadedPath, $"apt-get install -y --allow-downgrades {Quote(downloadedPath)}");
+                return;
+            case InstallKind.Pacman:
+                RunSystemPackageUpdate(downloadedPath, $"pacman -U --noconfirm {Quote(downloadedPath)}");
+                return;
+            default:
+                RunTarballUpdate(downloadedPath, installDir);
+                return;
+        }
+    }
+
+    private static void RunFlatpakUpdate(string bundlePath)
+    {
+        var appId = Environment.GetEnvironmentVariable("FLATPAK_ID")
+            ?? throw new InvalidOperationException("FLATPAK_ID is not set.");
+
+        var scope = IsFlatpakUserInstall() ? "--user" : "--system";
+
+        var cacheDir = Environment.GetEnvironmentVariable("XDG_CACHE_HOME") ?? Path.GetDirectoryName(bundlePath)!;
+        var logPath = Path.Combine(cacheDir, "flatpak-update.log");
+
+        var hostScript = $"""
+            exec >{Quote(logPath)} 2>&1 </dev/null
+            for i in $(seq 1 50); do flatpak ps --columns=application | grep -qx {Quote(appId)} || break; sleep 0.2; done
+            flatpak install {scope} --noninteractive -y --reinstall {Quote(bundlePath)}
+            exec flatpak run {Quote(appId)}
+            """;
+
+        _ = Process.Start(new ProcessStartInfo
+        {
+            FileName = "flatpak-spawn",
+            ArgumentList = { "--host", "sh", "-c", hostScript },
+            UseShellExecute = false,
+        }) ?? throw new InvalidOperationException("Failed to start flatpak-spawn.");
+
+        Thread.Sleep(500);
+        Environment.Exit(0);
+    }
+
+    private static bool IsFlatpakUserInstall()
+    {
+        try
+        {
+            return File.ReadLines("/.flatpak-info")
+                .Any(l => l.StartsWith("app-path=", StringComparison.Ordinal) &&
+                          l.Contains("/.local/share/flatpak/", StringComparison.Ordinal));
+        }
+        catch (IOException)
+        {
+            return true;
+        }
+    }
+
+    private static void RunAppImageUpdate(string newAppImagePath)
+    {
+        var target = Environment.GetEnvironmentVariable("APPIMAGE")
+            ?? throw new InvalidOperationException("APPIMAGE is not set.");
+        var pid = Environment.ProcessId;
+
+        var script = $"""
+            #!/bin/sh
+            while kill -0 {pid} 2>/dev/null; do sleep 0.2; done
+            mv -f {Quote(newAppImagePath)} {Quote(target)}
+            chmod +x {Quote(target)}
+            exec {Quote(target)}
+            """;
+
+        RunDetachedShellScript(script);
+        Environment.Exit(0);
+    }
+
+    private static void RunSystemPackageUpdate(string packagePath, string installCommand)
+    {
+        if (!CommandExists("pkexec"))
+            throw new InvalidOperationException($"pkexec was not found. Install the update manually: {packagePath}");
+
+        var pid = Environment.ProcessId;
+        var exePath = Environment.ProcessPath!;
+
+        var script = $"""
+            #!/bin/sh
+            while kill -0 {pid} 2>/dev/null; do sleep 0.2; done
+            pkexec sh -c {Quote(installCommand)}
+            exec {Quote(exePath)}
+            """;
+
+        RunDetachedShellScript(script);
+        Environment.Exit(0);
+    }
+
+    private static bool CommandExists(string name)
+        => (Environment.GetEnvironmentVariable("PATH") ?? "")
+            .Split(':', StringSplitOptions.RemoveEmptyEntries)
+            .Any(dir => File.Exists(Path.Combine(dir, name)));
+
+    private static string Quote(string value) => "'" + value.Replace("'", "'\\''") + "'";
+
+    private static void RunTarballUpdate(string archivePath, string installDir)
     {
         var stagingDir = Path.Combine(Path.GetTempPath(), "starlight-update-" + Guid.NewGuid());
         _ = Directory.CreateDirectory(stagingDir);

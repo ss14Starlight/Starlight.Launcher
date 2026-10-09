@@ -113,7 +113,8 @@ public partial class MainWindow : Window
 
         WebViewFallbackHint.Text = OperatingSystem.IsLinux()
             ? "No usable web engine was found. Install the WebKitGTK package for your distribution " +
-              "(webkit2gtk-4.1 / libwebkit2gtk-4.1-0 / webkit2gtk-4.0) and start the launcher again."
+              "(webkit2gtk-4.1 / libwebkit2gtk-4.1-0 / webkit2gtk-4.0) and start the launcher again. " +
+              "On SteamOS / Steam Deck, or if you can't install packages, use the Flatpak version instead - it ships its own WebKitGTK."
             : "The embedded web engine failed to start. Please check the launcher logs.";
 
         WebViewFallbackDetails.Text = details;
