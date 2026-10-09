@@ -110,8 +110,7 @@ public partial class App : Application
                 messaging.StopAndWait();
                 Log.Information("Shutdown: IPC messaging stopped at {Elapsed}", sw.Elapsed);
 
-                // Stopping the host synchronously waits (up to 5s) for SignalR connections to close, which
-                // needs the WebView to answer; doing that on the UI thread stalls both until the timeout.
+                // Fix long shutdown time
                 await Task.Run(async () => await _blazorHost.DisposeAsync());
                 Log.Information("Shutdown: Blazor host disposed at {Elapsed}", sw.Elapsed);
 
