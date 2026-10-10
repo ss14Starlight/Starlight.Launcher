@@ -43,6 +43,9 @@ public partial class MainWindow : Window
         if (OperatingSystem.IsLinux())
         {
             LinuxWebViewSetup.Configure(Web);
+
+            Web.IsVisible = false;
+            Web.NavigationCompleted += (_, _) => Web.IsVisible = true;
         }
         else if (OperatingSystem.IsWindows())
         {

@@ -37,6 +37,15 @@ public partial class App : Application
 
     public override async void OnFrameworkInitializationCompleted()
     {
+        // Avalonia's D-Bus tray watcher (async void) rethrows its own cancellation once the tray icon is
+        // disposed, which happens on every exit; unhandled, that aborts the process and dumps core.
+        Avalonia.Threading.Dispatcher.UIThread.UnhandledException += (_, e) =>
+        {
+            if (e.Exception is OperationCanceledException &&
+                e.Exception.StackTrace?.Contains("Avalonia.FreeDesktop.DBusTrayIconImpl.WatchAsync") == true)
+                e.Handled = true;
+        };
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var services = new ServiceCollection();
@@ -83,10 +92,11 @@ public partial class App : Application
 
             desktop.ShutdownRequested += async (_, e) =>
             {
+                // Keep cancelling while the flush below is running, otherwise repeated close requests
+                // tear the app down underneath it.
+                e.Cancel = true;
                 if (flushing) return;
                 flushing = true;
-
-                e.Cancel = true;
 
                 var sw = System.Diagnostics.Stopwatch.StartNew();
                 Log.Information("Shutdown: starting");
@@ -100,7 +110,8 @@ public partial class App : Application
                 messaging.StopAndWait();
                 Log.Information("Shutdown: IPC messaging stopped at {Elapsed}", sw.Elapsed);
 
-                await _blazorHost.DisposeAsync();
+                // Fix long shutdown time
+                await Task.Run(async () => await _blazorHost.DisposeAsync());
                 Log.Information("Shutdown: Blazor host disposed at {Elapsed}", sw.Elapsed);
 
                 await settings.FlushPendingSavesAsync();
