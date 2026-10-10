@@ -235,7 +235,7 @@ jobs:
           useradd -m builder
           chown -R builder .
           su builder -c "updpkgsums && makepkg -f --nodeps"
-          mv starlight-launcher-bin-*.pkg.tar.zst "../../Starlight.Launcher-linux-x64-${VER}.pkg.tar.zst"
+          mv ss14-starlight-launcher-bin-*.pkg.tar.zst "../../Starlight.Launcher-linux-x64-${VER}.pkg.tar.zst"
           cp PKGBUILD ../../PKGBUILD
       - uses: actions/upload-artifact@v4
         with:
