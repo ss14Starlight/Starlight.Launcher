@@ -703,9 +703,48 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
     }
 
     /// <summary>
-    ///     Attaches a password-based SS14 login to an account that was created through Discord/Steam.
+    ///     Merges a password-based SS14 login into an account that was created through Discord/Steam. The
+    ///     account's Discord/Steam logins are bound to the SS14 account on the server first, proven by
+    ///     <paramref name="authLogin"/> itself; the local merge only happens once the server agrees.
+    ///     Returns null on success, or the reason it failed.
     /// </summary>
-    public void LinkAuthToken(Guid oldUserId, Guid newUserId, LoginInfo authLogin)
+    public async Task<string?> LinkSs14AccountAsync(Guid oldUserId, LoginInfo authLogin, CancellationToken cancel = default)
+    {
+        ActiveLoginData? existing;
+        lock (_loginsLock)
+        {
+            _ = _logins.TryGetValue(oldUserId, out existing);
+        }
+
+        if (existing is null)
+            return "The account to link was not found.";
+
+        foreach (var token in new[] { existing.LoginInfo.DiscordToken, existing.LoginInfo.SteamToken })
+        {
+            if (token == null || string.IsNullOrWhiteSpace(token.Token))
+                continue;
+
+            // a challenge is single-use, so every login gets its own proof
+            if (await _starlightAuthApi.ProveSs14Async(authLogin, cancel) is not { } proof)
+                return "Could not verify the SS14 account with the Starlight server.";
+
+            if (await _starlightAuthApi.LinkSs14Async(token.Token, proof, cancel) is { } error)
+                return error;
+        }
+
+        LinkAuthToken(oldUserId, authLogin.UserId, authLogin);
+
+        LoggedInAccount? merged;
+        lock (_loginsLock)
+        {
+            merged = _logins.GetValueOrDefault(authLogin.UserId);
+        }
+        _ = await EnsureFreshAsync(merged, cancel);
+
+        return null;
+    }
+
+    private void LinkAuthToken(Guid oldUserId, Guid newUserId, LoginInfo authLogin)
     {
         ActiveLoginData? existing;
         lock (_loginsLock)
@@ -721,12 +760,10 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
 
         var old = existing.LoginInfo;
 
-        var hasStarlightToken = old.DiscordToken != null || old.SteamToken != null;
-
         var merged = new LoginInfo
         {
             UserId = newUserId,
-            Username = hasStarlightToken && !string.IsNullOrWhiteSpace(old.Username) ? old.Username : authLogin.Username,
+            Username = authLogin.Username,
             Token = authLogin.Token,
             AuthServerUrl = authLogin.AuthServerUrl,
             DiscordToken = old.DiscordToken,

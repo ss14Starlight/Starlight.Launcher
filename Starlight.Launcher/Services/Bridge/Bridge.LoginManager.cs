@@ -32,7 +32,8 @@ public sealed partial class Bridge : IBridge
 
     public void RemoveLogin(Guid userId) => _loginManager.RemoveLogin(userId);
 
-    public void LinkAuthToken(Guid oldUserID, Guid newUserId, LoginInfo authLogin) => _loginManager.LinkAuthToken(oldUserID, newUserId, authLogin);
+    public Task<string?> LinkSs14AccountAsync(Guid oldUserId, LoginInfo authLogin, CancellationToken cancel = default)
+        => _loginManager.LinkSs14AccountAsync(oldUserId, authLogin, cancel);
 
     public void AddFreshLogin(LoginInfo info) => _loginManager.AddFreshLogin(info);
 }

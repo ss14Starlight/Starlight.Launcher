@@ -1,3 +1,7 @@
+using Robust.Launcher.Api.Api;
+using Robust.Launcher.Api.Models;
+using Robust.Launcher.Api.Models.Data;
+using Robust.Launcher.Api.Utility;
 using Serilog;
 using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI.Models.BugReport;
@@ -34,7 +38,7 @@ public sealed record TokenRefreshResult(TokenCheckOutcome Outcome, StarlightRefr
     public static readonly TokenRefreshResult Unavailable = new(TokenCheckOutcome.Unavailable, null);
 }
 
-public sealed class StarlightAuthApi(HttpClient http, SettingsService settings)
+public sealed class StarlightAuthApi(HttpClient http, SettingsService settings, AuthApi ss14Auth)
 {
     /// <summary>
     ///     Cap on how long a single auth call may take. The shared <see cref="HttpClient"/> defaults to
@@ -54,24 +58,19 @@ public sealed class StarlightAuthApi(HttpClient http, SettingsService settings)
     public string BuildLauncherLoginUrl(bool steam, string state)
         => new Uri(ApiUrl, $"api/{(steam ? "steam" : "discord")}-auth/launcher-login?state={Uri.EscapeDataString(state)}").ToString();
 
-    public async Task<bool> RegisterAttachAsync(string token, string state, CancellationToken cancel)
+    public async Task<string?> CreateSs14ChallengeAsync(CancellationToken cancel)
     {
         try
         {
             using var timeout = Linked(cancel);
-
-            using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(ApiUrl, "api/auth/attach"))
+            using var resp = await http.PostAsync(new Uri(ApiUrl, "api/auth/ss14-challenge"), null, timeout.Token);
+            if (!resp.IsSuccessStatusCode)
             {
-                Content = JsonContent.Create(new { state }),
-            };
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                Log.Warning("SS14 challenge request failed with {Status}", resp.StatusCode);
+                return null;
+            }
 
-            using var resp = await http.SendAsync(request, timeout.Token);
-            if (resp.IsSuccessStatusCode)
-                return true;
-
-            Log.Warning("Attach registration failed with {Status}", resp.StatusCode);
-            return false;
+            return (await resp.Content.ReadFromJsonAsync<Ss14Challenge>(cancellationToken: timeout.Token))?.Hash;
         }
         catch (OperationCanceledException) when (cancel.IsCancellationRequested)
         {
@@ -79,8 +78,81 @@ public sealed class StarlightAuthApi(HttpClient http, SettingsService settings)
         }
         catch (Exception e)
         {
-            Log.Warning(e, "Could not reach the auth server to register an attach");
-            return false;
+            Log.Warning(e, "Could not reach the auth server for an SS14 challenge");
+            return null;
+        }
+    }
+
+    public async Task<Ss14Proof?> ProveSs14Async(LoginInfo info, CancellationToken cancel)
+    {
+        if (info.Token is not { } token || string.IsNullOrWhiteSpace(token.Token) || token.IsTimeExpired())
+            return null;
+
+        if ((info.AuthServerUrl ?? settings.GetSettings().SelectedAuthServer) is not { } authServer)
+            return null;
+
+        if (await CreateSs14ChallengeAsync(cancel) is not { } hash)
+            return null;
+
+        try
+        {
+            return await ss14Auth.JoinSessionAsync(token.Token, hash, new UrlFallbackSet(authServer))
+                ? new Ss14Proof(info.UserId, hash)
+                : null;
+        }
+        catch (AuthApiException e)
+        {
+            Log.Warning(e, "Could not join the SS14 challenge for {Login}", info);
+            return null;
+        }
+    }
+
+    public async Task<string?> RegisterAttachAsync(string state, string? token, Ss14Proof? ss14, CancellationToken cancel)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(ApiUrl, "api/auth/attach"))
+        {
+            Content = JsonContent.Create(new { state, ss14 }),
+        };
+        if (token != null)
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        return await SendLinkRequestAsync(request, cancel);
+    }
+
+    public async Task<string?> LinkSs14Async(string token, Ss14Proof ss14, CancellationToken cancel)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(ApiUrl, "api/auth/link-ss14"))
+        {
+            Content = JsonContent.Create(ss14),
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        return await SendLinkRequestAsync(request, cancel);
+    }
+
+    private async Task<string?> SendLinkRequestAsync(HttpRequestMessage request, CancellationToken cancel)
+    {
+        try
+        {
+            using var timeout = Linked(cancel);
+            using var resp = await http.SendAsync(request, timeout.Token);
+            if (resp.IsSuccessStatusCode)
+                return null;
+
+            var body = await resp.Content.ReadAsStringAsync(timeout.Token);
+            Log.Warning("{Path} failed with {Status}: {Body}", request.RequestUri?.AbsolutePath, resp.StatusCode, body);
+            return string.IsNullOrWhiteSpace(body) || body.TrimStart().StartsWith('{')
+                ? $"The server refused the link ({(int)resp.StatusCode})."
+                : body;
+        }
+        catch (OperationCanceledException) when (cancel.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception e)
+        {
+            Log.Warning(e, "Could not reach the auth server for {Path}", request.RequestUri?.AbsolutePath);
+            return "Could not reach the Starlight server.";
         }
     }
 
@@ -367,3 +439,7 @@ public sealed record SteamUserResponse(Guid UserId, string Username);
 public sealed record StarlightBugReportRequest(string Target, string? Project, string Title, string Description, Dictionary<string, string> Metadata);
 
 public sealed record StarlightApiError(string? Error);
+
+public sealed record Ss14Proof(Guid UserId, string Hash);
+
+public sealed record Ss14Challenge(string Hash);

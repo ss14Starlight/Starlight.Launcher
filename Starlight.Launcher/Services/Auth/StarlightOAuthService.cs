@@ -63,16 +63,29 @@ public abstract class StarlightOAuthService(StarlightAuthApi api, LoginManager l
 
     public async Task AttachToAccountAsync(LoggedInAccount account, CancellationToken cancel = default)
     {
-        var proof = (IsSteam ? account.LoginInfo.DiscordToken : account.LoginInfo.SteamToken)?.Token;
-        var (handoff, user) = await AuthorizeAsync(cancel, proof);
+        var otherToken = (IsSteam ? account.LoginInfo.DiscordToken : account.LoginInfo.SteamToken)?.Token;
 
-        if (user.UserId != account.UserId && ReadTokenUserId(GetStoredToken(account.LoginInfo)) != user.UserId)
-            throw Error($"This {DisplayName} account isn't linked to this player on the server yet.");
+        var (handoff, user) = await AuthorizeAsync(cancel, async state =>
+        {
+            var ss14 = await Api.ProveSs14Async(account.LoginInfo, cancel);
+            if (ss14 == null && account.LoginInfo.Token != null)
+                Log.Warning("Could not prove the SS14 login of {Account}; falling back to its Starlight login", account.LoginInfo);
+
+            if (ss14 == null && otherToken == null)
+                return;
+
+            if (await Api.RegisterAttachAsync(state, ss14 == null ? otherToken : null, ss14, cancel) is { } error)
+                throw Error(error);
+        });
+
+        if (user.UserId != account.UserId)
+            throw Error($"This {DisplayName} account is linked to a different player on the server.");
 
         var info = new LoginInfo
         {
             UserId = account.UserId,
-            Username = account.LoginInfo.Username,
+            // the server's name for the player: the SS14 name for an SS14 account, whichever login it came through
+            Username = string.IsNullOrWhiteSpace(user.Username) ? account.LoginInfo.Username : user.Username,
             Token = account.LoginInfo.Token,
             AuthServerUrl = account.LoginInfo.AuthServerUrl,
         };
@@ -84,7 +97,7 @@ public abstract class StarlightOAuthService(StarlightAuthApi api, LoginManager l
     }
 
     private async Task<(HandoffResult Handoff, (Guid UserId, string Username) User)> AuthorizeAsync(
-        CancellationToken cancel, string? attachProof = null)
+        CancellationToken cancel, Func<string, Task>? beforeBrowser = null)
     {
         var state = GenerateState();
         var tcs = new TaskCompletionSource<HandoffResult>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -92,8 +105,8 @@ public abstract class StarlightOAuthService(StarlightAuthApi api, LoginManager l
 
         try
         {
-            if (attachProof != null && !await Api.RegisterAttachAsync(attachProof, state, cancel))
-                Log.Warning("Could not register the {Provider} attach; the login will only work if the account is already linked", DisplayName);
+            if (beforeBrowser != null)
+                await beforeBrowser(state);
 
             try
             {
@@ -122,31 +135,6 @@ public abstract class StarlightOAuthService(StarlightAuthApi api, LoginManager l
         finally
         {
             _ = _pending.TryRemove(state, out _);
-        }
-    }
-
-    private string? GetStoredToken(LoginInfo info)
-        => (IsSteam ? info.SteamToken : info.DiscordToken)?.Token;
-
-    private static Guid? ReadTokenUserId(string? token)
-    {
-        var parts = token?.Split('.');
-        if (parts is not { Length: 3 })
-            return null;
-
-        try
-        {
-            var payload = parts[1].Replace('-', '+').Replace('_', '/');
-            payload += (payload.Length % 4) switch { 2 => "==", 3 => "=", _ => "" };
-
-            using var json = JsonDocument.Parse(Convert.FromBase64String(payload));
-            return json.RootElement.TryGetProperty("ss14_id", out var claim) && Guid.TryParse(claim.GetString(), out var id)
-                ? id
-                : null;
-        }
-        catch (Exception e) when (e is FormatException or JsonException or InvalidOperationException)
-        {
-            return null;
         }
     }
 
