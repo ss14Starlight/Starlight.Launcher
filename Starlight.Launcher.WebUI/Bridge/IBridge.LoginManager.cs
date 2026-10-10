@@ -25,7 +25,7 @@ public partial interface IBridge
 
     void RemoveLogin(Guid userId);
 
-    void LinkAuthToken(Guid oldUserID, Guid newUserId, LoginInfo authLogin);
+    Task<string?> LinkSs14AccountAsync(Guid oldUserId, LoginInfo authLogin, CancellationToken cancel = default);
 
     void AddFreshLogin(LoginInfo info);
 }

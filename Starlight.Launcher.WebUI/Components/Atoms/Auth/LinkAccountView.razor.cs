@@ -60,7 +60,11 @@ public partial class LinkAccountView : LocalizedComponentBase
 
             if (result.IsSuccess && UserId != null)
             {
-                _bridge.LinkAuthToken(UserId.Value, result.LoginInfo.UserId, result.LoginInfo);
+                if (await _bridge.LinkSs14AccountAsync(UserId.Value, result.LoginInfo) is { } linkError)
+                {
+                    Error = linkError;
+                    return;
+                }
 
                 _ = _snackbar.Add(L.GetString("auth-menu-account-linked", ("account", result.LoginInfo.Username)), Severity.Success);
 

@@ -49,13 +49,18 @@ public partial class AccountListView : LocalizedComponentBase
 
     internal static bool CanLinkDiscord(LoggedInAccount acc)
         => acc.Status != AccountLoginStatus.Expired
-           && (acc.LoginInfo.Token != null || acc.LoginInfo.SteamToken == null)
+           && (acc.LoginInfo.Token != null || acc.LoginInfo.SteamToken != null)
            && acc.LoginInfo.DiscordToken == null;
 
     internal static bool CanLinkSteam(LoggedInAccount acc)
         => acc.Status != AccountLoginStatus.Expired
            && (acc.LoginInfo.Token != null || acc.LoginInfo.DiscordToken != null)
            && acc.LoginInfo.SteamToken == null;
+
+    internal static bool CanLinkSs14(LoggedInAccount acc)
+        => acc.Status != AccountLoginStatus.Expired
+           && acc.LoginInfo.Token == null
+           && (acc.LoginInfo.DiscordToken != null || acc.LoginInfo.SteamToken != null);
 
     private Task Select(LoggedInAccount account)
         => OnSelect?.Invoke(account) ?? Task.CompletedTask;

@@ -319,6 +319,36 @@ public sealed class AuthApi
         }
     }
 
+    public async Task<bool> JoinSessionAsync(string token, string hash, UrlFallbackSet authSet)
+    {
+        try
+        {
+            var authUrl = authSet + "api/session/join";
+
+            using var resp = await authUrl.SendAsync(_httpClient, url =>
+            {
+                var requestMessage = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = JsonContent.Create(new { hash, hwid = (string?)null }),
+                };
+                requestMessage.Headers.Authorization = new AuthenticationHeaderValue("SS14Auth", token);
+                return requestMessage;
+            });
+
+            if (resp.IsSuccessStatusCode)
+                return true;
+
+            _logger.LogWarning("session/join returned {responseCode}", resp.StatusCode);
+            return false;
+        }
+        catch (HttpRequestException httpE)
+        {
+            _logger.LogError(httpE, "HttpRequestException in JoinSessionAsync");
+            HttpSelfTest.StartSelfTest();
+            throw new AuthApiException("HttpRequestException thrown", httpE);
+        }
+    }
+
     /// <summary>
     /// Represents an authentication request.
     /// </summary>

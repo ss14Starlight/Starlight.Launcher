@@ -113,7 +113,7 @@ else
                                 @L["auth-menu-link-steam-button"]
                             </MudMenuItem>
                         }
-                        @if (acc.Status != AccountLoginStatus.Expired && acc.LoginInfo.Token == null && acc.LoginInfo.DiscordToken != null)
+                        @if (CanLinkSs14(acc))
                         {
                             <MudMenuItem Icon="@Icons.Material.Filled.Key" IconColor="Color.Info"
                                          OnClick="() => OnLink?.Invoke(acc)">
