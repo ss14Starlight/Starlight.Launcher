@@ -93,7 +93,7 @@ public static class Helpers
                 using var response = await client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, cancel);
                 _ = response.EnsureSuccessStatusCode();
 
-                await using var contentStream = await response.Content.ReadAsStreamAsync(cancel);
+                await using var contentStream = new StallTimeoutStream(await response.Content.ReadAsStreamAsync(cancel));
                 // await using var fileStream = new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite, 4096, useAsync: true);
                 var totalLength = response.Content.Headers.ContentLength;
                 if (totalLength.HasValue)

@@ -613,10 +613,12 @@ public partial class Connector : ObservableObject
         return installation ?? throw UpdateFailed();
     }
 
-    private ConnectException UpdateFailed() =>
-        DataDirectoryAccess.IsAccessDenied(_updater.UpdateException)
-            ? new ConnectException(ConnectionStatus.AccessDenied, _updater.UpdateException!)
-            : new ConnectException(ConnectionStatus.UpdateError);
+    private ConnectException UpdateFailed() => _updater.UpdateException switch
+    {
+        var e when DataDirectoryAccess.IsAccessDenied(e) => new ConnectException(ConnectionStatus.AccessDenied, e!),
+        DownloadStalledException e => new ConnectException(ConnectionStatus.DownloadStalled, e),
+        _ => new ConnectException(ConnectionStatus.UpdateError),
+    };
 
     private static ConnectionStatus GetFailureStatus(Exception e, ConnectionStatus fallback) =>
         DataDirectoryAccess.IsAccessDenied(e) ? ConnectionStatus.AccessDenied : fallback;

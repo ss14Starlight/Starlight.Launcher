@@ -16,5 +16,9 @@ public enum ConnectionStatus
     /// <summary>
     /// The launcher couldn't write to the data folder (e.g. it requires admin rights).
     /// </summary>
-    AccessDenied
+    AccessDenied,
+    /// <summary>
+    /// The download stopped receiving data (usually a VPN/proxy or unstable connection).
+    /// </summary>
+    DownloadStalled
 }

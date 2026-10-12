@@ -97,7 +97,8 @@ public sealed class BandwidthStream : Stream
 
     public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
     {
-        var read = await base.ReadAsync(buffer, cancellationToken);
+        // Forward to the base stream directly: Stream.ReadAsync falls back to a blocking Read that ignores cancellation.
+        var read = await _baseStream.ReadAsync(buffer, cancellationToken);
         TrackBandwidth(read);
         return read;
     }

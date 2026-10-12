@@ -92,7 +92,7 @@ public sealed partial class Updater
         _ = manifestResp.EnsureSuccessStatusCode();
 
         var manifest = Blake2BHasherStream.CreateReader(
-            await manifestResp.Content.ReadAsStreamAsync(cancel),
+            new StallTimeoutStream(await manifestResp.Content.ReadAsStreamAsync(cancel)),
             ReadOnlySpan<byte>.Empty,
             32);
 
@@ -221,7 +221,7 @@ public sealed partial class Updater
         var response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancel);
         _ = response.EnsureSuccessStatusCode();
 
-        var stream = await response.Content.ReadAsStreamAsync(cancel);
+        Stream stream = new StallTimeoutStream(await response.Content.ReadAsStreamAsync(cancel));
         var bandwidthStream = new BandwidthStream(stream);
         stream = bandwidthStream;
         if (response.Content.Headers.ContentEncoding.Contains("zstd"))
