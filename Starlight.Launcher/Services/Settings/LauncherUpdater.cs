@@ -355,15 +355,15 @@ public partial class LauncherUpdater
         var appId = Environment.GetEnvironmentVariable("FLATPAK_ID")
             ?? throw new InvalidOperationException("FLATPAK_ID is not set.");
 
-        var scope = IsFlatpakUserInstall() ? "--user" : "--system";
-
         var cacheDir = Environment.GetEnvironmentVariable("XDG_CACHE_HOME") ?? Path.GetDirectoryName(bundlePath)!;
         var logPath = Path.Combine(cacheDir, "flatpak-update.log");
 
         var hostScript = $"""
             exec >{Quote(logPath)} 2>&1 </dev/null
             for i in $(seq 1 50); do flatpak ps --columns=application | grep -qx {Quote(appId)} || break; sleep 0.2; done
-            flatpak install {scope} --noninteractive -y --reinstall {Quote(bundlePath)}
+            if flatpak info --user {Quote(appId)} >/dev/null 2>&1; then scope=--user; else scope=--system; fi
+            echo "Installing update ($scope):" {Quote(bundlePath)}
+            flatpak install "$scope" -y --reinstall {Quote(bundlePath)} || echo "Update failed with exit code $?"
             exec flatpak run {Quote(appId)}
             """;
 
@@ -376,20 +376,6 @@ public partial class LauncherUpdater
 
         Thread.Sleep(500);
         Environment.Exit(0);
-    }
-
-    private static bool IsFlatpakUserInstall()
-    {
-        try
-        {
-            return File.ReadLines("/.flatpak-info")
-                .Any(l => l.StartsWith("app-path=", StringComparison.Ordinal) &&
-                          l.Contains("/.local/share/flatpak/", StringComparison.Ordinal));
-        }
-        catch (IOException)
-        {
-            return true;
-        }
     }
 
     private static void RunAppImageUpdate(string newAppImagePath)
