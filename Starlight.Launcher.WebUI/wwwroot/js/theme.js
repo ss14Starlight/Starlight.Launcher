@@ -4,5 +4,6 @@ window.appTheme = {
         const isDark = name.endsWith('-dark') || name === 'midnight';
         document.body.classList.toggle('mud-theme-dark', isDark);
     },
-    prefersDark: () => window.matchMedia('(prefers-color-scheme: dark)').matches
+    prefersDark: () => window.matchMedia('(prefers-color-scheme: dark)').matches,
+    setAnimatedBackground: (on) => document.documentElement.classList.toggle('sl-bg-static', !on)
 };

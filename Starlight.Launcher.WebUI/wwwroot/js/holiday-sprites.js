@@ -42,6 +42,8 @@ registerPaint('sprite-field', class {
             '--sprite-glow',
             '--sprite-seed',
             '--sprite-weights',
+            '--cam-x',
+            '--cam-zoom',
             'order'
         ];
         for (const k of KINDS) {
@@ -107,6 +109,10 @@ registerPaint('sprite-field', class {
         const seed = int('--sprite-seed', 0);
         const frame = int('order', 0) * speed;
 
+        const camX = num('--cam-x', 0);
+        const zoom = Math.max(0.05, num('--cam-zoom', 1));
+        const cx = size.width / 2, cy = size.height / 2;
+
         const W = size.width, H = size.height;
         const pad = 80 * baseSize;
         const fieldW = W + pad * 2;
@@ -121,6 +127,7 @@ registerPaint('sprite-field', class {
         let pid = 0;
 
         for (const layer of layers) {
+            const layerZoom = 1 + (zoom - 1) * layer.speed;
             const n = Math.round(count * layer.frac);
 
             for (let i = 0; i < n; i++) {
@@ -133,16 +140,21 @@ registerPaint('sprite-field', class {
 
                 const startX = rng() * fieldW;
                 const startY = rng() * fieldH;
-                const s = baseSize * layer.scale * (1 - sizeVar / 2 + rng() * sizeVar);
+                const s = baseSize * layer.scale * (1 - sizeVar / 2 + rng() * sizeVar) * Math.sqrt(layerZoom);
                 const vx = (dx + (rng() - 0.5) * 0.25) * layer.speed;
                 const vy = (dy + (rng() - 0.5) * 0.25) * layer.speed;
 
-                let x = (startX + vx * frame) % fieldW;
+                let x = (startX + vx * frame + camX * layer.speed) % fieldW;
                 let y = (startY + vy * frame) % fieldH;
                 if (x < 0) x += fieldW;
                 if (y < 0) y += fieldH;
                 x -= pad;
                 y -= pad;
+
+                if (layerZoom !== 1) {
+                    x = cx + (x - cx) * layerZoom;
+                    y = cy + (y - cy) * layerZoom;
+                }
 
                 if (sway) {
                     const phase = rng() * Math.PI * 2;

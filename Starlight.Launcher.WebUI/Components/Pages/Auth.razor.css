@@ -13,7 +13,7 @@
     justify-content: center;
     box-sizing: border-box;
     padding: 48px 16px;
-    background: oklch(var(--c-bg));
+    background: transparent;
     isolation: isolate;
 }
 

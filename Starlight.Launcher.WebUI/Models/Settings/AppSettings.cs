@@ -87,6 +87,12 @@ public partial record AppSettings
     public ElementPosition Navigation { get; init; } = ElementPosition.Bottom;
 
     /// <summary>
+    /// Drifting background and camera flights between pages. Off leaves a still background, which
+    /// saves most of the launcher's CPU while its window is open.
+    /// </summary>
+    public bool AnimatedBackground { get; init; } = true;
+
+    /// <summary>
     /// Determines should we place search bar at the bottom of TOOLBAR or at the top
     /// </summary>
     public bool ServerListToolbarBottomSearch { get; init; }

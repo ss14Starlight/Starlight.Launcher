@@ -16,6 +16,8 @@ registerPaint('animated-lines', class {
             '--twinkle',
             '--twinkle-speed',
             '--glow',
+            '--cam-x',
+            '--cam-zoom',
             'order'
         ];
     }
@@ -41,6 +43,9 @@ registerPaint('animated-lines', class {
         const glow = Math.max(0, num('--glow', 0));
         const frame = int('order', 0) * timeScale;
 
+        const camX = num('--cam-x', 0);
+        const zoom = Math.max(0.05, num('--cam-zoom', 1));
+
         const W = size.width, H = size.height;
         const cx = W / 2, cy = H / 2;
 
@@ -54,6 +59,8 @@ registerPaint('animated-lines', class {
         const pts = [];
 
         for (const layer of layers) {
+            const depth = layer.speedScale;
+            const layerZoom = 1 + (zoom - 1) * depth;
             const count = Math.max(0, Math.round(numPoints * layer.frac));
             const layerPts = [];
 
@@ -64,21 +71,27 @@ registerPaint('animated-lines', class {
                 const startY = rng() * H;
                 const dirX = (rng() * 2 - 1) + xoff;
                 const dirY = (rng() * 2 - 1) + yoff;
-                const r = dotSize * layer.sizeScale * (0.6 + rng() * 0.8);
+                const r = dotSize * layer.sizeScale * (0.6 + rng() * 0.8) * Math.sqrt(layerZoom);
 
                 let x, y;
                 if (circle) {
                     const radius = Math.hypot(cx - startX, cy - startY);
                     const theta0 = rng() * Math.PI * 2;
                     const spin = (0.5 + rng()) * layer.speedScale * 0.02;
-                    const theta = theta0 + frame * spin;
+                    // A page width of pan turns the orbit by half a revolution.
+                    const theta = theta0 + frame * spin + camX / W * Math.PI * depth;
                     x = radius * Math.cos(theta) + cx;
                     y = radius * Math.sin(theta) + cy;
                 } else {
-                    x = (startX + dirX * frame * layer.speedScale) % W;
+                    x = (startX + dirX * frame * layer.speedScale + camX * depth) % W;
                     y = (startY + dirY * frame * layer.speedScale) % H;
                     if (x < 0) x += W;
                     if (y < 0) y += H;
+                }
+
+                if (layerZoom !== 1) {
+                    x = cx + (x - cx) * layerZoom;
+                    y = cy + (y - cy) * layerZoom;
                 }
 
                 const twPhase = rng() * Math.PI * 2;
@@ -108,7 +121,7 @@ registerPaint('animated-lines', class {
         ctx.globalAlpha = 1;
 
         if (lineOpacity > 0 && distance > 0 && pts.length > 1) {
-            const linkDist = distance;
+            const linkDist = distance * zoom;
             const linkDistSq = linkDist * linkDist;
             ctx.strokeStyle = lineColor;
 

@@ -96,6 +96,9 @@ settings-menu-theme-option-description = Select the theme for the app.
 settings-menu-navigation-bar-option = Navigation Position
 settings-menu-navigation-bar-option-description = Select the position of the navigation bar.
 
+settings-menu-animated-background-option = Animated background
+settings-menu-animated-background-option-description = Drifting stars in the background and camera flights between pages. Turning it off saves CPU while the launcher is open.
+
 settings-menu-bottom-search-option = Bottom Search
 settings-menu-bottom-search-option-description = Place search bar at the bottom of the toolbar(when tags bar and search bar together).
 

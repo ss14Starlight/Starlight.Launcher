@@ -26,6 +26,9 @@ settings-menu-theme-option-description = Выберите тему для при
 settings-menu-navigation-bar-option = Положение навигации
 settings-menu-navigation-bar-option-description = Выберите положение навигационной панели в приложении.
 
+settings-menu-animated-background-option = Анимированный фон
+settings-menu-animated-background-option-description = Движущиеся звёзды на фоне и перелёты камеры между страницами. Выключение снижает нагрузку на процессор, пока лаунчер открыт.
+
 settings-menu-discord-presence-option = Discord Presence
 settings-menu-discord-presence-option-description = Показать статус в вашем Discord. (Требует перезапуска)
 

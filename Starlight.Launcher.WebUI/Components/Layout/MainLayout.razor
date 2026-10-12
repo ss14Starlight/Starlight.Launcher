@@ -9,6 +9,8 @@
 <MudSnackbarProvider />
 <ConnectingDialogHost />
 
+<div id="app-bg" class="@BackgroundClass"></div>
+
 <MudLayout>
     <MudAppBar Elevation="1" Class="app-titlebar">
         @if (_elementPosition == ElementPosition.Bottom || _isSmallScreen)
@@ -77,7 +79,7 @@
 
     @if (_elementPosition is ElementPosition.Bottom or ElementPosition.Top || _isSmallScreen)
     {
-        <MudAppBar Bottom="true" Elevation="3">
+        <MudAppBar Bottom="true" Elevation="3" Class="app-bottombar">
             @if (_elementPosition == ElementPosition.Top)
             {
                 <MudTooltip Text="@L["main-layout-auth-tab"]">

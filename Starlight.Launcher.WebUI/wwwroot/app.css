@@ -22,6 +22,8 @@ body {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    position: relative;
+    z-index: 1;
 }
 
 .mud-main-content {
@@ -401,7 +403,8 @@ h1:focus {
     --x: .15;
     --y: -.05;
     order: 0;
-    animation: app-bg-drive 1200s linear infinite;
+    animation: app-bg-drive 1200s steps(36000) infinite;
+    view-transition-name: app-bg;
     --twinkle: .6;
     --twinkle-speed: 1;
     --glow: .5;
@@ -438,6 +441,22 @@ h1:focus {
     --twinkle: .55;
     --twinkle-speed: .9;
     --glow: .45;
+}
+
+.app-bg--local {
+    --dot-color: oklch(from oklch(var(--c-tertiary)) l c h / .45);
+    --line-color: oklch(from oklch(var(--c-primary)) l c h / .20);
+    --dot-size: 2.2;
+    --num-points: 38;
+    --line-opacity: .7;
+    --dot-speed: .6;
+    --distance: 170;
+    --seed: 89;
+    --x: -.2;
+    --y: .08;
+    --twinkle: .45;
+    --twinkle-speed: .8;
+    --glow: .4;
 }
 
 /* NullLink hub: denser, faster "data flow" feel */
@@ -526,6 +545,18 @@ h1:focus {
     .app-bg::after {
         animation: none;
     }
+}
+
+.sl-bg-static .app-bg,
+.sl-bg-static .app-bg::before,
+.sl-bg-static .app-bg::after {
+    animation: none;
+}
+
+.sl-bg-paused .app-bg,
+.sl-bg-paused .app-bg::before,
+.sl-bg-paused .app-bg::after {
+    animation-play-state: paused;
 }
 
 .server-bar--side .server-toolbar__searchbar {
@@ -923,6 +954,122 @@ h1:focus {
 
 @media (prefers-reduced-motion: reduce) {
     .app-bg {
+        animation: none !important;
+    }
+}
+
+.mud-main-content {
+    view-transition-name: page;
+}
+
+.app-titlebar {
+    view-transition-name: titlebar;
+}
+
+.app-bottombar {
+    view-transition-name: bottombar;
+}
+
+.mud-drawer {
+    view-transition-name: drawer;
+}
+
+::view-transition-group(*) {
+    animation-duration: var(--nav-duration, 300ms);
+}
+
+::view-transition-old(root),
+::view-transition-new(root),
+::view-transition-new(app-bg) {
+    animation: none;
+}
+
+::view-transition-old(app-bg) {
+    animation: calc(var(--nav-duration, 300ms) * .5) ease-out both sl-fade-out;
+}
+
+::view-transition-old(titlebar),
+::view-transition-new(titlebar),
+::view-transition-old(bottombar),
+::view-transition-new(bottombar),
+::view-transition-old(drawer),
+::view-transition-new(drawer) {
+    animation-duration: 180ms;
+}
+
+:root[data-nav="right"]::view-transition-old(page) {
+    animation: var(--nav-duration) cubic-bezier(.65, 0, .35, 1) both sl-page-out-left;
+}
+
+:root[data-nav="right"]::view-transition-new(page) {
+    animation: var(--nav-duration) cubic-bezier(.65, 0, .35, 1) both sl-page-in-right;
+}
+
+:root[data-nav="left"]::view-transition-old(page) {
+    animation: var(--nav-duration) cubic-bezier(.65, 0, .35, 1) both sl-page-out-right;
+}
+
+:root[data-nav="left"]::view-transition-new(page) {
+    animation: var(--nav-duration) cubic-bezier(.65, 0, .35, 1) both sl-page-in-left;
+}
+
+/* Into auth: the page rushes past the camera, the menu settles in once we're "inside". */
+:root[data-nav="zoom-in"]::view-transition-old(page) {
+    animation: calc(var(--nav-duration) * .55) cubic-bezier(.4, 0, 1, 1) both sl-page-zoom-past;
+}
+
+:root[data-nav="zoom-in"]::view-transition-new(page) {
+    animation: calc(var(--nav-duration) * .6) cubic-bezier(0, 0, .2, 1) calc(var(--nav-duration) * .4) both sl-page-zoom-arrive;
+}
+
+:root[data-nav="zoom-out"]::view-transition-old(page) {
+    animation: calc(var(--nav-duration) * .5) cubic-bezier(.4, 0, 1, 1) both sl-page-zoom-leave;
+}
+
+:root[data-nav="zoom-out"]::view-transition-new(page) {
+    animation: calc(var(--nav-duration) * .6) cubic-bezier(0, 0, .2, 1) calc(var(--nav-duration) * .4) both sl-page-zoom-return;
+}
+
+@keyframes sl-fade-out {
+    to { opacity: 0; }
+}
+
+@keyframes sl-page-out-left {
+    to { transform: translateX(-14%); opacity: 0; }
+}
+
+@keyframes sl-page-in-right {
+    from { transform: translateX(14%); opacity: 0; }
+}
+
+@keyframes sl-page-out-right {
+    to { transform: translateX(14%); opacity: 0; }
+}
+
+@keyframes sl-page-in-left {
+    from { transform: translateX(-14%); opacity: 0; }
+}
+
+@keyframes sl-page-zoom-past {
+    to { transform: scale(1.35); opacity: 0; filter: blur(4px); }
+}
+
+@keyframes sl-page-zoom-arrive {
+    from { transform: scale(.82); opacity: 0; }
+}
+
+@keyframes sl-page-zoom-leave {
+    to { transform: scale(.85); opacity: 0; }
+}
+
+@keyframes sl-page-zoom-return {
+    from { transform: scale(1.2); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
         animation: none !important;
     }
 }

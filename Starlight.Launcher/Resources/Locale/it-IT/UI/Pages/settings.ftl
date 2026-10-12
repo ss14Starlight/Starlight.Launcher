@@ -52,6 +52,9 @@ settings-menu-theme-option-description = Seleziona un tema per l'app.
 settings-menu-navigation-bar-option = Posizione barra di navigazione
 settings-menu-navigation-bar-option-description = Selezione la posizione della barra di navigazione.
 
+settings-menu-animated-background-option = Sfondo animato
+settings-menu-animated-background-option-description = Stelle in movimento sullo sfondo e voli della telecamera tra le pagine. Disattivandolo si risparmia CPU mentre il launcher è aperto.
+
 settings-menu-discord-presence-option = Discord Presence
 settings-menu-discord-presence-option-description = Mostra il tuo stato su discord. (Necessita Riavvio)
 

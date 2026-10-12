@@ -39,6 +39,15 @@ public partial class MainWindow : Window
         };
         Web.AdapterDestroyed += (_, e) => Log.Warning("WebView adapter destroyed: {Adapter}", e);
 
+        Activated += (_, _) => SetBackgroundPaused(false);
+        Deactivated += (_, _) => SetBackgroundPaused(true);
+        Web.NavigationCompleted += (_, _) => SetBackgroundPaused(!IsActive);
+        Web.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == NativeWebView.IsSuspendedProperty && !Web.IsSuspended)
+                SetBackgroundPaused(!IsActive);
+        };
+
 #if DEBUG
         // DevTools are off by default; enabling them makes F12 / Ctrl+Shift+I open the inspector.
         Web.EnvironmentRequested += (_, args) => args.EnableDevTools = true;
@@ -93,6 +102,22 @@ public partial class MainWindow : Window
             _suspender?.Dispose();
             _suspender = null;
         };
+    }
+
+    private async void SetBackgroundPaused(bool paused)
+    {
+        if (Web.IsSuspended)
+            return;
+
+        try
+        {
+            _ = await Web.InvokeScript(
+                $"document.documentElement.classList.toggle('sl-bg-paused', {(paused ? "true" : "false")})");
+        }
+        catch (Exception e)
+        {
+            Log.Debug(e, "Couldn't toggle background animation");
+        }
     }
 
     private void StartAdapterWatchdog()

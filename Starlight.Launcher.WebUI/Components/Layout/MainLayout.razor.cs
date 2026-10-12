@@ -25,7 +25,10 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
     [Inject] private IDialogService _dialogService { get; set; } = default!;
     [Inject] private AppState _state { get; set; } = default!;
 
+    private static readonly TimeSpan _transitionStartTimeout = TimeSpan.FromMilliseconds(500);
+
     private IJSObjectReference? _titleBar;
+    private IDisposable? _locationChangingRegistration;
     private DotNetObjectReference<MainLayout>? _selfRef;
 
     private bool _shouldShowAppBar => OperatingSystem.IsWindows();
@@ -35,6 +38,15 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
     private bool _isSmallScreen = false;
 
     private bool _changelogLoading;
+
+    private string BackgroundClass => new Uri(_navigation.Uri).AbsolutePath.TrimEnd('/') switch
+    {
+        "/servers" => "app-bg app-bg--servers",
+        "/hub" => "app-bg app-bg--hub",
+        "/local-server" => "app-bg app-bg--local",
+        "/settings" => "app-bg app-bg--settings",
+        _ => "app-bg",
+    };
 
     private static string ToDataTheme(AppTheme t, bool systemPrefersDark) => t switch
     {
@@ -292,8 +304,22 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
             });
     }
 
+    private async ValueTask OnLocationChanging(LocationChangingContext context)
+    {
+        try
+        {
+            using var timeout = new CancellationTokenSource(_transitionStartTimeout);
+            _ = await _jS.InvokeAsync<bool>("slNav.start", timeout.Token, _navigation.Uri, context.TargetLocation);
+        }
+        catch (Exception e) when (e is JSException or TaskCanceledException or OperationCanceledException or JSDisconnectedException)
+        {
+        }
+    }
+
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
+        _ = EndTransitionAsync();
+
         var uri = new Uri(e.Location);
         _bridge.Presence.SetNavigation(uri.AbsolutePath switch
         {
@@ -304,9 +330,21 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
         });
     }
 
+    private async Task EndTransitionAsync()
+    {
+        try
+        {
+            await _jS.InvokeVoidAsync("slNav.end");
+        }
+        catch (Exception e) when (e is JSException or TaskCanceledException or JSDisconnectedException)
+        {
+        }
+    }
+
     private async Task ApplyThemeAsync()
     {
         var settings = await _bridge.GetSettingsAsync();
+        await _jS.InvokeVoidAsync("appTheme.setAnimatedBackground", settings.AnimatedBackground);
         var prefersDark = await _jS.InvokeAsync<bool>("appTheme.prefersDark");
         var themeName = ToDataTheme(settings.Theme, prefersDark);
 
@@ -335,6 +373,7 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
         await _browserViewportService.UnsubscribeAsync(this);
         _state.OnChange -= AppCalledRepaint;
         _navigation.LocationChanged -= OnLocationChanged;
+        _locationChangingRegistration?.Dispose();
         _bridge.LoginsUnrecoverable -= OnLoginsUnrecover;
         _bridge.ConfirmForeignEngine -= OnConfirmForeignEngine;
         if (_titleBar is not null) await _titleBar.DisposeAsync();
@@ -353,6 +392,8 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
             }
 
             await ApplyThemeAsync();
+            await _jS.InvokeVoidAsync("slNav.init", _navigation.Uri);
+            _locationChangingRegistration = _navigation.RegisterLocationChangingHandler(OnLocationChanging);
             await _browserViewportService.SubscribeAsync(this, fireImmediately: true);
             await _jS.InvokeVoidAsync("eval", "document.getElementById('app')?.classList.add('loaded')");
 
