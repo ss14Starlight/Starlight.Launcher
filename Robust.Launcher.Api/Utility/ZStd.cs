@@ -241,26 +241,18 @@ public class ZStdException : Exception
 /// <summary>
 /// Provides a stream that decompresses Zstandard-compressed data while reading.
 /// </summary>
-public sealed class ZStdDecompressStream : Stream
+/// <remarks>
+/// Initializes a new decompression stream.
+/// </remarks>
+public sealed class ZStdDecompressStream(Stream baseStream, bool ownStream = true) : Stream
 {
-    private readonly Stream _baseStream;
-    private readonly bool _ownStream;
-    private readonly unsafe ZSTD_DCtx* _ctx;
-    private readonly byte[] _buffer;
+    private readonly Stream _baseStream = baseStream;
+    private readonly bool _ownStream = ownStream;
+    private readonly unsafe ZSTD_DCtx* _ctx = Zstd.ZSTD_createDCtx();
+    private readonly byte[] _buffer = ArrayPool<byte>.Shared.Rent((int)Zstd.ZSTD_DStreamInSize());
     private int _bufferPos;
     private int _bufferSize;
     private bool _disposed;
-
-    /// <summary>
-    /// Initializes a new decompression stream.
-    /// </summary>
-    public unsafe ZStdDecompressStream(Stream baseStream, bool ownStream = true)
-    {
-        _baseStream = baseStream;
-        _ownStream = ownStream;
-        _ctx = Zstd.ZSTD_createDCtx();
-        _buffer = ArrayPool<byte>.Shared.Rent((int)Zstd.ZSTD_DStreamInSize());
-    }
 
     /// <summary>
     /// Releases the resources used by the stream.
@@ -432,34 +424,23 @@ public sealed class ZStdDecompressStream : Stream
     }
 
     private void ThrowIfDisposed()
-    {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(ZStdDecompressStream));
-    }
+        => ObjectDisposedException.ThrowIf(_disposed, this);
 }
 
 /// <summary>
 /// Provides a stream that compresses data using Zstandard while writing.
 /// </summary>
-public sealed class ZStdCompressStream : Stream
+/// <remarks>
+/// Initializes a new compression stream.
+/// </remarks>
+public sealed class ZStdCompressStream(Stream baseStream, bool ownStream = true) : Stream
 {
-    private readonly Stream _baseStream;
-    private readonly bool _ownStream;
-    private readonly unsafe ZSTD_CCtx* _ctx;
-    private readonly byte[] _buffer;
+    private readonly Stream _baseStream = baseStream;
+    private readonly bool _ownStream = ownStream;
+    private readonly unsafe ZSTD_CCtx* _ctx = Zstd.ZSTD_createCCtx();
+    private readonly byte[] _buffer = ArrayPool<byte>.Shared.Rent((int)Zstd.ZSTD_CStreamOutSize());
     private int _bufferPos;
     private bool _disposed;
-
-    /// <summary>
-    /// Initializes a new compression stream.
-    /// </summary>
-    public unsafe ZStdCompressStream(Stream baseStream, bool ownStream = true)
-    {
-        _ctx = Zstd.ZSTD_createCCtx();
-        _baseStream = baseStream;
-        _ownStream = ownStream;
-        _buffer = ArrayPool<byte>.Shared.Rent((int)Zstd.ZSTD_CStreamOutSize());
-    }
 
     /// <summary>
     /// Flushes all pending compressed data to the underlying stream.

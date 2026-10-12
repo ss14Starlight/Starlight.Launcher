@@ -3,9 +3,9 @@ using System.Diagnostics;
 using System.Text;
 using Robust.LoaderApi;
 
-namespace SS14.Loader;
+namespace Robust.Loader;
 
-internal sealed class RedialApi : IRedialApi
+internal sealed class RedialApi(string launcher) : IRedialApi
 {
     // We have to reset these env vars to avoid leaking through state on redial.
     private static readonly string[] _envVarsToClear = [
@@ -34,9 +34,7 @@ internal sealed class RedialApi : IRedialApi
         "DOTNET_gcServer",
     ];
 
-    private readonly string _launcher;
-
-    public RedialApi(string launcher) => _launcher = launcher;
+    private readonly string _launcher = launcher;
 
     public void Redial(Uri uri, string text = "")
     {

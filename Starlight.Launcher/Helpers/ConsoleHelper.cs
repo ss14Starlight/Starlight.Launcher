@@ -1,9 +1,12 @@
 using System.Runtime.InteropServices;
 
-public static class ConsoleHelper
+namespace Starlight.Launcher.Helpers;
+
+public static partial class ConsoleHelper
 {
-    [DllImport("kernel32.dll")]
-    static extern bool AllocConsole();
+    [LibraryImport("kernel32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool AllocConsole();
 
     public static void CreateConsole() => AllocConsole();
 }

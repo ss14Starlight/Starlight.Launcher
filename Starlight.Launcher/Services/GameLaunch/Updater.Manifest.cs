@@ -5,7 +5,7 @@ using Robust.Launcher.Api.Utility;
 using Serilog;
 using SpaceWizards.Sodium;
 using SQLitePCL;
-using Starlight.Launcher.Utility;
+using Starlight.Launcher.Helpers;
 using Starlight.Launcher.WebUI.Models.Updater;
 using System.Buffers.Binary;
 using System.Diagnostics;
@@ -93,7 +93,7 @@ public sealed partial class Updater
 
         var manifest = Blake2BHasherStream.CreateReader(
             new StallTimeoutStream(await manifestResp.Content.ReadAsStreamAsync(cancel)),
-            ReadOnlySpan<byte>.Empty,
+            [],
             32);
 
         // Go over the manifest, reading it into the SQLite ContentManifest table.
@@ -329,7 +329,7 @@ public sealed partial class Updater
                     await stream.ReadExactAsync(data, cancel);
 
                     swBlake.Start();
-                    _ = CryptoGenericHashBlake2B.Hash(hash, data.Span, ReadOnlySpan<byte>.Empty);
+                    _ = CryptoGenericHashBlake2B.Hash(hash, data.Span, []);
                     swBlake.Stop();
                 }
 
@@ -415,7 +415,7 @@ public sealed partial class Updater
         int blobIndex)
     {
         CryptoGenericHashBlake2B.State hashState;
-        _ = CryptoGenericHashBlake2B.Init(ref hashState, ReadOnlySpan<byte>.Empty, hash.Length);
+        _ = CryptoGenericHashBlake2B.Init(ref hashState, [], hash.Length);
 
         context.ResetSession();
 

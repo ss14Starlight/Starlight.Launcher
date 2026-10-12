@@ -61,14 +61,8 @@ public sealed partial class SettingsService
         _loginsLock.Wait();
         try
         {
-            if (_logins.ContainsKey(login.UserId))
-            {
+            if (!_logins.TryAdd(login.UserId, login))
                 _logins[login.UserId] = login;
-            }
-            else
-            {
-                _logins.Add(login.UserId, login);
-            }
         }
         finally
         {
@@ -216,7 +210,7 @@ public sealed partial class SettingsService
     private async Task<Dictionary<Guid, LoginInfo>> LoadLoginsAsync()
     {
         if (!File.Exists(_loginsPath))
-            return new();
+            return [];
 
         var raw = await File.ReadAllBytesAsync(_loginsPath);
 
@@ -225,7 +219,7 @@ public sealed partial class SettingsService
             try
             {
                 var json = Encoding.UTF8.GetString(await DecryptAsync(raw));
-                var list = JsonSerializer.Deserialize<List<LoginInfo>>(json) ?? new();
+                var list = JsonSerializer.Deserialize<List<LoginInfo>>(json) ?? [];
 
                 _logger.LogInformation("Successfully loaded {Number} logins from file {File}!", list.Count, _loginsPath);
 
@@ -237,14 +231,14 @@ public sealed partial class SettingsService
                 try { File.Move(_loginsPath, backup, true); } catch { /* best effort */ }
                 _logger.LogError(ex, "Logins could not be decrypted (key mismatch). Backed up to {backup}; re-auth required.", backup);
                 LoginsUnrecoverable?.Invoke();   // surface a toast/dialog
-                return new();
+                return [];
             }
         }
 
         try
         {
             var json = Encoding.UTF8.GetString(raw);
-            var list = JsonSerializer.Deserialize<List<LoginInfo>>(json) ?? new();
+            var list = JsonSerializer.Deserialize<List<LoginInfo>>(json) ?? [];
             await _loginsLock.WaitAsync();
 
             try { _logins = list.ToDictionary(x => x.UserId); }
@@ -259,7 +253,7 @@ public sealed partial class SettingsService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load logins; starting empty");
-            return new();
+            return [];
         }
     }
 }

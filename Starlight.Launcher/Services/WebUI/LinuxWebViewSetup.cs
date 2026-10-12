@@ -63,11 +63,11 @@ public static class LinuxWebViewSetup
         => string.Join("; ", _candidates.Select(c =>
         {
             var info = Probe(c);
-            if (info is null)
-                return $"{c}: unknown";
-            if (info is { IsInstalled: true, IsSupported: true })
-                return $"{c}: available{(string.IsNullOrEmpty(info.Version) ? "" : $" ({info.Version})")}";
-            return $"{c}: unavailable{(string.IsNullOrEmpty(info.UnavailableReason) ? "" : $" - {info.UnavailableReason}")}";
+            return info is null
+                ? $"{c}: unknown"
+                : info is { IsInstalled: true, IsSupported: true }
+                ? $"{c}: available{(string.IsNullOrEmpty(info.Version) ? "" : $" ({info.Version})")}"
+                : $"{c}: unavailable{(string.IsNullOrEmpty(info.UnavailableReason) ? "" : $" - {info.UnavailableReason}")}";
         }));
 
     private static WebViewAdapterType ChooseBackend()

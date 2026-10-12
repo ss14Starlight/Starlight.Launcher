@@ -22,7 +22,7 @@ using Starlight.Launcher.WebUI.Models.Helpers;
 using Starlight.Launcher.WebUI.Models.Settings;
 using static Starlight.Launcher.Services.Discord.DiscordRichPresence;
 
-namespace Starlight.Launcher.Services;
+namespace Starlight.Launcher.Services.GameLaunch;
 
 /// <summary>
 /// Responsible for actually launching the game.

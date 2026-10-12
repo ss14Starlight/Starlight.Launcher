@@ -3,7 +3,8 @@ using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Logging;
 using Serilog;
-using Starlight.Launcher.Services;
+using Starlight.Launcher.Helpers;
+using Starlight.Launcher.Services.DeepLink;
 
 namespace Starlight.Launcher;
 
@@ -124,7 +125,7 @@ internal static class Program
         if (path == null || !NativeLibrary.TryLoad(path, out var handle))
             return;
 
-        DllImportResolver resolver = (name, _, _) =>
+        nint resolver(string name, Assembly _1, DllImportSearchPath? _2) =>
             name is "libsodium" or "libsodium.dll" or "libsodium.so" or "libsodium.dylib" ? handle : IntPtr.Zero;
 
         foreach (var asmName in new[] { "NSec.Cryptography", "SpaceWizards.Sodium.Interop" })

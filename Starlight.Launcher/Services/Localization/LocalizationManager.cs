@@ -11,15 +11,15 @@ using Starlight.Launcher.WebUI.Localization;
 
 namespace Starlight.Launcher.Services.Localization;
 
-public sealed class LocalizationManager : ILocalizationManager
+public sealed class LocalizationManager(ILogger<LocalizationManager> logger, SettingsService settings) : ILocalizationManager
 {
     private const string DefaultLocale = "en-US";
 
-    private Assembly _assembly => typeof(LocalizationManager).Assembly;
+    private static Assembly s_assembly => typeof(LocalizationManager).Assembly;
 
-    private readonly ILogger<LocalizationManager> _logger;
-    private readonly SettingsService _settings;
-    private readonly Dictionary<string, List<string>> _resourcesByCulture = new();
+    private readonly ILogger<LocalizationManager> _logger = logger;
+    private readonly SettingsService _settings = settings;
+    private readonly Dictionary<string, List<string>> _resourcesByCulture = [];
     private FluentBundle? _currentBundle;
 
     public CultureInfo SystemCulture { get; private set; } = CultureInfo.InvariantCulture;
@@ -28,12 +28,6 @@ public sealed class LocalizationManager : ILocalizationManager
         => GetString(key);
 
     public event Action? Changed;
-
-    public LocalizationManager(ILogger<LocalizationManager> logger, SettingsService settings)
-    {
-        _logger = logger;
-        _settings = settings;
-    }
 
     public async Task Initialize()
     {
@@ -85,7 +79,7 @@ public sealed class LocalizationManager : ILocalizationManager
     }
 
     public List<string> EnumarateAllLoadedLanguages()
-        => _resourcesByCulture.Keys.ToList();
+        => [.. _resourcesByCulture.Keys];
 
     public string GetString(string key)
     {
@@ -95,7 +89,7 @@ public sealed class LocalizationManager : ILocalizationManager
         }
         catch
         {
-            _logger?.LogWarning("Can't find localization: {0} !", key);
+            _logger?.LogWarning("Can't find localization: {key} !", key);
             return key;
         }
     }
@@ -137,7 +131,7 @@ public sealed class LocalizationManager : ILocalizationManager
         {
             try
             {
-                using var stream = _assembly.GetManifestResourceStream(resource);
+                using var stream = s_assembly.GetManifestResourceStream(resource);
 
                 if (stream == null)
                     continue;
@@ -212,7 +206,7 @@ public sealed class LocalizationManager : ILocalizationManager
     {
         _resourcesByCulture.Clear();
 
-        foreach (var resource in _assembly.GetManifestResourceNames())
+        foreach (var resource in s_assembly.GetManifestResourceNames())
         {
             var separator = resource.IndexOfAny(['\\', '/']);
 

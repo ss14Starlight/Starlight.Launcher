@@ -1,20 +1,12 @@
 using System.Collections.Generic;
 using Robust.LoaderApi;
 
-namespace SS14.Loader;
+namespace Robust.Loader;
 
-internal sealed class MainArgs : IMainArgs
+internal sealed class MainArgs(string[] args, IFileApi fileApi, IRedialApi? redialApi, IEnumerable<ApiMount>? apiMounts) : IMainArgs
 {
-    public MainArgs(string[] args, IFileApi fileApi, IRedialApi? redialApi, IEnumerable<ApiMount>? apiMounts)
-    {
-        Args = args;
-        FileApi = fileApi;
-        RedialApi = redialApi;
-        ApiMounts = apiMounts;
-    }
-
-    public string[] Args { get; }
-    public IFileApi FileApi { get; }
-    public IRedialApi? RedialApi { get; }
-    public IEnumerable<ApiMount>? ApiMounts { get; }
+    public string[] Args { get; } = args;
+    public IFileApi FileApi { get; } = fileApi;
+    public IRedialApi? RedialApi { get; } = redialApi;
+    public IEnumerable<ApiMount>? ApiMounts { get; } = apiMounts;
 }

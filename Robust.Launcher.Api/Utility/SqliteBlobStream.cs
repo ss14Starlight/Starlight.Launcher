@@ -10,21 +10,13 @@ namespace Robust.Launcher.Api.Utility;
 /// Expecting Microsoft top engineers to understand basic API design principles is too much to ask for,
 /// so I can't in any way use blob re-open with Microsoft.Data.Sqlite.SqliteBlob.
 /// </summary>
-public sealed class SqliteBlobStream : Stream
+public sealed class SqliteBlobStream(sqlite3_blob blob, bool canWrite, bool ownsBlob) : Stream
 {
-    private readonly sqlite3_blob _blob;
-    private readonly bool _ownsBlob;
-    private int _length;
+    private readonly sqlite3_blob _blob = blob;
+    private readonly bool _ownsBlob = ownsBlob;
+    private int _length = sqlite3_blob_bytes(blob);
     private int _pos;
     private bool _disposed;
-
-    public SqliteBlobStream(sqlite3_blob blob, bool canWrite, bool ownsBlob)
-    {
-        _blob = blob;
-        _ownsBlob = ownsBlob;
-        CanWrite = canWrite;
-        _length = sqlite3_blob_bytes(blob);
-    }
 
     public static SqliteBlobStream Open(
         sqlite3 con,
@@ -123,7 +115,7 @@ public sealed class SqliteBlobStream : Stream
 
     public override void WriteByte(byte value)
     {
-        Span<byte> buffer = stackalloc byte[1] { value };
+        Span<byte> buffer = [value];
         Write(buffer);
     }
 
@@ -140,7 +132,7 @@ public sealed class SqliteBlobStream : Stream
 
     public override bool CanRead => true;
     public override bool CanSeek => true;
-    public override bool CanWrite { get; }
+    public override bool CanWrite { get; } = canWrite;
 
     public override long Length => _length;
 
@@ -160,8 +152,5 @@ public sealed class SqliteBlobStream : Stream
     }
 
     private void ThrowIfDisposed()
-    {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(SqliteBlobStream));
-    }
+        => ObjectDisposedException.ThrowIf(_disposed, this);
 }

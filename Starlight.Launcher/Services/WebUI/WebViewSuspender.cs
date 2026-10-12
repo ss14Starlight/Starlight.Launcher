@@ -12,11 +12,11 @@ namespace Starlight.Launcher.Services.WebUI;
 ///     Freezes the WebView while the window is minimized or hidden in the tray, and tells the UI to stop
 ///     its own background work (<see cref="UiActivity" />), so a hidden launcher costs next to nothing.
 /// </summary>
-public sealed class WebViewSuspender : IDisposable
+public sealed partial class WebViewSuspender : IDisposable
 {
-    private static readonly TimeSpan SuspendDelay = TimeSpan.FromSeconds(2);
+    private static readonly TimeSpan _suspendDelay = TimeSpan.FromSeconds(2);
 
-    private static readonly TimeSpan TrimDelay = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan _trimDelay = TimeSpan.FromSeconds(30);
 
     private const int MaxSuspendAttempts = 3;
 
@@ -35,17 +35,17 @@ public sealed class WebViewSuspender : IDisposable
         _webView = webView;
         _activity = activity;
 
-        _suspendTimer = new DispatcherTimer { Interval = SuspendDelay };
+        _suspendTimer = new DispatcherTimer { Interval = _suspendDelay };
         _suspendTimer.Tick += (_, _) => { _suspendTimer.Stop(); ApplySuspend(); };
 
-        _trimTimer = new DispatcherTimer { Interval = TrimDelay };
+        _trimTimer = new DispatcherTimer { Interval = _trimDelay };
         _trimTimer.Tick += (_, _) => { _trimTimer.Stop(); TrimMemory(); };
 
         _window.PropertyChanged += OnWindowPropertyChanged;
         Update();
     }
 
-    private bool ShouldBeActive =>
+    private bool _shouldBeActive =>
         _window.IsVisible && _window.WindowState != WindowState.Minimized;
 
     private void OnWindowPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
@@ -59,7 +59,7 @@ public sealed class WebViewSuspender : IDisposable
         if (_disposed)
             return;
 
-        if (ShouldBeActive)
+        if (_shouldBeActive)
         {
             _suspendTimer.Stop();
             _trimTimer.Stop();
@@ -83,13 +83,13 @@ public sealed class WebViewSuspender : IDisposable
 
     private async void ApplySuspend()
     {
-        if (_disposed || ShouldBeActive)
+        if (_disposed || _shouldBeActive)
             return;
 
         _suspendAttempts++;
         var ok = await _webView.TrySuspendAsync();
 
-        if (_disposed || ShouldBeActive)
+        if (_disposed || _shouldBeActive)
             return;
 
         if (ok)
@@ -106,7 +106,7 @@ public sealed class WebViewSuspender : IDisposable
 
     private void TrimMemory()
     {
-        if (_disposed || ShouldBeActive || _trimmed)
+        if (_disposed || _shouldBeActive || _trimmed)
             return;
 
         _trimmed = true;
@@ -147,14 +147,15 @@ public sealed class WebViewSuspender : IDisposable
         }
     }
 
-    [DllImport("kernel32.dll")]
-    private static extern IntPtr GetCurrentProcess();
+    [LibraryImport("kernel32.dll")]
+    private static partial IntPtr GetCurrentProcess();
 
-    [DllImport("kernel32.dll", EntryPoint = "K32EmptyWorkingSet")]
-    private static extern bool EmptyWorkingSet(IntPtr process);
+    [LibraryImport("kernel32.dll", EntryPoint = "K32EmptyWorkingSet")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool EmptyWorkingSet(IntPtr process);
 
-    [DllImport("libc", EntryPoint = "malloc_trim")]
-    private static extern int malloc_trim(nuint pad);
+    [LibraryImport("libc", EntryPoint = "malloc_trim")]
+    private static partial int malloc_trim(nuint pad);
 
     public void Dispose()
     {

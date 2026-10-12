@@ -21,10 +21,9 @@ public sealed partial class ClientLogManager(SettingsService settings)
         var s = settings.GetSettings();
         var custom = s.ClientLogDirectory;
 
-        if (string.IsNullOrWhiteSpace(custom))
-            return s.DirClientLogsDefault;
-
-        return Path.GetFullPath(Environment.ExpandEnvironmentVariables(custom.Trim()));
+        return string.IsNullOrWhiteSpace(custom)
+            ? s.DirClientLogsDefault
+            : Path.GetFullPath(Environment.ExpandEnvironmentVariables(custom.Trim()));
     }
 
     public async Task<ClientLogSession> BeginSessionAsync(

@@ -6,7 +6,6 @@ using Starlight.Launcher.WebUI.Models.DiscordAuthService;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Security.Cryptography;
-using System.Text.Json;
 using System.Web;
 
 namespace Starlight.Launcher.Services.Auth;

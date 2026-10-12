@@ -12,7 +12,7 @@ public static class Blake2B
         CryptoGenericHashBlake2B.State state;
         var pool = ArrayPool<byte>.Shared.Rent(65536);
 
-        _ = CryptoGenericHashBlake2B.Init(ref state, ReadOnlySpan<byte>.Empty, outputLength);
+        _ = CryptoGenericHashBlake2B.Init(ref state, [], outputLength);
 
         while (true)
         {

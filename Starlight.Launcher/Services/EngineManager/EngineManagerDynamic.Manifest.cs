@@ -17,7 +17,7 @@ public sealed partial class EngineManagerDynamic
 
     // One cache entry per CDN. Keyed by the CDN instance (stable while the list is static;
     // a reconfigured list yields new instances -> fresh caches, which is correct).
-    private readonly Dictionary<string, CdnManifestCache> _manifestCaches = new();
+    private readonly Dictionary<string, CdnManifestCache> _manifestCaches = [];
 
     /// <summary>
     /// Look up information about an engine version across all CDNs, in priority order.

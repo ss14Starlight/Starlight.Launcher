@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace Starlight.Launcher.Services.LocalServer;
 
-internal sealed class Win32JobObject : IDisposable
+internal sealed partial class Win32JobObject : IDisposable
 {
     private const int JobObjectExtendedLimitInformation = 9;
     private const uint JobObjectLimitKillOnJobClose = 0x2000;
@@ -88,15 +88,18 @@ internal sealed class Win32JobObject : IDisposable
         public UIntPtr PeakJobMemoryUsed;
     }
 
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    private static extern IntPtr CreateJobObjectW(IntPtr lpJobAttributes, string? lpName);
+    [LibraryImport("kernel32.dll", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
+    public static partial IntPtr CreateJobObjectW(IntPtr lpJobAttributes, string? lpName);
 
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern bool SetInformationJobObject(IntPtr hJob, int infoType, IntPtr lpJobObjectInfo, uint cbJobObjectInfoLength);
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool SetInformationJobObject(IntPtr hJob, int infoType, IntPtr lpJobObjectInfo, uint cbJobObjectInfoLength);
 
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern bool AssignProcessToJobObject(IntPtr job, IntPtr process);
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool AssignProcessToJobObject(IntPtr job, IntPtr process);
 
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern bool CloseHandle(IntPtr handle);
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool CloseHandle(IntPtr handle);
 }

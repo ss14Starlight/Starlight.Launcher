@@ -9,7 +9,7 @@ sealed partial class SettingsService
         _modulesLock.Wait();
         try
         {
-            return _engineModules.ToHashSet();
+            return [.. _engineModules];
         }
         finally
         {
@@ -73,7 +73,7 @@ sealed partial class SettingsService
         await _modulesLock.WaitAsync();
         try
         {
-            return _engineModules.ToHashSet();
+            return [.. _engineModules];
         }
         finally
         {

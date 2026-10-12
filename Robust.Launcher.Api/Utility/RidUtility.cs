@@ -59,52 +59,38 @@ public static class RidUtility
     }
 
     private static string GuessRid()
-    {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        => RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+        ? RuntimeInformation.ProcessArchitecture switch
         {
-            return RuntimeInformation.ProcessArchitecture switch
-            {
-                Architecture.X86 => "linux-x86",
-                Architecture.X64 => "linux-x64",
-                Architecture.Arm => "linux-arm",
-                Architecture.Arm64 => "linux-arm64",
-                _ => "unknown"
-            };
+            Architecture.X86 => "linux-x86",
+            Architecture.X64 => "linux-x64",
+            Architecture.Arm => "linux-arm",
+            Architecture.Arm64 => "linux-arm64",
+            _ => "unknown"
         }
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD))
+        : RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD)
+        ? RuntimeInformation.ProcessArchitecture switch
         {
-            return RuntimeInformation.ProcessArchitecture switch
-            {
-                Architecture.X64 => "freebsd-x64",
-                _ => "unknown"
-            };
+            Architecture.X64 => "freebsd-x64",
+            _ => "unknown"
         }
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        : RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+        ? RuntimeInformation.ProcessArchitecture switch
         {
-            return RuntimeInformation.ProcessArchitecture switch
-            {
-                Architecture.X86 => "win-x86",
-                Architecture.X64 => "win-x64",
-                Architecture.Arm => "win-arm",
-                Architecture.Arm64 => "win-arm64",
-                _ => "unknown"
-            };
+            Architecture.X86 => "win-x86",
+            Architecture.X64 => "win-x64",
+            Architecture.Arm => "win-arm",
+            Architecture.Arm64 => "win-arm64",
+            _ => "unknown"
         }
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        : !RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
+        ? "unknown"
+        : RuntimeInformation.ProcessArchitecture switch
         {
-            return RuntimeInformation.ProcessArchitecture switch
-            {
-                Architecture.X64 => "osx-x64",
-                Architecture.Arm64 => "osx-arm64",
-                _ => "unknown"
-            };
-        }
-
-        return "unknown";
-    }
+            Architecture.X64 => "osx-x64",
+            Architecture.Arm64 => "osx-arm64",
+            _ => "unknown"
+        };
 
     private static RidCatalog LoadRidCatalog()
     {

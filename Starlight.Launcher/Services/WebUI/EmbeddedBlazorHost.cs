@@ -4,13 +4,15 @@ using Microsoft.Extensions.Logging;
 using Robust.Launcher.Api.Api;
 using Robust.Launcher.Api.Models.ServerStatus;
 using Starlight.Launcher.Services.Auth;
+using Starlight.Launcher.Services.ContentManagement;
+using Starlight.Launcher.Services.DeepLink;
 using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Services;
 
-namespace Starlight.Launcher.Services;
+namespace Starlight.Launcher.Services.WebUI;
 
 /// <summary>
 /// Hosts the embedded Blazor web application.

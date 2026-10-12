@@ -16,7 +16,7 @@ public static partial class ServerTagInfer
 
     public static IEnumerable<string> InferTags(ServerStatus status)
     {
-        var currentTags = status.Tags ?? Array.Empty<string>();
+        var currentTags = status.Tags ?? [];
         var currentName = status.Name ?? "";
 
         var addedTags = new List<string>();

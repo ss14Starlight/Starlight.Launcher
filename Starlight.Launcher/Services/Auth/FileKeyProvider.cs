@@ -1,13 +1,12 @@
 using Microsoft.Extensions.Logging;
+using Starlight.Launcher.Services.Settings;
 using System.Security.Cryptography;
 
-namespace Starlight.Launcher.Services.Settings;
+namespace Starlight.Launcher.Services.Auth;
 
-public sealed class FileKeyProvider : ILoginKeyProvider
+public sealed class FileKeyProvider(ILogger<FileKeyProvider> logger) : ILoginKeyProvider
 {
-    private readonly ILogger<FileKeyProvider> _logger;
-
-    public FileKeyProvider(ILogger<FileKeyProvider> logger) => _logger = logger;
+    private readonly ILogger<FileKeyProvider> _logger = logger;
 
     public async Task<byte[]> GetOrCreateKeyAsync(string keyPath)
     {

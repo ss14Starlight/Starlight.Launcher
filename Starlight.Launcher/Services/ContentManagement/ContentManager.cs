@@ -3,17 +3,16 @@ using Microsoft.Data.Sqlite;
 using Robust.Launcher.Api.Models.ContentManagement;
 using Robust.Launcher.Api.Utility;
 using Serilog;
+using Starlight.Launcher.Services.GameLaunch;
 using Starlight.Launcher.Services.Settings;
 using System.Diagnostics;
 using System.IO.Compression;
 
-namespace Starlight.Launcher.Services;
+namespace Starlight.Launcher.Services.ContentManagement;
 
-public sealed class ContentManager
+public sealed class ContentManager(SettingsService settings)
 {
-    private readonly SettingsService _settings;
-
-    public ContentManager(SettingsService settings) => _settings = settings;
+    private readonly SettingsService _settings = settings;
 
     public void Initialize()
     {

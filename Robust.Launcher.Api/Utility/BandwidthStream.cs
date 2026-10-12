@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Robust.Launcher.Api.Utility;
 
-public sealed class BandwidthStream : Stream
+public sealed class BandwidthStream(Stream baseStream) : Stream
 {
     private const int NumSeconds = 8;
     private const int BucketDivisor = 2;
@@ -15,18 +15,11 @@ public sealed class BandwidthStream : Stream
     // TotalBuckets MUST be power of two!
     private const int TotalBuckets = NumSeconds * BucketsPerSecond;
 
-    private readonly Stopwatch _stopwatch;
-    private readonly Stream _baseStream;
-    private readonly long[] _buckets;
+    private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
+    private readonly Stream _baseStream = baseStream;
+    private readonly long[] _buckets = new long[TotalBuckets];
 
     private long _bucketIndex;
-
-    public BandwidthStream(Stream baseStream)
-    {
-        _stopwatch = Stopwatch.StartNew();
-        _baseStream = baseStream;
-        _buckets = new long[TotalBuckets];
-    }
 
     private void TrackBandwidth(long value)
     {

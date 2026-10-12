@@ -6,7 +6,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Starlight.Launcher.Models.Tray;
 
-namespace Starlight.Launcher.Services;
+namespace Starlight.Launcher.Services.Tray;
 
 public sealed class AvaloniaTray : INativeTray
 {
@@ -40,7 +40,7 @@ public sealed class AvaloniaTray : INativeTray
         };
         _trayIcon.Clicked += (_, _) => IconActivated?.Invoke(this, EventArgs.Empty);
 
-        var icons = TrayIcon.GetIcons(Application.Current!) ?? new TrayIcons();
+        var icons = TrayIcon.GetIcons(Application.Current!) ?? [];
         icons.Add(_trayIcon);
         TrayIcon.SetIcons(Application.Current!, icons);
     }
@@ -126,7 +126,7 @@ public sealed class AvaloniaTray : INativeTray
         };
     }
 
-    private static Bitmap RenderIcon(string pathData, Color color)
+    private static RenderTargetBitmap RenderIcon(string pathData, Color color)
     {
         var bitmap = new RenderTargetBitmap(new PixelSize(IconPixels, IconPixels), new Vector(96, 96));
         using (var ctx = bitmap.CreateDrawingContext())

@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Runtime.InteropServices;
 using Starlight.Launcher.Services.Auth;
+using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Models.BugReport;
 

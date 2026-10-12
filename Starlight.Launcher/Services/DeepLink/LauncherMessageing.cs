@@ -3,11 +3,11 @@ using System.Text;
 using System.Text.Json;
 using Serilog;
 
-namespace Starlight.Launcher.Services;
+namespace Starlight.Launcher.Services.DeepLink;
 
 public class LauncherMessaging
 {
-    private LauncherActivationMessage[] _initialMessages = Array.Empty<LauncherActivationMessage>();
+    private LauncherActivationMessage[] _initialMessages = [];
     private NamedPipeServerStream? _pipeServer;
     private readonly CancellationTokenSource _pipeServerSelfDestruct = new();
     private static readonly Encoding _noBomUtf8 = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);

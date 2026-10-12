@@ -1,4 +1,5 @@
 using Serilog;
+using Starlight.Launcher.Services.ContentManagement;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Models.Data;
 
@@ -7,11 +8,9 @@ namespace Starlight.Launcher.Services.Bridge;
 public sealed partial class Bridge : IBridge
 {
     public async Task<DataResetResult> ClearEnginesAsync()
-    {
-        if (_updater.IsUpdating)
-            return DataResetResult.Busy;
-
-        return await Task.Run(() =>
+        => _updater.IsUpdating
+        ? DataResetResult.Busy
+        : await Task.Run(() =>
         {
             try
             {
@@ -32,7 +31,6 @@ public sealed partial class Bridge : IBridge
                 return DataResetResult.Failed;
             }
         });
-    }
 
     public async Task<DataResetResult> ClearContentAsync()
     {

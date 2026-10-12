@@ -22,6 +22,12 @@ using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Services;
+using Starlight.Launcher.Platforms.Windows.Services.Settings;
+using Starlight.Launcher.Services.ContentManagement;
+using Starlight.Launcher.Services.DeepLink;
+using Starlight.Launcher.Services.GameLaunch;
+using Starlight.Launcher.Services.Tray;
+using Starlight.Launcher.Services.WebUI;
 
 namespace Starlight.Launcher;
 
@@ -161,10 +167,9 @@ public partial class App : Application
     {
         _ = services.AddLogging(b => b.ClearProviders().AddSerilog(Serilog.Log.Logger));
 
-        if (OperatingSystem.IsWindows())
-            _ = services.AddSingleton<ILoginKeyProvider, DpapiKeyProvider>();
-        else
-            _ = services.AddSingleton<ILoginKeyProvider, FileKeyProvider>();
+        _ = OperatingSystem.IsWindows()
+            ? services.AddSingleton<ILoginKeyProvider, DpapiKeyProvider>()
+            : services.AddSingleton<ILoginKeyProvider, FileKeyProvider>();
 
         _ = services.AddSingleton<INativeTray, AvaloniaTray>();
         _ = services.AddSingleton<IFileDialogService, AvaloniaFileDialogService>();

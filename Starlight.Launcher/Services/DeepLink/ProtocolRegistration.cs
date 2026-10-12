@@ -1,9 +1,9 @@
 using System.Diagnostics;
 using Microsoft.Win32;
 using Serilog;
-using Starlight.Launcher.Services;
+using Starlight.Launcher.Services.Settings;
 
-namespace Starlight.Launcher;
+namespace Starlight.Launcher.Services.DeepLink;
 
 internal static class ProtocolRegistration
 {

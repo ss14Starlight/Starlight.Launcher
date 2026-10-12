@@ -6,26 +6,16 @@ using Starlight.Launcher.Models.Tray;
 using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI.Localization;
 
-namespace Starlight.Launcher.Services;
+namespace Starlight.Launcher.Services.Tray;
 
 /// <summary>
 /// Coordinates initialization and interaction with the system tray.
 /// </summary>
-public sealed class TrayCoordinator
+public sealed class TrayCoordinator(INativeTray tray, SettingsService settings, ILocalizationManager loc)
 {
-    private readonly INativeTray _tray;
-    private readonly SettingsService _settings;
-    private readonly ILocalizationManager _loc;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="TrayCoordinator"/> class.
-    /// </summary>
-    public TrayCoordinator(INativeTray tray, SettingsService settings, ILocalizationManager loc)
-    {
-        _tray = tray;
-        _settings = settings;
-        _loc = loc;
-    }
+    private readonly INativeTray _tray = tray;
+    private readonly SettingsService _settings = settings;
+    private readonly ILocalizationManager _loc = loc;
 
     /// <summary>
     /// Initializes the system tray icon and its menu.

@@ -3,19 +3,17 @@ using System.Text.Json;
 using Robust.Launcher.Api.Utility;
 using Serilog;
 using Starlight.Launcher.WebUI.Models.LocalServer;
+using static Robust.Launcher.Api.Utility.Helpers;
 
 namespace Starlight.Launcher.Services.LocalServer;
 
 public sealed partial class LocalServerManager
 {
     public async Task<LocalServerManifest?> FetchManifestAsync(string manifestUrl, CancellationToken cancel = default)
-    {
-        if (!Uri.TryCreate(manifestUrl, UriKind.Absolute, out var uri)
-            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
-            throw new ArgumentException("Manifest URL must be an absolute http(s) URL.", nameof(manifestUrl));
-
-        return await _http.GetFromJsonAsync<LocalServerManifest>(uri, Helpers.JsonWebOptions, cancel);
-    }
+        => !Uri.TryCreate(manifestUrl, UriKind.Absolute, out var uri)
+        || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+        ? throw new ArgumentException("Manifest URL must be an absolute http(s) URL.", nameof(manifestUrl))
+        : await _http.GetFromJsonAsync<LocalServerManifest>(uri, JsonWebOptions, cancel);
 
     public async Task<LocalServerLatestBuildResult> GetLatestBuildAsync(string manifestUrl, CancellationToken cancel = default)
     {
@@ -29,10 +27,9 @@ public sealed partial class LocalServerManager
             var build = latest.Value;
 
             var rid = RidUtility.FindBestRid(build.Server.Keys);
-            if (rid == null || !build.Server.TryGetValue(rid, out var asset))
-                return new LocalServerLatestBuildResult(latest.Key, build.Time, null, null, false, "No server build available for your platform.");
-
-            return new LocalServerLatestBuildResult(latest.Key, build.Time, rid, asset.Size, true, null);
+            return rid == null || !build.Server.TryGetValue(rid, out var asset)
+                ? new LocalServerLatestBuildResult(latest.Key, build.Time, null, null, false, "No server build available for your platform.")
+                : new LocalServerLatestBuildResult(latest.Key, build.Time, rid, asset.Size, true, null);
         }
         catch (Exception e) when (e is HttpRequestException or JsonException or ArgumentException)
         {

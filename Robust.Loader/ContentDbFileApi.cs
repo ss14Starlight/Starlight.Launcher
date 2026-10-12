@@ -16,13 +16,13 @@ using Robust.Launcher.Api.Utility;
 using static SQLitePCL.raw;
 using static SharpZstd.Interop.Zstd;
 
-namespace SS14.Loader;
+namespace Robust.Loader;
 
 internal sealed class ContentDbFileApi : IFileApi, IDisposable
 {
-    private readonly Dictionary<string, (long id, int length, ContentCompressionScheme compr)> _files = new();
+    private readonly Dictionary<string, (long id, int length, ContentCompressionScheme compr)> _files = [];
     private readonly SemaphoreSlim _dbConnectionsSemaphore;
-    private readonly ConcurrentBag<ConPoolEntry> _dbConnections = new();
+    private readonly ConcurrentBag<ConPoolEntry> _dbConnections = [];
     private readonly int _connectionPoolSize;
 
     public unsafe ContentDbFileApi(string contentDbPath, long version)
@@ -155,10 +155,7 @@ internal sealed class ContentDbFileApi : IFileApi, IDisposable
     private static int ConnectionPoolSize()
     {
         var envVar = Environment.GetEnvironmentVariable("SS14_LOADER_CONTENT_POOL_SIZE");
-        if (!string.IsNullOrEmpty(envVar))
-            return int.Parse(envVar);
-
-        return Math.Max(2, Environment.ProcessorCount);
+        return !string.IsNullOrEmpty(envVar) ? int.Parse(envVar) : Math.Max(2, Environment.ProcessorCount);
     }
 
     public void Dispose()
@@ -306,19 +303,12 @@ internal sealed class ContentDbFileApi : IFileApi, IDisposable
         }
     }
 
-    private sealed unsafe class ConPoolEntry
+    private sealed unsafe class ConPoolEntry(sqlite3 connection, ZSTD_DCtx* decompressionContext, sqlite3_blob blob)
     {
-        public readonly sqlite3 Connection;
-        public readonly ZSTD_DCtx* DecompressionContext;
-        public readonly sqlite3_blob Blob;
+        public readonly sqlite3 Connection = connection;
+        public readonly ZSTD_DCtx* DecompressionContext = decompressionContext;
+        public readonly sqlite3_blob Blob = blob;
         public bool IsMaster;
-
-        public ConPoolEntry(sqlite3 connection, ZSTD_DCtx* decompressionContext, sqlite3_blob blob)
-        {
-            Connection = connection;
-            DecompressionContext = decompressionContext;
-            Blob = blob;
-        }
     }
 
     public IEnumerable<string> AllFiles => _files.Keys;

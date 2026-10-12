@@ -1,6 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Robust.Launcher.Api.Models;
-using Robust.Launcher.Api.Utility;
+using static Robust.Launcher.Api.Utility.Helpers;
 
 namespace Starlight.Launcher.Services.EngineManager;
 // This is an interface instead of a class because
@@ -19,7 +19,7 @@ public interface IEngineManager
 
     Task<EngineInstallationResult> DownloadEngineIfNecessary(
         string engineVersion,
-        Helpers.DownloadProgressCallback? progress = null,
+        DownloadProgressCallback? progress = null,
         CancellationToken cancel = default);
 
     /// <returns>True if something new had to be installed.</returns>
@@ -27,7 +27,7 @@ public interface IEngineManager
         string moduleName,
         string engineVersion,
         EngineModuleManifest manifest,
-        Helpers.DownloadProgressCallback? progress = null,
+        DownloadProgressCallback? progress = null,
         CancellationToken cancel = default);
 
     Task DoEngineCullMaybeAsync(SqliteConnection contenCon);

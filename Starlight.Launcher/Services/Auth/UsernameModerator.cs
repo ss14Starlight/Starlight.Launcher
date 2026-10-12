@@ -38,7 +38,7 @@ public static class UsernameModerator
         if (cleaned.Length == 0)
             return Reject("The username has no usable characters.");
 
-        Measure(cleaned, out int runeCount, out int nonAscii, out int asciiLetters);
+        Measure(cleaned, out var runeCount, out var nonAscii, out var asciiLetters);
 
         if (runeCount >= MinLength && (double)nonAscii / runeCount <= MaxNonAsciiRatio)
         {
@@ -98,7 +98,7 @@ public static class UsernameModerator
                 pendingSpace = false;
             }
 
-            _ = sb.Append(rune.ToString());
+            _ = sb.Append(rune);
         }
 
         return sb.ToString();
@@ -125,8 +125,8 @@ public static class UsernameModerator
 
         foreach (var rune in s.EnumerateRunes())
         {
-            int v = rune.Value;
-            bool keep = v is (>= 'a' and <= 'z') or (>= 'A' and <= 'Z') or (>= '0' and <= '9') or '_' or '-' or '.';
+            var v = rune.Value;
+            var keep = v is (>= 'a' and <= 'z') or (>= 'A' and <= 'Z') or (>= '0' and <= '9') or '_' or '-' or '.';
 
             if (keep)
             {
@@ -172,7 +172,7 @@ public static class UsernameModerator
         foreach (var rune in s.EnumerateRunes())
         {
             if (n++ == MaxLength) break;
-            _ = sb.Append(rune.ToString());
+            _ = sb.Append(rune);
         }
         return sb.ToString().TrimEnd();
     }

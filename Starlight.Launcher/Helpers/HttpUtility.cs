@@ -2,7 +2,7 @@ using System.Net.Http.Headers;
 using Robust.Launcher.Api.Utility;
 using static Robust.Launcher.Api.Utility.HttpUtility;
 
-namespace Starlight.Launcher.Utility;
+namespace Starlight.Launcher.Helpers;
 
 /// <summary>
 /// Provides helper methods for sending and receiving Zstandard-compressed HTTP content.
@@ -35,14 +35,8 @@ public static class HttpUtility
     /// <summary>
     /// Represents HTTP content that is transparently decompressed using Zstandard.
     /// </summary>
-    public sealed class ZStdHttpContent : DecompressedContent
+    public sealed class ZStdHttpContent(HttpContent originalContent) : DecompressedContent(originalContent)
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ZStdHttpContent"/> class.
-        /// </summary>
-        public ZStdHttpContent(HttpContent originalContent) : base(originalContent)
-        {
-        }
 
         /// <summary>
         /// Creates a stream that decompresses Zstandard-compressed content.

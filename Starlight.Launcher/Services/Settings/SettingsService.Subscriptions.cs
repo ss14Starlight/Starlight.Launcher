@@ -4,8 +4,8 @@ namespace Starlight.Launcher.Services.Settings;
 
 public sealed partial class SettingsService
 {
-    private readonly List<ISettingsSubscription> _settingsSubs = new();
-    private readonly object _settingsSubsLock = new();
+    private readonly List<ISettingsSubscription> _settingsSubs = [];
+    private readonly Lock _settingsSubsLock = new();
 
     public IDisposable Subscribe<T>(
         Func<AppSettings, T> selector,
@@ -31,7 +31,7 @@ public sealed partial class SettingsService
 
         ISettingsSubscription[] snapshot;
         lock (_settingsSubsLock)
-            snapshot = _settingsSubs.ToArray();
+            snapshot = [.. _settingsSubs];
 
         foreach (var sub in snapshot)
             sub.NotifyIfChanged(oldSettings, newSettings);

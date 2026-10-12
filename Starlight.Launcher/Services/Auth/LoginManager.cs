@@ -39,10 +39,10 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
 
     private Guid? _activeLoginId;
 
-    private readonly Dictionary<Guid, ActiveLoginData> _logins = new();
-    private readonly object _loginsLock = new();
+    private readonly Dictionary<Guid, ActiveLoginData> _logins = [];
+    private readonly Lock _loginsLock = new();
 
-    private readonly ObservableCollection<LoggedInAccount> _loginsView = new();
+    private readonly ObservableCollection<LoggedInAccount> _loginsView = [];
     public ReadOnlyObservableCollection<LoggedInAccount> Logins { get; }
 
     public event Action? LoginsChanged;
@@ -176,7 +176,7 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
             ActiveLoginData[] loaded;
             lock (_loginsLock)
             {
-                loaded = _logins.Values.ToArray();
+                loaded = [.. _logins.Values];
             }
 
             foreach (var data in loaded)
@@ -244,7 +244,7 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
         ActiveLoginData[] snapshot;
         lock (_loginsLock)
         {
-            snapshot = _logins.Values.ToArray();
+            snapshot = [.. _logins.Values];
         }
 
         if (snapshot.Length == 0)
@@ -282,31 +282,17 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
 
         // Expired accounts need the user, not us. Re-check occasionally in case the
         // server un-revoked the session, but do not hammer it.
-        if (data.Status == AccountLoginStatus.Expired)
-            return DateTime.UtcNow - last >= _revalidateInterval;
-
-        if (data.Status == AccountLoginStatus.Unreachable)
-            return DateTime.UtcNow - last >= _retryAfterUnreachable;
-
-        if (NeedsRenewal(data.LoginInfo))
-            return true;
-
-        return DateTime.UtcNow - last >= _revalidateInterval;
+        return data.Status == AccountLoginStatus.Expired
+            ? DateTime.UtcNow - last >= _revalidateInterval
+            : data.Status == AccountLoginStatus.Unreachable
+            ? DateTime.UtcNow - last >= _retryAfterUnreachable
+            : NeedsRenewal(data.LoginInfo) || DateTime.UtcNow - last >= _revalidateInterval;
     }
 
     private static bool NeedsRenewal(LoginInfo info)
-    {
-        if (info.Token is { } robust && robust.ShouldRefresh(LoginTokenExt.RefreshBuffer))
-            return true;
-
-        if (info.DiscordToken is { } discord && discord.ShouldRefresh(StarlightRenewalBuffer(discord)))
-            return true;
-
-        if (info.SteamToken is { } steam && steam.ShouldRefresh(StarlightRenewalBuffer(steam)))
-            return true;
-
-        return false;
-    }
+        => (info.Token is { } robust && robust.ShouldRefresh(LoginTokenExt.RefreshBuffer))
+        || (info.DiscordToken is { } discord && discord.ShouldRefresh(StarlightRenewalBuffer(discord)))
+        || (info.SteamToken is { } steam && steam.ShouldRefresh(StarlightRenewalBuffer(steam)));
 
     private static TimeSpan StarlightRenewalBuffer(LoginToken token)
         => token.RenewalBuffer(LoginTokenExt.ShortRefreshBuffer);
@@ -875,8 +861,8 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
 
         var current = _settings.GetLogins();
 
-        List<ActiveLoginData> toRemove = new();
-        List<ActiveLoginData> toAdd = new();
+        List<ActiveLoginData> toRemove = [];
+        List<ActiveLoginData> toAdd = [];
         var activeWasRemoved = false;
 
         lock (_loginsLock)
@@ -934,9 +920,7 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
         List<ActiveLoginData> candidates;
         lock (_loginsLock)
         {
-            candidates = _logins.Values
-                .Where(d => d.LoginInfo is { Token: null, DiscordToken: not null })
-                .ToList();
+            candidates = [.. _logins.Values.Where(d => d.LoginInfo is { Token: null, DiscordToken: not null })];
         }
 
         var changed = new List<LoginInfo>();

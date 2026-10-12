@@ -9,14 +9,14 @@ using System.Runtime.Loader;
 using NSec.Cryptography;
 using Robust.LoaderApi;
 
-namespace SS14.Loader;
+namespace Robust.Loader;
 
 internal class Program
 {
     private readonly string[] _engineArgs;
     private const string RobustAssemblyName = "Robust.Client";
 
-    private readonly IFileApi _fileApi;
+    private readonly ZipFileApi _fileApi;
 
     private Program(string robustPath, string[] engineArgs)
     {
@@ -39,10 +39,7 @@ internal class Program
     {
         var ourDir = Path.GetDirectoryName(typeof(Program).Assembly.Location);
         var a = Path.Combine(ourDir!, unmanaged);
-        if (NativeLibrary.TryLoad(a, out var handle))
-            return handle;
-
-        return IntPtr.Zero;
+        return NativeLibrary.TryLoad(a, out var handle) ? handle : IntPtr.Zero;
     }
 
     private bool Run()
@@ -73,7 +70,7 @@ internal class Program
         if (!string.IsNullOrEmpty(contentDb) && !string.IsNullOrEmpty(contentVersion))
         {
             contentApi = new ContentDbFileApi(contentDb, long.Parse(contentVersion));
-            extraMounts = new[] { new ApiMount(contentApi, "/") };
+            extraMounts = [new ApiMount(contentApi, "/")];
         }
 
         if (!string.IsNullOrEmpty(overlayZip))

@@ -20,17 +20,11 @@ namespace Robust.Launcher.Api.Models.ServerStatus;
 /// <summary>
 ///     Caches information pulled from servers and updates it asynchronously.
 /// </summary>
-public sealed class ServerStatusCache : IServerSource
+public sealed class ServerStatusCache(HttpClient http, ILogger<ServerStatusCache> logger) : IServerSource
 {
     private readonly ConcurrentDictionary<string, CacheReg> _cachedData = new();
-    private readonly HttpClient _http;
-    private readonly ILogger<ServerStatusCache> _logger;
-
-    public ServerStatusCache(HttpClient http, ILogger<ServerStatusCache> logger)
-    {
-        _http = http;
-        _logger = logger;
-    }
+    private readonly HttpClient _http = http;
+    private readonly ILogger<ServerStatusCache> _logger = logger;
 
     /// <summary>
     ///     Gets an uninitialized status for a server address.
@@ -76,20 +70,20 @@ public sealed class ServerStatusCache : IServerSource
     }
 
     private const int MaxConcurrentPings = 16;
-    private static readonly TimeSpan PingTimeout = TimeSpan.FromSeconds(3);
-    private static readonly TimeSpan PingRetryDelay = TimeSpan.FromSeconds(30);
-    private static readonly TimeSpan PingMaxAge = TimeSpan.FromMinutes(2);
-    private static readonly SemaphoreSlim PingGate = new(MaxConcurrentPings, MaxConcurrentPings);
+    private static readonly TimeSpan _pingTimeout = TimeSpan.FromSeconds(3);
+    private static readonly TimeSpan _pingRetryDelay = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan _pingMaxAge = TimeSpan.FromMinutes(2);
+    private static readonly SemaphoreSlim _pingGate = new(MaxConcurrentPings, MaxConcurrentPings);
 
     private static async Task MeasurePing(ServerStatusData data, Uri address, CancellationToken cancel)
     {
         var api = UriHelper.GetServerApiAddress(address);
 
-        await PingGate.WaitAsync(cancel).ConfigureAwait(false);
+        await _pingGate.WaitAsync(cancel).ConfigureAwait(false);
         try
         {
             using var pingCancel = CancellationTokenSource.CreateLinkedTokenSource(cancel);
-            pingCancel.CancelAfter(PingTimeout);
+            pingCancel.CancelAfter(_pingTimeout);
 
             var addresses = IPAddress.TryParse(api.DnsSafeHost, out var literal)
                 ? [literal]
@@ -117,7 +111,7 @@ public sealed class ServerStatusCache : IServerSource
         }
         finally
         {
-            _ = PingGate.Release();
+            _ = _pingGate.Release();
         }
     }
 
@@ -134,7 +128,7 @@ public sealed class ServerStatusCache : IServerSource
             if (reg.LastPingAttempt is { } last)
             {
                 var age = DateTime.UtcNow - last;
-                var retry = data.Ping is null ? age >= PingRetryDelay : age >= PingMaxAge;
+                var retry = data.Ping is null ? age >= _pingRetryDelay : age >= _pingMaxAge;
                 if (!retry)
                     return false;
             }
@@ -243,10 +237,10 @@ public sealed class ServerStatusCache : IServerSource
             data.RoundStartTime = DateTime.Parse(status.RoundStartTime, null, System.Globalization.DateTimeStyles.RoundtripKind);
         }
 
-        var baseTags = status.Tags ?? Array.Empty<string>();
+        var baseTags = status.Tags ?? [];
         var inferredTags = ServerTagInfer.InferTags(status);
 
-        data.Tags = baseTags.Concat(inferredTags).ToArray();
+        data.Tags = [.. baseTags, .. inferredTags];
 
         data.NotifyChanged();
     }
@@ -418,15 +412,13 @@ public sealed class ServerStatusCache : IServerSource
             }
         });
 
-    private sealed class CacheReg
+    private sealed class CacheReg(ServerStatusData data)
     {
-        public readonly ServerStatusData Data;
+        public readonly ServerStatusData Data = data;
         public readonly SemaphoreSlim Semaphore = new(1);
         public CancellationTokenSource? Cancellation;
         public bool DidInitialStatusUpdate;
         public bool PingInFlight;
         public DateTime? LastPingAttempt;
-
-        public CacheReg(ServerStatusData data) => Data = data;
     }
 }

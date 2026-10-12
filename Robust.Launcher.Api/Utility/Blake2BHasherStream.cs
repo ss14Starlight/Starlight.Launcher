@@ -34,20 +34,14 @@ public sealed class Blake2BHasherStream : Stream
     }
 
     public static Blake2BHasherStream CreateReader(Stream wrapping, ReadOnlySpan<byte> key, int outputLength)
-    {
-        if (!wrapping.CanRead)
-            throw new ArgumentException("Must pass readable stream.");
-
-        return new Blake2BHasherStream(wrapping, true, key, outputLength);
-    }
+        => !wrapping.CanRead
+            ? throw new ArgumentException("Must pass readable stream.")
+            : new Blake2BHasherStream(wrapping, true, key, outputLength);
 
     public static Blake2BHasherStream CreateWriter(Stream wrapping, ReadOnlySpan<byte> key, int outputLength)
-    {
-        if (!wrapping.CanWrite)
-            throw new ArgumentException("Must pass writeable stream.");
-
-        return new Blake2BHasherStream(wrapping, false, key, outputLength);
-    }
+        => !wrapping.CanWrite
+            ? throw new ArgumentException("Must pass writeable stream.")
+            : new Blake2BHasherStream(wrapping, false, key, outputLength);
 
     public override void Flush()
     {

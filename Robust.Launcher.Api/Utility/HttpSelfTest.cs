@@ -25,14 +25,14 @@ internal static class HttpSelfTest
     private static int s_httpSelfTestInitiated = 0;
 
     private static readonly string[] _selfTestUrls =
-    {
+    [
         "http://central.spacestation14.io/launcher_version.txt",
         "https://central.spacestation14.io/launcher_version.txt",
         "http://cdn.centcomm.spacestation14.com/launcher_version.txt",
         "https://cdn.centcomm.spacestation14.com/launcher_version.txt",
         "http://moon.spacestation14.com/replays/",
         "https://moon.spacestation14.com/replays/"
-    };
+    ];
 
     public static void StartSelfTest()
     {
@@ -166,18 +166,11 @@ internal static class HttpSelfTest
             throw new Exception($"Got bad status code in response: {response.StatusCode}");
     }
 
-    private sealed class LogDataTransferStream : Stream
+    private sealed class LogDataTransferStream(Stream baseStream, Stopwatch stopwatch, Action<string> log) : Stream
     {
-        private readonly Stream _baseStream;
-        private readonly Stopwatch _stopwatch;
-        private readonly Action<string> _log;
-
-        public LogDataTransferStream(Stream baseStream, Stopwatch stopwatch, Action<string> log)
-        {
-            _baseStream = baseStream;
-            _stopwatch = stopwatch;
-            _log = log;
-        }
+        private readonly Stream _baseStream = baseStream;
+        private readonly Stopwatch _stopwatch = stopwatch;
+        private readonly Action<string> _log = log;
 
         public override void Flush() => _baseStream.Flush();
 

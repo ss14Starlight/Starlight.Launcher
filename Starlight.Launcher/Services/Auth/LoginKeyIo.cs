@@ -1,4 +1,4 @@
-namespace Starlight.Launcher.Services.Settings;
+namespace Starlight.Launcher.Services.Auth;
 
 /// <summary>
 ///     Reading the login key with a little patience.

@@ -6,8 +6,8 @@ namespace Starlight.Launcher.Services.LocalServer;
 internal sealed class TomlDocument
 {
     private readonly List<string> _groupOrder = [];
-    private readonly Dictionary<string, List<string>> _keyOrder = new();
-    private readonly Dictionary<string, Dictionary<string, string>> _rawValues = new();
+    private readonly Dictionary<string, List<string>> _keyOrder = [];
+    private readonly Dictionary<string, Dictionary<string, string>> _rawValues = [];
 
     public static TomlDocument Parse(string text)
     {
@@ -44,7 +44,7 @@ internal sealed class TomlDocument
         if (_rawValues.ContainsKey(group))
             return;
 
-        _rawValues[group] = new Dictionary<string, string>();
+        _rawValues[group] = [];
         _keyOrder[group] = [];
         _groupOrder.Add(group);
     }

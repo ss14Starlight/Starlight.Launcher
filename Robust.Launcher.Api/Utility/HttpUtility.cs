@@ -33,12 +33,10 @@ public static class HttpUtility
             Headers.ContentLength = null;
             Headers.ContentEncoding.Clear();
             string? prevEncoding = null;
-            foreach (string encoding in originalContent.Headers.ContentEncoding)
+            foreach (var encoding in originalContent.Headers.ContentEncoding)
             {
                 if (prevEncoding != null)
-                {
                     Headers.ContentEncoding.Add(prevEncoding);
-                }
 
                 prevEncoding = encoding;
             }
@@ -49,7 +47,7 @@ public static class HttpUtility
         protected override void SerializeToStream(Stream stream, TransportContext? context,
             CancellationToken cancellationToken)
         {
-            using Stream decompressedStream = CreateContentReadStream(cancellationToken);
+            using var decompressedStream = CreateContentReadStream(cancellationToken);
             decompressedStream.CopyTo(stream);
         }
 
@@ -59,7 +57,7 @@ public static class HttpUtility
         protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context,
             CancellationToken cancellationToken)
         {
-            using Stream decompressedStream = await CreateContentReadStreamAsync(cancellationToken)
+            using var decompressedStream = await CreateContentReadStreamAsync(cancellationToken)
                 .ConfigureAwait(false);
 
             await decompressedStream.CopyToAsync(stream, cancellationToken).ConfigureAwait(false);
@@ -67,7 +65,7 @@ public static class HttpUtility
 
         protected override Stream CreateContentReadStream(CancellationToken cancellationToken)
         {
-            ValueTask<Stream> task = CreateContentReadStreamAsyncCore(async: false, cancellationToken);
+            var task = CreateContentReadStreamAsyncCore(async: false, cancellationToken);
             Debug.Assert(task.IsCompleted);
             return task.GetAwaiter().GetResult();
         }
@@ -79,22 +77,13 @@ public static class HttpUtility
             CancellationToken cancellationToken)
         {
             if (_contentConsumed)
-            {
                 throw new InvalidOperationException("Stream already read");
-            }
 
             _contentConsumed = true;
 
-            Stream originalStream;
-            if (async)
-            {
-                originalStream = await _originalContent.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-            }
-            else
-            {
-                originalStream = _originalContent.ReadAsStream(cancellationToken);
-            }
-
+            var originalStream = async
+                ? await _originalContent.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false)
+                : _originalContent.ReadAsStream(cancellationToken);
             return GetDecompressedStream(originalStream);
         }
 
@@ -107,9 +96,7 @@ public static class HttpUtility
         protected override void Dispose(bool disposing)
         {
             if (disposing)
-            {
                 _originalContent.Dispose();
-            }
 
             base.Dispose(disposing);
         }

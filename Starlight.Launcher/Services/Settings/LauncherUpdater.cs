@@ -4,16 +4,13 @@ using System.IO.Compression;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.Json;
-using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI.Models.LauncherUpdater;
 
-namespace Starlight.Launcher.Services;
+namespace Starlight.Launcher.Services.Settings;
 
-public partial class LauncherUpdater
+public partial class LauncherUpdater(SettingsService settings)
 {
-    private readonly SettingsService _settings;
-
-    public LauncherUpdater(SettingsService settings) => _settings = settings;
+    private readonly SettingsService _settings = settings;
 
     public static string GetVersion()
     {
@@ -28,7 +25,7 @@ public partial class LauncherUpdater
 
     public event Action<(long downloaded, long total)>? DownloadProgress;
 
-    public async Task<UpdateInfo> IsUpdateAvailable()
+    public static async Task<UpdateInfo> IsUpdateAvailable()
     {
         var currentVersion = NormalizeVersion(GetVersion());
         var current = ParseVersion(currentVersion);
@@ -94,19 +91,18 @@ public partial class LauncherUpdater
 
         return releases is null
             ? throw new InvalidOperationException("Failed to fetch releases.")
-            : (IReadOnlyList<ChangelogEntry>)releases
+            : (IReadOnlyList<ChangelogEntry>)[.. releases
             .Select(r => (r.TagName, r.Body, Parsed: ParseVersion(NormalizeVersion(r.TagName))))
             .Where(r => r.Parsed is not null)
             .Where(r => lastSeen is null || r.Parsed! > lastSeen)
             .Where(r => current is null || r.Parsed! <= current)
             .OrderByDescending(r => r.Parsed)
-            .Select(r => new ChangelogEntry(NormalizeVersion(r.TagName), r.Body))
-            .ToList();
+            .Select(r => new ChangelogEntry(NormalizeVersion(r.TagName), r.Body))];
     }
 
     private sealed record GhReleaseInfo(string TagName, string HtmlUrl, string? Body, IReadOnlyList<ReleaseAsset> Assets);
 
-    private async Task<IReadOnlyList<GhReleaseInfo>?> GetReleases()
+    private static async Task<IReadOnlyList<GhReleaseInfo>?> GetReleases()
     {
         using var httpClient = new HttpClient();
         httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Starlight.Launcher");
@@ -138,7 +134,7 @@ public partial class LauncherUpdater
                     {
                         var name = a.TryGetProperty("name", out var n) ? n.GetString() : null;
                         var url = a.TryGetProperty("browser_download_url", out var u) ? u.GetString() : null;
-                        long size = a.TryGetProperty("size", out var s) && s.TryGetInt64(out var sv) ? sv : 0;
+                        var size = a.TryGetProperty("size", out var s) && s.TryGetInt64(out var sv) ? sv : 0;
 
                         if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(url))
                             assets.Add(new ReleaseAsset(name, url, size));
@@ -156,18 +152,17 @@ public partial class LauncherUpdater
         }
     }
 
-    public async Task<IReadOnlyList<ChangelogEntry>> GetAllChangelogs()
+    public static async Task<IReadOnlyList<ChangelogEntry>> GetAllChangelogs()
     {
         var releases = await GetReleases();
 
         return releases is null
             ? throw new InvalidOperationException("Failed to fetch releases.")
-            : (IReadOnlyList<ChangelogEntry>)releases
+            : (IReadOnlyList<ChangelogEntry>)[.. releases
             .Select(r => (r.TagName, r.Body, Parsed: ParseVersion(NormalizeVersion(r.TagName))))
             .Where(r => r.Parsed is not null)
             .OrderByDescending(r => r.Parsed)
-            .Select(r => new ChangelogEntry(NormalizeVersion(r.TagName), r.Body))
-            .ToList();
+            .Select(r => new ChangelogEntry(NormalizeVersion(r.TagName), r.Body))];
     }
 
     private static string NormalizeVersion(string? version)

@@ -7,8 +7,11 @@ using Avalonia.Reactive;
 using Avalonia.Threading;
 using Serilog;
 using Starlight.Launcher.Services.Auth;
+using Starlight.Launcher.Services.ContentManagement;
+using Starlight.Launcher.Services.DeepLink;
 using Starlight.Launcher.Services.Discord;
 using Starlight.Launcher.Services.EngineManager;
+using Starlight.Launcher.Services.GameLaunch;
 using Starlight.Launcher.Services.LocalServer;
 using Starlight.Launcher.Services.ServerStatus;
 using Starlight.Launcher.Services.Settings;
@@ -18,54 +21,32 @@ using Starlight.Launcher.WebUI.Services;
 
 namespace Starlight.Launcher.Services.Bridge;
 
-public sealed partial class Bridge : IBridge
+public sealed partial class Bridge(LauncherCommands commands, Connector connector, DiscordAuthService discordAuth,
+    SteamAuthService steamAuth, DiscordRichPresence discordRichPresence, HubServerFetcher hubServerFetcher,
+    LauncherUpdater launcherUpdater, LoginManager loginManager, ServerInfoLoader serverInfoLoader,
+    SettingsService settings, Updater updater, IFileDialogService fileDialog,
+    INativeTray tray, LocalServerManager localServer, StarlightAuthApi starlightAuth,
+    EngineSourceGuard engineSourceGuard, ContentManager content, IEngineManager engineManager) : IBridge
 {
-    private readonly LauncherCommands _commands;
-    private readonly Connector _connector;
-    private readonly DiscordAuthService _discordAuth;
-    private readonly SteamAuthService _steamAuth;
-    private readonly DiscordRichPresence _discordRichPresence;
-    private readonly HubServerFetcher _hubServerFetcher;
-    private readonly LauncherUpdater _launcherUpdater;
-    private readonly LoginManager _loginManager;
-    private readonly ServerInfoLoader _serverInfoLoader;
-    private readonly SettingsService _settings;
-    private readonly Updater _updater;
-    private readonly IFileDialogService _fileDialog;
-    private readonly INativeTray _tray;
-    private readonly LocalServerManager _localServer;
-    private readonly StarlightAuthApi _starlightAuth;
-    private readonly EngineSourceGuard _engineSourceGuard;
-    private readonly ContentManager _content;
-    private readonly IEngineManager _engineManager;
+    private readonly LauncherCommands _commands = commands;
+    private readonly Connector _connector = connector;
+    private readonly DiscordAuthService _discordAuth = discordAuth;
+    private readonly SteamAuthService _steamAuth = steamAuth;
+    private readonly DiscordRichPresence _discordRichPresence = discordRichPresence;
+    private readonly HubServerFetcher _hubServerFetcher = hubServerFetcher;
+    private readonly LauncherUpdater _launcherUpdater = launcherUpdater;
+    private readonly LoginManager _loginManager = loginManager;
+    private readonly ServerInfoLoader _serverInfoLoader = serverInfoLoader;
+    private readonly SettingsService _settings = settings;
+    private readonly Updater _updater = updater;
+    private readonly IFileDialogService _fileDialog = fileDialog;
+    private readonly INativeTray _tray = tray;
+    private readonly LocalServerManager _localServer = localServer;
+    private readonly StarlightAuthApi _starlightAuth = starlightAuth;
+    private readonly EngineSourceGuard _engineSourceGuard = engineSourceGuard;
+    private readonly ContentManager _content = content;
+    private readonly IEngineManager _engineManager = engineManager;
     private Window? _window;
-
-    public Bridge(LauncherCommands commands, Connector connector, DiscordAuthService discordAuth,
-        SteamAuthService steamAuth, DiscordRichPresence discordRichPresence, HubServerFetcher hubServerFetcher,
-        LauncherUpdater launcherUpdater, LoginManager loginManager, ServerInfoLoader serverInfoLoader,
-        SettingsService settings, Updater updater, IFileDialogService fileDialog,
-        INativeTray tray, LocalServerManager localServer, StarlightAuthApi starlightAuth,
-        EngineSourceGuard engineSourceGuard, ContentManager content, IEngineManager engineManager)
-    {
-        _commands = commands;
-        _connector = connector;
-        _discordAuth = discordAuth;
-        _steamAuth = steamAuth;
-        _discordRichPresence = discordRichPresence;
-        _hubServerFetcher = hubServerFetcher;
-        _launcherUpdater = launcherUpdater;
-        _loginManager = loginManager;
-        _serverInfoLoader = serverInfoLoader;
-        _settings = settings;
-        _updater = updater;
-        _fileDialog = fileDialog;
-        _tray = tray;
-        _localServer = localServer;
-        _starlightAuth = starlightAuth;
-        _engineSourceGuard = engineSourceGuard;
-        _content = content;
-        _engineManager = engineManager;
-    }
 
     public void OpenBrowser(string url)
     {
@@ -122,8 +103,11 @@ public sealed partial class Bridge : IBridge
 
     public event Action? WindowStateChanged;
 
-    [DllImport("user32.dll")] private static extern bool ReleaseCapture();
-    [DllImport("user32.dll")] private static extern IntPtr SendMessage(IntPtr h, uint m, IntPtr w, IntPtr l);
+    [LibraryImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool ReleaseCapture();
+    [LibraryImport("user32.dll")]
+    private static partial IntPtr SendMessage(IntPtr h, uint m, IntPtr w, IntPtr l);
     private const uint WM_NCLBUTTONDOWN = 0x00A1;
     private const int HTCAPTION = 2;
 

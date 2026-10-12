@@ -6,28 +6,23 @@ using Robust.Launcher.Api.Utility;
 using Serilog;
 using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI.Models.LocalServer;
+using static Robust.Launcher.Api.Utility.Helpers;
 
 namespace Starlight.Launcher.Services.LocalServer;
 
-public sealed partial class LocalServerManager
+public sealed partial class LocalServerManager(HttpClient http, SettingsService settings)
 {
     private const int MaxConsoleLines = 5000;
 
     private const string InstallMarkerFileName = ".starlight-install-complete";
 
-    private readonly HttpClient _http;
-    private readonly SettingsService _settings;
+    private readonly HttpClient _http = http;
+    private readonly SettingsService _settings = settings;
 
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private readonly List<LocalServerLogLine> _consoleBuffer = [];
     private Process? _process;
     private Win32JobObject? _jobObject;
-
-    public LocalServerManager(HttpClient http, SettingsService settings)
-    {
-        _http = http;
-        _settings = settings;
-    }
 
     public LocalServerState CurrentState { get; private set; } = new(LocalServerPhase.Idle);
 
@@ -39,7 +34,7 @@ public sealed partial class LocalServerManager
     public IReadOnlyList<LocalServerLogLine> GetConsoleBuffer()
     {
         lock (_lock)
-            return _consoleBuffer.ToArray();
+            return [.. _consoleBuffer];
     }
 
     public async Task StartAsync(
@@ -196,7 +191,7 @@ public sealed partial class LocalServerManager
             throw new UpdateException($"Server executable not found at {exePath}.");
 
         if (!OperatingSystem.IsWindows())
-            Helpers.ChmodPlusX(exePath);
+            ChmodPlusX(exePath);
 
         var startInfo = new ProcessStartInfo
         {
@@ -345,7 +340,7 @@ public sealed partial class LocalServerManager
     {
         await DeleteDirectoryWithRetryAsync(installDir);
 
-        Helpers.EnsureDirectoryExists(Path.GetDirectoryName(installDir)!);
+        EnsureDirectoryExists(Path.GetDirectoryName(installDir)!);
 
         await using var tempFile = TempFile.CreateTempFile();
 
@@ -364,7 +359,7 @@ public sealed partial class LocalServerManager
         SetState(new LocalServerState(LocalServerPhase.Extracting, sourceName, buildHash, buildTime));
 
         _ = tempFile.Seek(0, SeekOrigin.Begin);
-        Helpers.ExtractZipToDirectory(installDir, tempFile);
+        ExtractZipToDirectory(installDir, tempFile);
 
         // Written last: marks the install as complete and safe to launch.
         await File.WriteAllTextAsync(Path.Combine(installDir, InstallMarkerFileName), asset.Sha256, cancel);

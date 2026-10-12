@@ -5,8 +5,9 @@ using Avalonia.Threading;
 using Microsoft.Extensions.Logging;
 using Robust.Launcher.Api.Models;
 using Starlight.Launcher.Services.Auth;
+using Starlight.Launcher.Services.GameLaunch;
 
-namespace Starlight.Launcher.Services;
+namespace Starlight.Launcher.Services.DeepLink;
 
 public partial class LauncherCommands(ILogger<LauncherCommands> logger, LoginManager loginManager, Connector connector, DiscordAuthService discordAuth, SteamAuthService steamAuth)
 {

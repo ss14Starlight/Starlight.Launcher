@@ -11,6 +11,7 @@ using Serilog;
 using Starlight.Launcher.Models.EngineManager;
 using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI.Models.Data;
+using static Robust.Launcher.Api.Utility.Helpers;
 
 namespace Starlight.Launcher.Services.EngineManager;
 
@@ -46,10 +47,9 @@ public sealed partial class EngineManagerDynamic : IEngineManager
         }
 #endif
 
-        if (!_settings.GetEngines().TryGetValue(engineVersion, out _))
-            throw new ArgumentException("We do not have that engine version!");
-
-        return Path.Combine(settings.DirEngineInstallations, $"{engineVersion}.zip");
+        return !_settings.GetEngines().TryGetValue(engineVersion, out _)
+            ? throw new ArgumentException("We do not have that engine version!")
+            : Path.Combine(settings.DirEngineInstallations, $"{engineVersion}.zip");
     }
 
     public string GetEngineModule(string moduleName, string moduleVersion)
@@ -71,10 +71,9 @@ public sealed partial class EngineManagerDynamic : IEngineManager
             return "DEADBEEF";
 #endif
 
-        if (!_settings.GetEngines().TryGetValue(engineVersion, out var installedEngine))
-            throw new ArgumentException("Invalid engine version in GET!");
-
-        return installedEngine.Signature;
+        return !_settings.GetEngines().TryGetValue(engineVersion, out var installedEngine)
+            ? throw new ArgumentException("Invalid engine version in GET!")
+            : installedEngine.Signature;
     }
 
     private async Task ConfirmEngineSourceAsync(FoundVersionInfo found, CancellationToken cancel)
@@ -99,7 +98,7 @@ public sealed partial class EngineManagerDynamic : IEngineManager
 
     public async Task<EngineInstallationResult> DownloadEngineIfNecessary(
         string engineVersion,
-        Helpers.DownloadProgressCallback? progress = null,
+        DownloadProgressCallback? progress = null,
         CancellationToken cancel = default)
     {
         var settings = _settings.GetSettings();
@@ -151,7 +150,7 @@ public sealed partial class EngineManagerDynamic : IEngineManager
 
         Log.Debug("Downloading engine: {EngineDownloadUrl}", buildInfo.Url);
 
-        Helpers.EnsureDirectoryExists(settings.DirEngineInstallations);
+        EnsureDirectoryExists(settings.DirEngineInstallations);
 
         var downloadTarget = Path.Combine(settings.DirEngineInstallations, $"{foundVersion.Version}.zip");
         await using var file = File.Create(downloadTarget, 4096, FileOptions.Asynchronous);
@@ -209,7 +208,7 @@ public sealed partial class EngineManagerDynamic : IEngineManager
         return false;
     }
 
-    private unsafe bool VerifySignature(FileStream stream, string signature, string publicKeyPem)
+    private static unsafe bool VerifySignature(FileStream stream, string signature, string publicKeyPem)
     {
         if (stream.Length > int.MaxValue)
             throw new InvalidOperationException("Unable to handle files larger than 2 GiB");
@@ -250,7 +249,7 @@ public sealed partial class EngineManagerDynamic : IEngineManager
         string moduleName,
         string moduleVersion,
         EngineModuleManifest manifest,
-        Helpers.DownloadProgressCallback? progress = null,
+        DownloadProgressCallback? progress = null,
         CancellationToken cancel = default)
     {
         var settings = _settings.GetSettings();
@@ -330,7 +329,7 @@ public sealed partial class EngineManagerDynamic : IEngineManager
             tempFile.Seek(0, SeekOrigin.Begin);
 
             // CEF is so horrifically huge I'm enabling disk compression on it.
-            Helpers.MarkDirectoryCompress(moduleVersionDiskPath);
+            MarkDirectoryCompress(moduleVersionDiskPath);
 
             ExtractModule(moduleName, moduleVersionDiskPath, tempFile);
         }
@@ -372,17 +371,18 @@ public sealed partial class EngineManagerDynamic : IEngineManager
         moduleVersionDiskPath = Path.Combine(moduleDiskPath, version);
     }
 
-    private static async Task ClearModuleDir(string modDiskPath, string modVersionDiskPath) => await Task.Run(() =>
-                                                                                                    {
-                                                                                                        // Avoid disk IO hang.
-                                                                                                        Helpers.EnsureDirectoryExists(modDiskPath);
-                                                                                                        Helpers.EnsureDirectoryExists(modVersionDiskPath);
-                                                                                                        Helpers.ClearDirectory(modVersionDiskPath);
-                                                                                                    }, CancellationToken.None);
+    private static async Task ClearModuleDir(string modDiskPath, string modVersionDiskPath)
+        => await Task.Run(() =>
+        {
+            // Avoid disk IO hang.
+            EnsureDirectoryExists(modDiskPath);
+            EnsureDirectoryExists(modVersionDiskPath);
+            ClearDirectory(modVersionDiskPath);
+        }, CancellationToken.None);
 
     private static void ExtractModule(string moduleName, string moduleVersionDiskPath, FileStream tempFile)
     {
-        Helpers.ExtractZipToDirectory(moduleVersionDiskPath, tempFile);
+        ExtractZipToDirectory(moduleVersionDiskPath, tempFile);
 
         // Chmod required files.
         if (OperatingSystem.IsLinux())
@@ -390,7 +390,7 @@ public sealed partial class EngineManagerDynamic : IEngineManager
             switch (moduleName)
             {
                 case "Robust.Client.WebView":
-                    Helpers.ChmodPlusX(Path.Combine(moduleVersionDiskPath, "Robust.Client.WebView"));
+                    ChmodPlusX(Path.Combine(moduleVersionDiskPath, "Robust.Client.WebView"));
                     break;
             }
         }
@@ -442,7 +442,7 @@ public sealed partial class EngineManagerDynamic : IEngineManager
     private string WriteLoaderKey(string publicKeyPem)
     {
         var settings = _settings.GetSettings();
-        Helpers.EnsureDirectoryExists(settings.DirLauncherData);
+        EnsureDirectoryExists(settings.DirLauncherData);
         File.WriteAllText(settings.PathLoaderSigningKey, publicKeyPem);
         return settings.PathLoaderSigningKey;
     }

@@ -1,19 +1,19 @@
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
+using Starlight.Launcher.Services.Auth;
+using Starlight.Launcher.Services.Settings;
 
-namespace Starlight.Launcher.Services.Settings;
+namespace Starlight.Launcher.Platforms.Windows.Services.Settings;
 
-public sealed class DpapiKeyProvider : ILoginKeyProvider
+public sealed class DpapiKeyProvider(ILogger<DpapiKeyProvider> logger) : ILoginKeyProvider
 {
-    private readonly ILogger<DpapiKeyProvider> _logger;
+    private readonly ILogger<DpapiKeyProvider> _logger = logger;
     private static readonly byte[] _entropy = "starlight.logins.v1"u8.ToArray();
 
     private static readonly string _legacyKeyPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "Starlight.Launcher", "logins.key");
-
-    public DpapiKeyProvider(ILogger<DpapiKeyProvider> logger) => _logger = logger;
 
     public async Task<byte[]> GetOrCreateKeyAsync(string keyPath)
     {

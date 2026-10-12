@@ -27,7 +27,7 @@ public sealed partial class SettingsService : IAsyncDisposable
     private readonly string _favoritesPath;
     private volatile HashSet<string> _favoriteAddresses = new(StringComparer.OrdinalIgnoreCase);
 
-    private Dictionary<Guid, LoginInfo> _logins = new();
+    private Dictionary<Guid, LoginInfo> _logins = [];
     private readonly SemaphoreSlim _loginsLock = new(1, 1);
     private readonly string _loginsPath;
     private readonly string _loginKeyPath;
@@ -74,9 +74,7 @@ public sealed partial class SettingsService : IAsyncDisposable
         _modulesPath = Path.Combine(_settings.DirLauncherData, "modules.json");
         _favorites = LoadJson(_favoritesPath, new List<FavoriteServer>());
         _engineInstallations = LoadJson(_enginesPath, new List<InstalledEngineVersion>()).ToDictionary(x => x.Version);
-        _engineModules = LoadJson(_modulesPath, new HashSet<InstalledEngineModule>())
-            .Where(m => !string.IsNullOrEmpty(m.Name) && !string.IsNullOrEmpty(m.Version))
-            .ToHashSet();
+        _engineModules = [.. LoadJson(_modulesPath, new HashSet<InstalledEngineModule>()).Where(m => !string.IsNullOrEmpty(m.Name) && !string.IsNullOrEmpty(m.Version))];
         RebuildFavoritesIndex(); // Rebuild addresses after load.
     }
 
@@ -119,12 +117,12 @@ public sealed partial class SettingsService : IAsyncDisposable
             var json = JsonSerializer.Serialize(obj, _jsonOptions);
             await WriteFileSafeAsync(json, Path.GetDirectoryName(path)!, path);
 #if DEBUG
-            _logger.LogDebug("{0} saved", path);
+            _logger.LogDebug("{path} saved", path);
 #endif
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to save {0}", path);
+            _logger.LogError(ex, "Failed to save {path}", path);
         }
         finally
         {
@@ -288,20 +286,20 @@ public sealed partial class SettingsService : IAsyncDisposable
         {
             if (!File.Exists(path))
             {
-                _logger.LogInformation("Can't find {0} file, fallback to empty.", path);
+                _logger.LogInformation("Can't find {path} file, fallback to empty.", path);
                 return fallback;
             }
 
             var json = File.ReadAllText(path);
             var result = JsonSerializer.Deserialize<T>(json) ?? fallback;
 
-            _logger.LogInformation("Successfully loaded {0}", path);
+            _logger.LogInformation("Successfully loaded {path}", path);
 
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to load {0}, using empty list", path);
+            _logger.LogWarning(ex, "Failed to load {path}, using empty list", path);
             return fallback;
         }
     }

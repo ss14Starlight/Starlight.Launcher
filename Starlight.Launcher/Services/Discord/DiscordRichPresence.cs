@@ -349,18 +349,15 @@ public sealed class DiscordRichPresence : IPresenceController, IDisposable
     }
 
     private static string? BuildDetails(in PresenceContext ctx)
-    {
-        if (string.IsNullOrWhiteSpace(ctx.ServerName))
-            return null;
-
-        return ctx.State switch
+        => string.IsNullOrWhiteSpace(ctx.ServerName)
+        ? null
+        : ctx.State switch
         {
             PresenceState.ViewingServer => $"Viewing {ctx.ServerName}",
             PresenceState.LaunchingGame => $"Connecting to {ctx.ServerName}",
             PresenceState.Reconnecting => $"Reconnecting to {ctx.ServerName}",
             _ => ctx.ServerName
         };
-    }
 
     /// <summary>
     /// Untranslated for now,
@@ -416,14 +413,11 @@ public sealed class DiscordRichPresence : IPresenceController, IDisposable
     }
 
     private static string? Truncate(string? value)
-    {
-        if (string.IsNullOrEmpty(value))
-            return null;
-
-        return value.Length <= MaxFieldLength
-            ? value
-            : string.Concat(value.AsSpan(0, MaxFieldLength - 1), "...");
-    }
+        => string.IsNullOrEmpty(value)
+        ? null
+        : value.Length <= MaxFieldLength
+        ? value
+        : string.Concat(value.AsSpan(0, MaxFieldLength - 1), "...");
 
     private void OnPresenceSettingsChanged((bool Hidden, string ApplicationId) settings) =>
         ApplySettings(settings.Hidden, settings.ApplicationId);

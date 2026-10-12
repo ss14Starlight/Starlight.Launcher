@@ -186,7 +186,7 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
                 ServerStatusCache.ApplyStatus(s, kv.Value.StatusData);
                 return s;
             }));
-            AllServers = _allServers.ToArray();
+            AllServers = [.. _allServers];
         }
 
         ServersChanged?.Invoke();

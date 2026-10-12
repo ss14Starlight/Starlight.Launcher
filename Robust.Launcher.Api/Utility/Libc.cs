@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace Robust.Launcher.Api.Utility;
 
-internal static class Libc
+internal static partial class Libc
 {
     public const int RTLD_LAZY = 0x00001;
     public const int RTLD_NOW = 0x00002;
@@ -14,8 +14,8 @@ internal static class Libc
     public const int RTLD_LOCAL = 0;
     public const int RTLD_NODELETE = 0x01000;
 
-    [DllImport("libdl.so.2")]
-    public static extern IntPtr dlopen([MarshalAs(UnmanagedType.LPUTF8Str)] string name, int flags);
+    [LibraryImport("libdl.so.2")]
+    public static partial IntPtr dlopen([MarshalAs(UnmanagedType.LPUTF8Str)] string name, int flags);
 
     public const int O_RDONLY = 0;
     public const int O_CLOEXEC = 0x80000;
@@ -26,12 +26,12 @@ internal static class Libc
     public const int FS_COMPR_FL = 0x00000004;
     public const int FS_NOCOMP_FL = 0x00000400;
 
-    [DllImport("libc", SetLastError = true)]
-    public static extern int open([MarshalAs(UnmanagedType.LPUTF8Str)] string path, int flags);
+    [LibraryImport("libc", SetLastError = true)]
+    public static partial int open([MarshalAs(UnmanagedType.LPUTF8Str)] string path, int flags);
 
-    [DllImport("libc", SetLastError = true)]
-    public static extern unsafe int ioctl(int fd, nuint request, void* arg);
+    [LibraryImport("libc", SetLastError = true)]
+    public static unsafe partial int ioctl(int fd, nuint request, void* arg);
 
-    [DllImport("libc", SetLastError = true)]
-    public static extern int close(int fd);
+    [LibraryImport("libc", SetLastError = true)]
+    public static partial int close(int fd);
 }

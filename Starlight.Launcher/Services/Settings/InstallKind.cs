@@ -1,4 +1,4 @@
-namespace Starlight.Launcher.Services;
+namespace Starlight.Launcher.Services.Settings;
 
 public enum InstallKind
 {

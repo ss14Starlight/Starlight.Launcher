@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 using Serilog;
 using Starlight.Launcher.Services.Settings;
 
-namespace Starlight.Launcher.Services;
+namespace Starlight.Launcher.Services.GameLaunch;
 
 /// <summary>
 /// Utility class to do SQLite database migrations.
@@ -103,11 +103,9 @@ public static class Migrator
         string Up(SqliteConnection connection);
     }
 
-    private sealed class FileMigrationScript : IMigrationScript
+    private sealed class FileMigrationScript(string code) : IMigrationScript
     {
-        private readonly string _code;
-
-        public FileMigrationScript(string code) => _code = code;
+        private readonly string _code = code;
 
         public string Up(SqliteConnection connection) => _code;
     }

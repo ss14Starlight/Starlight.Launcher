@@ -9,7 +9,7 @@ public sealed partial class SettingsService
         _favoritesLock.Wait();
         try
         {
-            return _favorites.ToList();
+            return [.. _favorites];
         }
         finally
         {
@@ -40,7 +40,7 @@ public sealed partial class SettingsService
         await _favoritesLock.WaitAsync();
         try
         {
-            return _favorites.ToList();
+            return [.. _favorites];
         }
         finally
         {

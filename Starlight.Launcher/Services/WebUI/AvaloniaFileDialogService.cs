@@ -7,19 +7,17 @@ using Starlight.Launcher.Models.Helpers;
 using Starlight.Launcher.WebUI.Models.Helpers;
 using Starlight.Launcher.WebUI.Services;
 
-namespace Starlight.Launcher.Services;
+namespace Starlight.Launcher.Services.WebUI;
 
 /// <summary>
 /// Provides file and folder picker dialogs using Avalonia's storage API.
 /// </summary>
-public sealed class AvaloniaFileDialogService : IFileDialogService
+/// <remarks>
+/// Initializes a new instance of the <see cref="AvaloniaFileDialogService"/> class.
+/// </remarks>
+public sealed class AvaloniaFileDialogService(ILogger<AvaloniaFileDialogService> logger) : IFileDialogService
 {
-    private readonly ILogger<AvaloniaFileDialogService> _logger;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="AvaloniaFileDialogService"/> class.
-    /// </summary>
-    public AvaloniaFileDialogService(ILogger<AvaloniaFileDialogService> logger) => _logger = logger;
+    private readonly ILogger<AvaloniaFileDialogService> _logger = logger;
 
     /// <summary>
     /// Displays a file picker dialog and returns the selected file.
@@ -125,7 +123,7 @@ public sealed class AvaloniaFileDialogService : IFileDialogService
     /// <summary>
     /// Gets the application's main window.
     /// </summary>
-    private static TopLevel? GetTopLevel() =>
+    private static Window? GetTopLevel() =>
         (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
 
     /// <summary>
@@ -142,6 +140,6 @@ public sealed class AvaloniaFileDialogService : IFileDialogService
             types.Add(new FilePickerFileType(parts[i]) { Patterns = patterns });
         }
 
-        return types.ToArray();
+        return [.. types];
     }
 }
