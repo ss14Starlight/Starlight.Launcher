@@ -68,7 +68,7 @@ internal static class Program
                 if (Uri.TryCreate(args[0], UriKind.Absolute, out var uri))
                 {
                     var classified = LauncherUriRouter.Classify(uri);
-                    logger.Information("Classified activation URI {uri} as {kind}", uri, classified.Kind);
+                    logger.Information("Classified activation URI {uri} as {kind}", uri.GetLeftPart(UriPartial.Path), classified.Kind);
                     messages = [classified];
                     sendAnyway = true;
                 }
@@ -78,7 +78,7 @@ internal static class Program
                 }
             }
 
-            logger.Information("IPC: sending/claiming with {@Messages}", messages);
+            logger.Information("IPC: sending/claiming with {Kinds}", messages.Select(m => m.Kind));
 
             if (messaging.SendMessagesOrClaim(messages, sendAnyway))
                 return 0;

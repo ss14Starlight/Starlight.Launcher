@@ -37,7 +37,7 @@ public sealed partial class SettingsService : IAsyncDisposable
     private readonly SemaphoreSlim _enginesLock = new(1, 1);
     private readonly string _enginesPath;
 
-    private HashSet<(string Version, string Name)> _engineModules;
+    private HashSet<InstalledEngineModule> _engineModules;
     private readonly SemaphoreSlim _modulesLock = new(1, 1);
     private readonly string _modulesPath;
 
@@ -74,7 +74,9 @@ public sealed partial class SettingsService : IAsyncDisposable
         _modulesPath = Path.Combine(_settings.DirLauncherData, "modules.json");
         _favorites = LoadJson(_favoritesPath, new List<FavoriteServer>());
         _engineInstallations = LoadJson(_enginesPath, new List<InstalledEngineVersion>()).ToDictionary(x => x.Version);
-        _engineModules = LoadJson(_modulesPath, new HashSet<(string Version, string Name)>());
+        _engineModules = LoadJson(_modulesPath, new HashSet<InstalledEngineModule>())
+            .Where(m => !string.IsNullOrEmpty(m.Name) && !string.IsNullOrEmpty(m.Version))
+            .ToHashSet();
         RebuildFavoritesIndex(); // Rebuild addresses after load.
     }
 

@@ -267,6 +267,8 @@ public sealed partial class Updater
             // Buffer for storing uncompressed data.
             var readBuffer = new byte[1024];
 
+            var decompressBuffer = preCompressed ? new byte[DecompressChunkSize] : [];
+
             var hash = new byte[256 / 8];
 
             for (var i = 0; i < toDownload.Count; i++)
@@ -284,53 +286,52 @@ public sealed partial class Updater
 
                 var length = BinaryPrimitives.ReadInt32LittleEndian(fileHeader.AsSpan(0, 4));
 
-                EnsureBuffer(ref readBuffer, length);
-                var data = readBuffer.AsMemory(0, length);
-
                 // Data to write to database.
                 var compression = ContentCompressionScheme.None;
-                var writeData = data;
+                Memory<byte> data = default;
+                Memory<byte> writeData;
 
-                if (preCompressed)
+                // Compressed length from extended header.
+                var compressedLength = preCompressed
+                    ? BinaryPrimitives.ReadInt32LittleEndian(fileHeader.AsSpan(4, 4))
+                    : 0;
+
+                // Log.Debug("{index:D5}: {blobLength:D8} {dataLength:D8}", idx, length, compressedLength);
+
+                if (compressedLength > 0)
                 {
-                    // Compressed length from extended header.
-                    var compressedLength = BinaryPrimitives.ReadInt32LittleEndian(fileHeader.AsSpan(4, 4));
+                    EnsureBuffer(ref compressBuffer, compressedLength);
+                    var compressedData = compressBuffer.AsMemory(0, compressedLength);
+                    await stream.ReadExactAsync(compressedData, cancel);
 
-                    // Log.Debug("{index:D5}: {blobLength:D8} {dataLength:D8}", idx, length, compressedLength);
+                    // Decompress in chunks and hash them as we go to verify the blob,
+                    // so we don't need a buffer for the whole uncompressed file.
+                    DecompressAndHash(
+                        decompressContext!,
+                        compressedData.Span,
+                        decompressBuffer,
+                        length,
+                        hash,
+                        swZstd,
+                        swBlake,
+                        i);
 
-                    if (compressedLength > 0)
-                    {
-                        EnsureBuffer(ref compressBuffer, compressedLength);
-                        var compressedData = compressBuffer.AsMemory(0, compressedLength);
-                        await stream.ReadExactAsync(compressedData, cancel);
-
-                        // Decompress so that we can verify hash down below.
-                        // TODO: It's possible to hash while we're decompressing to avoid using a full buffer.
-
-                        swZstd.Start();
-                        var decompressedLength = decompressContext!.Decompress(data.Span, compressedData.Span);
-                        swZstd.Stop();
-
-                        if (decompressedLength != data.Length)
-                            throw new UpdateException($"Compressed blob {i} had incorrect decompressed size!");
-
-                        // Set variables so that the database write down below uses them.
-                        compression = ContentCompressionScheme.ZStd;
-                        writeData = compressedData;
-                    }
-                    else
-                    {
-                        await stream.ReadExactAsync(data, cancel);
-                    }
+                    // Set variables so that the database write down below uses them.
+                    compression = ContentCompressionScheme.ZStd;
+                    writeData = compressedData;
                 }
                 else
                 {
-                    await stream.ReadExactAsync(data, cancel);
-                }
+                    EnsureBuffer(ref readBuffer, length);
+                    data = readBuffer.AsMemory(0, length);
+                    writeData = data;
 
-                swBlake.Start();
-                _ = CryptoGenericHashBlake2B.Hash(hash, data.Span, ReadOnlySpan<byte>.Empty);
-                swBlake.Stop();
+                    await stream.ReadExactAsync(data, cancel);
+
+                    swBlake.Start();
+                    _ = CryptoGenericHashBlake2B.Hash(hash, data.Span, ReadOnlySpan<byte>.Empty);
+                    swBlake.Stop();
+                }
 
                 /*
                 Log.Verbose(
@@ -399,6 +400,54 @@ public sealed partial class Updater
 
         Progress = null;
         Speed = null;
+    }
+
+    private const int DecompressChunkSize = 128 * 1024;
+
+    private static void DecompressAndHash(
+        ZStdDCtx context,
+        ReadOnlySpan<byte> compressedData,
+        Span<byte> chunkBuffer,
+        int expectedLength,
+        Span<byte> hash,
+        Stopwatch swZstd,
+        Stopwatch swBlake,
+        int blobIndex)
+    {
+        CryptoGenericHashBlake2B.State hashState;
+        _ = CryptoGenericHashBlake2B.Init(ref hashState, ReadOnlySpan<byte>.Empty, hash.Length);
+
+        context.ResetSession();
+
+        var sourcePos = 0;
+        var totalLength = 0;
+        nuint frameRemaining;
+
+        do
+        {
+            var prevSourcePos = sourcePos;
+
+            swZstd.Start();
+            var written = context.DecompressStream(chunkBuffer, compressedData, ref sourcePos, out frameRemaining);
+            swZstd.Stop();
+
+            // No progress possible: input is exhausted but the frame isn't finished.
+            if (written == 0 && sourcePos == prevSourcePos)
+                throw new UpdateException($"Compressed blob {blobIndex} is truncated!");
+
+            totalLength += written;
+            if (totalLength > expectedLength)
+                throw new UpdateException($"Compressed blob {blobIndex} had incorrect decompressed size!");
+
+            swBlake.Start();
+            _ = CryptoGenericHashBlake2B.Update(ref hashState, chunkBuffer[..written]);
+            swBlake.Stop();
+        } while (frameRemaining != 0 || sourcePos < compressedData.Length);
+
+        if (totalLength != expectedLength)
+            throw new UpdateException($"Compressed blob {blobIndex} had incorrect decompressed size!");
+
+        _ = CryptoGenericHashBlake2B.Final(ref hashState, hash);
     }
 
     private async Task CheckManifestDownloadServerProtocolVersions(string url, CancellationToken cancel)

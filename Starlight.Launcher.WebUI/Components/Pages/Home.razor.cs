@@ -31,7 +31,7 @@ public partial class Home : LocalizedComponentBase, IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private void RefreshServers() => _statusCache.Refresh();
+    private void RefreshServers() => _statusCache.Refresh(_favoriteServers.ToArray());
 
     protected override async Task OnInitializedAsync()
     {

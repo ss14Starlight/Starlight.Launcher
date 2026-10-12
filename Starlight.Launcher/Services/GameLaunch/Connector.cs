@@ -28,33 +28,21 @@ namespace Starlight.Launcher.Services;
 /// Responsible for actually launching the game.
 /// Either by connecting to a game server, or by launching a local content bundle.
 /// </summary>
-public partial class Connector : ObservableObject
+public partial class Connector(Updater updater, IEngineManager engineManager, HttpClient http, LoginManager login, SettingsService settings, INativeTray tray, DiscordRichPresence presence, ClientLogManager clientLogs) : ObservableObject
 {
-    private readonly Updater _updater;
-    private readonly LoginManager _loginManager;
-    private readonly IEngineManager _engineManager;
-    private readonly SettingsService _settings;
-    private readonly HttpClient _http;
-    private readonly INativeTray _tray;
-    private readonly DiscordRichPresence _presence;
-    private readonly ClientLogManager _clientLogs;
+    private readonly Updater _updater = updater;
+    private readonly LoginManager _loginManager = login;
+    private readonly IEngineManager _engineManager = engineManager;
+    private readonly SettingsService _settings = settings;
+    private readonly HttpClient _http = http;
+    private readonly INativeTray _tray = tray;
+    private readonly DiscordRichPresence _presence = presence;
+    private readonly ClientLogManager _clientLogs = clientLogs;
     private TaskCompletionSource<PrivacyPolicyAcceptResult>? _acceptPrivacyPolicyTcs;
 
     private int _activeLaunches;
 
     public int ActiveLaunches => _activeLaunches;
-
-    public Connector(Updater updater, IEngineManager engineManager, HttpClient http, LoginManager login, SettingsService settings, INativeTray tray, DiscordRichPresence presence, ClientLogManager clientLogs)
-    {
-        _updater = updater;
-        _engineManager = engineManager;
-        _http = http;
-        _loginManager = login;
-        _settings = settings;
-        _tray = tray;
-        _presence = presence;
-        _clientLogs = clientLogs;
-    }
 
     public ConnectionStatus Status
     {
@@ -673,16 +661,14 @@ public partial class Connector : ObservableObject
     public InstalledEngineModule? GetInstalledModuleForEngineVersion(
         Version engineVersion,
         string moduleName)
-    {
-        // TODO: needs a source of installed engine modules (the original used a dataManager).
-        // IEngineManager doesn't currently expose an enumerable of installed modules.
-        (string, string)? module = _settings.GetModules().Where(m => m.Name == moduleName).Select(m => new { Version = Version.Parse(m.Version), m }).Where(m => engineVersion >= m.Version).MaxBy(m => m.Version)?.m;
-
-        if (module == null)
-            return null;
-
-        return new InstalledEngineModule(module.Value.Item2, module.Value.Item1);
-    }
+        // Module versions are the minimum engine version they support,
+        // so pick the newest installed one the engine is new enough for.
+        => _settings.GetModules()
+            .Where(m => m.Name == moduleName)
+            .Select(m => (Module: m, Version: Version.TryParse(m.Version, out var v) ? v : null))
+            .Where(m => m.Version != null && engineVersion >= m.Version)
+            .MaxBy(m => m.Version)
+            .Module;
 
     private async Task<Process?> LaunchClient(
         ContentLaunchInfo launchInfo,
@@ -727,7 +713,7 @@ public partial class Connector : ObservableObject
         if (_settings.GetSettings().DisableSigning)
             EnvVar("SS14_DISABLE_SIGNING", "true");
 
-        EnvVar("SS14_LAUNCHER_PATH", Process.GetCurrentProcess().MainModule!.FileName);
+        EnvVar("SS14_LAUNCHER_PATH", Environment.ProcessPath);
 
         // Performance tweaks
         EnvVar("DOTNET_TieredPGO", "1");
@@ -899,10 +885,7 @@ public partial class Connector : ObservableObject
         if (Release)
         {
             basePath = settings.DirLauncherInstall;
-            if (OperatingSystem.IsMacOS())
-                basePath = Path.Combine(basePath, "..", "..");
-            else
-                basePath = Path.Combine(basePath, "loader");
+            basePath = OperatingSystem.IsMacOS() ? Path.Combine(basePath, "..", "..") : Path.Combine(basePath, "loader");
         }
         else
         {
@@ -1023,11 +1006,9 @@ public sealed record ContentBundleMetadata(
 )
 {
     public ServerBuildInformation GetBaseBuildInformation()
-    {
-        if (BaseBuild == null)
-            throw new InvalidOperationException("Metadata must have base build!");
-
-        return new ServerBuildInformation
+        => BaseBuild == null
+            ? throw new InvalidOperationException("Metadata must have base build!")
+            : new ServerBuildInformation
         {
             DownloadUrl = BaseBuild.DownloadUrl,
             ManifestUrl = BaseBuild.ManifestUrl,
@@ -1039,7 +1020,6 @@ public sealed record ContentBundleMetadata(
             ManifestHash = BaseBuild.ManifestHash,
             Acz = false
         };
-    }
 }
 
 public sealed record ContentBundleBaseBuild(

@@ -21,7 +21,7 @@ using YamlDotNet.Serialization.NamingConventions;
 
 namespace Starlight.Launcher.Services;
 
-public sealed partial class Updater
+public sealed partial class Updater(IEngineManager engineManager, HttpClient http, SettingsService settings, ContentManager manager, DiscordRichPresence presence)
 {
     private const int ManifestDownloadProtocolVersion = 1;
 
@@ -34,28 +34,18 @@ public sealed partial class Updater
             .IgnoreUnmatchedProperties()
             .Build();
 
-    private readonly IEngineManager _engineManager;
-    private readonly HttpClient _http;
-    private readonly SettingsService _settings;
-    private readonly ContentManager _manager;
-    private readonly DiscordRichPresence _presence;
-    private bool _updating;
-
-    public Updater(IEngineManager engineManager, HttpClient http, SettingsService settings, ContentManager manager, DiscordRichPresence presence)
-    {
-        _engineManager = engineManager;
-        _http = http;
-        _settings = settings;
-        _manager = manager;
-        _presence = presence;
-    }
+    private readonly IEngineManager _engineManager = engineManager;
+    private readonly HttpClient _http = http;
+    private readonly SettingsService _settings = settings;
+    private readonly ContentManager _manager = manager;
+    private readonly DiscordRichPresence _presence = presence;
 
     // Note: these get updated from different threads. Observe responsibly.
     public UpdateStatus Status { get; private set; }
     public (long downloaded, long total, ProgressUnit unit)? Progress { get; private set; }
     public long? Speed { get; private set; }
 
-    public bool IsUpdating => _updating;
+    public bool IsUpdating { get; private set; }
 
     public Exception? UpdateException;
 
@@ -65,10 +55,10 @@ public sealed partial class Updater
 
     private async Task<T?> GuardUpdateAsync<T>(Func<Task<T>> func) where T : class
     {
-        if (_updating)
+        if (IsUpdating)
             throw new InvalidOperationException("Update already in progress.");
 
-        _updating = true;
+        IsUpdating = true;
         _presence.SetActive(PresenceState.DownloadingContent, true);
         UpdateException = null;
 
@@ -92,7 +82,7 @@ public sealed partial class Updater
         {
             Progress = null;
             Speed = null;
-            _updating = false;
+            IsUpdating = false;
             _presence.SetActive(PresenceState.DownloadingContent, false);
         }
 
@@ -179,13 +169,14 @@ public sealed partial class Updater
 
                 Log.Debug("Did not already have this content bundle, ingesting as new version {Version}", versionId);
 
+                long? baseBuildId = null;
                 if (metadata.BaseBuild is not null)
                 {
                     Log.Debug("Content bundle has base build info, downloading...");
 
                     // We have a base build to download.
                     // Copy it into the new AnonymousContentBundle version before loading the rest of the zip contents.
-                    var baseBuildId = await TouchOrDownloadContentUpdate(
+                    baseBuildId = await TouchOrDownloadContentUpdate(
                         metadata.GetBaseBuildInformation(),
                         con,
                         moduleManifest,
@@ -220,8 +211,9 @@ public sealed partial class Updater
                 Log.Debug("Manifest hash of new version is {Hash}", Convert.ToHexString(manifestHash));
                 Log.Debug("Resolving content dependencies...");
 
-                // TODO: This could copy from base build modules in certain cases.
-                await ResolveContentDependencies(con, versionId, metadata.EngineVersion, moduleManifest);
+                if (baseBuildId is not { } baseId
+                    || !TryCopyContentDependencies(con, versionId, baseId, metadata.EngineVersion))
+                    await ResolveContentDependencies(con, versionId, metadata.EngineVersion, moduleManifest);
             }
             else
             {
@@ -255,9 +247,9 @@ public sealed partial class Updater
 
         {
             Status = UpdateStatus.CheckingClientUpdate;
-            modules = con.Query<(string, string)>(
+            modules = [.. con.Query<(string, string)>(
                 "SELECT ModuleName, moduleVersion FROM ContentEngineDependency WHERE VersionId = @Version",
-                new { Version = versionRowId }).ToArray();
+                new { Version = versionRowId })];
 
             for (var index = 0; index < modules.Length; index++)
             {
@@ -453,14 +445,9 @@ public sealed partial class Updater
 
         long versionId;
         var engineVersion = buildInfo.EngineVersion;
-        if (existingVersion == null)
-        {
-            versionId = await DownloadNewVersion(buildInfo, con, moduleManifest, state, cancel, engineVersion);
-        }
-        else
-        {
-            versionId = await DuplicateExistingVersion(buildInfo, con, moduleManifest, existingVersion, engineVersion);
-        }
+        versionId = existingVersion == null
+            ? await DownloadNewVersion(buildInfo, con, moduleManifest, state, engineVersion, cancel)
+            : await DuplicateExistingVersion(buildInfo, con, moduleManifest, existingVersion, engineVersion);
 
         Status = UpdateStatus.CommittingDownload;
 
@@ -617,7 +604,7 @@ public sealed partial class Updater
 
                         _ = con.Execute(@"
                                 INSERT INTO ContentEngineDependency(VersionId, ModuleName, ModuleVersion)
-                                VALUES (@Version, @ModName, @EngineVersion)",
+                                VALUES (@Version, @ModName, @ModVersion)",
                             new
                             {
                                 Version = versionId,
@@ -663,8 +650,8 @@ public sealed partial class Updater
         SqliteConnection con,
         Lazy<Task<EngineModuleManifest>> moduleManifest,
         TransactedDownloadState state,
-        CancellationToken cancel,
-        string engineVersion)
+        string engineVersion,
+        CancellationToken cancel)
     {
         // Don't have this version, download it.
 
@@ -681,17 +668,13 @@ public sealed partial class Updater
         // Store the created version ID so we can manually delete it later if necessary.
         state.MadeContentVersion = versionId;
 
-        // TODO: Download URL
-        byte[] manifestHash;
-        if (!string.IsNullOrEmpty(buildInfo.ManifestUrl)
+        var manifestHash = !string.IsNullOrEmpty(buildInfo.ManifestUrl)
             && !string.IsNullOrEmpty(buildInfo.ManifestDownloadUrl)
-            && !string.IsNullOrEmpty(buildInfo.ManifestHash))
-            manifestHash = await ManifestDownloadNewVersion(buildInfo, con, versionId, state, cancel);
-        else if (buildInfo.DownloadUrl != null)
-            manifestHash = await ZipDownloadNewVersion(buildInfo, con, versionId, cancel);
-        else
-            throw new InvalidOperationException("No download information provided at all!");
-
+            && !string.IsNullOrEmpty(buildInfo.ManifestHash)
+            ? await ManifestDownloadNewVersion(buildInfo, con, versionId, state, cancel)
+            : !string.IsNullOrEmpty(buildInfo.DownloadUrl)
+            ? await ZipDownloadNewVersion(buildInfo, con, versionId, cancel)
+            : throw new InvalidOperationException("No download information provided at all!");
         Log.Debug("Manifest hash: {ManifestHash}", Convert.ToHexString(manifestHash));
 
         _ = con.Execute(
@@ -750,6 +733,46 @@ public sealed partial class Updater
 
             Log.Debug("Inserting dependency: {ModuleName} {ModuleVersion}", module, version);
         }
+    }
+
+    /// <summary>
+    /// Copies engine dependencies from a base build version, if they are guaranteed to resolve identically.
+    /// This is the case when the engine version matches and the content bundle didn't override manifest.yml.
+    /// </summary>
+    /// <returns>True if dependencies were copied, false if they need to be resolved from scratch.</returns>
+    private static bool TryCopyContentDependencies(
+        SqliteConnection con,
+        long versionId,
+        long baseVersionId,
+        string engineVersion)
+    {
+        var baseEngineVersion = con.ExecuteScalar<string?>(
+            "SELECT ModuleVersion FROM ContentEngineDependency WHERE ModuleName = 'Robust' AND VersionId = @Version",
+            new { Version = baseVersionId });
+
+        if (baseEngineVersion != engineVersion)
+            return false;
+
+        // Module list comes from manifest.yml, so it must be the exact same blob (or absent in both).
+        var sameManifest = con.ExecuteScalar<bool>(
+            @"SELECT
+                (SELECT ContentId FROM ContentManifest WHERE VersionId = @NewVersion AND Path = 'manifest.yml')
+                IS
+                (SELECT ContentId FROM ContentManifest WHERE VersionId = @OldVersion AND Path = 'manifest.yml')",
+            new { NewVersion = versionId, OldVersion = baseVersionId });
+
+        if (!sameManifest)
+            return false;
+
+        var copied = con.Execute(
+            @"INSERT INTO ContentEngineDependency (VersionId, ModuleName, ModuleVersion)
+            SELECT @NewVersion, ModuleName, ModuleVersion
+            FROM ContentEngineDependency
+            WHERE VersionId = @OldVersion",
+            new { NewVersion = versionId, OldVersion = baseVersionId });
+
+        Log.Debug("Copied {Count} engine dependencies from base build version {BaseVersion}", copied, baseVersionId);
+        return true;
     }
 
     private static void EnsureBuffer(ref byte[] buf, int needsFit)
@@ -846,7 +869,7 @@ public sealed partial class Updater
 
     public sealed class ResourceManifestData
     {
-        public string[] Modules = Array.Empty<string>();
+        public string[] Modules = [];
         public bool MultiWindow = false;
     }
 

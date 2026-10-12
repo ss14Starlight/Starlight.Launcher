@@ -136,6 +136,43 @@ public sealed unsafe partial class ZStdDCtx : IDisposable
     }
 
     /// <summary>
+    /// Resets the current decompression session, discarding any partially decoded frame.
+    /// </summary>
+    public void ResetSession()
+    {
+        CheckDisposed();
+
+        ZStdException.ThrowIfError(Zstd.ZSTD_DCtx_reset(Context, ZSTD_ResetDirective.ZSTD_reset_session_only));
+    }
+
+    /// <summary>
+    /// Decompresses as much of the source data as fits into the destination buffer.
+    /// </summary>
+    /// <param name="destination">Buffer to write decompressed data into.</param>
+    /// <param name="source">Compressed data.</param>
+    /// <param name="sourcePos">Position in <paramref name="source"/>, advanced by the amount of consumed input.</param>
+    /// <param name="frameRemaining">Zero if the current frame has been fully decoded and flushed.</param>
+    /// <returns>Amount of bytes written into <paramref name="destination"/>.</returns>
+    public int DecompressStream(Span<byte> destination, ReadOnlySpan<byte> source, ref int sourcePos, out nuint frameRemaining)
+    {
+        CheckDisposed();
+
+        fixed (byte* dst = destination)
+        fixed (byte* src = source)
+        {
+            var outBuf = new ZSTD_outBuffer { dst = dst, pos = 0, size = (nuint)destination.Length };
+            var inBuf = new ZSTD_inBuffer { src = src, pos = (nuint)sourcePos, size = (nuint)source.Length };
+
+            var ret = Zstd.ZSTD_decompressStream(Context, &outBuf, &inBuf);
+            ZStdException.ThrowIfError(ret);
+
+            sourcePos = (int)inBuf.pos;
+            frameRemaining = ret;
+            return (int)outBuf.pos;
+        }
+    }
+
+    /// <summary>
     /// Releases the unmanaged decompression context.
     /// </summary>
     ~ZStdDCtx()

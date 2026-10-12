@@ -48,7 +48,12 @@ public static class Helpers
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "<Pending>")]
     public static unsafe void MarkDirectoryCompress(string path)
     {
-        // TODO: Linux: chattr +c
+        if (OperatingSystem.IsLinux())
+        {
+            MarkDirectoryCompressLinux(path);
+            return;
+        }
+
         if (!OperatingSystem.IsWindows())
             return;
 
@@ -77,6 +82,29 @@ public static class Helpers
                 null);
 
             _ = Win.CloseHandle(handle);
+        }
+    }
+
+    // Equivalent of `chattr +c`: new files created in the directory inherit the flag.
+    // Only btrfs (and f2fs with compression enabled) honor it; elsewhere the ioctl fails and we silently ignore it.
+    private static unsafe void MarkDirectoryCompressLinux(string path)
+    {
+        var fd = Libc.open(path, Libc.O_RDONLY | Libc.O_CLOEXEC);
+        if (fd < 0)
+            return;
+
+        try
+        {
+            var flags = 0;
+            if (Libc.ioctl(fd, Libc.FS_IOC_GETFLAGS, &flags) < 0)
+                return;
+
+            flags = (flags | Libc.FS_COMPR_FL) & ~Libc.FS_NOCOMP_FL;
+            _ = Libc.ioctl(fd, Libc.FS_IOC_SETFLAGS, &flags);
+        }
+        finally
+        {
+            _ = Libc.close(fd);
         }
     }
 

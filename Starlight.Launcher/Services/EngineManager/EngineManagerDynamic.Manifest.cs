@@ -1,6 +1,9 @@
 using Serilog;
 using Starlight.Launcher.WebUI.Models.Data;
 using System.Diagnostics;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 
 namespace Starlight.Launcher.Services.EngineManager;
@@ -86,12 +89,36 @@ public sealed partial class EngineManagerDynamic
 
     private async Task UpdateBuildManifest(RobustCdn cdn, CdnManifestCache cache, CancellationToken cancel)
     {
-        // TODO: If-Modified-Since and If-None-Match request conditions.
-
         var manifestUrl = cdn.BuildsManifest;
         Log.Debug("Loading manifest from {ManifestUrls}...", string.Join(", ", manifestUrl.Urls));
 
-        cache.Versions = await manifestUrl.GetFromJsonAsync<Dictionary<string, VersionInfo>>(_http, cancel);
+        // Conditional request: the manifest is large and rarely changes, so let the server answer 304.
+        // Validators are shared across mirrors; a mismatching ETag just yields a full 200 response.
+        var hasCached = cache.Versions != null;
+        using var response = await manifestUrl.SendAsync(_http, url =>
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, url);
+            if (hasCached)
+            {
+                if (cache.ETag != null)
+                    request.Headers.IfNoneMatch.Add(cache.ETag);
+                if (cache.LastModified is { } lastModified)
+                    request.Headers.IfModifiedSince = lastModified;
+            }
+            return request;
+        }, cancel);
+
+        if (hasCached && response.StatusCode == HttpStatusCode.NotModified)
+        {
+            Log.Debug("Manifest not modified, keeping cached version.");
+        }
+        else
+        {
+            _ = response.EnsureSuccessStatusCode();
+            cache.Versions = await response.Content.ReadFromJsonAsync<Dictionary<string, VersionInfo>>(cancel);
+            cache.ETag = response.Headers.ETag;
+            cache.LastModified = response.Content.Headers.LastModified;
+        }
 
         cache.ValidUntil = _manifestStopwatch.Elapsed + _settings.GetSettings().RobustManifestCacheTime;
     }
@@ -132,6 +159,8 @@ public sealed partial class EngineManagerDynamic
     {
         public Dictionary<string, VersionInfo>? Versions;
         public TimeSpan ValidUntil;
+        public EntityTagHeaderValue? ETag;
+        public DateTimeOffset? LastModified;
     }
 
     private sealed record FoundVersionInfo(string Version, VersionInfo Info, RobustCdn Cdn);

@@ -158,6 +158,8 @@ internal class Program
             return 1;
         }
 
+        PinBundledLibsodium();
+
         var robustPath = args[0];
         var sig = Convert.FromHexString(args[1]);
         var keyPath = args[2];
@@ -203,5 +205,46 @@ internal class Program
         }*/
 
         return 0;
+    }
+
+    private static void PinBundledLibsodium()
+    {
+        var fileName = OperatingSystem.IsWindows() ? "libsodium.dll"
+            : OperatingSystem.IsMacOS() ? "libsodium.dylib"
+            : "libsodium.so";
+
+        var os = OperatingSystem.IsWindows() ? "win" : OperatingSystem.IsMacOS() ? "osx" : "linux";
+        var arch = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
+
+        var baseDir = AppContext.BaseDirectory;
+        var candidates = new[]
+        {
+            Path.Combine(baseDir, fileName),
+            Path.Combine(baseDir, "runtimes", RuntimeInformation.RuntimeIdentifier, "native", fileName),
+            Path.Combine(baseDir, "runtimes", $"{os}-{arch}", "native", fileName),
+        };
+
+        string? path = null;
+        foreach (var candidate in candidates)
+        {
+            if (File.Exists(candidate))
+            {
+                path = candidate;
+                break;
+            }
+        }
+
+        if (path == null || !NativeLibrary.TryLoad(path, out var handle))
+            return;
+
+        try
+        {
+            NativeLibrary.SetDllImportResolver(typeof(SignatureAlgorithm).Assembly, (name, _, _) =>
+                name is "libsodium" or "libsodium.dll" or "libsodium.so" or "libsodium.dylib" ? handle : IntPtr.Zero);
+        }
+        catch (InvalidOperationException)
+        {
+            // Resolver already set.
+        }
     }
 }

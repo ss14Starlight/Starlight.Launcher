@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -318,15 +319,15 @@ public sealed class ServerStatusCache : IServerSource
         data.NotifyChanged();
     }
 
-    public void Refresh()
+    /// <summary>
+    ///     Re-fetches status for the given servers only.
+    ///     Servers that never had an initial status update are skipped.
+    /// </summary>
+    public void Refresh(IEnumerable<ServerStatusData> servers)
     {
-        // TODO: This refreshes everything.
-        // Which means if you're hitting refresh on your home page, it'll refresh the servers list too.
-        // This is wasteful.
-
-        foreach (var datum in _cachedData.Values)
+        foreach (var data in servers)
         {
-            if (!datum.DidInitialStatusUpdate)
+            if (!_cachedData.TryGetValue(data.Address, out var datum) || !datum.DidInitialStatusUpdate)
                 continue;
 
             datum.Cancellation?.Cancel();

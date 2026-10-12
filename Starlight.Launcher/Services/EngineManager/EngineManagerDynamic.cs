@@ -276,7 +276,7 @@ public sealed partial class EngineManagerDynamic : IEngineManager
 
         Log.Debug("Selected module {ModuleName} {ModuleVersion}", moduleName, moduleVersion);
 
-        var alreadyInstalled = _settings.GetModules().Contains((moduleName, moduleVersion));
+        var alreadyInstalled = _settings.GetModules().Contains(new InstalledEngineModule(moduleName, moduleVersion));
 
         if (alreadyInstalled)
         {
@@ -511,7 +511,7 @@ public sealed partial class EngineManagerDynamic : IEngineManager
         }
 
         // Cull modules
-        var toCullModules = _settings.GetModules().Where(m => !modulesUsed.Contains(m)).ToArray();
+        var toCullModules = _settings.GetModules().Where(m => !modulesUsed.Contains((m.Name, m.Version))).ToArray();
 
         foreach (var module in toCullModules)
         {
