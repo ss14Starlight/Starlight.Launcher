@@ -21,6 +21,11 @@ public partial class Settings : LocalizedComponentBase, IDisposable
     [Inject] private ISnackbar _snackbar { get; set; } = default!;
     private List<string> _availableLanguages = [];
 
+    // Values of the engine's audio.output_mode cvar, null (the empty option) is automatic.
+    private static readonly List<string> AudioOutputModes = ["stereo", "headphones", "quad", "5.1", "7.1", "mono"];
+
+    private string AudioOutputModeName(string mode) => L[$"settings-menu-audio-output-mode-{mode switch { "5.1" => "surround51", "7.1" => "surround71", _ => mode }}"];
+
     private MudTabs _tabs = null!;
 
     private MudTabPanel _generalTab = null!;

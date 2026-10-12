@@ -522,6 +522,21 @@ public partial class Connector : ObservableObject
                     cVars.Add(("TRACY_ONLY_LOCALHOST", "1"));
             }
 
+            // Audio options for the Starlight engine. Official engines just ignore unknown cvars passed this way.
+            // Only pass non-defaults so the client's own value isn't overridden for nothing.
+            if (!string.IsNullOrWhiteSpace(settings.AudioOutputMode))
+            {
+                args.Add("--cvar");
+                args.Add($"audio.output_mode={settings.AudioOutputMode}");
+            }
+
+            if (!settings.AudioFollowDefaultDevice)
+            {
+                args.Add("--cvar");
+                args.Add("audio.follow_default_device=false");
+            }
+
+            // User overrides go last so they win over everything above.
             foreach (var (name, value) in ParseCVarOverrides(settings.ClientCVarOverrides))
             {
                 args.Add("--cvar");

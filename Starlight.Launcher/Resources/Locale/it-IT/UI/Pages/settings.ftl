@@ -143,3 +143,18 @@ settings-menu-development-tracy-localhost-option-description = Accetta connessio
 settings-menu-development-cvars-option = Override CVar del client
 settings-menu-development-cvars-option-description = CVar aggiuntive passate al client all'avvio. Le CVar replicate dal server vengono comunque sovrascritte dal server.
 settings-menu-development-cvars-option-helper = Una coppia key=value per riga o separate da ";", le righe che iniziano con # vengono ignorate
+
+# Audio
+
+settings-menu-audio-category = Audio
+settings-menu-audio-output-mode-option = Configurazione altoparlanti
+settings-menu-audio-output-mode-option-description = Per quale configurazione di altoparlanti il gioco elabora l'audio. Se mancano voci o alcuni suoni, prova "Stereo" o "Cuffie". Richiede il motore Starlight.
+settings-menu-audio-output-mode-auto = Automatico
+settings-menu-audio-output-mode-stereo = Stereo
+settings-menu-audio-output-mode-headphones = Cuffie (HRTF)
+settings-menu-audio-output-mode-quad = Quadrifonico
+settings-menu-audio-output-mode-surround51 = Surround 5.1
+settings-menu-audio-output-mode-surround71 = Surround 7.1
+settings-menu-audio-output-mode-mono = Mono
+settings-menu-audio-follow-device-option = Segui il dispositivo di uscita di sistema
+settings-menu-audio-follow-device-option-description = Cambia l'uscita audio del gioco quando cambia il dispositivo predefinito di sistema, ad esempio collegando le cuffie. Richiede il motore Starlight.

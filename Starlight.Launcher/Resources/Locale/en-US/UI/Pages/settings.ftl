@@ -203,3 +203,18 @@ settings-menu-development-tracy-localhost-option-description = Only accept Tracy
 settings-menu-development-cvars-option = Client CVar Overrides
 settings-menu-development-cvars-option-description = Extra cvars passed to the game client on launch. Cvars the server replicates to clients are still overridden by the server.
 settings-menu-development-cvars-option-helper = One key=value per line or separated by ";", lines starting with # are ignored
+
+# Audio
+
+settings-menu-audio-category = Audio
+settings-menu-audio-output-mode-option = Speaker layout
+settings-menu-audio-output-mode-option-description = Which speaker setup the game renders sound for. If voices or some sounds are missing, try "Stereo" or "Headphones". Requires the Starlight engine.
+settings-menu-audio-output-mode-auto = Automatic
+settings-menu-audio-output-mode-stereo = Stereo
+settings-menu-audio-output-mode-headphones = Headphones (HRTF)
+settings-menu-audio-output-mode-quad = Quadraphonic
+settings-menu-audio-output-mode-surround51 = 5.1 Surround
+settings-menu-audio-output-mode-surround71 = 7.1 Surround
+settings-menu-audio-output-mode-mono = Mono
+settings-menu-audio-follow-device-option = Follow system output device
+settings-menu-audio-follow-device-option-description = Switch the game audio along when the system default output changes, e.g. when headphones are plugged in. Requires the Starlight engine.

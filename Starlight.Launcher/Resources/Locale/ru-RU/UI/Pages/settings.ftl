@@ -120,3 +120,18 @@ settings-menu-development-tracy-localhost-option-description = Принимат�
 settings-menu-development-cvars-option = Переопределение CVar клиента
 settings-menu-development-cvars-option-description = Дополнительные cvar, передаваемые игровому клиенту при запуске. Cvar, которые сервер реплицирует клиентам, всё равно будут перезаписаны сервером.
 settings-menu-development-cvars-option-helper = По одной паре key=value на строку или через ";", строки с # игнорируются
+
+# Audio
+
+settings-menu-audio-category = Звук
+settings-menu-audio-output-mode-option = Конфигурация динамиков
+settings-menu-audio-output-mode-option-description = Под какую акустику игра сводит звук. Если пропадают голоса или часть звуков, попробуйте «Стерео» или «Наушники». Работает с движком Starlight.
+settings-menu-audio-output-mode-auto = Автоматически
+settings-menu-audio-output-mode-stereo = Стерео
+settings-menu-audio-output-mode-headphones = Наушники (HRTF)
+settings-menu-audio-output-mode-quad = Квадро
+settings-menu-audio-output-mode-surround51 = Объёмный 5.1
+settings-menu-audio-output-mode-surround71 = Объёмный 7.1
+settings-menu-audio-output-mode-mono = Моно
+settings-menu-audio-follow-device-option = Следовать системному устройству вывода
+settings-menu-audio-follow-device-option-description = Переключать звук игры вслед за системным устройством по умолчанию, например при подключении наушников. Работает с движком Starlight.

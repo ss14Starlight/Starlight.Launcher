@@ -213,6 +213,19 @@ public partial record AppSettings
     public string ClientCVarOverrides { get; init; } = "";
 
     /// <summary>
+    /// Speaker layout passed to the client as <c>audio.output_mode</c>, e.g. <c>stereo</c> or <c>5.1</c>.
+    /// Null means automatic, in which case nothing is passed and the client decides.
+    /// </summary>
+    /// <remarks>Only understood by the Starlight engine, official engines ignore unknown cvars.</remarks>
+    public string? AudioOutputMode { get; init; }
+
+    /// <summary>
+    /// Passed to the client as <c>audio.follow_default_device</c>.
+    /// </summary>
+    /// <remarks>Only understood by the Starlight engine, official engines ignore unknown cvars.</remarks>
+    public bool AudioFollowDefaultDevice { get; init; } = true;
+
+    /// <summary>
     /// If a download gets interrupted, keep the files for a week.
     /// </summary>
     public int InterruptibleDownloadKeepHours = 7 * 24;
