@@ -40,7 +40,19 @@
         <span class="dismiss">🗙</span>
     </div>
 
-    <script src="_framework/blazor.web.js"></script>
+    <script src="_framework/blazor.web.js" autostart="false"></script>
+    <script>
+        (function () {
+            var serverTimeoutMs = 7 * 24 * 60 * 60 * 1000;
+            Blazor.start({
+                circuit: {
+                    configureSignalR: function (builder) {
+                        builder.withServerTimeout(serverTimeoutMs).withKeepAliveInterval(15000);
+                    }
+                }
+            });
+        })();
+    </script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
     <script src="_content/MudBlazor.Markdown/MudBlazor.Markdown.min.js"></script>
     <script src="@Assets["js/theme.js"]"></script>

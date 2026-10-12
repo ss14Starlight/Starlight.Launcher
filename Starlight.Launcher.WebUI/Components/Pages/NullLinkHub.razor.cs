@@ -8,6 +8,7 @@ using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using Color = MudBlazor.Color;
 using Starlight.Launcher.WebUI.Models.Data;
+using Starlight.Launcher.WebUI.Services;
 
 namespace Starlight.Launcher.WebUI.Components.Pages;
 
@@ -16,6 +17,7 @@ public sealed partial class NullLinkHub : LocalizedComponentBase, IAsyncDisposab
     [Inject] private HttpClient _client { get; set; } = default!;
     [Inject] private IBridge _bridge { get; set; } = default!;
     [Inject] private IDialogService _dialog { get; set; } = default!;
+    [Inject] private UiActivity _activity { get; set; } = default!;
     private List<ServerListItem>? _servers;
     private string? _error;
     private CancellationTokenSource? _cts;
@@ -43,6 +45,7 @@ public sealed partial class NullLinkHub : LocalizedComponentBase, IAsyncDisposab
         {
             while (await timer.WaitForNextTickAsync(token))
             {
+                await _activity.WaitUntilActiveAsync(token);
                 await LoadAsync(token);
                 await InvokeAsync(StateHasChanged);
             }

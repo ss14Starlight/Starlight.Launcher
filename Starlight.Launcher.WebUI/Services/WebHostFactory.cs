@@ -14,6 +14,8 @@ namespace Starlight.Launcher.WebUI;
 
 public static class WebHostFactory
 {
+    public static readonly TimeSpan IdleConnectionTimeout = TimeSpan.FromDays(7);
+
     public static WebApplication Create(Action<IServiceCollection>? configureServices = null)
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions
@@ -26,7 +28,9 @@ public static class WebHostFactory
 
         _ = builder.WebHost.UseStaticWebAssets();
 
-        _ = builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+        _ = builder.Services.AddRazorComponents()
+            .AddInteractiveServerComponents(o => o.DisconnectedCircuitRetentionPeriod = IdleConnectionTimeout)
+            .AddHubOptions(o => o.ClientTimeoutInterval = IdleConnectionTimeout);
 
         _ = builder.Services.Configure<HostOptions>(options => options.ShutdownTimeout = TimeSpan.FromSeconds(2));
 

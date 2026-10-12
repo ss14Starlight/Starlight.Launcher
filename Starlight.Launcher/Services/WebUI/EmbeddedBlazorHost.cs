@@ -45,6 +45,7 @@ public sealed class EmbeddedBlazorHost : IAsyncDisposable
                 _ = services.AddSingleton(nativeServices.GetRequiredService<StarlightAuthApi>());
                 _ = services.AddSingleton(nativeServices.GetRequiredService<DiscordAuthService>());
                 _ = services.AddSingleton(nativeServices.GetRequiredService<ServerStatusCache>());
+                _ = services.AddSingleton(nativeServices.GetRequiredService<UiActivity>());
                 _ = services.AddSingleton(nativeServices.GetRequiredService<UiTicker>());
                 _ = services.AddSingleton(nativeServices.GetRequiredService<IBridge>());
                 _ = services.AddSingleton(nativeServices.GetRequiredService<HttpClient>());

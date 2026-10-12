@@ -5,6 +5,7 @@ using Avalonia.Platform;
 using Avalonia.Threading;
 using Serilog;
 using Starlight.Launcher.Services.WebUI;
+using Starlight.Launcher.WebUI.Services;
 
 namespace Starlight.Launcher;
 
@@ -16,14 +17,17 @@ public partial class MainWindow : Window
     /// </summary>
     private static readonly TimeSpan AdapterTimeout = TimeSpan.FromSeconds(20);
 
+    private readonly UiActivity _activity;
     private WebViewSuspender? _suspender;
     private DispatcherTimer? _adapterWatchdog;
     private bool _adapterCreated;
 
-    public MainWindow() : this(null, "") { }
+    public MainWindow() : this(null, "", new UiActivity()) { }
 
-    public MainWindow(Uri? blazorUrl, string pathToWebViewData)
+    public MainWindow(Uri? blazorUrl, string pathToWebViewData, UiActivity activity)
     {
+        _activity = activity;
+
         InitializeComponent();
 
         Web.AdapterCreated += (_, e) =>
@@ -73,13 +77,13 @@ public partial class MainWindow : Window
         {
             StartAdapterWatchdog();
 
+            _suspender ??= new WebViewSuspender(this, Web, _activity);
+
             if (!OperatingSystem.IsWindows())
                 return;
             await Task.Delay(500);
             if (TryGetPlatformHandle()?.Handle is { } hwnd)
                 UnlayerChildren(hwnd);
-
-            _suspender ??= new WebViewSuspender(this, Web);
         };
 
         Closed += (_, _) =>

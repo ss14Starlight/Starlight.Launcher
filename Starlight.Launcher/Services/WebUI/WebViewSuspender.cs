@@ -1,62 +1,170 @@
+using System.Runtime;
+using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
+using Serilog;
+using Starlight.Launcher.WebUI.Services;
 
 namespace Starlight.Launcher.Services.WebUI;
 
+/// <summary>
+///     Freezes the WebView while the window is minimized or hidden in the tray, and tells the UI to stop
+///     its own background work (<see cref="UiActivity" />), so a hidden launcher costs next to nothing.
+/// </summary>
 public sealed class WebViewSuspender : IDisposable
 {
+    private static readonly TimeSpan SuspendDelay = TimeSpan.FromSeconds(2);
+
+    private static readonly TimeSpan TrimDelay = TimeSpan.FromSeconds(30);
+
+    private const int MaxSuspendAttempts = 3;
+
     private readonly NativeWebView _webView;
     private readonly Window _window;
-    private readonly DispatcherTimer _debounce;
+    private readonly UiActivity _activity;
+    private readonly DispatcherTimer _suspendTimer;
+    private readonly DispatcherTimer _trimTimer;
+    private int _suspendAttempts;
+    private bool _trimmed;
     private bool _disposed;
 
-    public WebViewSuspender(Window window, NativeWebView webView, TimeSpan? delay = null)
+    public WebViewSuspender(Window window, NativeWebView webView, UiActivity activity)
     {
         _window = window;
         _webView = webView;
+        _activity = activity;
 
-        _debounce = new DispatcherTimer { Interval = delay ?? TimeSpan.FromSeconds(2) };
-        _debounce.Tick += (_, _) => { _debounce.Stop(); ApplySuspend(); };
+        _suspendTimer = new DispatcherTimer { Interval = SuspendDelay };
+        _suspendTimer.Tick += (_, _) => { _suspendTimer.Stop(); ApplySuspend(); };
+
+        _trimTimer = new DispatcherTimer { Interval = TrimDelay };
+        _trimTimer.Tick += (_, _) => { _trimTimer.Stop(); TrimMemory(); };
 
         _window.PropertyChanged += OnWindowPropertyChanged;
+        Update();
     }
 
-    private bool _shouldBeActive =>
+    private bool ShouldBeActive =>
         _window.IsVisible && _window.WindowState != WindowState.Minimized;
 
     private void OnWindowPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
-        if (e.Property != Window.WindowStateProperty && e.Property != Visual.IsVisibleProperty)
+        if (e.Property == Window.WindowStateProperty || e.Property == Visual.IsVisibleProperty)
+            Update();
+    }
+
+    private void Update()
+    {
+        if (_disposed)
             return;
 
-        if (_shouldBeActive)
+        if (ShouldBeActive)
         {
-            _debounce.Stop();
+            _suspendTimer.Stop();
+            _trimTimer.Stop();
+            _suspendAttempts = 0;
+            _trimmed = false;
+
+            if (_webView.IsSuspended)
+                Log.Information("Resuming WebView");
             _webView.Resume();
+            _activity.SetActive(true);
+            return;
         }
-        else if (!_debounce.IsEnabled)
-        {
-            _debounce.Start();
-        }
+
+        _activity.SetActive(false);
+
+        if (!_suspendTimer.IsEnabled && !_webView.IsSuspended)
+            _suspendTimer.Start();
+        if (!_trimTimer.IsEnabled && !_trimmed)
+            _trimTimer.Start();
     }
 
     private async void ApplySuspend()
     {
-        if (_disposed || _shouldBeActive)
+        if (_disposed || ShouldBeActive)
             return;
 
+        _suspendAttempts++;
         var ok = await _webView.TrySuspendAsync();
 
-        if (!ok && !_shouldBeActive && !_disposed)
-            _debounce.Start();
+        if (_disposed || ShouldBeActive)
+            return;
+
+        if (ok)
+        {
+            Log.Information("WebView suspended");
+            return;
+        }
+
+        if (_suspendAttempts < MaxSuspendAttempts)
+            _suspendTimer.Start();
+        else
+            Log.Debug("WebView can't be suspended on this backend, relying on it throttling hidden views");
     }
+
+    private void TrimMemory()
+    {
+        if (_disposed || ShouldBeActive || _trimmed)
+            return;
+
+        _trimmed = true;
+
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                var before = Environment.WorkingSet;
+
+                GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+                GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, blocking: true, compacting: true);
+                GC.WaitForPendingFinalizers();
+
+                if (OperatingSystem.IsWindows())
+                    _ = EmptyWorkingSet(GetCurrentProcess());
+                else if (OperatingSystem.IsLinux())
+                    TryMallocTrim();
+
+                Log.Information("Trimmed memory while hidden: working set {Before} MB -> {After} MB",
+                    before / (1024 * 1024), Environment.WorkingSet / (1024 * 1024));
+            }
+            catch (Exception e)
+            {
+                Log.Debug(e, "Memory trim failed");
+            }
+        });
+    }
+
+    private static void TryMallocTrim()
+    {
+        try
+        {
+            _ = malloc_trim(0);
+        }
+        catch (Exception e) when (e is DllNotFoundException or EntryPointNotFoundException)
+        {
+        }
+    }
+
+    [DllImport("kernel32.dll")]
+    private static extern IntPtr GetCurrentProcess();
+
+    [DllImport("kernel32.dll", EntryPoint = "K32EmptyWorkingSet")]
+    private static extern bool EmptyWorkingSet(IntPtr process);
+
+    [DllImport("libc", EntryPoint = "malloc_trim")]
+    private static extern int malloc_trim(nuint pad);
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+            return;
+
         _disposed = true;
-        _debounce.Stop();
+        _suspendTimer.Stop();
+        _trimTimer.Stop();
         _window.PropertyChanged -= OnWindowPropertyChanged;
+        _activity.SetActive(true);
     }
 }

@@ -86,7 +86,7 @@ public partial class App : Application
             var dataDir = settings.GetSettings().DirLauncherData;
             var webViewDataDir = DataDirectoryAccess.CanWrite(dataDir) ? dataDir : "";
 
-            var window = new MainWindow(_blazorHost.Url, webViewDataDir) { Title = "Starlight.Launcher" };
+            var window = new MainWindow(_blazorHost.Url, webViewDataDir, Services.GetRequiredService<UiActivity>()) { Title = "Starlight.Launcher" };
 
             var flushing = false;
 
@@ -199,6 +199,7 @@ public partial class App : Application
         _ = services.AddSingleton<ClientLogManager>();
         _ = services.AddSingleton<LocalServerManager>();
         _ = services.AddTransient<Connector>();
+        _ = services.AddSingleton<UiActivity>();
         _ = services.AddSingleton<UiTicker>();
         _ = services.AddSingleton<LauncherUpdater>();
         _ = services.AddSingleton<IBridge, Bridge>();
