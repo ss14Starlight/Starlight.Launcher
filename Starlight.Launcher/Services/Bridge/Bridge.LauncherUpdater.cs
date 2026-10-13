@@ -27,6 +27,8 @@ public sealed partial class Bridge : IBridge
 
     public void CleanupOldInstallers() => _launcherUpdater.CleanupOldInstallers();
 
+    public string? TakeFailedUpdateReport() => LauncherUpdater.TakeFailedUpdateReport();
+
     public bool ShouldShowChangelog() => _launcherUpdater.ShouldShowChangelog();
 
     public async Task<IReadOnlyList<ChangelogEntry>> GetChangelogsToShow() => await _launcherUpdater.GetChangelogsToShow();

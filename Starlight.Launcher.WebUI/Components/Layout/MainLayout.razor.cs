@@ -217,6 +217,15 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
 
     private async Task CheckUpdate()
     {
+        if (_bridge.TakeFailedUpdateReport() is { } report)
+        {
+            _ = await _dialogService.ShowMessageBoxAsync(
+                L["update-failed-title"],
+                (MarkupString)$"<p>{System.Net.WebUtility.HtmlEncode(L["update-failed-text"])}</p><pre style=\"white-space:pre-wrap;font-size:12px;opacity:.8\">{System.Net.WebUtility.HtmlEncode(report)}</pre>",
+                yesText: L["general-close"]);
+            return;
+        }
+
         try
         {
             var info = await _bridge.IsUpdateAvailable();

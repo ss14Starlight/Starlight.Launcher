@@ -14,6 +14,8 @@
 
     const root = document.documentElement;
 
+    const supported = !!(globalThis.CSS?.paintWorklet ?? globalThis.paintWorklet);
+
     let camX = 0;
     let zoom = 1;
     let raf = 0;
@@ -23,6 +25,7 @@
     const background = () => document.getElementById('app-bg');
 
     const moving = () =>
+        supported &&
         !root.classList.contains('sl-bg-static') &&
         !matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -93,7 +96,7 @@
 
         async start(fromUrl, toUrl) {
             const from = pathOf(fromUrl), to = pathOf(toUrl);
-            if (from === to)
+            if (!supported || from === to)
                 return false;
 
             const d = steps(from, to);
@@ -120,7 +123,7 @@
             if (!animate)
                 zoom = zTo;
 
-            if (!document.startViewTransition) {
+            if (!supported || !document.startViewTransition) {
                 startPendingFlight();
                 return false;
             }

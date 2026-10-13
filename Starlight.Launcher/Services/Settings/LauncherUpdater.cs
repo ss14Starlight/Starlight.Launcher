@@ -345,21 +345,41 @@ public partial class LauncherUpdater(SettingsService settings)
         }
     }
 
+    private const string FlatpakUpdateApplied = "UPDATE-APPLIED";
+    private const string FlatpakUpdateNotApplied = "UPDATE-NOT-APPLIED";
+
+    private static string FlatpakUpdateLogPath =>
+        Path.Combine(
+            Environment.GetEnvironmentVariable("XDG_CACHE_HOME")
+                ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cache"),
+            "flatpak-update.log");
+
     private static void RunFlatpakUpdate(string bundlePath)
     {
         var appId = Environment.GetEnvironmentVariable("FLATPAK_ID")
             ?? throw new InvalidOperationException("FLATPAK_ID is not set.");
 
-        var cacheDir = Environment.GetEnvironmentVariable("XDG_CACHE_HOME") ?? Path.GetDirectoryName(bundlePath)!;
-        var logPath = Path.Combine(cacheDir, "flatpak-update.log");
+        var logPath = FlatpakUpdateLogPath;
+        _ = Directory.CreateDirectory(Path.GetDirectoryName(logPath)!);
 
         var hostScript = $"""
             exec >{Quote(logPath)} 2>&1 </dev/null
-            for i in $(seq 1 50); do flatpak ps --columns=application | grep -qx {Quote(appId)} || break; sleep 0.2; done
-            if flatpak info --user {Quote(appId)} >/dev/null 2>&1; then scope=--user; else scope=--system; fi
-            echo "Installing update ($scope):" {Quote(bundlePath)}
-            flatpak install "$scope" -y --reinstall {Quote(bundlePath)} || echo "Update failed with exit code $?"
-            exec flatpak run {Quote(appId)}
+            app={Quote(appId)}
+            echo "Waiting for $app to exit"
+            i=0
+            while flatpak ps --columns=application | grep -qx "$app"; do
+                i=$((i + 1))
+                if [ "$i" -eq 150 ]; then echo "Still running after 30s, killing it"; flatpak kill "$app"; fi
+                if [ "$i" -ge 175 ]; then echo "Could not stop $app"; break; fi
+                sleep 0.2
+            done
+            if flatpak info --user "$app" >/dev/null 2>&1; then scope=--user; else scope=--system; fi
+            before=$(flatpak info "$scope" --show-commit "$app" 2>/dev/null)
+            echo "Installing update ($scope) over commit $before:" {Quote(bundlePath)}
+            flatpak install "$scope" -y --reinstall --bundle {Quote(bundlePath)} || echo "flatpak install failed with exit code $?"
+            after=$(flatpak info "$scope" --show-commit "$app" 2>/dev/null)
+            if [ -n "$after" ] && [ "$after" != "$before" ]; then echo "{FlatpakUpdateApplied} $after"; else echo "{FlatpakUpdateNotApplied}"; fi
+            exec flatpak run "$app"
             """;
 
         _ = Process.Start(new ProcessStartInfo
@@ -371,6 +391,38 @@ public partial class LauncherUpdater(SettingsService settings)
 
         Thread.Sleep(500);
         Environment.Exit(0);
+    }
+
+    /// <summary>
+    ///     If the last Flatpak self-update didn't apply, returns the end of its log (once).
+    /// </summary>
+    public static string? TakeFailedUpdateReport()
+    {
+        if (InstallKindDetector.Current != InstallKind.Flatpak)
+            return null;
+
+        var logPath = FlatpakUpdateLogPath;
+        try
+        {
+            if (!File.Exists(logPath))
+                return null;
+
+            var lines = File.ReadAllLines(logPath);
+            File.Move(logPath, logPath + ".last", overwrite: true);
+
+            if (lines.Any(l => l.StartsWith(FlatpakUpdateApplied, StringComparison.Ordinal)))
+                return null;
+
+            return string.Join('\n', lines.TakeLast(15));
+        }
+        catch (IOException)
+        {
+            return null;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return null;
+        }
     }
 
     private static void RunAppImageUpdate(string newAppImagePath)

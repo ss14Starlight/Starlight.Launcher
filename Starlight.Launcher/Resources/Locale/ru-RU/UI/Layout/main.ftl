@@ -8,3 +8,6 @@ main-layout-auth-tab = Авторизация
 main-layout-data-folder-no-access = Лаунчер не может записывать в папку данных "{ $path }". Загрузка и обновление файлов игры не будут работать. Выберите другую папку в настройках.
 main-layout-data-folder-no-access-action = Настройки
 main-layout-bug-report = Сообщить об ошибке
+
+update-failed-title = Обновление не установилось
+update-failed-text = Лаунчер скачал обновление, но Flatpak его не установил. Установите новый .flatpak со страницы релизов вручную (flatpak install --reinstall <файл>). Подробности:

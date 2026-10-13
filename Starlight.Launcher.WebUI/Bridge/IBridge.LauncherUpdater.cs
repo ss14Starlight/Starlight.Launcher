@@ -17,6 +17,11 @@ public partial interface IBridge
 
     void CleanupOldInstallers();
 
+    /// <summary>
+    /// Log tail of the last self-update if it didn't apply (Flatpak only), returned once.
+    /// </summary>
+    string? TakeFailedUpdateReport();
+
     bool ShouldShowChangelog();
 
     Task<IReadOnlyList<ChangelogEntry>> GetChangelogsToShow();
