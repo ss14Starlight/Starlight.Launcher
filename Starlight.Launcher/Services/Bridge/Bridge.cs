@@ -106,7 +106,7 @@ public sealed partial class Bridge(LauncherCommands commands, Connector connecto
     [LibraryImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static partial bool ReleaseCapture();
-    [LibraryImport("user32.dll")]
+    [LibraryImport("user32.dll", EntryPoint = "SendMessageW")]
     private static partial IntPtr SendMessage(IntPtr h, uint m, IntPtr w, IntPtr l);
     private const uint WM_NCLBUTTONDOWN = 0x00A1;
     private const int HTCAPTION = 2;
@@ -116,7 +116,14 @@ public sealed partial class Bridge(LauncherCommands commands, Connector connecto
         if (!OperatingSystem.IsWindows()) { return; }
         if (_window?.TryGetPlatformHandle()?.Handle is not { } hwnd) return;
 
-        _ = ReleaseCapture();
-        _ = SendMessage(hwnd, WM_NCLBUTTONDOWN, HTCAPTION, IntPtr.Zero);
+        try
+        {
+            _ = ReleaseCapture();
+            _ = SendMessage(hwnd, WM_NCLBUTTONDOWN, HTCAPTION, IntPtr.Zero);
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "Window drag failed");
+        }
     });
 }
