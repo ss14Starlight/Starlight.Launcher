@@ -1,7 +1,7 @@
 window.appTheme = {
     set: (name) => {
         document.documentElement.setAttribute('data-theme', name);
-        const isDark = name.endsWith('-dark') || name === 'midnight';
+        const isDark = getComputedStyle(document.documentElement).colorScheme === 'dark';
         document.body.classList.toggle('mud-theme-dark', isDark);
     },
     prefersDark: () => window.matchMedia('(prefers-color-scheme: dark)').matches,

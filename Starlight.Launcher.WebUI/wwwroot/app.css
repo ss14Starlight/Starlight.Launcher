@@ -943,10 +943,179 @@ h1:focus {
     --sprite-seed: 21;
 }
 
+:root[data-theme="christmas"] .app-bg {
+    --bg-paint: paint(sprite-field), paint(animated-lines);
+    --sprite-a-path: "M-14 4 a14 14 0 1 0 28 0 a14 14 0 1 0 -28 0 Z M-4 -15 L4 -15 L4 -10 L-4 -10 Z";
+    --sprite-a-fill: oklch(from oklch(var(--c-primary)) l c h / .55);
+    --sprite-a-detail: "M-13.7 1 L13.7 1 L13.9 6 L-13.9 6 Z";
+    --sprite-a-detail-fill: oklch(from oklch(var(--c-tertiary)) l c h / .75);
+    --sprite-b-path: "M0 -16 L4.7 -6.5 L15.2 -4.9 L7.6 2.5 L9.4 12.9 L0 8 L-9.4 12.9 L-7.6 2.5 L-15.2 -4.9 L-4.7 -6.5 Z";
+    --sprite-b-fill: oklch(from oklch(var(--c-tertiary)) l c h / .6);
+    --sprite-c-path: "M-3 0 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0 Z";
+    --sprite-c-fill: oklch(from oklch(var(--c-text)) l c h / .55);
+    --sprite-weights: 2 1 6;
+    --sprite-count: 46;
+    --sprite-size: .75;
+    --sprite-size-var: .8;
+    --sprite-speed: 1;
+    --sprite-dx: -.04;
+    --sprite-dy: .45;
+    --sprite-spin: .3;
+    --sprite-sway: 12;
+    --sprite-sway-speed: .9;
+    --sprite-opacity: .5;
+    --sprite-twinkle: .4;
+    --sprite-glow: .5;
+    --sprite-seed: 41;
+}
+
+:root[data-theme="valentine"] .app-bg {
+    --bg-paint: paint(sprite-field), paint(animated-lines);
+    --sprite-a-path: "M0 18 C-6 12 -20 4 -20 -6 C-20 -14 -14 -19 -8 -19 C-4 -19 -1 -17 0 -14 C1 -17 4 -19 8 -19 C14 -19 20 -14 20 -6 C20 4 6 12 0 18 Z";
+    --sprite-a-fill: oklch(from oklch(var(--c-primary)) l c h / .5);
+    --sprite-b-path: "M0 18 C-6 12 -20 4 -20 -6 C-20 -14 -14 -19 -8 -19 C-4 -19 -1 -17 0 -14 C1 -17 4 -19 8 -19 C14 -19 20 -14 20 -6 C20 4 6 12 0 18 Z";
+    --sprite-b-fill: oklch(from oklch(var(--c-secondary)) l c h / .6);
+    --sprite-b-stroke: oklch(from oklch(var(--c-secondary)) l c h / .6);
+    --sprite-b-stroke-width: 3;
+    --sprite-c-path: "M0 -10 C1 -3 3 -1 10 0 C3 1 1 3 0 10 C-1 3 -3 1 -10 0 C-3 -1 -1 -3 0 -10 Z";
+    --sprite-c-fill: oklch(from oklch(var(--c-tertiary)) l c h / .7);
+    --sprite-weights: 3 2 2;
+    --sprite-count: 30;
+    --sprite-size: .7;
+    --sprite-size-var: .8;
+    --sprite-speed: 1;
+    --sprite-dx: .05;
+    --sprite-dy: -.4;
+    --sprite-spin: .3;
+    --sprite-sway: 10;
+    --sprite-sway-speed: .8;
+    --sprite-opacity: .5;
+    --sprite-twinkle: .4;
+    --sprite-glow: .6;
+    --sprite-seed: 14;
+}
+
+:root[data-theme="shamrock"] .app-bg {
+    --bg-paint: paint(sprite-field), paint(animated-lines);
+    --sprite-a-path: "M-7.5 -8 a7.5 7.5 0 1 0 15 0 a7.5 7.5 0 1 0 -15 0 Z M-15.5 1 a7.5 7.5 0 1 0 15 0 a7.5 7.5 0 1 0 -15 0 Z M0.5 1 a7.5 7.5 0 1 0 15 0 a7.5 7.5 0 1 0 -15 0 Z M-4 -1 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 Z M-1.5 5 L1.5 19 L4.5 19 L1.5 5 Z";
+    --sprite-a-fill: oklch(from oklch(var(--c-primary)) l c h / .5);
+    --sprite-b-path: "M-9 0 a9 9 0 1 0 18 0 a9 9 0 1 0 -18 0 Z";
+    --sprite-b-fill: oklch(from oklch(var(--c-secondary)) l c h / .6);
+    --sprite-b-detail: "M-6.5 0 a6.5 6.5 0 1 0 13 0 a6.5 6.5 0 1 0 -13 0 Z M-5 0 a5 5 0 1 1 10 0 a5 5 0 1 1 -10 0 Z";
+    --sprite-b-detail-fill: oklch(from oklch(var(--c-secondary)) calc(l - .2) c h / .7);
+    --sprite-c-path: "M0 -10 C1 -3 3 -1 10 0 C3 1 1 3 0 10 C-1 3 -3 1 -10 0 C-3 -1 -1 -3 0 -10 Z";
+    --sprite-c-fill: oklch(from oklch(var(--c-tertiary)) l c h / .65);
+    --sprite-weights: 4 2 1;
+    --sprite-count: 26;
+    --sprite-size: .8;
+    --sprite-size-var: .7;
+    --sprite-speed: 1;
+    --sprite-dx: .06;
+    --sprite-dy: -.25;
+    --sprite-spin: .5;
+    --sprite-sway: 8;
+    --sprite-sway-speed: .7;
+    --sprite-opacity: .5;
+    --sprite-twinkle: .3;
+    --sprite-glow: .4;
+    --sprite-seed: 17;
+}
+
+:root[data-theme="easter"] .app-bg {
+    --bg-paint: paint(sprite-field), paint(animated-lines);
+    --sprite-a-path: "M0 -18 C9 -18 14 -4 14 5 C14 13 8 18 0 18 C-8 18 -14 13 -14 5 C-14 -4 -9 -18 0 -18 Z";
+    --sprite-a-fill: oklch(from oklch(var(--c-primary)) l c h / .5);
+    --sprite-a-detail: "M-13.5 0 L-9 -4 L-4.5 0 L0 -4 L4.5 0 L9 -4 L13.5 0 L13.8 4 L9 0 L4.5 4 L0 0 L-4.5 4 L-9 0 L-13.8 4 Z";
+    --sprite-a-detail-fill: oklch(from oklch(var(--c-tertiary)) l c h / .8);
+    --sprite-b-path: "M0 -18 C9 -18 14 -4 14 5 C14 13 8 18 0 18 C-8 18 -14 13 -14 5 C-14 -4 -9 -18 0 -18 Z";
+    --sprite-b-fill: oklch(from oklch(var(--c-secondary)) l c h / .5);
+    --sprite-b-detail: "M-7.8 2 a1.8 1.8 0 1 0 3.6 0 a1.8 1.8 0 1 0 -3.6 0 Z M-1.8 0 a1.8 1.8 0 1 0 3.6 0 a1.8 1.8 0 1 0 -3.6 0 Z M4.2 2 a1.8 1.8 0 1 0 3.6 0 a1.8 1.8 0 1 0 -3.6 0 Z M-4.8 9 a1.8 1.8 0 1 0 3.6 0 a1.8 1.8 0 1 0 -3.6 0 Z M1.2 9 a1.8 1.8 0 1 0 3.6 0 a1.8 1.8 0 1 0 -3.6 0 Z M-1.8 -8 a1.8 1.8 0 1 0 3.6 0 a1.8 1.8 0 1 0 -3.6 0 Z";
+    --sprite-b-detail-fill: oklch(from oklch(var(--c-tertiary)) l c h / .8);
+    --sprite-c-path: "M-5 -7 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0 Z M1.66 -2.16 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0 Z M-0.89 5.66 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0 Z M-9.11 5.66 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0 Z M-11.66 -2.16 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0 Z";
+    --sprite-c-fill: oklch(from oklch(var(--c-text)) l c h / .45);
+    --sprite-c-detail: "M-3.5 0 a3.5 3.5 0 1 0 7 0 a3.5 3.5 0 1 0 -7 0 Z";
+    --sprite-c-detail-fill: oklch(from oklch(var(--c-tertiary)) l c h / .9);
+    --sprite-weights: 2 2 2;
+    --sprite-count: 24;
+    --sprite-size: .8;
+    --sprite-size-var: .7;
+    --sprite-speed: 1;
+    --sprite-dx: .04;
+    --sprite-dy: -.2;
+    --sprite-spin: .4;
+    --sprite-sway: 10;
+    --sprite-sway-speed: .6;
+    --sprite-opacity: .5;
+    --sprite-twinkle: .2;
+    --sprite-glow: .3;
+    --sprite-seed: 9;
+}
+
+:root[data-theme="independence"] .app-bg {
+    --bg-paint: paint(sprite-field), paint(animated-lines);
+    --sprite-a-path: "M0 -16 L4.7 -6.5 L15.2 -4.9 L7.6 2.5 L9.4 12.9 L0 8 L-9.4 12.9 L-7.6 2.5 L-15.2 -4.9 L-4.7 -6.5 Z";
+    --sprite-a-fill: oklch(from oklch(var(--c-primary)) l c h / .55);
+    --sprite-b-path: "M0 -6 L0 -16 M0 6 L0 16 M-6 0 L-16 0 M6 0 L16 0 M4.2 4.2 L11.3 11.3 M-4.2 -4.2 L-11.3 -11.3 M4.2 -4.2 L11.3 -11.3 M-4.2 4.2 L-11.3 11.3";
+    --sprite-b-fill: oklch(from oklch(var(--c-tertiary)) l c h / .6);
+    --sprite-b-stroke: oklch(from oklch(var(--c-tertiary)) l c h / .6);
+    --sprite-b-stroke-width: 2.5;
+    --sprite-c-path: "M0 -16 L4.7 -6.5 L15.2 -4.9 L7.6 2.5 L9.4 12.9 L0 8 L-9.4 12.9 L-7.6 2.5 L-15.2 -4.9 L-4.7 -6.5 Z";
+    --sprite-c-fill: oklch(from oklch(var(--c-secondary)) l c h / .6);
+    --sprite-weights: 3 2 3;
+    --sprite-count: 30;
+    --sprite-size: .7;
+    --sprite-size-var: .8;
+    --sprite-speed: 1;
+    --sprite-dx: .03;
+    --sprite-dy: -.3;
+    --sprite-spin: .4;
+    --sprite-sway: 6;
+    --sprite-sway-speed: .8;
+    --sprite-opacity: .5;
+    --sprite-twinkle: .6;
+    --sprite-twinkle-speed: 1.4;
+    --sprite-glow: .8;
+    --sprite-seed: 76;
+}
+
+:root[data-theme="thanksgiving"] .app-bg {
+    --bg-paint: paint(sprite-field), paint(animated-lines);
+    --sprite-a-path: "M0 -20 L4 -11 L8 -13 L7 -5 L15 -9 L13 -3 L18 -1 L10 5 L11 9 L2 7 L1 16 L-1 16 L-2 7 L-11 9 L-10 5 L-18 -1 L-13 -3 L-15 -9 L-7 -5 L-8 -13 L-4 -11 Z";
+    --sprite-a-fill: oklch(from oklch(var(--c-primary)) l c h / .55);
+    --sprite-b-path: "M0 -18 C10 -10 12 4 0 16 C-12 4 -10 -10 0 -18 Z";
+    --sprite-b-fill: oklch(from oklch(var(--c-secondary)) l c h / .55);
+    --sprite-b-detail: "M-0.6 -14 L0.6 -14 L0.8 19 L-0.8 19 Z";
+    --sprite-b-detail-fill: oklch(from oklch(var(--c-bg)) calc(l - .03) c h / .6);
+    --sprite-c-path: "M-7 -2 L7 -2 C7 6 3 11 0 13 C-3 11 -7 6 -7 -2 Z";
+    --sprite-c-fill: oklch(from oklch(var(--c-tertiary)) l c h / .5);
+    --sprite-c-detail: "M-9 -1 C-9 -10 9 -10 9 -1 Z M-1 -7 L1 -7 L1.5 -12 L-0.5 -12 Z";
+    --sprite-c-detail-fill: oklch(from oklch(var(--c-secondary)) calc(l - .12) c h / .85);
+    --sprite-weights: 3 3 1;
+    --sprite-count: 28;
+    --sprite-size: .8;
+    --sprite-size-var: .7;
+    --sprite-speed: 1;
+    --sprite-dx: .1;
+    --sprite-dy: .35;
+    --sprite-spin: 1.2;
+    --sprite-sway: 18;
+    --sprite-sway-speed: .7;
+    --sprite-opacity: .5;
+    --sprite-twinkle: .1;
+    --sprite-glow: .2;
+    --sprite-seed: 27;
+}
+
 @supports not (background-image: paint(sprite-field)) {
     :root[data-theme="pumpkin"] .app-bg,
     :root[data-theme="skeleton"] .app-bg,
     :root[data-theme="newyear"] .app-bg,
+    :root[data-theme="christmas"] .app-bg,
+    :root[data-theme="valentine"] .app-bg,
+    :root[data-theme="shamrock"] .app-bg,
+    :root[data-theme="easter"] .app-bg,
+    :root[data-theme="independence"] .app-bg,
+    :root[data-theme="thanksgiving"] .app-bg,
     :root[data-theme="birthday"] .app-bg {
         --bg-paint: none;
     }

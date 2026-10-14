@@ -69,12 +69,7 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
         _ => "emerald-light"
     };
 
-    private static readonly Dictionary<(int Month, int Day), List<string>> _holidayThemes = new()
-    {
-        { (12, 31), ["newyear"] },
-        { (8, 23), ["birthday"] },
-        { (10, 31), ["pumpkin", "skeleton"] }
-    };
+    private (DateOnly Date, string? Theme)? _holidayTheme;
 
     private ErrorBoundary? _errorBoundary;
     private ElementPosition _elementPosition;
@@ -357,13 +352,16 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
         var prefersDark = await _jS.InvokeAsync<bool>("appTheme.prefersDark");
         var themeName = ToDataTheme(settings.Theme, prefersDark);
 
-        var today = DateTime.Today;
+        var today = DateOnly.FromDateTime(DateTime.Today);
 
-        if (_holidayThemes.TryGetValue((today.Month, today.Day), out var themes))
+        if (_holidayTheme?.Date != today)
         {
-            var pickedTheme = Random.Shared.Next(themes.Count);
-            themeName = themes[pickedTheme];
+            var themes = HolidayThemes.For(today);
+            _holidayTheme = (today, themes.Count > 0 ? themes[Random.Shared.Next(themes.Count)] : null);
         }
+
+        if (_holidayTheme.Value.Theme is { } holidayTheme)
+            themeName = holidayTheme;
 
         await _jS.InvokeVoidAsync("appTheme.set", themeName);
     }
