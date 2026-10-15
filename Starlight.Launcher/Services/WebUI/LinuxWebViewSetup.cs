@@ -31,8 +31,8 @@ public static class LinuxWebViewSetup
         var rendering = ReadRenderingMode();
 
         Log.Information(
-            "Linux WebView: backend {Backend}, offscreen {Offscreen}, WPE rendering {Rendering}. Availability: {Availability}",
-            backend, offscreen?.ToString() ?? "default", rendering?.ToString() ?? "default", DescribeAvailability());
+            "Linux WebView: backend {Backend}, offscreen {Offscreen}, WPE rendering {Rendering}. Availability: {Availability}. Session: {Session}",
+            backend, offscreen?.ToString() ?? "default", rendering?.ToString() ?? "default", DescribeAvailability(), DescribeSession());
 
         webView.EnvironmentRequested += (_, args) =>
         {
@@ -57,6 +57,17 @@ public static class LinuxWebViewSetup
     /// <summary>Whether any WebView backend is installed and usable on this machine.</summary>
     public static bool AnyBackendAvailable()
         => _candidates.Any(c => Probe(c) is { IsInstalled: true, IsSupported: true });
+
+    public static string DescribeSession()
+    {
+        static string Env(string name) => Environment.GetEnvironmentVariable(name) is { Length: > 0 } v ? v : "-";
+
+        return $"type={Env("XDG_SESSION_TYPE")} desktop={Env("XDG_CURRENT_DESKTOP")} " +
+               $"wayland={Env("WAYLAND_DISPLAY")} x11={Env("DISPLAY")} flatpak={(Settings.InstallKindDetector.IsFlatpak ? "yes" : "no")} " +
+               $"compositing-off={Env("WEBKIT_DISABLE_COMPOSITING_MODE")} dmabuf-off={Env("WEBKIT_DISABLE_DMABUF_RENDERER")} " +
+               $"dmabuf-shm={Env("WEBKIT_DMABUF_RENDERER_FORCE_SHM")} " +
+               $"{BackendVariable}={Env(BackendVariable)} {OffscreenVariable}={Env(OffscreenVariable)}";
+    }
 
     /// <summary>A one-line, log- and UI-friendly summary of which backends are present.</summary>
     public static string DescribeAvailability()

@@ -17,10 +17,18 @@ public partial class MainWindow : Window
     /// </summary>
     private static readonly TimeSpan AdapterTimeout = TimeSpan.FromSeconds(20);
 
+    /// <summary>
+    ///     Linux only: how long the page gets to finish loading once the adapter exists. The WebView stays
+    ///     hidden until then, so a WebKit that starts but never draws would otherwise leave an empty window.
+    /// </summary>
+    private static readonly TimeSpan PageLoadTimeout = TimeSpan.FromSeconds(25);
+
     private readonly UiActivity _activity;
     private WebViewSuspender? _suspender;
     private DispatcherTimer? _adapterWatchdog;
+    private DispatcherTimer? _pageWatchdog;
     private bool _adapterCreated;
+    private bool _pageLoaded;
 
     public MainWindow() : this(null, "", new UiActivity()) { }
 
@@ -36,6 +44,9 @@ public partial class MainWindow : Window
             _adapterCreated = true;
             _adapterWatchdog?.Stop();
             WebViewFallback.IsVisible = false;
+
+            if (OperatingSystem.IsLinux())
+                StartPageWatchdog();
         };
         Web.AdapterDestroyed += (_, e) => Log.Warning("WebView adapter destroyed: {Adapter}", e);
 
@@ -58,7 +69,19 @@ public partial class MainWindow : Window
             LinuxWebViewSetup.Configure(Web);
 
             Web.IsVisible = false;
-            Web.NavigationCompleted += (_, _) => Web.IsVisible = true;
+            Web.NavigationStarted += (_, e) => Log.Information("WebView navigation started: {Url}", e.Request);
+            Web.NavigationCompleted += (_, e) =>
+            {
+                Log.Information("WebView navigation completed: {Url}, success {Success}", e.Request, e.IsSuccess);
+                Web.IsVisible = true;
+
+                if (!e.IsSuccess)
+                    return;
+
+                _pageLoaded = true;
+                _pageWatchdog?.Stop();
+                WebViewFallback.IsVisible = false;
+            };
         }
         else if (OperatingSystem.IsWindows())
         {
@@ -99,6 +122,8 @@ public partial class MainWindow : Window
         {
             _adapterWatchdog?.Stop();
             _adapterWatchdog = null;
+            _pageWatchdog?.Stop();
+            _pageWatchdog = null;
             _suspender?.Dispose();
             _suspender = null;
         };
@@ -132,27 +157,58 @@ public partial class MainWindow : Window
             if (_adapterCreated)
                 return;
 
-            ShowWebViewFallback();
+            ShowWebViewFallback(pageNeverLoaded: false);
         };
         _adapterWatchdog.Start();
     }
 
-    private void ShowWebViewFallback()
+    private void StartPageWatchdog()
     {
-        var details = OperatingSystem.IsLinux()
-            ? LinuxWebViewSetup.DescribeAvailability()
-            : "";
+        if (_pageLoaded || _pageWatchdog is not null)
+            return;
 
-        WebViewFallbackHint.Text = OperatingSystem.IsLinux()
-            ? "No usable web engine was found. Install the WebKitGTK package for your distribution " +
-              "(webkit2gtk-4.1 / libwebkit2gtk-4.1-0 / webkit2gtk-4.0) and start the launcher again. " +
-              "On SteamOS / Steam Deck, or if you can't install packages, use the Flatpak version instead - it ships its own WebKitGTK."
-            : "The embedded web engine failed to start. Please check the launcher logs.";
+        _pageWatchdog = new DispatcherTimer { Interval = PageLoadTimeout };
+        _pageWatchdog.Tick += (_, _) =>
+        {
+            _pageWatchdog?.Stop();
+            if (_pageLoaded)
+                return;
+
+            Web.IsVisible = false;
+            ShowWebViewFallback(pageNeverLoaded: true);
+        };
+        _pageWatchdog.Start();
+    }
+
+    private void ShowWebViewFallback(bool pageNeverLoaded)
+    {
+        var logs = Path.Combine(AppPaths.AppDataDirectory, "launcher-logs");
+
+        var details = OperatingSystem.IsLinux()
+            ? $"{LinuxWebViewSetup.DescribeAvailability()}\n{LinuxWebViewSetup.DescribeSession()}\nLogs: {logs}"
+            : $"Logs: {logs}";
+
+        WebViewFallbackHint.Text = (OperatingSystem.IsLinux(), pageNeverLoaded) switch
+        {
+            (true, true) =>
+                "The web engine started, but the launcher page never appeared. This usually means WebKit can't draw " +
+                "on this desktop or GPU. Start the launcher with STARLIGHT_WEBVIEW_OFFSCREEN=1, or with " +
+                "STARLIGHT_WEBVIEW_BACKEND=wpe if WPE WebKit is installed, or use the Flatpak version. " +
+                "If none of that helps, please send us the newest file from the logs folder below.",
+            (true, false) =>
+                "No usable web engine was found. Install the WebKitGTK package for your distribution " +
+                "(webkit2gtk-4.1 / libwebkit2gtk-4.1-0 / webkit2gtk-4.0) and start the launcher again. " +
+                "On SteamOS / Steam Deck, or if you can't install packages, use the Flatpak version instead - it ships its own WebKitGTK.",
+            _ => "The embedded web engine failed to start. Please check the launcher logs.",
+        };
 
         WebViewFallbackDetails.Text = details;
         WebViewFallback.IsVisible = true;
 
-        Log.Error("WebView adapter was not created within {Timeout}; showing fallback UI. {Details}", AdapterTimeout, details);
+        if (pageNeverLoaded)
+            Log.Error("WebView page did not finish loading within {Timeout}; showing fallback UI. {Details}", PageLoadTimeout, details);
+        else
+            Log.Error("WebView adapter was not created within {Timeout}; showing fallback UI. {Details}", AdapterTimeout, details);
     }
 
     const int GWL_EXSTYLE = -20;
