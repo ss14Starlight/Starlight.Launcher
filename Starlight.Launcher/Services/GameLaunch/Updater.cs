@@ -308,23 +308,23 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
 
     private async Task<T> RetryTransientAsync<T>(Func<Task<T>> attempt, Action? beforeRetry, CancellationToken cancel)
     {
-        var maxAttempts = RetryDelays.Length + 1;
-
         for (var i = 0; ; i++)
         {
+            DownloadErrorKind kind = default;
             try
             {
                 var result = await attempt();
                 Retry = null;
                 return result;
             }
-            catch (Exception e) when (i < RetryDelays.Length
-                                      && !cancel.IsCancellationRequested
-                                      && TransientDownloadError.IsTransient(e))
+            catch (Exception e) when (!cancel.IsCancellationRequested
+                                      && (kind = TransientDownloadError.Classify(e)) != DownloadErrorKind.Fatal
+                                      && i < MaxRetries(kind))
             {
                 var delay = RetryDelays[i];
-                Log.Warning(e, "Download failed on a network error, retrying in {Delay} (attempt {Attempt}/{Max})",
-                    delay, i + 2, maxAttempts);
+                var maxAttempts = MaxRetries(kind) + 1;
+                Log.Warning(e, "Download failed on a network error ({Kind}), retrying in {Delay} (attempt {Attempt}/{Max})",
+                    kind, delay, i + 2, maxAttempts);
 
                 Progress = null;
                 Speed = null;
@@ -336,6 +336,11 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
             }
         }
     }
+
+    private const int MaxOfflineRetries = 1;
+
+    private static int MaxRetries(DownloadErrorKind kind) =>
+        kind == DownloadErrorKind.Offline ? MaxOfflineRetries : RetryDelays.Length;
 
     private Lazy<Task<EngineModuleManifest>> NewModuleManifest(CancellationToken cancel) =>
         new(() => _engineManager.GetEngineModuleManifest(cancel));
