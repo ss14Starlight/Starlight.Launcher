@@ -9,11 +9,31 @@ env:
   DOTNET_VERSION: '11.0.x'
   MAIN_PROJECT: 'Starlight.Launcher/Starlight.Launcher.csproj'
   LOADER_PROJECT: 'Robust.Loader/Robust.Loader.csproj'
+  TEST_PROJECT: 'Starlight.Launcher.Tests/Starlight.Launcher.Tests.csproj'
   EXE_NAME: 'Starlight.Launcher.exe'
   APP_NAME: 'Starlight.Launcher'
 
 jobs:
+  test:
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-quality: preview
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Run tests
+        shell: bash
+        run: dotnet test ${{ env.TEST_PROJECT }} -c Release
+
   windows:
+    needs: test
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -57,6 +77,7 @@ jobs:
           path: installer/Output/*.exe
 
   linux:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -273,6 +294,7 @@ jobs:
           path: Starlight.Launcher-*.rpm
 
   macos:
+    needs: test
     runs-on: macos-latest
     strategy:
       matrix:
