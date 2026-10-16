@@ -441,7 +441,7 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
 
         try
         {
-            // CheckForceCompatMode() (sentinel-file forcing after a GL crash) was dropped during the port.
+            // Turned on automatically by PipeOutput after the client fails to create its GL window.
             var compatMode = _settings.GetSettings().CompatMode && !OperatingSystem.IsMacOS();
 
             var args = new List<string>
@@ -773,7 +773,7 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
 
         await logSession.WriteProcessStartedAsync(process.Id);
         Log.Debug("Setting up manual-pipe logging for new client with PID {pid}.", process.Id);
-        PipeOutput(process, logSession);
+        PipeOutput(process, logSession, compatMode: settings.CompatMode && !OperatingSystem.IsMacOS());
 
         return process;
 
@@ -791,12 +791,17 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
     }
     */
 
-    private static async void PipeOutput(Process process, ClientLogSession session)
+    private const string GlWindowFailureMarker = "Failed to create main game window";
+
+    private async void PipeOutput(Process process, ClientLogSession session, bool compatMode)
     {
+        var glFailure = false;
+
         async Task DoPipe(StreamReader reader, Stream writer)
         {
             var readStream = reader.BaseStream;
             var buf = new byte[4096];
+            var carry = "";
             while (true)
             {
                 var read = await readStream.ReadAsync(buf);
@@ -807,6 +812,15 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
                 }
 
                 await writer.WriteAsync(buf.AsMemory(0, read));
+
+                if (compatMode || glFailure)
+                    continue;
+
+                var text = carry + Encoding.Latin1.GetString(buf, 0, read);
+                if (text.Contains(GlWindowFailureMarker, StringComparison.Ordinal))
+                    glFailure = true;
+
+                carry = text[Math.Max(0, text.Length - GlWindowFailureMarker.Length)..];
             }
         }
 
@@ -833,6 +847,9 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
                 Log.Warning(e, "Failed to await client exit for {pid}", process.Id);
             }
 
+            if (glFailure && exitCode != 0)
+                ForceCompatMode();
+
             try
             {
                 await session.WriteExitAsync(exitCode);
@@ -844,6 +861,15 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
 
             await session.DisposeAsync();
         }
+    }
+
+    private void ForceCompatMode()
+    {
+        if (OperatingSystem.IsMacOS() || _settings.GetSettings().CompatMode)
+            return;
+
+        Log.Warning("Client failed to create an OpenGL window, enabling compatibility mode for the next launch");
+        _settings.UpdateSettings(s => s with { CompatMode = true });
     }
 
     private static void PipeLogOutput(Process process)
