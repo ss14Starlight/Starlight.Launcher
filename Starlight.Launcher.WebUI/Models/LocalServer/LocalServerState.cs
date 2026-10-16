@@ -6,6 +6,8 @@ public enum LocalServerPhase
     FetchingManifest,
     Downloading,
     Extracting,
+    DownloadingRuntime,
+    InstallingRuntime,
     Starting,
     Running,
     Stopping,
@@ -20,5 +22,6 @@ public sealed record LocalServerState(
     DateTimeOffset? BuildTime = null,
     long? DownloadedBytes = null,
     long? TotalBytes = null,
-    string? ErrorMessage = null
+    string? ErrorMessage = null,
+    string? RuntimeVersion = null
 );

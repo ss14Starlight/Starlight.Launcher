@@ -4,6 +4,7 @@ using System.Text;
 using Robust.Launcher.Api.Models;
 using Robust.Launcher.Api.Utility;
 using Serilog;
+using Starlight.Launcher.Services.LocalServer.Dotnet;
 using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI.Models.Helpers;
 using Starlight.Launcher.WebUI.Models.LocalServer;
@@ -11,7 +12,7 @@ using static Robust.Launcher.Api.Utility.Helpers;
 
 namespace Starlight.Launcher.Services.LocalServer;
 
-public sealed partial class LocalServerManager(HttpClient http, SettingsService settings)
+public sealed partial class LocalServerManager(HttpClient http, SettingsService settings, DotnetRuntimeManager dotnet)
 {
     private const int MaxConsoleLines = 5000;
 
@@ -21,6 +22,7 @@ public sealed partial class LocalServerManager(HttpClient http, SettingsService 
 
     private readonly HttpClient _http = http;
     private readonly SettingsService _settings = settings;
+    private readonly DotnetRuntimeManager _dotnet = dotnet;
 
     private readonly Lock _lock = new();
     private readonly RingBuffer<LocalServerLogLine> _consoleBuffer = new(MaxConsoleLines);
@@ -78,11 +80,13 @@ public sealed partial class LocalServerManager(HttpClient http, SettingsService 
 
             LastInstallDirectory = installDir;
 
+            var runtime = await EnsureRuntimeAsync(installDir, sourceName, buildHash, build.Time, cancel);
+
             ApplyCVarOverrides(installDir, cvarOverrides);
 
             SetState(new LocalServerState(LocalServerPhase.Starting, sourceName, buildHash, build.Time));
 
-            LaunchProcess(installDir, exePath);
+            LaunchProcess(installDir, exePath, runtime);
 
             SetState(new LocalServerState(LocalServerPhase.Running, sourceName, buildHash, build.Time));
         }
@@ -190,6 +194,8 @@ public sealed partial class LocalServerManager(HttpClient http, SettingsService 
         var dir = Path.Combine(_settings.GetSettings().DirLauncherData, "local-servers");
         await DeleteDirectoryWithRetryAsync(dir);
 
+        await _dotnet.PruneCacheAsync(GetInstalledRuntimeRequirements());
+
         LastInstallDirectory = null;
         SetState(new LocalServerState(LocalServerPhase.Idle));
     }
@@ -217,17 +223,61 @@ public sealed partial class LocalServerManager(HttpClient http, SettingsService 
         }
     }
 
-    private void LaunchProcess(string installDir, string exePath)
+    private async Task<DotnetInstallation?> EnsureRuntimeAsync(
+        string installDir,
+        string sourceName,
+        string buildHash,
+        DateTimeOffset buildTime,
+        CancellationToken cancel)
     {
-        if (!File.Exists(exePath))
-            throw new UpdateException($"Server executable not found at {exePath}.");
+        if (!File.Exists(Path.Combine(installDir, ServerAssemblyFileName)))
+            return null;
 
-        if (!OperatingSystem.IsWindows())
-            ChmodPlusX(exePath);
+        var requirements = DotnetRuntimeRequirements.TryLoad(installDir);
+        if (requirements is null)
+            return null;
 
+        var downloaded = false;
+        var runtime = await _dotnet.EnsureRuntimeAsync(
+            requirements,
+            p =>
+            {
+                downloaded = true;
+                SetState(new LocalServerState(
+                    p.Installing ? LocalServerPhase.InstallingRuntime : LocalServerPhase.DownloadingRuntime,
+                    sourceName, buildHash, buildTime,
+                    p.Installing ? null : p.Downloaded,
+                    p.Installing ? null : p.Total,
+                    RuntimeVersion: p.Version));
+            },
+            cancel);
+
+        AppendLine($"[Starlight.Launcher] Using .NET {runtime.NetCoreVersion} from {runtime.Root}.", isError: false);
+
+        if (downloaded)
+            await _dotnet.PruneCacheAsync(GetInstalledRuntimeRequirements());
+
+        return runtime;
+    }
+
+    private List<DotnetRuntimeRequirements> GetInstalledRuntimeRequirements()
+    {
+        var root = Path.Combine(_settings.GetSettings().DirLauncherData, "local-servers");
+        if (!Directory.Exists(root))
+            return [];
+
+        return Directory.EnumerateDirectories(root)
+            .SelectMany(Directory.EnumerateDirectories)
+            .Where(dir => File.Exists(Path.Combine(dir, InstallMarkerFileName)))
+            .Select(DotnetRuntimeRequirements.TryLoad)
+            .OfType<DotnetRuntimeRequirements>()
+            .ToList();
+    }
+
+    private void LaunchProcess(string installDir, string exePath, DotnetInstallation? runtime)
+    {
         var startInfo = new ProcessStartInfo
         {
-            FileName = exePath,
             WorkingDirectory = installDir,
             UseShellExecute = false,
             RedirectStandardOutput = true,
@@ -235,6 +285,27 @@ public sealed partial class LocalServerManager(HttpClient http, SettingsService 
             RedirectStandardInput = true,
             CreateNoWindow = true
         };
+
+        if (runtime is not null)
+        {
+            startInfo.FileName = runtime.Muxer;
+            startInfo.ArgumentList.Add(Path.Combine(installDir, ServerAssemblyFileName));
+
+            startInfo.Environment["DOTNET_ROOT"] = runtime.Root;
+            startInfo.Environment["DOTNET_MULTILEVEL_LOOKUP"] = "0";
+            foreach (var key in new[] { "DOTNET_ROOT_X64", "DOTNET_ROOT_X86", "DOTNET_ROOT_ARM64", "DOTNET_ROOT(x86)" })
+                _ = startInfo.Environment.Remove(key);
+        }
+        else
+        {
+            if (!File.Exists(exePath))
+                throw new UpdateException($"Server executable not found at {exePath}.");
+
+            if (!OperatingSystem.IsWindows())
+                ChmodPlusX(exePath);
+
+            startInfo.FileName = exePath;
+        }
 
         var process = Process.Start(startInfo) ?? throw new UpdateException("Failed to start server process.");
 
@@ -403,6 +474,8 @@ public sealed partial class LocalServerManager(HttpClient http, SettingsService 
         var hash = await sha.ComputeHashAsync(stream, cancel);
         return Convert.ToHexString(hash);
     }
+
+    private const string ServerAssemblyFileName = "Robust.Server.dll";
 
     private static string GetServerExecutablePath(string installDir) =>
         Path.Combine(installDir, OperatingSystem.IsWindows() ? "Robust.Server.exe" : "Robust.Server");

@@ -241,6 +241,10 @@ public partial class LocalServer : LocalizedComponentBase, IDisposable
         {
             await _bridge.StartLocalServerAsync(source.Name, source.Url, source.CVarOverrides);
         }
+        catch (LocalServerRuntimeUnavailableException e)
+        {
+            _ = _snackbar.Add(L.GetString("local-server-error-runtime-unavailable", ("version", e.RuntimeVersion)), Severity.Error);
+        }
         catch (Exception e)
         {
             _ = _snackbar.Add(e.Message, Severity.Error);
@@ -368,7 +372,8 @@ public partial class LocalServer : LocalizedComponentBase, IDisposable
         && _state.Phase is LocalServerPhase.Idle or LocalServerPhase.Stopped or LocalServerPhase.Error;
 
     private bool CanStop() => _state.Phase is LocalServerPhase.FetchingManifest or LocalServerPhase.Downloading
-        or LocalServerPhase.Extracting or LocalServerPhase.Starting or LocalServerPhase.Running;
+        or LocalServerPhase.Extracting or LocalServerPhase.DownloadingRuntime or LocalServerPhase.InstallingRuntime
+        or LocalServerPhase.Starting or LocalServerPhase.Running;
 
     private Color GetStatusColor() => _state.Phase switch
     {
@@ -384,6 +389,9 @@ public partial class LocalServer : LocalizedComponentBase, IDisposable
         LocalServerPhase.FetchingManifest => L["local-server-status-fetching"],
         LocalServerPhase.Downloading => L.GetString("local-server-status-downloading", ("percent", FormatPercent())),
         LocalServerPhase.Extracting => L["local-server-status-extracting"],
+        LocalServerPhase.DownloadingRuntime => L.GetString("local-server-status-downloading-runtime",
+            ("version", _state.RuntimeVersion ?? ""), ("percent", FormatPercent())),
+        LocalServerPhase.InstallingRuntime => L.GetString("local-server-status-installing-runtime", ("version", _state.RuntimeVersion ?? "")),
         LocalServerPhase.Starting => L["local-server-status-starting"],
         LocalServerPhase.Running => L["local-server-status-running"],
         LocalServerPhase.Stopping => L["local-server-status-stopping"],

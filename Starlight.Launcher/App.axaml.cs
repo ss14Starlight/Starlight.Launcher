@@ -15,6 +15,7 @@ using Starlight.Launcher.Services.Bridge;
 using Starlight.Launcher.Services.Discord;
 using Starlight.Launcher.Services.EngineManager;
 using Starlight.Launcher.Services.LocalServer;
+using Starlight.Launcher.Services.LocalServer.Dotnet;
 using Starlight.Launcher.Services.Localization;
 using Starlight.Launcher.Services.Logging;
 using Starlight.Launcher.Services.ServerStatus;
@@ -275,6 +276,7 @@ public partial class App : Application
         _ = services.AddSingleton<SteamAuthService>();
         _ = services.AddSingleton<DiscordAuthService>();
         _ = services.AddSingleton<ClientLogManager>();
+        _ = services.AddSingleton<DotnetRuntimeManager>();
         _ = services.AddSingleton<LocalServerManager>();
         _ = services.AddTransient<Connector>();
         _ = services.AddSingleton<UiActivity>();

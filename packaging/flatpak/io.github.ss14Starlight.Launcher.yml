@@ -19,17 +19,6 @@ finish-args:
   - --talk-name=org.freedesktop.Flatpak
 
 modules:
-  - name: dotnet-runtime
-    buildsystem: simple
-    build-commands:
-      - mkdir -p /app/lib/dotnet
-      - cp -a . /app/lib/dotnet/
-    sources:
-      - type: archive
-        url: https://builds.dotnet.microsoft.com/dotnet/aspnetcore/Runtime/10.0.12/aspnetcore-runtime-10.0.12-linux-x64.tar.gz
-        sha512: c489fc3a9dcc85f24f2d52e9a81b46fdf51affc8a360d008dbd5e3b7ce524969adc4a54f555ad13e29b822f59ed1cae9785608cbac2282f2c9c4fda45c21c7d1
-        strip-components: 0
-
   - name: starlight-launcher
     buildsystem: simple
     build-commands:
