@@ -237,25 +237,19 @@ public sealed partial class LocalServerManager(HttpClient http, SettingsService 
         if (requirements is null)
             return null;
 
-        var downloaded = false;
         var runtime = await _dotnet.EnsureRuntimeAsync(
             requirements,
-            p =>
-            {
-                downloaded = true;
-                SetState(new LocalServerState(
-                    p.Installing ? LocalServerPhase.InstallingRuntime : LocalServerPhase.DownloadingRuntime,
-                    sourceName, buildHash, buildTime,
-                    p.Installing ? null : p.Downloaded,
-                    p.Installing ? null : p.Total,
-                    RuntimeVersion: p.Version));
-            },
+            p => SetState(new LocalServerState(
+                p.Installing ? LocalServerPhase.InstallingRuntime : LocalServerPhase.DownloadingRuntime,
+                sourceName, buildHash, buildTime,
+                p.Installing ? null : p.Downloaded,
+                p.Installing ? null : p.Total,
+                RuntimeVersion: p.Version)),
             cancel);
 
         AppendLine($"[Starlight.Launcher] Using .NET {runtime.NetCoreVersion} from {runtime.Root}.", isError: false);
 
-        if (downloaded)
-            await _dotnet.PruneCacheAsync(GetInstalledRuntimeRequirements());
+        await _dotnet.PruneCacheAsync(GetInstalledRuntimeRequirements());
 
         return runtime;
     }

@@ -147,4 +147,43 @@ public sealed class DotnetRuntimeTests
                 Directory.Delete(cache, recursive: true);
         }
     }
+
+    [Fact]
+    public async Task UpdatesCachedRuntimeInBackground()
+    {
+        Assert.SkipUnless(Environment.GetEnvironmentVariable("STARLIGHT_NETWORK_TESTS") == "1", "Network tests disabled.");
+
+        var cache = Path.Combine(Path.GetTempPath(), "starlight-dotnet-test-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            using var http = new HttpClient();
+            var manager = new DotnetRuntimeManager(http, () => cache);
+            var pinned = new DotnetRuntimeRequirements([
+                new FrameworkRequirement(DotnetRuntimeRequirements.NetCoreApp, V("8.0.1"), RollForwardPolicy.Disable)
+            ]);
+            var latestPatch = new DotnetRuntimeRequirements([
+                new FrameworkRequirement(DotnetRuntimeRequirements.NetCoreApp, V("8.0.1"), RollForwardPolicy.LatestPatch)
+            ]);
+
+            var old = await manager.EnsureRuntimeAsync(pinned, null, TestContext.Current.CancellationToken);
+
+            File.SetLastWriteTimeUtc(Path.Combine(cache, ".update-check-runtime-8.0"), DateTime.UtcNow.AddDays(-30));
+
+            var cached = await manager.EnsureRuntimeAsync(latestPatch, _ => Assert.Fail("Should not block on the update."), TestContext.Current.CancellationToken);
+            Assert.Equal(old.Root, cached.Root);
+
+            await manager.WaitForBackgroundUpdatesAsync();
+
+            var updated = await manager.EnsureRuntimeAsync(latestPatch, _ => Assert.Fail("Should reuse the cache."), TestContext.Current.CancellationToken);
+            Assert.True(updated.NetCoreVersion > V("8.0.1"));
+
+            await manager.PruneCacheAsync([latestPatch]);
+            Assert.Equal(updated.Root, Assert.Single(Directory.EnumerateDirectories(cache)));
+        }
+        finally
+        {
+            if (Directory.Exists(cache))
+                Directory.Delete(cache, recursive: true);
+        }
+    }
 }

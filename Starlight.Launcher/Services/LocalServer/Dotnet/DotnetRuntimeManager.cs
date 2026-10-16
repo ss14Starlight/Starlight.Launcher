@@ -29,10 +29,12 @@ public sealed partial class DotnetRuntimeManager
 {
     private const string InstallMarkerFileName = ".starlight-install-complete";
     private const string TempDirPrefix = ".tmp-";
+    private const string UpdateCheckFilePrefix = ".update-check-";
 
     private const string ReleaseMetadataUrl = "https://builds.dotnet.microsoft.com/dotnet/release-metadata/{0}/releases.json";
 
     private static readonly TimeSpan SystemProbeTimeout = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan UpdateCheckInterval = TimeSpan.FromDays(3);
 
     private static string MuxerFileName => OperatingSystem.IsWindows() ? "dotnet.exe" : "dotnet";
 
@@ -40,6 +42,11 @@ public sealed partial class DotnetRuntimeManager
     private readonly Func<string> _cacheDirectory;
 
     private readonly SemaphoreSlim _cacheLock = new(1, 1);
+
+    private readonly Lock _updateLock = new();
+    private readonly HashSet<string> _stagingDirs = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _updatingChannels = new(StringComparer.Ordinal);
+    private readonly List<Task> _backgroundUpdates = [];
 
     public DotnetRuntimeManager(HttpClient http, SettingsService settings)
         : this(http, () => Path.Combine(settings.GetSettings().DirLauncherData, "dotnet"))
@@ -63,7 +70,10 @@ public sealed partial class DotnetRuntimeManager
         try
         {
             if (PickBest(ScanCache(), requirements) is { } cached)
+            {
+                ScheduleUpdateCheck(requirements, cached);
                 return cached;
+            }
 
             if (PickBest(await ProbeSystemAsync(cancel), requirements) is { } system)
                 return system;
@@ -91,9 +101,13 @@ public sealed partial class DotnetRuntimeManager
                 .OfType<string>()
                 .ToHashSet(StringComparer.Ordinal);
 
+            HashSet<string> staging;
+            lock (_updateLock)
+                staging = [.. _stagingDirs];
+
             foreach (var dir in Directory.EnumerateDirectories(cacheDir))
             {
-                if (keep.Contains(dir))
+                if (keep.Contains(dir) || staging.Contains(dir))
                     continue;
 
                 try
@@ -256,7 +270,7 @@ public sealed partial class DotnetRuntimeManager
         }
     }
 
-    private sealed record RuntimeArchive(string Flavor, string Version, string Rid, string Url, string Sha512);
+    private sealed record RuntimeArchive(string Flavor, RuntimeVersion Version, string Rid, string Url, string Sha512);
 
     private async Task<DotnetInstallation> DownloadAsync(
         DotnetRuntimeRequirements requirements,
@@ -276,75 +290,203 @@ public sealed partial class DotnetRuntimeManager
             throw new LocalServerRuntimeUnavailableException(displayVersion, e);
         }
 
-        var cacheDir = CacheDirectory;
-        EnsureDirectoryExists(cacheDir);
-
-        var finalDir = Path.Combine(cacheDir, $"{archive.Flavor}-{archive.Version}-{archive.Rid}");
-        var tempDir = Path.Combine(cacheDir, TempDirPrefix + Guid.NewGuid().ToString("N"));
-
-        Log.Information("Downloading .NET {Flavor} {Version} ({Rid}) from {Url}", archive.Flavor, archive.Version, archive.Rid, archive.Url);
-
+        var tempDir = NewTempDir();
         try
         {
-            await using var tempFile = TempFile.CreateTempFile();
+            await StageAsync(archive, tempDir, progress, displayVersion, cancel);
+            var install = Commit(archive, tempDir);
 
-            progress?.Invoke(new DotnetInstallProgress(archive.Version, Installing: false));
-            try
-            {
-                await _http.DownloadToStream(
-                    archive.Url,
-                    tempFile,
-                    (downloaded, total) => progress?.Invoke(new DotnetInstallProgress(archive.Version, false, downloaded, total)),
-                    cancel);
-            }
-            catch (Exception e) when (IsNetworkError(e, cancel))
-            {
-                throw new LocalServerRuntimeUnavailableException(displayVersion, e);
-            }
+            MarkUpdateChecked(requirements);
 
-            progress?.Invoke(new DotnetInstallProgress(archive.Version, Installing: true));
-
-            _ = tempFile.Seek(0, SeekOrigin.Begin);
-            var actualSha = Convert.ToHexString(await SHA512.HashDataAsync(tempFile, cancel));
-            if (!string.Equals(actualSha, archive.Sha512, StringComparison.OrdinalIgnoreCase))
-                throw new UpdateException($"Downloaded .NET runtime hash mismatch: expected {archive.Sha512}, got {actualSha}.");
-
-            _ = tempFile.Seek(0, SeekOrigin.Begin);
-            _ = Directory.CreateDirectory(tempDir);
-
-            if (archive.Url.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
-            {
-                ExtractZipToDirectory(tempDir, tempFile);
-            }
-            else
-            {
-                await using var gzip = new GZipStream(tempFile, CompressionMode.Decompress, leaveOpen: true);
-                await TarFile.ExtractToDirectoryAsync(gzip, tempDir, overwriteFiles: true, cancel);
-            }
-
-            var muxer = Path.Combine(tempDir, MuxerFileName);
-            if (!File.Exists(muxer))
-                throw new UpdateException("Downloaded .NET runtime archive does not contain the dotnet host.");
-
-            if (!OperatingSystem.IsWindows())
-                ChmodPlusX(muxer);
-
-            await File.WriteAllTextAsync(Path.Combine(tempDir, InstallMarkerFileName), archive.Sha512, cancel);
-
-            if (Directory.Exists(finalDir))
-                Directory.Delete(finalDir, recursive: true);
-
-            Directory.Move(tempDir, finalDir);
+            return requirements.IsSatisfiedBy(install.Frameworks)
+                ? install
+                : throw new UpdateException($"Downloaded .NET {archive.Version} does not satisfy the server requirements.");
         }
         finally
         {
             TryDeleteDirectory(tempDir);
         }
+    }
 
-        var install = new DotnetInstallation(finalDir, Path.Combine(finalDir, MuxerFileName), ScanSharedFrameworks(finalDir), IsLauncherManaged: true);
-        return requirements.IsSatisfiedBy(install.Frameworks)
-            ? install
-            : throw new UpdateException($"Downloaded .NET {archive.Version} does not satisfy the server requirements.");
+    private string NewTempDir()
+    {
+        var cacheDir = CacheDirectory;
+        EnsureDirectoryExists(cacheDir);
+        return Path.Combine(cacheDir, TempDirPrefix + Guid.NewGuid().ToString("N"));
+    }
+
+    private async Task StageAsync(
+        RuntimeArchive archive,
+        string tempDir,
+        Action<DotnetInstallProgress>? progress,
+        string displayVersion,
+        CancellationToken cancel)
+    {
+        var version = archive.Version.ToString();
+
+        Log.Information("Downloading .NET {Flavor} {Version} ({Rid}) from {Url}", archive.Flavor, version, archive.Rid, archive.Url);
+
+        await using var tempFile = TempFile.CreateTempFile();
+
+        progress?.Invoke(new DotnetInstallProgress(version, Installing: false));
+        try
+        {
+            await _http.DownloadToStream(
+                archive.Url,
+                tempFile,
+                (downloaded, total) => progress?.Invoke(new DotnetInstallProgress(version, false, downloaded, total)),
+                cancel);
+        }
+        catch (Exception e) when (IsNetworkError(e, cancel))
+        {
+            throw new LocalServerRuntimeUnavailableException(displayVersion, e);
+        }
+
+        progress?.Invoke(new DotnetInstallProgress(version, Installing: true));
+
+        _ = tempFile.Seek(0, SeekOrigin.Begin);
+        var actualSha = Convert.ToHexString(await SHA512.HashDataAsync(tempFile, cancel));
+        if (!string.Equals(actualSha, archive.Sha512, StringComparison.OrdinalIgnoreCase))
+            throw new UpdateException($"Downloaded .NET runtime hash mismatch: expected {archive.Sha512}, got {actualSha}.");
+
+        _ = tempFile.Seek(0, SeekOrigin.Begin);
+        _ = Directory.CreateDirectory(tempDir);
+
+        if (archive.Url.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+        {
+            ExtractZipToDirectory(tempDir, tempFile);
+        }
+        else
+        {
+            await using var gzip = new GZipStream(tempFile, CompressionMode.Decompress, leaveOpen: true);
+            await TarFile.ExtractToDirectoryAsync(gzip, tempDir, overwriteFiles: true, cancel);
+        }
+
+        var muxer = Path.Combine(tempDir, MuxerFileName);
+        if (!File.Exists(muxer))
+            throw new UpdateException("Downloaded .NET runtime archive does not contain the dotnet host.");
+
+        if (!OperatingSystem.IsWindows())
+            ChmodPlusX(muxer);
+
+        await File.WriteAllTextAsync(Path.Combine(tempDir, InstallMarkerFileName), archive.Sha512, cancel);
+    }
+
+    private DotnetInstallation Commit(RuntimeArchive archive, string tempDir)
+    {
+        var finalDir = Path.Combine(CacheDirectory, $"{archive.Flavor}-{archive.Version}-{archive.Rid}");
+
+        if (Directory.Exists(finalDir))
+            Directory.Delete(finalDir, recursive: true);
+
+        Directory.Move(tempDir, finalDir);
+
+        return new DotnetInstallation(finalDir, Path.Combine(finalDir, MuxerFileName), ScanSharedFrameworks(finalDir), IsLauncherManaged: true);
+    }
+
+    private void ScheduleUpdateCheck(DotnetRuntimeRequirements requirements, DotnetInstallation cached)
+    {
+        if (!IsUpdateCheckDue(requirements))
+            return;
+
+        var key = UpdateCheckKey(requirements);
+        lock (_updateLock)
+        {
+            if (!_updatingChannels.Add(key))
+                return;
+
+            _ = _backgroundUpdates.RemoveAll(t => t.IsCompleted);
+            _backgroundUpdates.Add(Task.Run(async () =>
+            {
+                try
+                {
+                    await UpdateAsync(requirements, cached);
+                }
+                catch (Exception e)
+                {
+                    Log.Warning(e, "Background update of the .NET {Version} runtime failed", requirements.DisplayVersion);
+                }
+                finally
+                {
+                    lock (_updateLock)
+                        _ = _updatingChannels.Remove(key);
+                }
+            }));
+        }
+    }
+
+    internal Task WaitForBackgroundUpdatesAsync()
+    {
+        lock (_updateLock)
+            return Task.WhenAll(_backgroundUpdates);
+    }
+
+    private async Task UpdateAsync(DotnetRuntimeRequirements requirements, DotnetInstallation cached)
+    {
+        var archive = await FindArchiveAsync(requirements, CancellationToken.None);
+
+        var framework = requirements.NeedsAspNetCore ? DotnetRuntimeRequirements.AspNetCoreApp : DotnetRuntimeRequirements.NetCoreApp;
+        var current = cached.Frameworks[framework].Max();
+
+        if (archive is null || archive.Version <= current)
+        {
+            MarkUpdateChecked(requirements);
+            return;
+        }
+
+        Log.Information("Updating cached .NET runtime {Current} to {Version}", current, archive.Version);
+
+        var tempDir = NewTempDir();
+        lock (_updateLock)
+            _ = _stagingDirs.Add(tempDir);
+
+        try
+        {
+            await StageAsync(archive, tempDir, progress: null, requirements.DisplayVersion, CancellationToken.None);
+
+            await _cacheLock.WaitAsync();
+            try
+            {
+                _ = Commit(archive, tempDir);
+            }
+            finally
+            {
+                _ = _cacheLock.Release();
+            }
+
+            MarkUpdateChecked(requirements);
+        }
+        finally
+        {
+            lock (_updateLock)
+                _ = _stagingDirs.Remove(tempDir);
+            TryDeleteDirectory(tempDir);
+        }
+    }
+
+    private static string UpdateCheckKey(DotnetRuntimeRequirements requirements) =>
+        $"{(requirements.NeedsAspNetCore ? "aspnetcore" : "runtime")}-{requirements.DisplayVersion}";
+
+    private string UpdateCheckPath(DotnetRuntimeRequirements requirements) =>
+        Path.Combine(CacheDirectory, UpdateCheckFilePrefix + UpdateCheckKey(requirements));
+
+    private bool IsUpdateCheckDue(DotnetRuntimeRequirements requirements)
+    {
+        var path = UpdateCheckPath(requirements);
+        return !File.Exists(path) || DateTime.UtcNow - File.GetLastWriteTimeUtc(path) >= UpdateCheckInterval;
+    }
+
+    private void MarkUpdateChecked(DotnetRuntimeRequirements requirements)
+    {
+        try
+        {
+            File.WriteAllText(UpdateCheckPath(requirements), "");
+            File.SetLastWriteTimeUtc(UpdateCheckPath(requirements), DateTime.UtcNow);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            Log.Warning(e, "Failed to record the .NET runtime update check time");
+        }
     }
 
     private async Task<RuntimeArchive?> FindArchiveAsync(DotnetRuntimeRequirements requirements, CancellationToken cancel)
@@ -386,7 +528,7 @@ public sealed partial class DotnetRuntimeManager
                 if (rid is null || url is null || hash is null || !IsRuntimeArchive(name, flavor))
                     continue;
 
-                archives[rid] = new RuntimeArchive(componentKey == "runtime" ? "runtime" : "aspnetcore", componentVersion.ToString(), rid, url, hash);
+                archives[rid] = new RuntimeArchive(componentKey == "runtime" ? "runtime" : "aspnetcore", componentVersion, rid, url, hash);
             }
 
             var bestRid = RidUtility.FindBestRid(archives.Keys);
