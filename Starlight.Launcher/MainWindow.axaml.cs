@@ -69,10 +69,10 @@ public partial class MainWindow : Window
             LinuxWebViewSetup.Configure(Web);
 
             Web.IsVisible = false;
-            Web.NavigationStarted += (_, e) => Log.Information("WebView navigation started: {Url}", e.Request);
+            Web.NavigationStarted += (_, e) => Log.Information("WebView navigation started: {Url}", e.Request?.GetLeftPart(UriPartial.Path));
             Web.NavigationCompleted += (_, e) =>
             {
-                Log.Information("WebView navigation completed: {Url}, success {Success}", e.Request, e.IsSuccess);
+                Log.Information("WebView navigation completed: {Url}, success {Success}", e.Request?.GetLeftPart(UriPartial.Path), e.IsSuccess);
                 Web.IsVisible = true;
 
                 if (!e.IsSuccess)
