@@ -107,24 +107,48 @@ public partial class App : Application
                 var sw = System.Diagnostics.Stopwatch.StartNew();
                 Log.Information("Shutdown: starting");
 
-                await Services.GetRequiredService<LocalServerManager>().StopAndWaitAsync();
-                Log.Information("Shutdown: local server stopped at {Elapsed}", sw.Elapsed);
+                async Task Step(string name, Func<Task> action, TimeSpan timeout)
+                {
+                    try
+                    {
+                        await action().WaitAsync(timeout);
+                        Log.Information("Shutdown: {Step} done at {Elapsed}", name, sw.Elapsed);
+                    }
+                    catch (TimeoutException)
+                    {
+                        Log.Warning("Shutdown: {Step} timed out after {Timeout}, skipping", name, timeout);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Shutdown: {Step} failed", name);
+                    }
+                }
 
-                commands.Shutdown();
-                Log.Information("Shutdown: commands stopped at {Elapsed}", sw.Elapsed);
+                try
+                {
+                    await Step("local server stop",
+                        () => Services.GetRequiredService<LocalServerManager>().StopAndWaitAsync(),
+                        TimeSpan.FromSeconds(10));
 
-                messaging.StopAndWait();
-                Log.Information("Shutdown: IPC messaging stopped at {Elapsed}", sw.Elapsed);
+                    await Step("commands stop", () =>
+                    {
+                        commands.Shutdown();
+                        return Task.CompletedTask;
+                    }, TimeSpan.FromSeconds(2));
 
-                // Fix long shutdown time
-                await Task.Run(async () => await _blazorHost.DisposeAsync());
-                Log.Information("Shutdown: Blazor host disposed at {Elapsed}", sw.Elapsed);
+                    await Step("IPC messaging stop", () => Task.Run(messaging.StopAndWait), TimeSpan.FromSeconds(3));
 
-                await settings.FlushPendingSavesAsync();
-                Log.Information("Shutdown: settings flushed at {Elapsed}", sw.Elapsed);
+                    await Step("Blazor host dispose",
+                        () => Task.Run(async () => await _blazorHost.DisposeAsync()),
+                        TimeSpan.FromSeconds(5));
 
-                desktop.Shutdown();
-                Log.Information("Shutdown: complete at {Elapsed}", sw.Elapsed);
+                    await Step("settings flush", settings.FlushPendingSavesAsync, TimeSpan.FromSeconds(5));
+                }
+                finally
+                {
+                    desktop.Shutdown();
+                    Log.Information("Shutdown: complete at {Elapsed}", sw.Elapsed);
+                }
             };
 
             window.Closing += (_ , e) =>
