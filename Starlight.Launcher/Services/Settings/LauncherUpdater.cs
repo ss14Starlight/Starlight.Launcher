@@ -373,13 +373,30 @@ public partial class LauncherUpdater(SettingsService settings)
                 if [ "$i" -ge 175 ]; then echo "Could not stop $app"; break; fi
                 sleep 0.2
             done
+            echo "$(flatpak --version), user $(id -un)"
+            echo "user install: $(flatpak info --user --show-commit "$app" 2>/dev/null || echo none)"
+            echo "system install: $(flatpak info --system --show-commit "$app" 2>/dev/null || echo none)"
             if flatpak info --user "$app" >/dev/null 2>&1; then scope=--user; else scope=--system; fi
             before=$(flatpak info "$scope" --show-commit "$app" 2>/dev/null)
             echo "Installing update ($scope) over commit $before:" {Quote(bundlePath)}
-            flatpak install "$scope" -y --reinstall --bundle {Quote(bundlePath)} || echo "flatpak install failed with exit code $?"
+            flatpak install "$scope" -y --reinstall --bundle {Quote(bundlePath)}
+            rc=$?
+            if [ "$rc" -ne 0 ]; then
+                echo "flatpak install $scope failed with exit code $rc"
+                # A system install needs polkit, which can't ask for a password from here (SteamOS'
+                # deck user has none by default). A user install needs no rights and flatpak run
+                # prefers it over the system one.
+                if [ "$scope" = --system ]; then
+                    echo "Retrying as a user install"
+                    scope=--user
+                    before=$(flatpak info --user --show-commit "$app" 2>/dev/null)
+                    flatpak install --user -y --reinstall --bundle {Quote(bundlePath)} || echo "flatpak install --user failed with exit code $?"
+                fi
+            fi
             after=$(flatpak info "$scope" --show-commit "$app" 2>/dev/null)
-            if [ -n "$after" ] && [ "$after" != "$before" ]; then echo "{FlatpakUpdateApplied} $after"; else echo "{FlatpakUpdateNotApplied}"; fi
-            exec flatpak run "$app"
+            if [ -n "$after" ] && [ "$after" != "$before" ]; then echo "{FlatpakUpdateApplied} $scope $after"; else echo "{FlatpakUpdateNotApplied}"; fi
+            # Not into the log: the launcher's own console output would bury the lines above.
+            exec flatpak run "$app" >/dev/null 2>&1
             """;
 
         _ = Process.Start(new ProcessStartInfo
@@ -413,7 +430,12 @@ public partial class LauncherUpdater(SettingsService settings)
             if (lines.Any(l => l.StartsWith(FlatpakUpdateApplied, StringComparison.Ordinal)))
                 return null;
 
-            return string.Join('\n', lines.TakeLast(15));
+            var script = lines
+                .TakeWhile(l => !l.StartsWith(FlatpakUpdateNotApplied, StringComparison.Ordinal))
+                .Where(l => !l.StartsWith('['))
+                .TakeLast(25);
+
+            return string.Join('\n', script);
         }
         catch (IOException)
         {
