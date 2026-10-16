@@ -1,4 +1,5 @@
 using System.IO.MemoryMappedFiles;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using Dapper;
@@ -204,6 +205,7 @@ public sealed partial class EngineManagerDynamic : IEngineManager
     {
         Exception? lastError = null;
         var queue = new List<string>(urls);
+        var sink = new LocalWriteStream(file);
 
         for (var i = 0; ; i++)
         {
@@ -231,11 +233,16 @@ public sealed partial class EngineManagerDynamic : IEngineManager
 
             try
             {
-                file.SetLength(0);
-                file.Seek(0, SeekOrigin.Begin);
-                await _http.DownloadToStream(url, file, progress, cancel);
+                sink.Reset();
+                await _http.DownloadToStream(url, sink, progress, cancel);
+                await sink.FlushAsync(cancel);
                 await verify(file);
                 return;
+            }
+            catch (LocalWriteException e)
+            {
+                Log.Error(e.InnerException, "Writing download from {DownloadUrl} to disk failed", url);
+                ExceptionDispatchInfo.Throw(e.InnerException!);
             }
             catch (Exception e) when (!cancel.IsCancellationRequested)
             {
