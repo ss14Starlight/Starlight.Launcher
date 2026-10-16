@@ -55,8 +55,7 @@ public partial class App : Application
             await _blazorHost.StartAsync(Services);
 
             await Services.GetRequiredService<ILocalizationManager>().Initialize();
-            if (OperatingSystem.IsWindows())
-                Services.GetRequiredService<DiscordRichPresence>().Initialize();
+            Services.GetRequiredService<DiscordRichPresence>().Initialize();
 
             var settings = Services.GetRequiredService<SettingsService>();
             _ = Task.Run(async () => await settings.InitializeLoginsAsync());
