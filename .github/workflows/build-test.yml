@@ -7,6 +7,7 @@ env:
   DOTNET_VERSION: '11.0.x'
   MAIN_PROJECT: 'Starlight.Launcher/Starlight.Launcher.csproj'
   LOADER_PROJECT: 'Robust.Loader/Robust.Loader.csproj'
+  TEST_PROJECT: 'Starlight.Launcher.Tests/Starlight.Launcher.Tests.csproj'
 
 jobs:
   build:
@@ -35,3 +36,6 @@ jobs:
       - name: Build loader
         shell: bash
         run: dotnet build ${{ env.LOADER_PROJECT }} -c Release -r ${{ matrix.rid }}
+      - name: Run tests
+        shell: bash
+        run: dotnet test ${{ env.TEST_PROJECT }} -c Release

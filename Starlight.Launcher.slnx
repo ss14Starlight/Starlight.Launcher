@@ -5,4 +5,5 @@
   <Project Path="Starlight.Launcher.Analyzer/Starlight.Launcher.Analyzer.csproj" />
   <Project Path="Starlight.Launcher.WebUI/Starlight.Launcher.WebUI.csproj" />
   <Project Path="Starlight.Launcher/Starlight.Launcher.csproj" />
+  <Project Path="Starlight.Launcher.Tests/Starlight.Launcher.Tests.csproj" />
 </Solution>

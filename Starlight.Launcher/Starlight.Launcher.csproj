@@ -31,6 +31,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<InternalsVisibleTo Include="Starlight.Launcher.Tests" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<AvaloniaResource Include="Resources\AppIcon\**" />
 		<AvaloniaResource Include="Resources\Images\**" />
 		<AvaloniaResource Include="Resources\Fonts\**" />
