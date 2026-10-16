@@ -435,8 +435,8 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
                 cVars.Add(("STARLIGHT_AUTH_STEAMTOKEN", steam.Token));
             cVars.Add(("ROBUST_AUTH_USERID", account.LoginInfo.UserId.ToString()));
             cVars.Add(("ROBUST_AUTH_PUBKEY", info.AuthInformation.PublicKey));
-            if (settings.SelectedAuthServer != null)
-                cVars.Add(("ROBUST_AUTH_SERVER", settings.SelectedAuthServer));
+            if ((account.LoginInfo.AuthServerUrl ?? settings.SelectedAuthServer) is { } authServer)
+                cVars.Add(("ROBUST_AUTH_SERVER", authServer));
         }
 
         try
