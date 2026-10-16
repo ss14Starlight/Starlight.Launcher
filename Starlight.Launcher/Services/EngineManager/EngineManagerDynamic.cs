@@ -148,18 +148,22 @@ public sealed partial class EngineManagerDynamic : IEngineManager
 
         Log.Information("Installing engine version {version}...", foundVersion.Version);
 
-        Log.Debug("Downloading engine: {EngineDownloadUrl}", buildInfo.Url);
-
         EnsureDirectoryExists(settings.DirEngineInstallations);
 
         var downloadTarget = Path.Combine(settings.DirEngineInstallations, $"{foundVersion.Version}.zip");
-        await using var file = File.Create(downloadTarget, 4096, FileOptions.Asynchronous);
+        var file = File.Create(downloadTarget, 4096, FileOptions.Asynchronous);
 
         try
         {
-            await _http.DownloadToStream(buildInfo.Url, file, progress, cancel: cancel);
+            var urls = ExpandMirrors(buildInfo.Url, [foundVersion.Cdn]);
+
+            await DownloadFromMirrors(urls, file, VerifySha, progress, cancel, async () =>
+            {
+                var more = await GetSameEngineBuildOnOtherCdns(foundVersion, bestRid, buildInfo.Sha256, cancel);
+                return [.. more.SelectMany(x => ExpandMirrors(x.Url, [x.Cdn])).Except(urls, StringComparer.OrdinalIgnoreCase)];
+            });
         }
-        catch (OperationCanceledException)
+        catch
         {
             // Don't leave behind garbage.
             await file.DisposeAsync();
@@ -168,19 +172,98 @@ public sealed partial class EngineManagerDynamic : IEngineManager
             throw;
         }
 
-        file.Seek(0, SeekOrigin.Begin);
-        var actualSha = await ComputeSha256Hex(file, cancel);
+        await file.DisposeAsync();
 
-        if (!string.Equals(actualSha, buildInfo.Sha256, StringComparison.OrdinalIgnoreCase))
+        _settings.AddInstalledEngine(new InstalledEngineVersion(foundVersion.Version, buildInfo.Signature, buildInfo.Sha256));
+        return new EngineInstallationResult(foundVersion.Version, true);
+
+        async Task VerifySha(FileStream stream)
         {
-            await file.DisposeAsync();
-            File.Delete(downloadTarget);
-            throw new UpdateException(
-                $"Downloaded engine {foundVersion.Version} hash mismatch: expected {buildInfo.Sha256}, got {actualSha}.");
+            stream.Seek(0, SeekOrigin.Begin);
+            var actualSha = await ComputeSha256Hex(stream, cancel);
+
+            if (!string.Equals(actualSha, buildInfo.Sha256, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new UpdateException(
+                    $"Downloaded engine {foundVersion.Version} hash mismatch: expected {buildInfo.Sha256}, got {actualSha}.");
+            }
+        }
+    }
+
+    private async Task DownloadFromMirrors(
+        IReadOnlyList<string> urls,
+        FileStream file,
+        Func<FileStream, Task> verify,
+        DownloadProgressCallback? progress,
+        CancellationToken cancel,
+        Func<Task<IReadOnlyList<string>>>? moreUrls = null)
+    {
+        Exception? lastError = null;
+        var queue = new List<string>(urls);
+
+        for (var i = 0; ; i++)
+        {
+            if (i == queue.Count)
+            {
+                if (moreUrls == null)
+                    break;
+
+                try
+                {
+                    queue.AddRange(await moreUrls());
+                }
+                catch (Exception e) when (!cancel.IsCancellationRequested)
+                {
+                    Log.Warning(e, "Failed to look up fallback download URLs");
+                }
+
+                moreUrls = null;
+                if (i == queue.Count)
+                    break;
+            }
+
+            var url = queue[i];
+            Log.Debug("Downloading {DownloadUrl}", url);
+
+            try
+            {
+                file.SetLength(0);
+                file.Seek(0, SeekOrigin.Begin);
+                await _http.DownloadToStream(url, file, progress, cancel);
+                await verify(file);
+                return;
+            }
+            catch (Exception e) when (!cancel.IsCancellationRequested)
+            {
+                lastError = e;
+                Log.Warning(e, "Download from {DownloadUrl} failed, trying the next mirror", url);
+            }
         }
 
-        _settings.AddInstalledEngine(new InstalledEngineVersion(foundVersion.Version, buildInfo.Signature, actualSha));
-        return new EngineInstallationResult(foundVersion.Version, true);
+        throw lastError ?? new UpdateException("No download URLs available.");
+    }
+
+    private static List<string> ExpandMirrors(string url, IEnumerable<RobustCdn> cdns)
+    {
+        var result = new List<string> { url };
+
+        foreach (var cdn in cdns)
+        {
+            var mirrors = cdn.BaseUrl.Urls;
+            var own = mirrors.FirstOrDefault(m => url.StartsWith(m, StringComparison.OrdinalIgnoreCase));
+            if (own == null)
+                continue;
+
+            var path = url[own.Length..];
+            foreach (var mirror in mirrors)
+            {
+                var candidate = mirror + path;
+                if (!result.Contains(candidate, StringComparer.OrdinalIgnoreCase))
+                    result.Add(candidate);
+            }
+        }
+
+        return result;
     }
 
     private static async Task<string> ComputeSha256Hex(Stream stream, CancellationToken cancel)
@@ -290,8 +373,6 @@ public sealed partial class EngineManagerDynamic : IEngineManager
 
         var platformData = versionData.Platforms[bestRid];
 
-        Log.Debug("Downloading module: {EngineDownloadUrl}", platformData.Url);
-
         GetModulePaths(
             moduleName,
             moduleVersion,
@@ -304,24 +385,12 @@ public sealed partial class EngineManagerDynamic : IEngineManager
             await using var tempFile = TempFile.CreateTempFile();
             Log.Debug("Downloading into temp file: {TempFilePath}", tempFile.Name);
 
-            await _http.DownloadToStream(platformData.Url, tempFile, progress, cancel);
-
-            // Verify signature.
-            tempFile.Seek(0, SeekOrigin.Begin);
-
-            if (!VerifyAgainstAnyCdn(tempFile, platformData.Sig))
-            {
-#if DEBUG
-                if (settings.DisableSigning)
-                {
-                    Log.Debug("Signature check failed for module, ignoring because signing disabled");
-                }
-                else
-#endif
-                {
-                    throw new UpdateException("Failed to verify module signature!");
-                }
-            }
+            await DownloadFromMirrors(
+                ExpandMirrors(platformData.Url, _cdns.Cdns),
+                tempFile,
+                VerifyModuleSignature,
+                progress,
+                cancel);
 
             // Done downloading, extract...
             Log.Debug("Download complete, extracting into: {TempFilePath}", moduleVersionDiskPath);
@@ -340,6 +409,24 @@ public sealed partial class EngineManagerDynamic : IEngineManager
 
         return true;
 
+        Task VerifyModuleSignature(FileStream stream)
+        {
+            if (!VerifyAgainstAnyCdn(stream, platformData.Sig))
+            {
+#if DEBUG
+                if (settings.DisableSigning)
+                {
+                    Log.Debug("Signature check failed for module, ignoring because signing disabled");
+                }
+                else
+#endif
+                {
+                    throw new UpdateException("Failed to verify module signature!");
+                }
+            }
+
+            return Task.CompletedTask;
+        }
     }
 
     private async Task CopyOverrideModule(string name)

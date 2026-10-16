@@ -30,6 +30,16 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
     // How many bytes a compression attempt needs to save to be considered "worth it".
     private const int CompressionSavingsThreshold = 10;
 
+    // Pauses before each automatic retry of a download that failed on a network error.
+    // Content blobs that made it are kept as an interrupted download, so each retry only fetches the rest.
+    private static readonly TimeSpan[] RetryDelays =
+    [
+        TimeSpan.FromSeconds(2),
+        TimeSpan.FromSeconds(5),
+        TimeSpan.FromSeconds(10),
+        TimeSpan.FromSeconds(20),
+    ];
+
     private static readonly IDeserializer _resourceManifestDeserializer =
         new DeserializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
@@ -46,6 +56,7 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
     public UpdateStatus Status { get; private set; }
     public (long downloaded, long total, ProgressUnit unit)? Progress { get; private set; }
     public long? Speed { get; private set; }
+    public (int attempt, int max)? Retry { get; private set; }
 
     public bool IsUpdating { get; private set; }
 
@@ -84,6 +95,7 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
         {
             Progress = null;
             Speed = null;
+            Retry = null;
             IsUpdating = false;
             _presence.SetActive(PresenceState.DownloadingContent, false);
         }
@@ -99,14 +111,16 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
 
         // Both content downloading and engine downloading MAY need the manifest.
         // So use a Lazy<Task<T>> to avoid loading it twice.
-        var moduleManifest =
-            new Lazy<Task<EngineModuleManifest>>(() => _engineManager.GetEngineModuleManifest(cancel));
+        var moduleManifest = NewModuleManifest(cancel);
 
         // ReSharper disable once UseAwaitUsing
         using var con = _manager.GetSqliteConnection();
-        var versionRowId = await Task.Run(
-            () => TouchOrDownloadContentUpdateTransacted(buildInfo, con, moduleManifest, cancel),
-            CancellationToken.None);
+        var versionRowId = await RetryTransientAsync(
+            () => Task.Run(
+                () => TouchOrDownloadContentUpdateTransacted(buildInfo, con, moduleManifest, cancel),
+                CancellationToken.None),
+            () => moduleManifest = ResetIfFaulted(moduleManifest, cancel),
+            cancel);
 
         Log.Debug("Checking to cull old content versions...");
 
@@ -128,9 +142,7 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
 
         // Both content downloading and engine downloading MAY need the manifest.
         // So use a Lazy<Task<T>> to avoid loading it twice.
-        var moduleManifest = new Lazy<Task<EngineModuleManifest>>(
-            () => _engineManager.GetEngineModuleManifest(cancel)
-        );
+        var moduleManifest = NewModuleManifest(cancel);
 
         var versionId = await Task.Run(async () =>
         {
@@ -259,19 +271,28 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
                 if (name == "Robust")
                 {
                     // Engine version may change here due to manifest version redirects.
-                    var newEngineVersion = await InstallEngineVersionIfMissing(version, cancel);
+                    var newEngineVersion = await RetryTransientAsync(
+                        () => InstallEngineVersionIfMissing(version, cancel),
+                        null,
+                        cancel);
                     modules[index] = (name, newEngineVersion);
                 }
                 else
                 {
-                    Status = UpdateStatus.DownloadingEngineModules;
+                    _ = await RetryTransientAsync(
+                        async () =>
+                        {
+                            Status = UpdateStatus.DownloadingEngineModules;
 
-                    var manifest = await moduleManifest.Value;
-                    _ = await _engineManager.DownloadModuleIfNecessary(
-                        name,
-                        version,
-                        manifest,
-                        DownloadProgressCallback,
+                            var manifest = await moduleManifest.Value;
+                            return await _engineManager.DownloadModuleIfNecessary(
+                                name,
+                                version,
+                                manifest,
+                                DownloadProgressCallback,
+                                cancel);
+                        },
+                        () => moduleManifest = ResetIfFaulted(moduleManifest, cancel),
                         cancel);
                 }
             }
@@ -285,6 +306,43 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
         Log.Information("Update done!");
         return new ContentLaunchInfo(versionRowId, modules);
     }
+
+    private async Task<T> RetryTransientAsync<T>(Func<Task<T>> attempt, Action? beforeRetry, CancellationToken cancel)
+    {
+        var maxAttempts = RetryDelays.Length + 1;
+
+        for (var i = 0; ; i++)
+        {
+            try
+            {
+                var result = await attempt();
+                Retry = null;
+                return result;
+            }
+            catch (Exception e) when (i < RetryDelays.Length
+                                      && !cancel.IsCancellationRequested
+                                      && TransientDownloadError.IsTransient(e))
+            {
+                var delay = RetryDelays[i];
+                Log.Warning(e, "Download failed on a network error, retrying in {Delay} (attempt {Attempt}/{Max})",
+                    delay, i + 2, maxAttempts);
+
+                Progress = null;
+                Speed = null;
+                Retry = (i + 2, maxAttempts);
+                Status = UpdateStatus.RetryingDownload;
+
+                await Task.Delay(delay, cancel);
+                beforeRetry?.Invoke();
+            }
+        }
+    }
+
+    private Lazy<Task<EngineModuleManifest>> NewModuleManifest(CancellationToken cancel) =>
+        new(() => _engineManager.GetEngineModuleManifest(cancel));
+
+    private Lazy<Task<EngineModuleManifest>> ResetIfFaulted(Lazy<Task<EngineModuleManifest>> manifest, CancellationToken cancel) =>
+        manifest is { IsValueCreated: true, Value.IsFaulted: true } ? NewModuleManifest(cancel) : manifest;
 
     private void CullOldContentVersions(SqliteConnection con)
     {

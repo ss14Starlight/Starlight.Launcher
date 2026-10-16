@@ -16,4 +16,5 @@ public enum UpdateStatus
     Ready,
     Error,
     LoadingContentBundle,
+    RetryingDownload,
 }

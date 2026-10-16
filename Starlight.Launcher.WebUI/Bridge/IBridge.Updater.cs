@@ -11,4 +11,6 @@ public partial interface IBridge
     (long downloaded, long total, ProgressUnit unit)? GetUpdateProgress();
 
     UpdateStatus GetUpdateStatus();
+
+    (int attempt, int max)? GetUpdateRetry();
 }

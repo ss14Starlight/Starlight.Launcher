@@ -87,6 +87,53 @@ public sealed partial class EngineManagerDynamic
         return null;
     }
 
+    private async Task<List<(string Url, RobustCdn Cdn)>> GetSameEngineBuildOnOtherCdns(
+        FoundVersionInfo found,
+        string rid,
+        string sha256,
+        CancellationToken cancel)
+    {
+        var result = new List<(string, RobustCdn)>();
+
+        await _manifestSemaphore.WaitAsync(cancel);
+        try
+        {
+            foreach (var cdn in _cdns.Cdns)
+            {
+                if (ReferenceEquals(cdn, found.Cdn))
+                    continue;
+
+                var cache = GetOrCreateCache(cdn);
+                try
+                {
+                    if (cache.Versions == null || cache.ValidUntil <= _manifestStopwatch.Elapsed)
+                        await UpdateBuildManifest(cdn, cache, cancel);
+                }
+                catch (Exception e) when (!cancel.IsCancellationRequested)
+                {
+                    Log.Warning(e, "Failed to load engine manifest from fallback CDN {Cdn}", cdn.Name);
+                    continue;
+                }
+
+                if (FindVersionInfoInCached(cdn, cache, found.Version, followRedirects: false) is not { } other
+                    || other.Info.Insecure
+                    || !other.Info.Platforms.TryGetValue(rid, out var build)
+                    || !string.Equals(build.Sha256, sha256, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                result.Add((build.Url, cdn));
+            }
+        }
+        finally
+        {
+            _ = _manifestSemaphore.Release();
+        }
+
+        return result;
+    }
+
     private async Task UpdateBuildManifest(RobustCdn cdn, CdnManifestCache cache, CancellationToken cancel)
     {
         var manifestUrl = cdn.BuildsManifest;

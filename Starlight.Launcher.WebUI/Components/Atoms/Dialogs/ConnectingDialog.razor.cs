@@ -90,6 +90,8 @@ public sealed partial class ConnectingDialog : LocalizedComponentBase, IDisposab
             UpdateStatus.LoadingContentBundle => "Loading content bundle...",
             UpdateStatus.Verifying => "Verifying...",
             UpdateStatus.CommittingDownload => "Finishing up...",
+            UpdateStatus.RetryingDownload when _bridge.GetUpdateRetry() is { } r =>
+                L.GetString("connecting-dialog-retrying", ("attempt", r.attempt), ("max", r.max)),
             _ => "Checking for updates..."
         },
         ConnectionStatus.StartingClient => "Starting the game...",

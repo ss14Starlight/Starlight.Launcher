@@ -9,4 +9,6 @@ public sealed partial class Bridge : IBridge
     public (long downloaded, long total, ProgressUnit unit)? GetUpdateProgress() => _updater.Progress;
 
     public UpdateStatus GetUpdateStatus() => _updater.Status;
+
+    public (int attempt, int max)? GetUpdateRetry() => _updater.Retry;
 }
