@@ -58,22 +58,23 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
     public long? Speed { get; private set; }
     public (int attempt, int max)? Retry { get; private set; }
 
-    public bool IsUpdating { get; private set; }
+    private readonly SemaphoreSlim _updateLock = new(1, 1);
 
-    public Exception? UpdateException;
+    public bool IsUpdating => _updateLock.CurrentCount == 0;
 
-    public async Task<ContentLaunchInfo?> RunUpdateForLaunchAsync(ServerBuildInformation buildInformation, CancellationToken cancel = default) => await GuardUpdateAsync(() => RunUpdate(buildInformation, cancel));
+    public Task<ContentLaunchInfo> RunUpdateForLaunchAsync(ServerBuildInformation buildInformation, CancellationToken cancel = default) => GuardUpdateAsync(() => RunUpdate(buildInformation, cancel), cancel);
 
-    public async Task<ContentLaunchInfo?> InstallContentBundleForLaunchAsync(ZipArchive archive, byte[] zipHash, ContentBundleMetadata metadata, CancellationToken cancel = default) => await GuardUpdateAsync(() => InstallContentBundle(archive, zipHash, metadata, cancel));
+    public Task<ContentLaunchInfo> InstallContentBundleForLaunchAsync(ZipArchive archive, byte[] zipHash, ContentBundleMetadata metadata, CancellationToken cancel = default) => GuardUpdateAsync(() => InstallContentBundle(archive, zipHash, metadata, cancel), cancel);
 
-    private async Task<T?> GuardUpdateAsync<T>(Func<Task<T>> func) where T : class
+    private async Task<T> GuardUpdateAsync<T>(Func<Task<T>> func, CancellationToken cancel)
     {
-        if (IsUpdating)
-            throw new InvalidOperationException("Update already in progress.");
+        if (!_updateLock.Wait(0))
+        {
+            Log.Information("Another update is in progress, waiting for it to finish");
+            await _updateLock.WaitAsync(cancel);
+        }
 
-        IsUpdating = true;
         _presence.SetActive(PresenceState.DownloadingContent, true);
-        UpdateException = null;
 
         try
         {
@@ -88,19 +89,17 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
         catch (Exception e)
         {
             Status = UpdateStatus.Error;
-            UpdateException = e;
             Log.Error(e, "Exception while trying to run updates");
+            throw;
         }
         finally
         {
             Progress = null;
             Speed = null;
             Retry = null;
-            IsUpdating = false;
             _presence.SetActive(PresenceState.DownloadingContent, false);
+            _ = _updateLock.Release();
         }
-
-        return null;
     }
 
     private async Task<ContentLaunchInfo> RunUpdate(

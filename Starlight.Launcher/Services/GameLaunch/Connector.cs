@@ -597,15 +597,21 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
 
     private async Task<ContentLaunchInfo> RunUpdateAsync(ServerBuildInformation info, CancellationToken cancel)
     {
-        var installation = await _updater.RunUpdateForLaunchAsync(info, cancel);
-        return installation ?? throw UpdateFailed();
+        try
+        {
+            return await _updater.RunUpdateForLaunchAsync(info, cancel);
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            throw UpdateFailed(e);
+        }
     }
 
-    private ConnectException UpdateFailed() => _updater.UpdateException switch
+    private static ConnectException UpdateFailed(Exception e) => e switch
     {
-        var e when DataDirectoryAccess.IsAccessDenied(e) => new ConnectException(ConnectionStatus.AccessDenied, e!),
-        DownloadStalledException e => new ConnectException(ConnectionStatus.DownloadStalled, e),
-        _ => new ConnectException(ConnectionStatus.UpdateError),
+        _ when DataDirectoryAccess.IsAccessDenied(e) => new ConnectException(ConnectionStatus.AccessDenied, e),
+        DownloadStalledException => new ConnectException(ConnectionStatus.DownloadStalled, e),
+        _ => new ConnectException(ConnectionStatus.UpdateError, e),
     };
 
     private static ConnectionStatus GetFailureStatus(Exception e, ConnectionStatus fallback) =>
@@ -617,8 +623,14 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
         ContentBundleMetadata metadata,
         CancellationToken cancel)
     {
-        var installation = await _updater.InstallContentBundleForLaunchAsync(archive, zipHash, metadata, cancel);
-        return installation ?? throw UpdateFailed();
+        try
+        {
+            return await _updater.InstallContentBundleForLaunchAsync(archive, zipHash, metadata, cancel);
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            throw UpdateFailed(e);
+        }
     }
 
     private async Task<(ServerInfo, Uri, Uri)> GetServerInfoAsync(string address, CancellationToken cancel)
