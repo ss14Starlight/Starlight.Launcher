@@ -14,6 +14,7 @@ internal static class Program
     public static int Main(string[] args)
     {
         PinBundledLibsodium();
+        PinBundledSkia();
 
         try
         {
@@ -107,11 +108,21 @@ internal static class Program
 
     // NSec checks the exact libsodium version, so a foreign libsodium found via PATH
     // (e.g. one shipped with PHP) breaks it. Force our bundled copy for every assembly that P/Invokes it.
-    private static void PinBundledLibsodium()
+    private static void PinBundledLibsodium() =>
+        PinBundledNativeLibrary("libsodium", "NSec.Cryptography", "SpaceWizards.Sodium.Interop");
+
+    private static void PinBundledSkia()
     {
-        var fileName = OperatingSystem.IsWindows() ? "libsodium.dll"
-            : OperatingSystem.IsMacOS() ? "libsodium.dylib"
-            : "libsodium.so";
+        PinBundledNativeLibrary("libSkiaSharp", "SkiaSharp");
+        PinBundledNativeLibrary("libHarfBuzzSharp", "HarfBuzzSharp");
+    }
+
+    private static void PinBundledNativeLibrary(string libName, params string[] assemblies)
+    {
+        var extension = OperatingSystem.IsWindows() ? ".dll"
+            : OperatingSystem.IsMacOS() ? ".dylib"
+            : ".so";
+        var fileName = libName + extension;
 
         var baseDir = AppContext.BaseDirectory;
         var candidates = new[]
@@ -126,9 +137,11 @@ internal static class Program
             return;
 
         nint resolver(string name, Assembly _1, DllImportSearchPath? _2) =>
-            name is "libsodium" or "libsodium.dll" or "libsodium.so" or "libsodium.dylib" ? handle : IntPtr.Zero;
+            name == libName || name == libName + ".dll" || name == libName + ".so" || name == libName + ".dylib"
+                ? handle
+                : IntPtr.Zero;
 
-        foreach (var asmName in new[] { "NSec.Cryptography", "SpaceWizards.Sodium.Interop" })
+        foreach (var asmName in assemblies)
         {
             try
             {
