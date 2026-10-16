@@ -43,14 +43,7 @@ public partial class App : Application
 
     public override async void OnFrameworkInitializationCompleted()
     {
-        // Avalonia's D-Bus tray watcher (async void) rethrows its own cancellation once the tray icon is
-        // disposed, which happens on every exit; unhandled, that aborts the process and dumps core.
-        Avalonia.Threading.Dispatcher.UIThread.UnhandledException += (_, e) =>
-        {
-            if (e.Exception is OperationCanceledException &&
-                e.Exception.StackTrace?.Contains("Avalonia.FreeDesktop.DBusTrayIconImpl.WatchAsync") == true)
-                e.Handled = true;
-        };
+        GlobalExceptionHandlers.InstallDispatcher();
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {

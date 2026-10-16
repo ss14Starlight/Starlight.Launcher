@@ -56,16 +56,23 @@ public sealed class ServerStatusCache(HttpClient http, ILogger<ServerStatusCache
         reg.DidInitialStatusUpdate = true;
         lock (reg)
             reg.LastPingAttempt = DateTime.UtcNow;
-        await reg.Semaphore.WaitAsync();
-        var cancelSource = reg.Cancellation = new CancellationTokenSource();
-        var cancel = cancelSource.Token;
         try
         {
-            await UpdateStatusFor(reg.Data, _http, cancel);
+            await reg.Semaphore.WaitAsync();
+            var cancelSource = reg.Cancellation = new CancellationTokenSource();
+            var cancel = cancelSource.Token;
+            try
+            {
+                await UpdateStatusFor(reg.Data, _http, cancel);
+            }
+            finally
+            {
+                _ = reg.Semaphore.Release();
+            }
         }
-        finally
+        catch (Exception e)
         {
-            _ = reg.Semaphore.Release();
+            _logger.LogError(e, "Status update failed for {Address}", reg.Data.Address);
         }
     }
 

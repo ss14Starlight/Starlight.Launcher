@@ -5,6 +5,7 @@ using Avalonia.Logging;
 using Serilog;
 using Starlight.Launcher.Helpers;
 using Starlight.Launcher.Services.DeepLink;
+using Starlight.Launcher.Services.Logging;
 
 namespace Starlight.Launcher;
 
@@ -60,6 +61,7 @@ internal static class Program
                 .WriteTo.File(Path.Combine(AppPaths.AppDataDirectory, "launcher-logs", "log-.log"), restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug, rollingInterval: RollingInterval.Day)
                 .CreateLogger();
             Log.Logger = logger;
+            GlobalExceptionHandlers.Install();
 
             var messaging = new LauncherMessaging();
             var messages = new[] { LauncherActivationMessage.Ping() };
@@ -102,7 +104,12 @@ internal static class Program
                 /* best effort - don't let logging failure mask the real crash */
             }
 
+            Log.Fatal(ex, "Launcher crashed");
             throw;
+        }
+        finally
+        {
+            Log.CloseAndFlush();
         }
     }
 

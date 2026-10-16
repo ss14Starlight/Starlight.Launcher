@@ -87,7 +87,16 @@ public sealed partial class WebViewSuspender : IDisposable
             return;
 
         _suspendAttempts++;
-        var ok = await _webView.TrySuspendAsync();
+        bool ok;
+        try
+        {
+            ok = await _webView.TrySuspendAsync();
+        }
+        catch (Exception e)
+        {
+            Log.Warning(e, "Failed to suspend WebView");
+            return;
+        }
 
         if (_disposed || _shouldBeActive)
             return;

@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 using MudBlazor;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
@@ -19,6 +20,7 @@ public partial class Settings : LocalizedComponentBase, IDisposable
     [Inject] private IFileDialogService _fileDialog { get; set; } = default!;
     [Inject] private NavigationManager _navigation { get; set; } = default!;
     [Inject] private ISnackbar _snackbar { get; set; } = default!;
+    [Inject] private ILogger<Settings> _logger { get; set; } = default!;
     private List<string> _availableLanguages = [];
 
     // Values of the engine's audio.output_mode cvar, null (the empty option) is automatic.
@@ -145,28 +147,35 @@ public partial class Settings : LocalizedComponentBase, IDisposable
 
     private async void OnActivePanelIndexChanged(int value)
     {
-        var index = _tabs.Panels.Select((value, index) => (value, index)).FirstOrDefault(x => ReferenceEquals(x.value, _developmentTab)).index;
-
-        if (value == index)
+        try
         {
-            var options = new DialogOptions
-            {
-                CloseButton = false,
-                MaxWidth = MaxWidth.Small,
-                FullWidth = true,
-                BackdropClick = false,
-            };
+            var index = _tabs.Panels.Select((value, index) => (value, index)).FirstOrDefault(x => ReferenceEquals(x.value, _developmentTab)).index;
 
-            var settings = await _bridge.GetSettingsAsync();
-            if (!settings.DevPolicyAccepted)
+            if (value == index)
             {
-                var dialog = await _dialog.ShowAsync<AlertDialog>(L["settings-development-tab-alert-title"], options);
-                if (dialog.Dialog is AlertDialog alert)
+                var options = new DialogOptions
                 {
-                    alert.OnSuccess += async () => await _bridge.WriteSettingsAsync(await _bridge.GetSettingsAsync() with { DevPolicyAccepted = true });
-                    alert.OnCancel += async () => await _tabs.ActivatePanelAsync(_generalTab);
+                    CloseButton = false,
+                    MaxWidth = MaxWidth.Small,
+                    FullWidth = true,
+                    BackdropClick = false,
+                };
+
+                var settings = await _bridge.GetSettingsAsync();
+                if (!settings.DevPolicyAccepted)
+                {
+                    var dialog = await _dialog.ShowAsync<AlertDialog>(L["settings-development-tab-alert-title"], options);
+                    if (dialog.Dialog is AlertDialog alert)
+                    {
+                        alert.OnSuccess += async () => await _bridge.WriteSettingsAsync(await _bridge.GetSettingsAsync() with { DevPolicyAccepted = true });
+                        alert.OnCancel += async () => await _tabs.ActivatePanelAsync(_generalTab);
+                    }
                 }
             }
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Failed to handle settings tab change");
         }
     }
 

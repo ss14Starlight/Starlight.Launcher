@@ -852,17 +852,24 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
 
         async void DoPipe(TextReader reader)
         {
-            while (true)
+            try
             {
-                var read = await reader.ReadLineAsync();
-
-                if (read == null)
+                while (true)
                 {
-                    Log.Debug("EOF, ending pipe logging for {pid}", process.Id);
-                    return;
-                }
+                    var read = await reader.ReadLineAsync();
 
-                Log.Information("piped: {content}", read);
+                    if (read == null)
+                    {
+                        Log.Debug("EOF, ending pipe logging for {pid}", process.Id);
+                        return;
+                    }
+
+                    Log.Information("piped: {content}", read);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Warning(e, "Error while piping client output for {pid}", process.Id);
             }
         }
 

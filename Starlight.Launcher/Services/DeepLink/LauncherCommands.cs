@@ -94,18 +94,25 @@ public partial class LauncherCommands(ILogger<LauncherCommands> logger, LoginMan
 
     public async void RunCommandTask()
     {
-        var reader = CommandChannel.Reader;
-        while (await reader.WaitToReadAsync())
+        try
         {
-            var message = await reader.ReadAsync();
-            try
+            var reader = CommandChannel.Reader;
+            while (await reader.WaitToReadAsync())
             {
-                await Dispatch(message);
+                var message = await reader.ReadAsync();
+                try
+                {
+                    await Dispatch(message);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Exception while processing activation message {Kind}", message.Kind);
+                }
             }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Exception while processing activation message {Kind}", message.Kind);
-            }
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Activation command loop stopped");
         }
     }
 
