@@ -316,9 +316,16 @@ public sealed partial class SettingsService : IAsyncDisposable
 
             return result;
         }
+        catch (JsonException ex)
+        {
+            var backup = path + $".corrupt-{DateTime.UtcNow:yyyyMMddHHmmss}.bak";
+            try { File.Move(path, backup, true); } catch { /* best effort */ }
+            _logger.LogError(ex, "Failed to parse {path}; backed up to {backup}, using defaults", path, backup);
+            return fallback;
+        }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to load {path}, using empty list", path);
+            _logger.LogWarning(ex, "Failed to load {path}, using defaults", path);
             return fallback;
         }
     }
