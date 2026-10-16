@@ -5,6 +5,7 @@ using Avalonia.Platform;
 using Avalonia.Threading;
 using Serilog;
 using Starlight.Launcher.Services.WebUI;
+using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Services;
 
 namespace Starlight.Launcher;
@@ -24,17 +25,19 @@ public partial class MainWindow : Window
     private static readonly TimeSpan PageLoadTimeout = TimeSpan.FromSeconds(25);
 
     private readonly UiActivity _activity;
+    private readonly ILocalizationManager? _loc;
     private WebViewSuspender? _suspender;
     private DispatcherTimer? _adapterWatchdog;
     private DispatcherTimer? _pageWatchdog;
     private bool _adapterCreated;
     private bool _pageLoaded;
 
-    public MainWindow() : this(null, "", new UiActivity()) { }
+    public MainWindow() : this(null, "", new UiActivity(), null) { }
 
-    public MainWindow(Uri? blazorUrl, string pathToWebViewData, UiActivity activity)
+    public MainWindow(Uri? blazorUrl, string pathToWebViewData, UiActivity activity, ILocalizationManager? loc)
     {
         _activity = activity;
+        _loc = loc;
 
         InitializeComponent();
 
@@ -185,21 +188,15 @@ public partial class MainWindow : Window
         var logs = Path.Combine(AppPaths.AppDataDirectory, "launcher-logs");
 
         var details = OperatingSystem.IsLinux()
-            ? $"{LinuxWebViewSetup.DescribeAvailability()}\n{LinuxWebViewSetup.DescribeSession()}\nLogs: {logs}"
-            : $"Logs: {logs}";
+            ? $"{LinuxWebViewSetup.DescribeAvailability()}\n{LinuxWebViewSetup.DescribeSession()}\n{Loc("webview-fallback-logs", ("path", logs))}"
+            : Loc("webview-fallback-logs", ("path", logs));
 
+        WebViewFallbackTitle.Text = Loc("webview-fallback-title");
         WebViewFallbackHint.Text = (OperatingSystem.IsLinux(), pageNeverLoaded) switch
         {
-            (true, true) =>
-                "The web engine started, but the launcher page never appeared. This usually means WebKit can't draw " +
-                "on this desktop or GPU. Start the launcher with STARLIGHT_WEBVIEW_OFFSCREEN=1, or with " +
-                "STARLIGHT_WEBVIEW_BACKEND=wpe if WPE WebKit is installed, or use the Flatpak version. " +
-                "If none of that helps, please send us the newest file from the logs folder below.",
-            (true, false) =>
-                "No usable web engine was found. Install the WebKitGTK package for your distribution " +
-                "(webkit2gtk-4.1 / libwebkit2gtk-4.1-0 / webkit2gtk-4.0) and start the launcher again. " +
-                "On SteamOS / Steam Deck, or if you can't install packages, use the Flatpak version instead - it ships its own WebKitGTK.",
-            _ => "The embedded web engine failed to start. Please check the launcher logs.",
+            (true, true) => Loc("webview-fallback-linux-page-never-loaded"),
+            (true, false) => Loc("webview-fallback-linux-no-engine"),
+            _ => Loc("webview-fallback-engine-failed"),
         };
 
         WebViewFallbackDetails.Text = details;
@@ -210,6 +207,9 @@ public partial class MainWindow : Window
         else
             Log.Error("WebView adapter was not created within {Timeout}; showing fallback UI. {Details}", AdapterTimeout, details);
     }
+
+    private string Loc(string key, params (string, object?)[] args)
+        => _loc?.GetString(key, args) ?? key;
 
     const int GWL_EXSTYLE = -20;
     const int WS_EX_LAYERED = 0x00080000;

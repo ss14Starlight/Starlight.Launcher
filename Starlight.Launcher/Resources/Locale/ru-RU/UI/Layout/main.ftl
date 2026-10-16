@@ -4,6 +4,10 @@ main-layout-hub-tab = Хаб NullLink
 main-layout-local-server-tab = Локальный сервер
 main-layout-settings-tab = Настройки
 main-layout-auth-tab = Авторизация
+main-layout-changelog = Список изменений
+
+settings-logins-unrecoverable = Вход невозможно восстановить!
+settings-logins-unrecoverable-action = Подробнее
 
 main-layout-data-folder-no-access = Лаунчер не может записывать в папку данных "{ $path }". Загрузка и обновление файлов игры не будут работать. Выберите другую папку в настройках.
 main-layout-data-folder-no-access-action = Настройки

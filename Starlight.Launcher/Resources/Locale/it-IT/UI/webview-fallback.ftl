@@ -1,0 +1,5 @@
+webview-fallback-title = Impossibile visualizzare l'interfaccia del launcher.
+webview-fallback-linux-page-never-loaded = Il motore web si è avviato, ma la pagina del launcher non è mai apparsa. Di solito significa che WebKit non riesce a disegnare su questo desktop o GPU. Avvia il launcher con STARLIGHT_WEBVIEW_OFFSCREEN=1, oppure con STARLIGHT_WEBVIEW_BACKEND=wpe se WPE WebKit è installato, oppure usa la versione Flatpak. Se nulla di questo aiuta, inviaci il file più recente dalla cartella dei log qui sotto.
+webview-fallback-linux-no-engine = Nessun motore web utilizzabile trovato. Installa il pacchetto WebKitGTK della tua distribuzione (webkit2gtk-4.1 / libwebkit2gtk-4.1-0 / webkit2gtk-4.0) e avvia di nuovo il launcher. Su SteamOS / Steam Deck, o se non puoi installare pacchetti, usa invece la versione Flatpak - include il proprio WebKitGTK.
+webview-fallback-engine-failed = Il motore web integrato non è riuscito ad avviarsi. Controlla i log del launcher.
+webview-fallback-logs = Log: { $path }

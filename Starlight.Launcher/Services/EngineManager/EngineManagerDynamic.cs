@@ -254,7 +254,7 @@ public sealed partial class EngineManagerDynamic : IEngineManager
         throw lastError ?? new UpdateException("No download URLs available.");
     }
 
-    private static List<string> ExpandMirrors(string url, IEnumerable<RobustCdn> cdns)
+    internal static List<string> ExpandMirrors(string url, IEnumerable<RobustCdn> cdns)
     {
         var result = new List<string> { url };
 

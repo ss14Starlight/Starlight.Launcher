@@ -20,7 +20,8 @@ auth-menu-register-dont-match-pass = Le password non coincidono
 # Snackbars(not including errors/warnings)
 
 auth-menu-account-deleted = Account { $account } eliminato.
-auth-menu-linked-status = Discord collegato a { $account }.
+auth-menu-discord-linked-status = Discord collegato a { $account }.
+auth-menu-steam-linked-status = Steam collegato a { $account }.
 auth-menu-discord-renewed = Sessione Discord aggiornata.
 auth-menu-attach-login-error = L'accesso dal browser non è stato completato in tempo. Riprova e completalo entro 5 minuti.
 auth-menu-attach-connect-fail = Impossibile contattare il server di autenticazione Starlight. Controlla la connessione e riprova.
@@ -45,6 +46,7 @@ auth-menu-active-chip = Attivo
 auth-menu-no-accounts = Non hai aggiunto nessun account.
 auth-menu-no-accounts-hint = Usa "Aggiungi Account" per accedere o registrarti
 auth-menu-discord-linked-tooltip = Discord collegato
+auth-menu-steam-linked-tooltip = Steam collegato
 auth-menu-login-again-button = Accedi di nuovo
 auth-menu-ss14-relogin-button = Accedi di nuovo a SS14
 auth-menu-select-button = Seleziona
@@ -68,6 +70,7 @@ auth-menu-confirm-label = Conferma Password
 auth-menu-2fa-label = Codice 2FA
 auth-menu-resend-confirmation = Ri-manda email ti conferma
 auth-menu-signin-method-discord = Accedi con discord
+auth-menu-signin-method-steam = Accedi con Steam
 auth-menu-signin-forgot-password = Password dimenticata?
 auth-menu-signin = Accedi
 
@@ -76,6 +79,13 @@ auth-menu-signin = Accedi
 auth-menu-registration = Registrati
 auth-menu-registration-status-busy = Registrazione...
 auth-menu-registration-status-wait = Registrati
+
+auth-menu-registration-disabled-title = Registrazione disattivata
+auth-menu-registration-disabled-hint =
+    Al momento lo sviluppatore ufficiale ha rifiutato la richiesta di ripristinare l'API di registrazione.
+    Usa Discord per registrarti o visita il sito ufficiale di SS14.
+
+auth-menu-registration-back-to-signin = Torna all'accesso
 
 # ForgotPassword
 
@@ -95,4 +105,34 @@ auth-menu-link-account-hint     = Accedi con il tuo account del server di autent
 auth-menu-link-account-confirm  = Collega
 auth-menu-link-account-busy     = Collegamento...
 auth-menu-account-linked        = L'account { $account } è collegato
+
+# NullLink profile
+
+auth-menu-link-steam-button = Collega Steam
+auth-profile-make-active = Gioca con questo account
+auth-profile-refresh = Aggiorna
+auth-profile-user-id = ID account
+auth-profile-total-playtime = Tempo di gioco totale
+auth-profile-servers-played = Server
+auth-profile-achievements-count = Obiettivi
+auth-profile-top-role = Ruolo preferito
+auth-profile-duration-m = { $minutes }m
+auth-profile-duration-hm = { $hours }h { $minutes }m
+auth-profile-playtime-title = Tempo di gioco per server
+auth-profile-playtime-empty = NullLink non ha ancora registrato tempo di gioco per questo account.
+auth-profile-server-offline = Il server è offline o non è più in lista
+auth-profile-more-roles = +{ $count } altri
+auth-profile-less-roles = Mostra meno
+auth-profile-achievements-title = Obiettivi
+auth-profile-achievements-empty = Nessun obiettivo sbloccato.
+auth-profile-achievement-by = { $character } su { $server }
+auth-profile-achievement-server = Su { $server }
+auth-profile-resources-title = Risorse
+auth-profile-not-linked-title = Profilo NullLink non disponibile
+auth-profile-not-linked-hint = NullLink riconosce i giocatori dalla loro sessione Starlight. Collega Discord o Steam a questo account per vedere tempo di gioco e obiettivi.
+auth-profile-unauthorized-title = Sessione scaduta
+auth-profile-unauthorized-hint = Accedi di nuovo per caricare il profilo NullLink.
+auth-profile-unavailable-title = Impossibile caricare il profilo
+auth-profile-unavailable-hint = NullLink non è raggiungibile al momento. Riprova tra poco.
+auth-profile-retry = Riprova
 

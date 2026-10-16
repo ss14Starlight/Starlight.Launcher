@@ -80,29 +80,29 @@ public sealed partial class ConnectingDialog : LocalizedComponentBase, IDisposab
 
     private string _statusText => _bridge.GetConnectionStatus() switch
     {
-        ConnectionStatus.Connecting => "Contacting server...",
+        ConnectionStatus.Connecting => L["connecting-dialog-status-connecting"],
         ConnectionStatus.Updating => _bridge.GetUpdateStatus() switch
         {
-            UpdateStatus.DownloadingEngineVersion => "Downloading engine...",
-            UpdateStatus.DownloadingEngineModules => "Downloading engine modules...",
-            UpdateStatus.DownloadingClientUpdate => "Downloading game files...",
-            UpdateStatus.LoadingIntoDb => "Installing...",
-            UpdateStatus.LoadingContentBundle => "Loading content bundle...",
-            UpdateStatus.Verifying => "Verifying...",
-            UpdateStatus.CommittingDownload => "Finishing up...",
+            UpdateStatus.DownloadingEngineVersion => L["connecting-dialog-status-downloading-engine"],
+            UpdateStatus.DownloadingEngineModules => L["connecting-dialog-status-downloading-modules"],
+            UpdateStatus.DownloadingClientUpdate => L["connecting-dialog-status-downloading-client"],
+            UpdateStatus.LoadingIntoDb => L["connecting-dialog-status-installing"],
+            UpdateStatus.LoadingContentBundle => L["connecting-dialog-status-loading-bundle"],
+            UpdateStatus.Verifying => L["connecting-dialog-status-verifying"],
+            UpdateStatus.CommittingDownload => L["connecting-dialog-status-committing"],
             UpdateStatus.RetryingDownload when _bridge.GetUpdateRetry() is { } r =>
                 L.GetString("connecting-dialog-retrying", ("attempt", r.attempt), ("max", r.max)),
-            _ => "Checking for updates..."
+            _ => L["connecting-dialog-status-checking-updates"]
         },
-        ConnectionStatus.StartingClient => "Starting the game...",
-        ConnectionStatus.ClientRunning => "Game is running.",
-        ConnectionStatus.ConnectionFailed => "Could not reach the server.",
-        ConnectionStatus.UpdateError => "Update failed. See the logs for details.",
+        ConnectionStatus.StartingClient => L["connecting-dialog-status-starting-client"],
+        ConnectionStatus.ClientRunning => L["connecting-dialog-status-client-running"],
+        ConnectionStatus.ConnectionFailed => L["connecting-dialog-status-connection-failed"],
+        ConnectionStatus.UpdateError => L["connecting-dialog-status-update-error"],
         ConnectionStatus.AccessDenied => L.GetString("connecting-dialog-access-denied", ("path", _bridge.GetSettings().DirLauncherData)),
         ConnectionStatus.DownloadStalled => L["connecting-dialog-download-stalled"],
-        ConnectionStatus.NotAContentBundle => "This file isn't a valid content bundle.",
-        ConnectionStatus.Cancelled => "Cancelled.",
-        _ => "Starting..."
+        ConnectionStatus.NotAContentBundle => L["connecting-dialog-status-not-a-bundle"],
+        ConnectionStatus.Cancelled => L["connecting-dialog-status-cancelled"],
+        _ => L["connecting-dialog-status-starting"]
     };
 
     protected override void OnInitialized()

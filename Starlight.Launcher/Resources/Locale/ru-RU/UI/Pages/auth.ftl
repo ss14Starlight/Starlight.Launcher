@@ -20,7 +20,7 @@ auth-menu-register-dont-match-pass = Пароли не совпадают
 # Snackbars(not including errors/warnings)
 
 auth-menu-account-deleted = Учетная запись { $account } удалена.
-auth-menu-linked-status = Discord привязан к { $account }.
+auth-menu-discord-linked-status = Discord привязан к { $account }.
 auth-menu-discord-renewed = Сеанс в Discord возобновлен.
 auth-menu-attach-login-error = Вход через браузер не был завершён вовремя. Попробуйте снова и завершите его в течение 5 минут.
 auth-menu-attach-connect-fail = Не удалось связаться с сервером авторизации Starlight. Проверьте подключение и попробуйте снова.
@@ -77,13 +77,31 @@ auth-menu-registration = Регистрация
 auth-menu-registration-status-busy = Регистрация...
 auth-menu-registration-status-wait = Зарегистрироваться
 
+auth-menu-registration-disabled-title = Регистрация отключена
+auth-menu-registration-disabled-hint =
+    На данный момент официальный разработчик отклонил запрос на восстановление API регистрации.
+    Пожалуйста, зарегистрируйтесь через Discord или на официальном сайте SS14.
+
+auth-menu-registration-back-to-signin = Вернуться ко входу
+
 # ForgotPassword
 
 auth-menu-forgotpassword = Восстановление пароля
 auth-menu-forgotpassword-alert = Если учетная запись с этим адресом электронной почты существует, на него были отправлены инструкции по сбросу пароля.
 auth-menu-enter-email-label = Введите адрес электронной почты, привязанный к вашей учетной записи.
-auth-menu-forgotpassword-status-busy = Отпрявляем...
+auth-menu-forgotpassword-status-busy = Отправляем...
 auth-menu-forgotpassword-status-wait = Отправить
+
+# Link
+
+auth-menu-can-play-no-discord = Можно играть без Discord
+auth-menu-link-account-button = Привязать аккаунт
+auth-menu-needs-discord = Требуется авторизация через Discord
+auth-menu-link-account-title = Привязка аккаунта
+auth-menu-link-account-hint     = Войдите в аккаунт сервера авторизации, чтобы играть без Discord
+auth-menu-link-account-confirm  = Привязать
+auth-menu-link-account-busy     = Привязываем...
+auth-menu-account-linked        = Аккаунт { $account } привязан
 
 # NullLink profile
 

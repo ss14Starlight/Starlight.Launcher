@@ -18,20 +18,20 @@
             @switch (_bridge.GetConnectionStatus())
             {
                 case ConnectionStatus.AwaitingPrivacyPolicyAcceptance:
-                    <MudText Class="mb-3">This server requires you to accept its privacy policy before connecting.</MudText>
+                    <MudText Class="mb-3">@L["connecting-dialog-privacy-required"]</MudText>
                     @if (_bridge.GetPrivacyPolicyInfo() is { } pp)
                     {
                         <MudPaper Class="pa-3 d-flex align-center justify-space-between" Elevation="0" Outlined="true">
                             <div>
                                 <MudText Typo="Typo.subtitle2">@pp.Identifier</MudText>
-                                <MudText Typo="Typo.caption" Class="connect-meta">Version @pp.Version</MudText>
+                                <MudText Typo="Typo.caption" Class="connect-meta">@L.GetString("connecting-dialog-privacy-version", ("version", pp.Version))</MudText>
                             </div>
                             @if (!string.IsNullOrWhiteSpace(pp.Link))
                             {
                                 <MudButton Href="@pp.Link" Target="_blank" Rel="noopener noreferrer"
                                            StartIcon="@Icons.Material.Filled.OpenInNew"
                                            Variant="Variant.Text" Color="Color.Primary">
-                                    Read policy
+                                    @L["connecting-dialog-privacy-read"]
                                 </MudButton>
                             }
                         </MudPaper>
@@ -39,7 +39,7 @@
                     @if (_bridge.GetPrivacyPolicyDifferentVersion())
                     {
                         <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-3">
-                            The policy has changed since you last accepted it.
+                            @L["connecting-dialog-privacy-changed"]
                         </MudAlert>
                     }
                     break;
@@ -59,7 +59,7 @@
                     break;
 
                 case ConnectionStatus.ClientExited when _bridge.IsClientExitedBadly():
-                    <MudAlert Severity="Severity.Error">The game closed unexpectedly.</MudAlert>
+                    <MudAlert Severity="Severity.Error">@L["connecting-dialog-client-crashed"]</MudAlert>
                     break;
 
                 case ConnectionStatus.Cancelled:
@@ -103,7 +103,7 @@
                                 @if (p.unit == ProgressUnit.Bytes && _haveSpeed && _smoothedBytesPerSec > 1)
                                 {
                                     <MudText Typo="Typo.caption">
-                                        @Format((long)_smoothedBytesPerSec)/s@(_eta is { } eta ? $" · {eta} left" : "")
+                                        @Format((long)_smoothedBytesPerSec)/s@(_eta is { } eta ? $" · {L.GetString("connecting-dialog-eta", ("eta", eta))}" : "")
                                     </MudText>
                                 }
                             </div>
@@ -116,10 +116,10 @@
     <DialogActions>
         @if (_bridge.GetConnectionStatus() == ConnectionStatus.AwaitingPrivacyPolicyAcceptance)
         {
-            <MudButton OnClick="@(() => Decide(PrivacyPolicyAcceptResult.Denied))">Decline</MudButton>
+            <MudButton OnClick="@(() => Decide(PrivacyPolicyAcceptResult.Denied))">@L["connecting-dialog-privacy-decline"]</MudButton>
             <MudButton Variant="Variant.Filled" Class="cta-btn-primary"
                        OnClick="@(() => Decide(PrivacyPolicyAcceptResult.Accepted))">
-                Accept &amp; continue
+                @L["connecting-dialog-privacy-accept"]
             </MudButton>
         }
         else if (_isTerminal)

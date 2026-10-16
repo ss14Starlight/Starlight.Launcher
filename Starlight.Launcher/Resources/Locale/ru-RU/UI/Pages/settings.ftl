@@ -1,25 +1,95 @@
 # Categories
 
 settings-menu-general-category = Основные
+settings-menu-servers-category = Серверы
 settings-menu-appearance-category = Внешний вид
 settings-menu-server-list-category = Список серверов
 settings-menu-tray-category = Трей
 settings-menu-development-category = Разработка
+settings-menu-discord-rpc-category = Rich Presence
+settings-menu-ignored-category = Игнорируемые
 
 # General
+
+settings-menu-reset-option = Сбросить настройки
+settings-menu-reset-confirm-title = Сброс настроек по умолчанию
+settings-menu-reset-confirm-text = Вы уверены, что хотите сбросить настройки к значениям по умолчанию?
+settings-menu-reset-confirm-yes = Да
+settings-menu-reset-confirm-cancel = Отмена
 
 settings-menu-language-option = Язык
 settings-menu-language-option-description = Выберите язык для приложения.
 settings-menu-language-option-system = Системный
 
+settings-menu-multiple-clients-option = Запретить несколько клиентов
+settings-menu-multiple-clients-option-description = Не даёт запустить несколько клиентов одновременно.
+
 settings-menu-prereleases-option = Пре-релизные обновления
 settings-menu-prereleases-option-description = Предлагать тестовые версии лаунчера. Они могут работать нестабильно.
+
+settings-menu-data-folder-option = Папка данных
+settings-menu-data-folder-option-description = Выберите папку, в которой будут храниться данные.
+settings-menu-data-folder-no-access-title = Нет доступа к папке
+settings-menu-data-folder-no-access-text = Лаунчер не может записывать в "{ $path }". Скорее всего, эта папка требует прав администратора, поэтому загрузка и обновление файлов игры не будут работать. Выберите другую папку.
+
+settings-menu-logs-folder-option = Папка логов
+settings-menu-logs-folder-option-description = Выберите папку, в которой будут храниться логи.
+
+settings-menu-logs-split-mode-option = Разделение логов
+settings-menu-logs-split-mode-option-description = Определяет, как логи разбиваются на отдельные файлы.
+
+settings-menu-logs-combine-streams-option = Объединять потоки логов
+settings-menu-logs-combine-streams-option-description = Записывает потоки stdout и stderr в один файл лога.
+
+settings-menu-log-retain-amount-option = Количество хранимых логов
+settings-menu-log-retain-amount-option-description = Определяет, сколько файлов логов хранить.
+
+settings-menu-update-option = Проверить обновления
+settings-menu-update-latest = У вас уже последняя версия.
+settings-menu-update-found = Доступна версия { $latest }!
+settings-menu-update-download = Скачать
+
+# Servers
 
 settings-menu-hub-list-option = Список хабов
 settings-menu-hub-list-option-description = Настройте список хабов для списка серверов.
 settings-menu-hub-list-option-add-tooltip = Добавить хаб
-settings-menu-hub-list-option-empty-values = Нет настроенных хабов. Нажмите + что-бы добавить один.
-settings-menu-hub-list-option-text-label = URL Хаба
+settings-menu-hub-list-option-empty-values = Нет настроенных хабов. Нажмите +, чтобы добавить.
+settings-menu-hub-list-option-text-label = URL хаба
+
+settings-menu-auth-list-option = Серверы авторизации
+settings-menu-auth-list-option-description = Настройте список серверов авторизации и выберите текущий.
+settings-menu-auth-list-option-add-tooltip = Добавить сервер авторизации
+settings-menu-auth-list-option-empty-values = Нет настроенных серверов авторизации. Нажмите +, чтобы добавить.
+settings-menu-auth-list-option-text-label = URL сервера авторизации
+
+settings-menu-deauth-onchange-option = Выход при смене
+settings-menu-deauth-onchange-option-description = Выходить из аккаунта после смены сервера авторизации?
+
+settings-cdns-option = CDN
+settings-cdns-option-description = Настройте список CDN-серверов, с которых загружается движок клиента.
+settings-cdns-option-add = Добавить CDN
+settings-cdns-option-empty = Нет настроенных CDN. Нажмите +, чтобы добавить.
+settings-cdns-option-name-label = Название CDN
+settings-cdns-option-important-tooltip = Важный
+settings-cdns-option-enabled-tooltip = Включён
+settings-cdns-option-key-label = Публичный ключ CDN
+settings-cdns-option-mirrors-label = Зеркала CDN
+settings-cdns-option-add-mirror = Добавить зеркало CDN
+settings-cdns-option-important-warning-title = Изменение важного CDN
+settings-cdns-option-important-warning-body =
+    Вы собираетесь изменить CDN-сервер, отмеченный как важный.
+    Это сломает часть функций приложения.
+    Убедитесь, что вы понимаете, что делаете.
+settings-cdns-option-important-warning-hint =
+    Это сломает авторизацию через Discord.
+    Действуйте осторожно.
+settings-cdns-option-important-warning-cancel = Отмена
+settings-cdns-option-important-warning-confirm = Подтвердить
+settings-cdns-option-key-unlock-tooltip = Разблокировать редактирование публичных ключей
+settings-cdns-option-key-lock-tooltip = Заблокировать редактирование публичных ключей
+settings-cdns-option-key-unlock-warning-title = Редактировать публичные ключи CDN?
+settings-cdns-option-key-unlock-warning = Публичные ключи определяют, каким сборкам движка доверяет лаунчер. Добавляйте только ключи, полученные напрямую от владельца CDN: неверный ключ сломает загрузку движка, а ключ от того, кому вы не доверяете, позволит ему запускать свой код на вашем компьютере. Смена ключа у CDN Starlight сломает вход через Discord и Steam.
 
 # Appearance
 
@@ -32,17 +102,14 @@ settings-menu-navigation-bar-option-description = Выберите положе�
 settings-menu-animated-background-option = Анимированный фон
 settings-menu-animated-background-option-description = Движущиеся звёзды на фоне и перелёты камеры между страницами. Выключение снижает нагрузку на процессор, пока лаунчер открыт.
 
-settings-menu-discord-presence-option = Discord Presence
-settings-menu-discord-presence-option-description = Показать статус в вашем Discord. (Требует перезапуска)
-
 settings-menu-bottom-search-option = Строка поиска снизу
-settings-menu-bottom-search-option-description = Если включено, строка с поиском будет находиться в самом низу панели инструментов(когда панель с тегами и панель с поиском вместе).
+settings-menu-bottom-search-option-description = Если включено, строка с поиском будет находиться в самом низу панели инструментов (когда панель с тегами и панель с поиском вместе).
 
 settings-menu-bottom-search-bar-option = Нижняя строка поиска
 settings-menu-bottom-search-bar-option-description = Если включено, строка с поиском будет находиться внизу приложения.
 
 settings-menu-bottom-tags-bar-option = Нижняя панель фильтров
-settings-menu-bottom-tags-bar-option-description = Если включено, панель с фильтрами будет распологаться внизу списка серверов.
+settings-menu-bottom-tags-bar-option-description = Если включено, панель с фильтрами будет располагаться внизу списка серверов.
 
 settings-menu-tags-bar-open-option = Развернутая панель фильтров
 settings-menu-tags-bar-open-option-description = Если включено, то панель фильтров будет всегда открыта по умолчанию при открытии списка серверов. (Но вы все еще сможете ее свернуть!!!)
@@ -63,6 +130,17 @@ settings-menu-tray-collapse-close-option-description = Сворачивать п
 
 settings-menu-tray-collapse-minimize-option = Свернуть при минимизировании
 settings-menu-tray-collapse-minimize-option-description = Сворачивать приложение в трей при попытке его минимизировать.
+
+# Discord RPC
+
+settings-menu-discord-presence-option = Discord Presence
+settings-menu-discord-presence-option-description = Показать статус в вашем Discord.
+
+settings-menu-discord-presence-buttons-option = Кнопки в статусе
+settings-menu-discord-presence-buttons-option-description = Показывать кнопку «Скачать» и другие «рекламные» кнопки в Discord Rich Presence?
+
+settings-menu-discord-presence-states-option = Состояния статуса
+settings-menu-discord-presence-states-option-description = Настройте состояния и их приоритет для вашего статуса в Discord.
 
 # Development(Advanced)
 
@@ -87,15 +165,20 @@ settings-menu-development-max-versions-option-description = Укажите ма�
 settings-menu-development-max-fork-versions-option = Максимальное количество версий форков
 settings-menu-development-max-fork-versions-option-description = Укажите максимальное количество версий форка, которые необходимо сохранить в истории версий. Старые версии форка будут удаляться при превышении этого лимита.
 
-settings-menu-data-folder-no-access-title = Нет доступа к папке
-settings-menu-data-folder-no-access-text = Лаунчер не может записывать в "{ $path }". Скорее всего, эта папка требует прав администратора, поэтому загрузка и обновление файлов игры не будут работать. Выберите другую папку.
+# Development tab alert
 
+settings-development-tab-alert-title = Предупреждение о вкладке разработки
+settings-development-tab-alert-description =
+    Вы пытаетесь открыть вкладку, предназначенную только для опытных пользователей и разработчиков.
+    Чтобы продолжить, вы должны согласиться с тем, что после изменения любых настроек
+    STARLIGHT не гарантирует корректную работу программы, а также не гарантирует, что она не повредит ваше оборудование.
 
-settings-cdns-option-key-unlock-tooltip = Разблокировать редактирование публичных ключей
-settings-cdns-option-key-lock-tooltip = Заблокировать редактирование публичных ключей
-settings-cdns-option-key-unlock-warning-title = Редактировать публичные ключи CDN?
-settings-cdns-option-key-unlock-warning = Публичные ключи определяют, каким сборкам движка доверяет лаунчер. Добавляйте только ключи, полученные напрямую от владельца CDN: неверный ключ сломает загрузку движка, а ключ от того, кому вы не доверяете, позволит ему запускать свой код на вашем компьютере. Смена ключа у CDN Starlight сломает вход через Discord и Steam.
+# Ignored
 
+settings-menu-ignored-servers-option = Игнорируемые серверы
+settings-menu-ignored-servers-option-description = Позволяет убрать серверы из списка игнорируемых.
+
+settings-ignored-servers-option-remove = Убрать
 # Data
 
 settings-menu-data-category = Данные
