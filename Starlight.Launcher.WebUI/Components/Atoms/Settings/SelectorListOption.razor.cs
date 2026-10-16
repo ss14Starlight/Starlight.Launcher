@@ -16,7 +16,7 @@ public partial class SelectorListOption : ComponentBase
     /// Means that this component will control value change by itself.
     /// </summary>
     [Parameter] public bool SelfValueControl { get; set; } = true;
-    [Parameter] public Action<string?>? SelfValueControlAction { get; set; }
+    [Parameter] public Func<string?, Task>? SelfValueControlAction { get; set; }
     [Parameter] public Func<Task<string?>>? SelfValueControlInitialization { get; set; }
     [Parameter] public Func<string, string>? DisplayTextSelector { get; set; }
 
@@ -35,7 +35,8 @@ public partial class SelectorListOption : ComponentBase
         else
         {
             SelectedValue = value;
-            SelfValueControlAction?.Invoke(value);
+            if (SelfValueControlAction is not null)
+                await SelfValueControlAction(value);
         }
     }
 }

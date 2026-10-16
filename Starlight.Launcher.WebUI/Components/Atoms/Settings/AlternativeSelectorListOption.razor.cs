@@ -23,7 +23,7 @@ public partial class AlternativeSelectorListOption : LocalizedComponentBase
     /// Means that this component will control value change by itself.
     /// </summary>
     [Parameter] public bool SelfValueControl { get; set; } = true;
-    [Parameter] public Action<List<string>, string?>? SelfValueControlAction { get; set; }
+    [Parameter] public Func<List<string>, string?, Task>? SelfValueControlAction { get; set; }
     [Parameter] public Func<Task<(List<string> Values, string? Selected)>>? SelfValueControlInitialization { get; set; }
 
     private int _selectedIndex = -1;
@@ -101,7 +101,8 @@ public partial class AlternativeSelectorListOption : LocalizedComponentBase
         }
         else
         {
-            SelfValueControlAction?.Invoke(Values, SelectedValue);
+            if (SelfValueControlAction is not null)
+                await SelfValueControlAction(Values, SelectedValue);
         }
     }
 
