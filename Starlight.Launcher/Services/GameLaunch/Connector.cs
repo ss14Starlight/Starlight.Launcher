@@ -237,7 +237,7 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
             return;
         }
 
-        _acceptPrivacyPolicyTcs.SetResult(result);
+        _ = _acceptPrivacyPolicyTcs.TrySetResult(result);
     }
 
     private void Cleanup()
