@@ -16,6 +16,8 @@ public sealed partial class LocalServerManager(HttpClient http, SettingsService 
 
     private const string InstallMarkerFileName = ".starlight-install-complete";
 
+    private static readonly TimeSpan GracefulShutdownTimeout = TimeSpan.FromSeconds(10);
+
     private readonly HttpClient _http = http;
     private readonly SettingsService _settings = settings;
 
@@ -114,15 +116,44 @@ public sealed partial class LocalServerManager(HttpClient http, SettingsService 
 
         try
         {
-            if (!process.HasExited)
-            {
-                process.Kill(entireProcessTree: true);
-                await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(10));
-            }
+            if (process.HasExited)
+                return;
+
+            if (await TryGracefulShutdownAsync(process))
+                return;
+
+            AppendLine("[Starlight.Launcher] Server did not shut down in time, killing process.", isError: true);
+            process.Kill(entireProcessTree: true);
+            await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(10));
         }
         catch (Exception e)
         {
             Log.Warning(e, "Failed to stop local server process");
+        }
+    }
+
+    private async Task<bool> TryGracefulShutdownAsync(Process process)
+    {
+        try
+        {
+            AppendLine("> shutdown", isError: false);
+            await process.StandardInput.WriteLineAsync("shutdown");
+            await process.StandardInput.FlushAsync();
+        }
+        catch (Exception e)
+        {
+            Log.Warning(e, "Failed to send shutdown command to local server");
+            return false;
+        }
+
+        try
+        {
+            await process.WaitForExitAsync().WaitAsync(GracefulShutdownTimeout);
+            return true;
+        }
+        catch (TimeoutException)
+        {
+            return false;
         }
     }
 

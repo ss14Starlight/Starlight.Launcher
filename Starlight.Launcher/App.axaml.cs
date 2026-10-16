@@ -121,7 +121,7 @@ public partial class App : Application
                 {
                     await Step("local server stop",
                         () => Services.GetRequiredService<LocalServerManager>().StopAndWaitAsync(),
-                        TimeSpan.FromSeconds(10));
+                        TimeSpan.FromSeconds(20));
 
                     await Step("commands stop", () =>
                     {

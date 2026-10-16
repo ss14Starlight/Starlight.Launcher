@@ -13,7 +13,7 @@ public sealed partial class Bridge : IBridge
         remove => _launcherUpdater.DownloadProgress -= value;
     }
 
-    public async Task<UpdateInfo> IsUpdateAvailable() => await LauncherUpdater.IsUpdateAvailable();
+    public async Task<UpdateInfo> IsUpdateAvailable() => await _launcherUpdater.IsUpdateAvailable();
 
     public async Task<string> DownloadAsset(ReleaseAsset asset, CancellationToken ct = default) => await _launcherUpdater.DownloadAsset(asset, ct);
 
@@ -47,7 +47,7 @@ public sealed partial class Bridge : IBridge
 
     public async Task<IReadOnlyList<ChangelogEntry>> GetChangelogsToShow() => await _launcherUpdater.GetChangelogsToShow();
 
-    public async Task<IReadOnlyList<ChangelogEntry>> GetAllChangelogs() => await LauncherUpdater.GetAllChangelogs();
+    public async Task<IReadOnlyList<ChangelogEntry>> GetAllChangelogs() => await _launcherUpdater.GetAllChangelogs();
 
     public void MarkChangelogSeen() => _launcherUpdater.MarkChangelogSeen();
 
