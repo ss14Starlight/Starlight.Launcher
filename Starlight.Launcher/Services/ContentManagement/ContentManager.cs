@@ -181,9 +181,36 @@ public sealed class ContentManager(SettingsService settings)
             }
             catch (Win32Exception e)
             {
+                Log.Debug(e, "Unable to read main module of process {Pid}, comparing by process name", pid);
+            }
+
+            try
+            {
+                var running = ProcessNameMatches(proc.ProcessName, mainModule);
+                if (!running)
+                    Log.Debug("Process {Pid} ({ProcessName}) is not a client, PID was reused", pid, proc.ProcessName);
+
+                return running;
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+            catch (Win32Exception e)
+            {
                 Log.Debug(e, "Unable to inspect process {Pid}, assuming it is still a running client", pid);
                 return true;
             }
         }
+    }
+
+    private static bool ProcessNameMatches(string processName, string mainModule)
+    {
+        if (string.IsNullOrEmpty(mainModule))
+            return true;
+
+        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        return string.Equals(processName, Path.GetFileNameWithoutExtension(mainModule), comparison)
+            || string.Equals(processName, Path.GetFileName(mainModule), comparison);
     }
 }

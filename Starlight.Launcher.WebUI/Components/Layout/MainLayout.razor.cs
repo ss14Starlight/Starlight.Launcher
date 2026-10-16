@@ -171,6 +171,29 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
             });
     }
 
+    private void CheckUnreadableSettingsFiles()
+    {
+        var files = _bridge.GetUnreadableSettingsFiles();
+        if (files.Count == 0)
+            return;
+
+        _ = _snackbar.Add(
+            L.GetString("main-layout-settings-unreadable", ("files", string.Join(", ", files.Select(Path.GetFileName)))),
+            Severity.Warning,
+            config =>
+            {
+                config.RequireInteraction = true;
+                config.Action = L["main-layout-settings-unreadable-action"];
+                config.ActionColor = MudBlazor.Color.Primary;
+                config.OnClick = __ =>
+                {
+                    if (Path.GetDirectoryName(files[0]) is { } dir)
+                        _bridge.OpenPath(dir);
+                    return Task.CompletedTask;
+                };
+            });
+    }
+
     private async Task ShowChangelogIfNeeded()
     {
         if (!_bridge.ShouldShowChangelog())
@@ -405,6 +428,7 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
             await _jS.InvokeVoidAsync("eval", "document.getElementById('app')?.classList.add('loaded')");
 
             await CheckDataFolderAccess();
+            CheckUnreadableSettingsFiles();
             await ShowChangelogIfNeeded();
             await CheckUpdate();
         }

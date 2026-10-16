@@ -87,6 +87,8 @@ public sealed partial class SettingsService : IAsyncDisposable
 
     public IReadOnlySet<string> GetFavoriteAddressesSnapshot() => _favoriteAddresses;
 
+    public IReadOnlyList<string> GetUnreadableFiles() => [.. _unreadablePaths.Keys.Order(StringComparer.OrdinalIgnoreCase)];
+
     private void ScheduleSaveInternal(
         ref CancellationTokenSource? ctsField,
         Func<Task> saveAction,

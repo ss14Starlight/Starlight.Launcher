@@ -23,6 +23,8 @@ public sealed partial class Bridge : IBridge
 
     public IReadOnlySet<string> GetFavoriteAddressesSnapshot() => _settings.GetFavoriteAddressesSnapshot();
 
+    public IReadOnlyList<string> GetUnreadableSettingsFiles() => _settings.GetUnreadableFiles();
+
     public AppSettings GetSettings() => _settings.GetSettings();
 
     public async Task<AppSettings> GetSettingsAsync() => await _settings.GetSettingsAsync();

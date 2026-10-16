@@ -13,6 +13,8 @@ public partial interface IBridge
 
     IReadOnlySet<string> GetFavoriteAddressesSnapshot();
 
+    IReadOnlyList<string> GetUnreadableSettingsFiles();
+
     AppSettings GetSettings();
 
     Task<AppSettings> GetSettingsAsync();
