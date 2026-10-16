@@ -36,6 +36,7 @@ auth-menu-online-status = Online
 auth-menu-expired-status = Sessione scaduta
 auth-menu-unsure-status = Verificando...
 auth-menu-unreachable-status = Server di autenticazione irraggiungibile
+auth-menu-ss14-expired-status = Sessione SS14 scaduta, accedi di nuovo
 
 # Account List
 
@@ -45,6 +46,7 @@ auth-menu-no-accounts = Non hai aggiunto nessun account.
 auth-menu-no-accounts-hint = Usa "Aggiungi Account" per accedere o registrarti
 auth-menu-discord-linked-tooltip = Discord collegato
 auth-menu-login-again-button = Accedi di nuovo
+auth-menu-ss14-relogin-button = Accedi di nuovo a SS14
 auth-menu-select-button = Seleziona
 auth-menu-link-discord-button = Collega a Discord
 auth-menu-add-account-button = Aggiungi Account

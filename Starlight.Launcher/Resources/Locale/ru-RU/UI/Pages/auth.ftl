@@ -36,6 +36,7 @@ auth-menu-online-status = Онлайн
 auth-menu-expired-status = Сеанс истек
 auth-menu-unsure-status = Проверка...
 auth-menu-unreachable-status = Сервер авторизации недоступен
+auth-menu-ss14-expired-status = Сеанс SS14 истек, войдите заново
 
 # Account List
 
@@ -45,6 +46,7 @@ auth-menu-no-accounts = Вы ещё не добавили ни одной уче
 auth-menu-no-accounts-hint = Нажмите "Добавить аккаунт", чтобы войти или зарегистрироваться
 auth-menu-discord-linked-tooltip = Discord привязан
 auth-menu-login-again-button = Войти заново
+auth-menu-ss14-relogin-button = Войти в SS14 заново
 auth-menu-select-button = Выбрать
 auth-menu-link-discord-button = Привязать Discord
 auth-menu-add-account-button = Добавить аккаунт

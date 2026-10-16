@@ -31,8 +31,12 @@ public partial class AccountListView : LocalizedComponentBase
     [Inject] private IBridge _bridge { get; set; } = default!;
     [Inject] private ISnackbar _snackbar { get; set; } = default!;
 
+    internal static bool NeedsSs14Relogin(LoggedInAccount account)
+        => account.Ss14Expired && account.Status != AccountLoginStatus.Expired;
+
     private static string StatusCssVar(LoggedInAccount account) => account.Status switch
     {
+        AccountLoginStatus.Available when account.Ss14Expired => "warning",
         AccountLoginStatus.Available => "success",
         AccountLoginStatus.Expired => "warning",
         AccountLoginStatus.Unreachable => "error",
@@ -41,6 +45,7 @@ public partial class AccountListView : LocalizedComponentBase
 
     private string StatusLabel(LoggedInAccount account) => account.Status switch
     {
+        AccountLoginStatus.Available when account.Ss14Expired => L["auth-menu-ss14-expired-status"],
         AccountLoginStatus.Available => L["auth-menu-online-status"],
         AccountLoginStatus.Expired => L["auth-menu-expired-status"],
         AccountLoginStatus.Unreachable => L["auth-menu-unreachable-status"],

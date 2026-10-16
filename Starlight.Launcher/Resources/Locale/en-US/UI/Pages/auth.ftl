@@ -37,6 +37,7 @@ auth-menu-online-status = Online
 auth-menu-expired-status = The session has expired
 auth-menu-unsure-status = Checking...
 auth-menu-unreachable-status = Could not reach the auth server
+auth-menu-ss14-expired-status = SS14 session expired, log in again
 
 # Account List
 
@@ -47,6 +48,7 @@ auth-menu-no-accounts-hint = Press "Add Account" to login or register in system
 auth-menu-discord-linked-tooltip = Discord linked
 auth-menu-steam-linked-tooltip = Steam linked
 auth-menu-login-again-button = Login again
+auth-menu-ss14-relogin-button = Log in to SS14 again
 auth-menu-select-button = Select
 auth-menu-link-discord-button = Link Discord
 auth-menu-add-account-button = Add Account

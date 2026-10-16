@@ -323,6 +323,7 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
                 await PersistAsync(info);
 
             var status = Combine(robust.State, discord.State, steam.State);
+            data.SetCredentialStates(robust.State, discord.State, steam.State);
             data.SetStatus(status);
             data.MarkChecked();
 
@@ -423,7 +424,7 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
             return (CredentialState.Invalid, false);
 
         // Not near expiry. Ping only when we have no opinion yet or it is time to re-check.
-        if (data.Status == AccountLoginStatus.Available && !force && data.LastCheckUtc is { } last
+        if (data.RobustState == CredentialState.Valid && !force && data.LastCheckUtc is { } last
             && DateTime.UtcNow - last < _revalidateInterval)
         {
             return (CredentialState.Valid, false);
@@ -504,7 +505,8 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
             return (await ValidateStarlightAsync(steam, token, cancel), false);
         }
 
-        if (data.Status == AccountLoginStatus.Available && !force && data.LastCheckUtc is { } last
+        var lastState = steam ? data.SteamState : data.DiscordState;
+        if (lastState == CredentialState.Valid && !force && data.LastCheckUtc is { } last
             && DateTime.UtcNow - last < _revalidateInterval)
         {
             return (CredentialState.Valid, false);
@@ -679,6 +681,11 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
             AddToView([data]);
         }
 
+        var fresh = data.LoginInfo;
+        data.SetCredentialStates(
+            info.Token != null ? CredentialState.Valid : fresh.Token != null ? data.RobustState : CredentialState.None,
+            info.DiscordToken != null ? CredentialState.Valid : fresh.DiscordToken != null ? data.DiscordState : CredentialState.None,
+            info.SteamToken != null ? CredentialState.Valid : fresh.SteamToken != null ? data.SteamState : CredentialState.None);
         data.SetStatus(AccountLoginStatus.Available);
         data.MarkChecked();
         data.RaiseUsernameChanged();
@@ -1008,6 +1015,24 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
         public override AccountLoginStatus Status => _status;
 
         public override bool IsRefreshing => _refreshing;
+
+        public CredentialState RobustState { get; private set; }
+        public CredentialState DiscordState { get; private set; }
+        public CredentialState SteamState { get; private set; }
+
+        public override bool Ss14Expired => RobustState == CredentialState.Invalid;
+
+        public void SetCredentialStates(CredentialState robust, CredentialState discord, CredentialState steam)
+        {
+            var wasSs14Expired = Ss14Expired;
+
+            RobustState = robust;
+            DiscordState = discord;
+            SteamState = steam;
+
+            if (wasSs14Expired != Ss14Expired)
+                OnPropertyChanged(nameof(Ss14Expired));
+        }
 
         /// <summary>
         ///    Updates the status of this account and notifies the UI if it changed.

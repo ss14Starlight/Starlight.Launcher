@@ -40,7 +40,14 @@ else
                 <div class="account-info">
                     <div class="account-name-row">
                         <span class="account-name">@acc.LoginInfo.Username</span>
-                        @if (acc.LoginInfo.Token != null)
+                        @if (acc.LoginInfo.Token != null && acc.Ss14Expired)
+                        {
+                            <MudTooltip Text="@L["auth-menu-ss14-expired-status"]">
+                                <MudIcon Icon="@Icons.Material.Filled.Error"
+                                         Size="Size.Small" Color="Color.Warning" />
+                            </MudTooltip>
+                        }
+                        else if (acc.LoginInfo.Token != null)
                         {
                             <MudTooltip Text="@L["auth-menu-can-play-no-discord"]">
                                 <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
@@ -72,7 +79,7 @@ else
                         <span class="status-dot"
                               style="background:var(--mud-palette-@(StatusCssVar(acc)));
                                      box-shadow:0 0 8px 1px var(--mud-palette-@(StatusCssVar(acc)))"></span>
-                        <span class="mud-text-secondary">@(isActive ? L["auth-menu-active-chip"] : StatusLabel(acc))</span>
+                        <span class="mud-text-secondary">@(isActive && !NeedsSs14Relogin(acc) ? L["auth-menu-active-chip"] : StatusLabel(acc))</span>
                     </div>
                 </div>
 
@@ -87,6 +94,14 @@ else
                     }
                     else
                     {
+                        @if (NeedsSs14Relogin(acc))
+                        {
+                            <MudTooltip Text="@L["auth-menu-ss14-relogin-button"]">
+                                <MudIconButton Icon="@Icons.Material.Filled.Refresh" Size="Size.Small" Color="Color.Warning"
+                                               Disabled="Busy"
+                                               OnClick="() => OnAccountRelogin?.Invoke(acc)" />
+                            </MudTooltip>
+                        }
                         <MudTooltip Text="@(isActive ? L["auth-menu-active-chip"] : L["auth-menu-select-button"])">
                             <MudIconButton Icon="@(isActive ? Icons.Material.Filled.RadioButtonChecked : Icons.Material.Filled.RadioButtonUnchecked)"
                                            Size="Size.Small"

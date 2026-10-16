@@ -31,4 +31,6 @@ public abstract class LoggedInAccount(LoginInfo loginInfo) : ObservableObject
     ///     server" from "we asked and could not get an answer".
     /// </summary>
     public virtual bool IsRefreshing => false;
+
+    public virtual bool Ss14Expired => false;
 }
