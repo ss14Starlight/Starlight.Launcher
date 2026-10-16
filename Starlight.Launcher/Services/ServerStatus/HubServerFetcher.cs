@@ -398,6 +398,10 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
         {
             await RefreshServerList(cancel).ConfigureAwait(false);
         }
+        catch (OperationCanceledException) when (cancel.IsCancellationRequested)
+        {
+            Log.Debug("Server list refresh cancelled");
+        }
         catch (Exception ex)
         {
             Log.Error(ex, "Unhandled exception in RefreshServerList");
