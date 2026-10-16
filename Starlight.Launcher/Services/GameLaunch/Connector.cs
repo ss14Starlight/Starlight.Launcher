@@ -982,7 +982,7 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
                 var startInfo = new ProcessStartInfo
                 {
                     FileName = "open",
-                    ArgumentList = { appPath }
+                    ArgumentList = { "-W", "-n", appPath }
                 };
 
                 if (RuntimeInformation.OSArchitecture != Architecture.X64)
