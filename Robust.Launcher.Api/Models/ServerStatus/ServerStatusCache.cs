@@ -298,10 +298,8 @@ public sealed class ServerStatusCache(HttpClient http, ILogger<ServerStatusCache
         }
         catch (HubApiException apiException)
         {
-#if DEBUG
             if (apiException.IsRateLimited)
                 _logger.LogDebug("Hub: {Url} returned 429 exception(Too Many Requests)!", apiException.RequestUrl);
-#endif
             data.StatusInfo = ServerStatusInfoCode.Error;
             data.NotifyChanged();
             return;
