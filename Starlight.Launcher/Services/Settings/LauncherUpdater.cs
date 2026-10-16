@@ -3,6 +3,7 @@ using System.Formats.Tar;
 using System.IO.Compression;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text.Json;
 using Starlight.Launcher.WebUI.Models.LauncherUpdater;
 
@@ -134,9 +135,10 @@ public partial class LauncherUpdater(SettingsService settings)
                         var name = a.TryGetProperty("name", out var n) ? n.GetString() : null;
                         var url = a.TryGetProperty("browser_download_url", out var u) ? u.GetString() : null;
                         var size = a.TryGetProperty("size", out var s) && s.TryGetInt64(out var sv) ? sv : 0;
+                        var digest = a.TryGetProperty("digest", out var d) && d.ValueKind == JsonValueKind.String ? d.GetString() : null;
 
                         if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(url))
-                            assets.Add(new ReleaseAsset(name, url, size));
+                            assets.Add(new ReleaseAsset(name, url, size, ParseSha256Digest(digest)));
                     }
                 }
 
@@ -149,6 +151,16 @@ public partial class LauncherUpdater(SettingsService settings)
         {
             return null;
         }
+    }
+
+    private static string? ParseSha256Digest(string? digest)
+    {
+        const string prefix = "sha256:";
+        if (digest is null || !digest.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        var hex = digest[prefix.Length..];
+        return hex.Length == SHA256.HashSizeInBytes * 2 && hex.All(char.IsAsciiHexDigit) ? hex : null;
     }
 
     public static async Task<IReadOnlyList<ChangelogEntry>> GetAllChangelogs()
@@ -216,13 +228,33 @@ public partial class LauncherUpdater(SettingsService settings)
 #endif
 
     /// <summary>
-    /// Downloads the asset to the launcher data folder and returns the local path.
+    /// Downloads the asset to the launcher data folder, checks it against the SHA-256 digest
+    /// GitHub reported for it and returns the local path.
     /// </summary>
     public async Task<string> DownloadAsset(ReleaseAsset asset, CancellationToken ct = default)
     {
+        if (asset.Sha256 is null)
+            throw new InvalidOperationException($"GitHub did not provide a SHA-256 digest for {asset.Name}, refusing to install it.");
+
         var dir = GetUpdateFolder();
         _ = Directory.CreateDirectory(dir);
-        var path = Path.Combine(dir, asset.Name);
+        var path = Path.Combine(dir, Path.GetFileName(asset.Name));
+
+        try
+        {
+            await DownloadAndVerify(asset, path, ct);
+        }
+        catch
+        {
+            TryDelete(path);
+            throw;
+        }
+
+        return path;
+    }
+
+    private async Task DownloadAndVerify(ReleaseAsset asset, string path, CancellationToken ct)
+    {
 
         using var httpClient = new HttpClient();
         httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Starlight.Launcher");
@@ -235,6 +267,7 @@ public partial class LauncherUpdater(SettingsService settings)
 
         await using var src = await response.Content.ReadAsStreamAsync(ct);
         await using var dst = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
+        using var sha = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
 
         var buffer = new byte[81920];
         long downloaded = 0;
@@ -244,11 +277,29 @@ public partial class LauncherUpdater(SettingsService settings)
         while ((read = await src.ReadAsync(buffer, ct)) > 0)
         {
             await dst.WriteAsync(buffer.AsMemory(0, read), ct);
+            sha.AppendData(buffer, 0, read);
             downloaded += read;
             DownloadProgress?.Invoke((downloaded, total));
         }
 
-        return path;
+        var actual = Convert.ToHexString(sha.GetHashAndReset());
+        if (!string.Equals(actual, asset.Sha256, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException(
+                $"Checksum mismatch for {asset.Name}: expected {asset.Sha256}, got {actual}. The download may be corrupted or tampered with.");
+    }
+
+    private static void TryDelete(string path)
+    {
+        try
+        {
+            File.Delete(path);
+        }
+        catch (IOException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
     }
 
     private string GetUpdateFolder() => Path.Combine(_settings.GetSettings().DirLauncherData, "updates");
