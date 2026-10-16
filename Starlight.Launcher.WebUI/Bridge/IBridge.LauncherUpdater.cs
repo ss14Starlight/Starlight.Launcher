@@ -13,7 +13,7 @@ public partial interface IBridge
 
     Task<string> DownloadAsset(ReleaseAsset asset, CancellationToken ct = default);
 
-    void RunInstallerAndExit(string downloadedPath);
+    Task RunInstallerAndExit(string downloadedPath);
 
     void CleanupOldInstallers();
 

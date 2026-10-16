@@ -21,6 +21,15 @@
                     </MudAlert>
                     break;
 
+                case Phase.Installing:
+                    <div class="d-flex flex-column gap-3 py-2">
+                        <MudText Class="connect-meta">Installing update...</MudText>
+                        <div class="dl-bar">
+                            <div class="dl-bar-fill indeterminate"></div>
+                        </div>
+                    </div>
+                    break;
+
                 default:
                     <div class="d-flex flex-column gap-3 py-2">
                         <div class="d-flex align-end justify-space-between">
@@ -66,7 +75,7 @@
         {
             <MudButton Variant="Variant.Filled" Class="cta-btn-primary" OnClick="Close">Close</MudButton>
         }
-        else if (_phase != Phase.Done)
+        else if (_phase == Phase.Downloading)
         {
             <MudButton Color="Color.Error" OnClick="Cancel">Cancel</MudButton>
         }

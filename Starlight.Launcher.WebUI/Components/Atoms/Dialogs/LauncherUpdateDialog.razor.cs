@@ -14,7 +14,7 @@ public sealed partial class LauncherUpdateDialog : ComponentBase, IDisposable
 
     [Parameter] public ReleaseAsset Asset { get; set; } = default!;
 
-    private enum Phase { Downloading, Done, Failed }
+    private enum Phase { Downloading, Done, Installing, Failed }
     private Phase _phase = Phase.Downloading;
     private string? _error;
 
@@ -79,7 +79,10 @@ public sealed partial class LauncherUpdateDialog : ComponentBase, IDisposable
             // Small pause so the user sees "complete" before we vanish.
             await Task.Delay(800, _cts.Token);
 
-            _bridge.RunInstallerAndExit(path);
+            _phase = Phase.Installing;
+            await InvokeAsync(StateHasChanged);
+
+            await _bridge.RunInstallerAndExit(path);
         }
         catch (OperationCanceledException)
         {
