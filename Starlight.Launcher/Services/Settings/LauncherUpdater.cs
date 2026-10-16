@@ -9,9 +9,12 @@ using Starlight.Launcher.WebUI.Models.LauncherUpdater;
 
 namespace Starlight.Launcher.Services.Settings;
 
-public partial class LauncherUpdater(SettingsService settings)
+public partial class LauncherUpdater(SettingsService settings, HttpClient httpClient)
 {
+    private const string UserAgent = "Starlight.Launcher";
+
     private readonly SettingsService _settings = settings;
+    private readonly HttpClient _httpClient = httpClient;
 
     public static string GetVersion()
     {
@@ -26,7 +29,7 @@ public partial class LauncherUpdater(SettingsService settings)
 
     public event Action<(long downloaded, long total)>? DownloadProgress;
 
-    public static async Task<UpdateInfo> IsUpdateAvailable()
+    public async Task<UpdateInfo> IsUpdateAvailable()
     {
         var currentVersion = NormalizeVersion(GetVersion());
         var current = ParseVersion(currentVersion);
@@ -102,16 +105,15 @@ public partial class LauncherUpdater(SettingsService settings)
 
     private sealed record GhReleaseInfo(string TagName, string HtmlUrl, string? Body, IReadOnlyList<ReleaseAsset> Assets);
 
-    private static async Task<IReadOnlyList<GhReleaseInfo>?> GetReleases()
+    private async Task<IReadOnlyList<GhReleaseInfo>?> GetReleases()
     {
-        using var httpClient = new HttpClient();
-        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Starlight.Launcher");
+        var includePrereleases = _settings.GetSettings().ReceivePrereleases;
 
         try
         {
-            using var response = await httpClient.GetAsync(
-                "https://api.github.com/repos/ss14Starlight/Starlight.Launcher/releases?per_page=50",
-                HttpCompletionOption.ResponseHeadersRead);
+            using var request = CreateGetRequest(
+                "https://api.github.com/repos/ss14Starlight/Starlight.Launcher/releases?per_page=50");
+            using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
             _ = response.EnsureSuccessStatusCode();
 
             var json = await response.Content.ReadAsStringAsync();
@@ -122,6 +124,11 @@ public partial class LauncherUpdater(SettingsService settings)
             {
                 var tag = el.TryGetProperty("tag_name", out var t) ? t.GetString() : null;
                 if (string.IsNullOrWhiteSpace(tag))
+                    continue;
+
+                var isPrerelease = (el.TryGetProperty("prerelease", out var p) && p.ValueKind == JsonValueKind.True)
+                    || NormalizeVersion(tag).Contains('-');
+                if (isPrerelease && !includePrereleases)
                     continue;
 
                 var htmlUrl = el.TryGetProperty("html_url", out var h) ? h.GetString() : null;
@@ -163,7 +170,7 @@ public partial class LauncherUpdater(SettingsService settings)
         return hex.Length == SHA256.HashSizeInBytes * 2 && hex.All(char.IsAsciiHexDigit) ? hex : null;
     }
 
-    public static async Task<IReadOnlyList<ChangelogEntry>> GetAllChangelogs()
+    public async Task<IReadOnlyList<ChangelogEntry>> GetAllChangelogs()
     {
         var releases = await GetReleases();
 
@@ -253,14 +260,17 @@ public partial class LauncherUpdater(SettingsService settings)
         return path;
     }
 
+    private static HttpRequestMessage CreateGetRequest(string url)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.UserAgent.ParseAdd(UserAgent);
+        return request;
+    }
+
     private async Task DownloadAndVerify(ReleaseAsset asset, string path, CancellationToken ct)
     {
-
-        using var httpClient = new HttpClient();
-        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Starlight.Launcher");
-
-        using var response = await httpClient.GetAsync(
-            asset.DownloadUrl, HttpCompletionOption.ResponseHeadersRead, ct);
+        using var request = CreateGetRequest(asset.DownloadUrl);
+        using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
         _ = response.EnsureSuccessStatusCode();
 
         var total = response.Content.Headers.ContentLength ?? (asset.Size > 0 ? asset.Size : 0);

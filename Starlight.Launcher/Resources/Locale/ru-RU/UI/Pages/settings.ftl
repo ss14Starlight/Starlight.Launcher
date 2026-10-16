@@ -12,6 +12,9 @@ settings-menu-language-option = Язык
 settings-menu-language-option-description = Выберите язык для приложения.
 settings-menu-language-option-system = Системный
 
+settings-menu-prereleases-option = Пре-релизные обновления
+settings-menu-prereleases-option-description = Предлагать тестовые версии лаунчера. Они могут работать нестабильно.
+
 settings-menu-hub-list-option = Список хабов
 settings-menu-hub-list-option-description = Настройте список хабов для списка серверов.
 settings-menu-hub-list-option-add-tooltip = Добавить хаб

@@ -22,6 +22,9 @@ settings-menu-language-option-system = Sistema
 settings-menu-multiple-clients-option = Impedisci client multipli
 settings-menu-multiple-clients-option-description = Impedisce il gioco di avviarsi in più finestre alla volta.
 
+settings-menu-prereleases-option = Aggiornamenti pre-release
+settings-menu-prereleases-option-description = Propone le versioni di prova del launcher. Potrebbero essere instabili.
+
 settings-menu-data-folder-option = Cartella dati
 settings-menu-data-folder-option-description = Seleziona la cartella che verrà usata per salvare i dati.
 settings-menu-data-folder-no-access-title = Nessun accesso alla cartella

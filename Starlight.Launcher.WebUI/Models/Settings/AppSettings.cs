@@ -69,6 +69,11 @@ public partial record AppSettings
     public bool PreventMultipleClients { get; set; } = true;
 
     /// <summary>
+    /// Offer launcher updates from GitHub pre-releases too. Off means only stable releases are offered.
+    /// </summary>
+    public bool ReceivePrereleases { get; init; }
+
+    /// <summary>
     /// Last version for which the changelog popup was shown to the user.
     /// Empty means never shown.
     /// </summary>

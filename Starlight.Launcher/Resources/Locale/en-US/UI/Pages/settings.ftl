@@ -24,6 +24,9 @@ settings-menu-language-option-system = System
 settings-menu-multiple-clients-option = Prevent Multiple Clients
 settings-menu-multiple-clients-option-description = Prevents launch of multiple clients at once.
 
+settings-menu-prereleases-option = Pre-release Updates
+settings-menu-prereleases-option-description = Offer test versions of the launcher. They may be unstable.
+
 settings-menu-data-folder-option = Data Folder
 settings-menu-data-folder-option-description = Select folder which will be used to store data.
 settings-menu-data-folder-no-access-title = No access to the folder
