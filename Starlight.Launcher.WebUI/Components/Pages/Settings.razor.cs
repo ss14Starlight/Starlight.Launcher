@@ -167,7 +167,7 @@ public partial class Settings : LocalizedComponentBase, IDisposable
                     var dialog = await _dialog.ShowAsync<AlertDialog>(L["settings-development-tab-alert-title"], options);
                     if (dialog.Dialog is AlertDialog alert)
                     {
-                        alert.OnSuccess += async () => await _bridge.WriteSettingsAsync(await _bridge.GetSettingsAsync() with { DevPolicyAccepted = true });
+                        alert.OnSuccess += async () => await UpdateSetting(s => s with { DevPolicyAccepted = true });
                         alert.OnCancel += async () => await _tabs.ActivatePanelAsync(_generalTab);
                     }
                 }
