@@ -28,6 +28,10 @@ public sealed partial class EngineManagerDynamic : IEngineManager
     private readonly EngineSourceGuard _sourceGuard;
     private volatile bool _manifestCachesDirty;
 
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, VerifiedEngineKey> _verifiedEngineKeys = new();
+
+    private sealed record VerifiedEngineKey(string Signature, long Length, DateTime LastWriteUtc, string PublicKey);
+
     public EngineManagerDynamic(HttpClient http, SettingsService settings, ICdnRegistry cdns, EngineSourceGuard sourceGuard)
     {
         _settings = settings;
@@ -504,13 +508,24 @@ public sealed partial class EngineManagerDynamic : IEngineManager
         var signature = GetEngineSignature(engineVersion);
         var enginePath = GetEnginePath(engineVersion);
 
+        var fileInfo = new FileInfo(enginePath);
+        var stamp = new VerifiedEngineKey(signature, fileInfo.Length, fileInfo.LastWriteTimeUtc, "");
+
+        if (_verifiedEngineKeys.TryGetValue(engineVersion, out var cached)
+            && cached with { PublicKey = "" } == stamp
+            && cdns.Any(c => c.PublicKey == cached.PublicKey))
+            return WriteLoaderKey(cached.PublicKey);
+
         using var stream = File.OpenRead(enginePath);
 
         foreach (var cdn in cdns)
         {
             stream.Seek(0, SeekOrigin.Begin);
             if (VerifySignature(stream, signature, cdn.PublicKey))
+            {
+                _verifiedEngineKeys[engineVersion] = stamp with { PublicKey = cdn.PublicKey };
                 return WriteLoaderKey(cdn.PublicKey);
+            }
         }
 
 #if DEBUG
@@ -529,9 +544,27 @@ public sealed partial class EngineManagerDynamic : IEngineManager
     private string WriteLoaderKey(string publicKeyPem)
     {
         var settings = _settings.GetSettings();
+        var bytes = Encoding.UTF8.GetBytes(publicKeyPem);
+        var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes))[..16].ToLowerInvariant();
+        var path = $"{settings.PathLoaderSigningKey}_{hash}";
+
+        if (File.Exists(path) && File.ReadAllBytes(path).AsSpan().SequenceEqual(bytes))
+            return path;
+
         EnsureDirectoryExists(settings.DirLauncherData);
-        File.WriteAllText(settings.PathLoaderSigningKey, publicKeyPem);
-        return settings.PathLoaderSigningKey;
+
+        var tmp = $"{path}.{Guid.NewGuid():N}.tmp";
+        File.WriteAllBytes(tmp, bytes);
+        try
+        {
+            File.Move(tmp, path, overwrite: true);
+        }
+        catch (IOException) when (File.Exists(path))
+        {
+            File.Delete(tmp);
+        }
+
+        return path;
     }
 
     public async Task<EngineModuleManifest> GetEngineModuleManifest(CancellationToken cancel = default)
