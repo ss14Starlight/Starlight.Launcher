@@ -92,6 +92,28 @@ begin
   end;
 end;
 
+procedure RemoveProtocolRegistration;
+var
+  Command, OurExe: String;
+begin
+  OurExe := ExpandConstant('{app}\{#ExeName}');
+  if not RegQueryStringValue(HKCU, 'Software\Classes\starlight\shell\open\command', '', Command) then
+    Exit;
+  if Pos(Lowercase(OurExe), Lowercase(Command)) = 0 then
+    Exit;
+
+  RegDeleteKeyIncludingSubkeys(HKCU, 'Software\Classes\starlight');
+  RegDeleteKeyIncludingSubkeys(HKCU, 'Software\Classes\Starlight.Launcher.Protocol');
+  RegDeleteKeyIncludingSubkeys(HKCU, 'Software\Starlight.Launcher');
+  RegDeleteValue(HKCU, 'Software\RegisteredApplications', 'Starlight.Launcher');
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  if CurUninstallStep = usUninstall then
+    RemoveProtocolRegistration;
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   AppDir: String;

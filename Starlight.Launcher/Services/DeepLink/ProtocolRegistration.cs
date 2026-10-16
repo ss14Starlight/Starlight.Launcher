@@ -22,13 +22,20 @@ internal static class ProtocolRegistration
             if (exePath is null)
                 return;
 
+            var command = $"\"{exePath}\" \"%1\"";
+            using (var existingKey = Registry.CurrentUser.OpenSubKey($@"Software\Classes\{Scheme}\shell\open\command"))
+            {
+                if (ShouldYieldTo(existingKey?.GetValue("") as string, command))
+                    return;
+            }
+
             using (var progIdKey = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{ProgId}"))
             {
                 progIdKey!.SetValue("", "Starlight Launcher Protocol");
                 using var iconKey = progIdKey.CreateSubKey("DefaultIcon");
                 iconKey!.SetValue("", $"\"{exePath}\",0");
                 using var commandKey = progIdKey.CreateSubKey(@"shell\open\command");
-                commandKey!.SetValue("", $"\"{exePath}\" \"%1\"");
+                commandKey!.SetValue("", command);
             }
 
             using (var capsKey = Registry.CurrentUser.CreateSubKey($@"Software\{AppRegName}\Capabilities"))
@@ -50,7 +57,7 @@ internal static class ProtocolRegistration
             using var directIconKey = schemeKey.CreateSubKey("DefaultIcon");
             directIconKey!.SetValue("", $"\"{exePath}\",0");
             using var directCommandKey = schemeKey.CreateSubKey(@"shell\open\command");
-            directCommandKey!.SetValue("", $"\"{exePath}\" \"%1\"");
+            directCommandKey!.SetValue("", command);
         }
         catch (Exception ex)
         {
@@ -89,7 +96,11 @@ internal static class ProtocolRegistration
                 "Categories=Game;\n" +
                 "MimeType=x-scheme-handler/starlight;\n";
 
-            if (File.Exists(desktopPath) && File.ReadAllText(desktopPath) == desktopContent)
+            var existing = File.Exists(desktopPath) ? File.ReadAllText(desktopPath) : null;
+            if (existing == desktopContent)
+                return;
+
+            if (ShouldYieldTo(existing, desktopContent) || (existing is null && ShouldYieldToSystemDesktopEntry()))
                 return;
 
             File.WriteAllText(desktopPath, desktopContent);
@@ -102,6 +113,66 @@ internal static class ProtocolRegistration
             Log.Warning(ex, "Failed to self-register {scheme} protocol handler (Linux)", Scheme);
         }
     }
+
+    private static bool ShouldYieldTo(string? existing, string ours)
+    {
+#if DEBUG
+        if (existing is null || existing == ours || IsForced())
+            return false;
+
+        var holder = ExtractQuotedExe(existing);
+        if (holder is null || !File.Exists(holder))
+            return false;
+
+        Log.Information("Debug build: leaving {scheme}:// registered to {holder}; set {env}=1 to take it over",
+            Scheme, holder, ForceRegisterEnvVar);
+        return true;
+#else
+        return false;
+#endif
+    }
+
+    private static bool ShouldYieldToSystemDesktopEntry()
+    {
+#if DEBUG
+        if (IsForced())
+            return false;
+
+        var dataDirs = Environment.GetEnvironmentVariable("XDG_DATA_DIRS") is { Length: > 0 } dirs
+            ? dirs.Split(':', StringSplitOptions.RemoveEmptyEntries)
+            : ["/usr/local/share", "/usr/share"];
+
+        foreach (var dir in dataDirs)
+        {
+            foreach (var name in new[] { "starlight-launcher.desktop", "io.github.ss14Starlight.Launcher.desktop" })
+            {
+                var path = Path.Combine(dir, "applications", name);
+                if (!File.Exists(path))
+                    continue;
+
+                Log.Information("Debug build: leaving {scheme}:// to installed {path}; set {env}=1 to take it over",
+                    Scheme, path, ForceRegisterEnvVar);
+                return true;
+            }
+        }
+#endif
+        return false;
+    }
+
+#if DEBUG
+    private const string ForceRegisterEnvVar = "STARLIGHT_REGISTER_PROTOCOL";
+
+    private static bool IsForced() => Environment.GetEnvironmentVariable(ForceRegisterEnvVar) == "1";
+
+    private static string? ExtractQuotedExe(string text)
+    {
+        var start = text.IndexOf('"');
+        if (start < 0)
+            return null;
+        var end = text.IndexOf('"', start + 1);
+        return end > start ? text[(start + 1)..end] : null;
+    }
+#endif
 
     private static void RunBestEffort(string fileName, string args)
     {

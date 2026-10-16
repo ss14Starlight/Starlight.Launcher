@@ -27,11 +27,6 @@ internal static class Program
 #endif
 
             if (OperatingSystem.IsWindows())
-                ProtocolRegistration.RegisterWindows();
-            else if (OperatingSystem.IsLinux())
-                ProtocolRegistration.RegisterLinux();
-
-            if (OperatingSystem.IsWindows())
             {
                 var userData = Path.Combine(AppPaths.AppDataDirectory, "WebView2");
                 Directory.CreateDirectory(userData);
@@ -86,6 +81,11 @@ internal static class Program
 
             if (messaging.SendMessagesOrClaim(messages, sendAnyway))
                 return 0;
+
+            if (OperatingSystem.IsWindows())
+                ProtocolRegistration.RegisterWindows();
+            else if (OperatingSystem.IsLinux())
+                ProtocolRegistration.RegisterLinux();
 
             App.PendingMessaging = messaging;
 
