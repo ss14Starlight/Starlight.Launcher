@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
@@ -15,6 +16,7 @@ namespace Starlight.Launcher.WebUI.Components.Pages;
 public partial class LocalServer : LocalizedComponentBase, IDisposable
 {
     private const int MaxConsoleLines = 5000;
+    private static readonly TimeSpan ConsoleFlushInterval = TimeSpan.FromMilliseconds(100);
 
     [Inject] private IBridge _bridge { get; set; } = default!;
     [Inject] private IDialogService _dialog { get; set; } = default!;
@@ -36,6 +38,9 @@ public partial class LocalServer : LocalizedComponentBase, IDisposable
 
     private LocalServerState _state = new(LocalServerPhase.Idle);
     private readonly RingBuffer<LocalServerLogLine> _console = new(MaxConsoleLines);
+    private readonly ConcurrentQueue<LocalServerLogLine> _pendingOutput = new();
+    private int _flushScheduled;
+    private bool _disposed;
     private bool _autoScrollPending;
     private bool _autoScrollEnabled = true;
     private string _commandInput = "";
@@ -324,13 +329,39 @@ public partial class LocalServer : LocalizedComponentBase, IDisposable
         _ = InvokeAsync(StateHasChanged);
     }
 
+    // Called from the stdout/stderr reader threads: only enqueue here, _console is touched on the renderer thread.
     private void OnOutput(LocalServerLogLine line)
     {
-        _console.Add(line);
+        _pendingOutput.Enqueue(line);
 
-        if (_autoScrollEnabled)
-            _autoScrollPending = true;
-        _ = InvokeAsync(StateHasChanged);
+        if (Interlocked.Exchange(ref _flushScheduled, 1) == 0)
+            _ = FlushOutputAsync();
+    }
+
+    private async Task FlushOutputAsync()
+    {
+        await Task.Delay(ConsoleFlushInterval);
+
+        await InvokeAsync(() =>
+        {
+            Volatile.Write(ref _flushScheduled, 0);
+            if (_disposed)
+                return;
+
+            var added = false;
+            while (_pendingOutput.TryDequeue(out var line))
+            {
+                _console.Add(line);
+                added = true;
+            }
+
+            if (!added)
+                return;
+
+            if (_autoScrollEnabled)
+                _autoScrollPending = true;
+            StateHasChanged();
+        });
     }
 
     private bool CanStart() => SelectedSource is not null
@@ -390,6 +421,7 @@ public partial class LocalServer : LocalizedComponentBase, IDisposable
 
     public override void Dispose()
     {
+        _disposed = true;
         _bridge.LocalServerStateChanged -= OnStateChanged;
         _bridge.LocalServerOutput -= OnOutput;
         base.Dispose();
