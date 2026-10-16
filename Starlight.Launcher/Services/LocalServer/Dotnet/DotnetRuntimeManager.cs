@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Formats.Tar;
 using System.IO.Compression;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -216,8 +217,18 @@ public sealed partial class DotnetRuntimeManager
 
         return byRoot
             .Select(kv => new DotnetInstallation(kv.Key, Path.Combine(kv.Key, MuxerFileName), kv.Value, IsLauncherManaged: false))
-            .Where(i => File.Exists(i.Muxer))
+            .Where(i => File.Exists(i.Muxer) && MatchesProcessArchitecture(i))
             .ToList();
+    }
+
+    private static bool MatchesProcessArchitecture(DotnetInstallation install)
+    {
+        if (ExecutableArchitecture.Matches(install.Muxer, RuntimeInformation.ProcessArchitecture))
+            return true;
+
+        Log.Information("Ignoring system .NET at {Root}: architecture does not match {Architecture}",
+            install.Root, RuntimeInformation.ProcessArchitecture);
+        return false;
     }
 
     private static async Task<string?> TryRunAsync(string fileName, string argument, CancellationToken cancel)
