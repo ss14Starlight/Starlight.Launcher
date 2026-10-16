@@ -859,7 +859,7 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
                 Log.Warning(e, "Failed to await client exit for {pid}", process.Id);
             }
 
-            if (glFailure && exitCode != 0)
+            if (glFailure)
                 ForceCompatMode();
 
             try

@@ -7,7 +7,7 @@ namespace Starlight.Launcher.Services.DeepLink;
 
 internal static class ProtocolRegistration
 {
-    private const string Scheme = "starlight";
+    internal const string Scheme = "starlight";
     private const string ProgId = "Starlight.Launcher.Protocol";
     private const string AppRegName = "Starlight.Launcher";
 

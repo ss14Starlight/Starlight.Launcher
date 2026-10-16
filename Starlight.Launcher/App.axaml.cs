@@ -45,6 +45,8 @@ public partial class App : Application
     {
         GlobalExceptionHandlers.InstallDispatcher();
 
+        SubscribeToUriActivation();
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var services = new ServiceCollection();
@@ -78,6 +80,7 @@ public partial class App : Application
             var messaging = Services.GetRequiredService<LauncherMessaging>();
             commands.RunCommandTask();
             messaging.StartServerTask(commands);
+            AttachUriActivationTarget(commands);
 
             // WebView2 can't start in a folder it can't write to, which would leave the window blank
             // and hide the warning about it. An empty path falls back to the default WebView data folder.
@@ -177,6 +180,58 @@ public partial class App : Application
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private readonly object _uriActivationLock = new();
+    private readonly List<LauncherActivationMessage> _pendingUriActivations = [];
+    private LauncherCommands? _uriActivationTarget;
+
+    private void SubscribeToUriActivation()
+    {
+        if (this.TryGetFeature<IActivatableLifetime>() is not { } activatable)
+            return;
+
+        activatable.Activated += (_, e) =>
+        {
+            if (e is not ProtocolActivatedEventArgs { Kind: ActivationKind.OpenUri, Uri: { } uri })
+                return;
+
+            if (!uri.Scheme.Equals(ProtocolRegistration.Scheme, StringComparison.OrdinalIgnoreCase))
+            {
+                Log.Warning("Ignoring activation with foreign URI scheme {Scheme}", uri.Scheme);
+                return;
+            }
+
+            var message = LauncherUriRouter.Classify(uri);
+            Log.Information("Protocol activation {Uri} classified as {Kind}", uri.GetLeftPart(UriPartial.Path), message.Kind);
+
+            LauncherCommands? target;
+            lock (_uriActivationLock)
+            {
+                target = _uriActivationTarget;
+                if (target == null)
+                {
+                    _pendingUriActivations.Add(message);
+                    return;
+                }
+            }
+
+            _ = target.QueueMessage(message);
+        };
+    }
+
+    private void AttachUriActivationTarget(LauncherCommands commands)
+    {
+        LauncherActivationMessage[] pending;
+        lock (_uriActivationLock)
+        {
+            _uriActivationTarget = commands;
+            pending = [.. _pendingUriActivations];
+            _pendingUriActivations.Clear();
+        }
+
+        foreach (var message in pending)
+            _ = commands.QueueMessage(message);
     }
 
     private static void RegisterServices(IServiceCollection services)
