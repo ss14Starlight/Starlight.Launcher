@@ -74,8 +74,6 @@ public sealed class LocalizationManager(ILogger<LocalizationManager> logger, Set
             await AddLanguage(bundle, culture);
 
         _currentBundle = bundle;
-
-        CultureInfo.CurrentUICulture = culture;
     }
 
     public List<string> EnumarateAllLoadedLanguages()
