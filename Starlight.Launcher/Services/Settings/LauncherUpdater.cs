@@ -77,9 +77,8 @@ public partial class LauncherUpdater(SettingsService settings)
 
     public void MarkChangelogSeen()
     {
-        var settings = _settings.GetSettings();
-        settings.LastSeenChangelogVersion = NormalizeVersion(GetVersion());
-        _settings.WriteSettings(settings);
+        var version = NormalizeVersion(GetVersion());
+        _settings.UpdateSettings(s => s with { LastSeenChangelogVersion = version });
     }
 
     public async Task<IReadOnlyList<ChangelogEntry>> GetChangelogsToShow()

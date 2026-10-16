@@ -165,7 +165,9 @@ public partial class App : Application
 
     private static void RegisterServices(IServiceCollection services)
     {
-        _ = services.AddLogging(b => b.ClearProviders().AddSerilog(Serilog.Log.Logger));
+        _ = services.AddLogging(b => b.ClearProviders()
+            .AddSerilog(Serilog.Log.Logger)
+            .AddFilter("Microsoft.AspNetCore", Microsoft.Extensions.Logging.LogLevel.Warning));
 
         _ = OperatingSystem.IsWindows()
             ? services.AddSingleton<ILoginKeyProvider, DpapiKeyProvider>()

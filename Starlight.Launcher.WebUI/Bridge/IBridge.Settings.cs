@@ -29,6 +29,8 @@ public partial interface IBridge
 
     Task WriteSettingsAsync(AppSettings settings);
 
+    void UpdateSettings(Func<AppSettings, AppSettings> update);
+
     Task WriteFavoritesAsync(List<FavoriteServer> favorites);
 
     void WriteLogins(Dictionary<Guid, LoginInfo> logins);

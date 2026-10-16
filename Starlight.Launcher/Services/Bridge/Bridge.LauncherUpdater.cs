@@ -19,6 +19,20 @@ public sealed partial class Bridge : IBridge
 
     public void RunInstallerAndExit(string downloadedPath)
     {
+        Task.Run(async () =>
+        {
+            try
+            {
+                await _localServer.StopAndWaitAsync();
+            }
+            catch (Exception e)
+            {
+                Serilog.Log.Warning(e, "Failed to stop the local server before updating");
+            }
+
+            await _settings.FlushPendingSavesAsync();
+        }).GetAwaiter().GetResult();
+
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             LauncherUpdater.RunInstallerAndExit(downloadedPath, _settings.GetSettings().DirLauncherInstall);
         else

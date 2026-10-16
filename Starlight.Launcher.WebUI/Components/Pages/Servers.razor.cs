@@ -217,8 +217,7 @@ public partial class Servers : LocalizedComponentBase, IDisposable
 
         if (settings.IgnoredServers.Any(x => x.Name == server.Name || x.Address == server.Address))
             return;
-        settings.IgnoredServers.Add(new IgnoredServer(server.Name, server.Address));
-        _bridge.WriteSettings(settings);
+        _bridge.UpdateSettings(s => s with { IgnoredServers = [.. s.IgnoredServers, new IgnoredServer(server.Name, server.Address)] });
 
         ApplyFilters();
     }

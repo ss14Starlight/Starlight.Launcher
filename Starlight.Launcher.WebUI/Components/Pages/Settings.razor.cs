@@ -201,9 +201,7 @@ public partial class Settings : LocalizedComponentBase, IDisposable
 
     private async Task UpdateSetting(Func<AppSettings, AppSettings> update, bool callWindowUpdate = false)
     {
-        var settings = await _bridge.GetSettingsAsync();
-        var newSettings = update(settings);
-        await _bridge.WriteSettingsAsync(newSettings);
+        await Task.Run(() => _bridge.UpdateSettings(update));
         if (callWindowUpdate)
             _state.CallUpdate();
     }

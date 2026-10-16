@@ -111,7 +111,7 @@ public partial class LauncherCommands(ILogger<LauncherCommands> logger, LoginMan
 
     private async Task Dispatch(LauncherActivationMessage message)
     {
-        _logger.LogDebug("Activation message: {Kind} payload={Payload}", message.Kind, message.Payload);
+        _logger.LogDebug("Activation message: {Message}", message.ToLogString());
 
         switch (message)
         {
@@ -130,29 +130,29 @@ public partial class LauncherCommands(ILogger<LauncherCommands> logger, LoginMan
             case { Kind: LauncherActivationKind.DiscordAuth, Payload: { } uriString }:
                 if (Uri.TryCreate(uriString, UriKind.Absolute, out var discordUri))
                 {
-                    _logger.LogInformation("Dispatching Discord auth deep link: {uri}", discordUri);
+                    _logger.LogInformation("Dispatching Discord auth deep link: {uri}", LauncherActivationMessage.RedactPayload(message.Kind, uriString));
                     _discordAuth.HandleDeepLink(discordUri);
                 }
                 else
                 {
-                    _logger.LogError("Bad auth deep link payload: {Payload}", uriString);
+                    _logger.LogError("Bad auth deep link payload: {Payload}", LauncherActivationMessage.RedactPayload(message.Kind, uriString));
                 }
                 break;
 
             case { Kind: LauncherActivationKind.SteamAuth, Payload: { } uriString }:
                 if (Uri.TryCreate(uriString, UriKind.Absolute, out var steamUri))
                 {
-                    _logger.LogInformation("Dispatching Steam auth deep link: {uri}", steamUri);
+                    _logger.LogInformation("Dispatching Steam auth deep link: {uri}", LauncherActivationMessage.RedactPayload(message.Kind, uriString));
                     _steamAuth.HandleDeepLink(steamUri);
                 }
                 else
                 {
-                    _logger.LogError("Bad auth deep link payload: {Payload}", uriString);
+                    _logger.LogError("Bad auth deep link payload: {Payload}", LauncherActivationMessage.RedactPayload(message.Kind, uriString));
                 }
                 break;
 
             default:
-                _logger.LogError("Unhandled or malformed activation message: {@Message}", message);
+                _logger.LogError("Unhandled or malformed activation message: {Message}", message.ToLogString());
                 break;
         }
     }

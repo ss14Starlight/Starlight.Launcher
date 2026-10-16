@@ -22,7 +22,7 @@ public sealed class EmbeddedBlazorHost : IAsyncDisposable
     private WebApplication? _app;
 
     /// <summary>
-    /// Target url for embedded blazor host
+    /// Target url for embedded blazor host. Carries the access token, so don't log it.
     /// </summary>
     public Uri? Url { get; private set; }
 
@@ -31,7 +31,10 @@ public sealed class EmbeddedBlazorHost : IAsyncDisposable
     /// </summary>
     public async Task StartAsync(IServiceProvider nativeServices)
     {
+        var accessToken = WebHostFactory.GenerateAccessToken();
+
         _app = WebHostFactory.Create(
+            accessToken,
             configureServices: services =>
             {
                 // Only re-expose what your .razor components actually @inject - trim
@@ -56,7 +59,7 @@ public sealed class EmbeddedBlazorHost : IAsyncDisposable
             });
 
         await _app.StartAsync();
-        Url = WebHostFactory.GetListenAddress(_app);
+        Url = WebHostFactory.GetEntryUrl(_app, accessToken);
     }
 
     /// <summary>

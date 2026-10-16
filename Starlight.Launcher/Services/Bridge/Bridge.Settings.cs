@@ -39,6 +39,8 @@ public sealed partial class Bridge : IBridge
 
     public async Task WriteSettingsAsync(AppSettings settings) => await _settings.WriteSettingsAsync(settings);
 
+    public void UpdateSettings(Func<AppSettings, AppSettings> update) => _settings.UpdateSettings(update);
+
     public async Task WriteFavoritesAsync(List <FavoriteServer> favorites) => await _settings.WriteFavoritesAsync(favorites);
 
     public void WriteLogins(Dictionary<Guid, LoginInfo> logins) => _settings.WriteLogins(logins);

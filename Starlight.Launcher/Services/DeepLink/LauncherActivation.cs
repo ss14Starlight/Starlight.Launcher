@@ -16,6 +16,18 @@ public sealed record LauncherActivationMessage(LauncherActivationKind Kind, stri
     public static LauncherActivationMessage Connect(Uri uri, string? reason = null) => new(LauncherActivationKind.Connect, uri.ToString(), reason);
     public static LauncherActivationMessage DiscordAuth(Uri uri) => new(LauncherActivationKind.DiscordAuth, uri.ToString());
     public static LauncherActivationMessage SteamAuth(Uri uri) => new(LauncherActivationKind.SteamAuth, uri.ToString());
+
+    public string ToLogString() => $"{Kind} payload={RedactPayload(Kind, Payload)} reason={Reason}";
+
+    public static string? RedactPayload(LauncherActivationKind kind, string? payload)
+    {
+        if (payload is null || kind is not (LauncherActivationKind.DiscordAuth or LauncherActivationKind.SteamAuth))
+            return payload;
+
+        return Uri.TryCreate(payload, UriKind.Absolute, out var uri)
+            ? uri.GetLeftPart(UriPartial.Path) + (string.IsNullOrEmpty(uri.Query) ? "" : "?<redacted>")
+            : "<redacted>";
+    }
 }
 
 public static class LauncherUriRouter

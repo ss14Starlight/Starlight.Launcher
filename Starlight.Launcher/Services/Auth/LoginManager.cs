@@ -87,9 +87,7 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
 
             OnPropertyChanged(nameof(ActiveAccount));
 
-            var appSettings = _settings.GetSettings();
-            appSettings.SelectedLoginId = value;
-            _settings.WriteSettings(appSettings);
+            _settings.UpdateSettings(s => s with { SelectedLoginId = value });
         }
     }
 
@@ -794,9 +792,7 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
         {
             OnPropertyChanged(nameof(ActiveAccount));
 
-            var appSettings = _settings.GetSettings();
-            appSettings.SelectedLoginId = null;
-            _settings.WriteSettings(appSettings);
+            _settings.UpdateSettings(s => s with { SelectedLoginId = null });
         }
 
         WithSuppressedSync(() =>

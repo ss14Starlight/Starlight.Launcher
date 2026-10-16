@@ -62,7 +62,7 @@ public class LauncherMessaging
             foreach (var message in messages)
             {
                 var json = JsonSerializer.Serialize(message);
-                Console.WriteLine($"IPC: relaying {json} to existing instance");
+                Console.WriteLine($"IPC: relaying {message.ToLogString()} to existing instance");
                 writer.WriteLine(json);
             }
 
@@ -125,7 +125,7 @@ public class LauncherMessaging
 
         foreach (var message in _initialMessages)
         {
-            Log.Information("IPC: queueing initial activation message {@Message}", message);
+            Log.Information("IPC: queueing initial activation message {Message}", message.ToLogString());
             await lc.QueueMessage(message);
         }
 
@@ -159,8 +159,6 @@ public class LauncherMessaging
 
                         line = line.TrimStart('\uFEFF');
 
-                        Log.Information("IPC: received raw line: {line}", line);
-
                         LauncherActivationMessage? message;
                         try
                         {
@@ -173,7 +171,10 @@ public class LauncherMessaging
                         }
 
                         if (message is not null)
+                        {
+                            Log.Information("IPC: received {Message}", message.ToLogString());
                             await lc.QueueMessage(message);
+                        }
                     }
                 }
                 catch (OperationCanceledException)

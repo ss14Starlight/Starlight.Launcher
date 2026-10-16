@@ -195,6 +195,25 @@ public sealed partial class SettingsService : IAsyncDisposable
         ScheduleSaveInternal(ref _settingsSaveCts, () => SaveJsonAsync(_filePath, _settingsLock, _settings), "settings");
     }
 
+    public void UpdateSettings(Func<AppSettings, AppSettings> update)
+    {
+        AppSettings old, updated;
+        _settingsLock.Wait();
+        try
+        {
+            old = _settings;
+            updated = update(old);
+            _settings = updated;
+        }
+        finally
+        {
+            _ = _settingsLock.Release();
+        }
+
+        NotifySettingsChanged(old, updated);
+        ScheduleSaveInternal(ref _settingsSaveCts, () => SaveJsonAsync(_filePath, _settingsLock, _settings), "settings");
+    }
+
     #endregion
 
     #region Async Methods
@@ -224,7 +243,7 @@ public sealed partial class SettingsService : IAsyncDisposable
         await _settingsLock.WaitAsync();
         try
         {
-            old = settings;
+            old = _settings;
             _settings = settings;
         }
         finally
