@@ -165,14 +165,14 @@ public sealed class LocalizationManager(ILogger<LocalizationManager> logger, Set
         _logger?.LogInformation("Loaded {Count} localization files for culture {Culture}", countFiles, culture.Name);
     }
 
-    public void SwitchLanguage(string cultureName)
+    public async Task SwitchLanguageAsync(string cultureName)
     {
         try
         {
             if (!_resourcesByCulture.ContainsKey(cultureName))
                 throw new ArgumentException($"Culture {cultureName} is not available");
             var culture = new CultureInfo(cultureName);
-            SwitchLanguage(culture);
+            await SwitchLanguageAsync(culture);
             Changed?.Invoke();
         }
         catch (Exception ex)
@@ -182,8 +182,8 @@ public sealed class LocalizationManager(ILogger<LocalizationManager> logger, Set
         }
     }
 
-    public void SwitchLanguage(CultureInfo? culture)
-        => LoadCulture(culture ?? SystemCulture).Wait();
+    public Task SwitchLanguageAsync(CultureInfo? culture)
+        => LoadCulture(culture ?? SystemCulture);
 
     private CultureInfo? MatchCultureAgainstAvailable(CultureInfo culture)
     {

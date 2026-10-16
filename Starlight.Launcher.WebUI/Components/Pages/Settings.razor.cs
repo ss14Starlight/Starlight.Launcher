@@ -179,14 +179,14 @@ public partial class Settings : LocalizedComponentBase, IDisposable
         }
     }
 
-    private Task OnLanguageChanged(string? value, Action<string?>? setLocal,
+    private async Task OnLanguageChanged(string? value, Action<string?>? setLocal,
         Func<AppSettings, string?, AppSettings> update)
     {
         if (value is not null && _availableLanguages.Contains(value))
-            L.SwitchLanguage(value?.ToString() ?? string.Empty);
+            await L.SwitchLanguageAsync(value);
 
         setLocal?.Invoke(value);
-        return UpdateSetting(s => update(s, value));
+        await UpdateSetting(s => update(s, value));
     }
 
     private async Task OnDataFolderChanged(string path)

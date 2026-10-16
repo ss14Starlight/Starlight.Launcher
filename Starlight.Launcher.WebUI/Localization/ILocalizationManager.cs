@@ -12,9 +12,9 @@ public interface ILocalizationManager
 
     string GetString(string key, params (string, object?)[] args);
 
-    void SwitchLanguage(string cultureName);
+    Task SwitchLanguageAsync(string cultureName);
 
-    void SwitchLanguage(CultureInfo? culture);
+    Task SwitchLanguageAsync(CultureInfo? culture);
 
     List<string> EnumarateAllLoadedLanguages();
 
