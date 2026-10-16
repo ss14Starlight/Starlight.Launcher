@@ -2,12 +2,13 @@ using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using Starlight.Launcher.WebUI.Bridge;
+using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Models.DiscordRichPresence;
 using Starlight.Launcher.WebUI.Models.LauncherUpdater;
 
 namespace Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 
-public sealed partial class LauncherUpdateDialog : ComponentBase, IDisposable
+public sealed partial class LauncherUpdateDialog : LocalizedComponentBase
 {
     [Inject] private IBridge _bridge { get; set; } = default!;
     [CascadingParameter] private IMudDialogInstance _mudDialog { get; set; } = default!;
@@ -55,6 +56,7 @@ public sealed partial class LauncherUpdateDialog : ComponentBase, IDisposable
 
     protected override void OnInitialized()
     {
+        base.OnInitialized();
         _bridge.DownloadProgress += OnProgress;
 
         _pollTimer = new Timer(_ =>
@@ -169,8 +171,9 @@ public sealed partial class LauncherUpdateDialog : ComponentBase, IDisposable
         return $"{v:0.#} {units[i]}";
     }
 
-    public void Dispose()
+    public override void Dispose()
     {
+        base.Dispose();
         _bridge.DownloadProgress -= OnProgress;
         _pollTimer?.Dispose();
 

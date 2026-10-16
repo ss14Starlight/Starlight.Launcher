@@ -10,6 +10,10 @@ auth-menu-incorrect-info-error = Username o password non corretti.
 auth-menu-unconfirmed-info-error = Il tuo account non è verificato. Controlla la tua email.
 auth-menu-tfa-required-error = Inserisci il codice di autenticazione a due fattori.
 auth-menu-account-blocked-error = Account bloccato.
+auth-menu-tfa-invalid-error = Codice di autenticazione a due fattori non valido.
+auth-menu-no-server-error = Nessun server di autenticazione selezionato. Scegline uno nelle impostazioni.
+auth-menu-steam-login-error = Accesso con Steam annullato o scaduto.
+auth-menu-steam-connect-fail = Impossibile connettersi a Steam.
 auth-menu-forgot-notvalid-email-error = Inserisci un email valida.
 
 auth-menu-register-username-missing = Inserisci il tuo username

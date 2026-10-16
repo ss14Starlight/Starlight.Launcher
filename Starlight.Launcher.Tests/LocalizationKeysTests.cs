@@ -11,6 +11,8 @@ public sealed class LocalizationKeysTests
 
     private static readonly Dictionary<string, Dictionary<string, string>> s_keysByCulture = LoadKeys();
 
+    internal static IReadOnlyDictionary<string, string> DefaultKeys => s_keysByCulture[DefaultLocale];
+
     public static TheoryData<string> Translations()
     {
         var data = new TheoryData<string>();

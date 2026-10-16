@@ -95,11 +95,11 @@
                 }
                 else if (Data.StatusInfo == ServerStatusInfoCode.Error)
                 {
-                    <span class="server-card__description--error">Could not load details</span>
+                    <span class="server-card__description--error">@L["servers-list-item-details-error"]</span>
                 }
                 else if (Data.StatusInfo is ServerStatusInfoCode.NotFetched or ServerStatusInfoCode.Fetching)
                 {
-                    <span class="server-card__description--muted">Loading...</span>
+                    <span class="server-card__description--muted">@L["servers-list-item-details-loading"]</span>
                 }
             </div>
 

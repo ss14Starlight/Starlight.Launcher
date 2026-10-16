@@ -10,6 +10,10 @@ auth-menu-incorrect-info-error = Неверное имя пользовател�
 auth-menu-unconfirmed-info-error = Ваша учетная запись не подтверждена. Проверьте свою электронную почту.
 auth-menu-tfa-required-error = Введите код двухфакторной аутентификации.
 auth-menu-account-blocked-error = Аккаунт заблокирован.
+auth-menu-tfa-invalid-error = Неверный код двухфакторной аутентификации.
+auth-menu-no-server-error = Не выбран сервер авторизации. Выберите его в настройках.
+auth-menu-steam-login-error = Вход через Steam отменён или истёк.
+auth-menu-steam-connect-fail = Не удалось подключиться к Steam.
 auth-menu-forgot-notvalid-email-error = Введите действительный адрес электронной почты.
 
 auth-menu-register-username-missing = Введите свое имя пользователя

@@ -155,6 +155,8 @@ settings-menu-development-engine-override-option-description = Sovrascrive il pe
 
 settings-menu-development-engine-override-path-option = Percorso Override Motore
 settings-menu-development-engine-override-path-option-description = Il percorso per il file eseguibile da usare quando Override Motore è abilitato. Dovrebbe indicare un file eseguibile del motore valido.
+settings-menu-development-engine-override-path-option-helper = Inserisci il percorso dell'eseguibile del motore
+settings-menu-development-engine-override-path-option-label = Percorso del motore
 
 settings-menu-development-robust-manifest-cache-time-option = Robust Manifest Cache Time
 settings-menu-development-robust-manifest-cache-time-option-description = Seleziona il tempo per cui conservare i dati del manifesto.

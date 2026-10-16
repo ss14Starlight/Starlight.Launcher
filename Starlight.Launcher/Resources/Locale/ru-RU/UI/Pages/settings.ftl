@@ -155,6 +155,8 @@ settings-menu-development-engine-override-option-description = Переопре�
 
 settings-menu-development-engine-override-path-option = Путь Переопределения Движка
 settings-menu-development-engine-override-path-option-description = Путь к исполняемому файлу движка, который будет использоваться при включенной функции "Переопределение движка". Этот путь должен указывать на действительный исполняемый файл движка.
+settings-menu-development-engine-override-path-option-helper = Укажите путь к исполняемому файлу движка
+settings-menu-development-engine-override-path-option-label = Путь к движку
 
 settings-menu-development-robust-manifest-cache-time-option = Время хранения кэша манифеста
 settings-menu-development-robust-manifest-cache-time-option-description = Укажите время, на которое следует кэшировать данные манифеста.

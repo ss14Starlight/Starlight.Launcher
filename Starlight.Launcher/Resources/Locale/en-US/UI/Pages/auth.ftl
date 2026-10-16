@@ -10,6 +10,10 @@ auth-menu-incorrect-info-error = Incorrect username or password.
 auth-menu-unconfirmed-info-error = Your account has not been verified. Please check your email.
 auth-menu-tfa-required-error = Enter your two-factor authentication code.
 auth-menu-account-blocked-error = Account blocked.
+auth-menu-tfa-invalid-error = Invalid two-factor authentication code.
+auth-menu-no-server-error = No auth server selected. Choose one in the settings.
+auth-menu-steam-login-error = Steam login canceled or expired.
+auth-menu-steam-connect-fail = Failed to connect Steam.
 auth-menu-forgot-notvalid-email-error = Enter valid email.
 
 auth-menu-register-username-missing = Enter your username

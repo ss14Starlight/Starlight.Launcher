@@ -155,6 +155,8 @@ settings-menu-development-engine-override-option-description = Override the defa
 
 settings-menu-development-engine-override-path-option = Engine Override Path
 settings-menu-development-engine-override-path-option-description = The file path to the engine executable to use when Engine Override is enabled. This should point to a valid Engine executable file.
+settings-menu-development-engine-override-path-option-helper = Write Path To Engine Executable
+settings-menu-development-engine-override-path-option-label = Engine Path
 
 settings-menu-development-robust-manifest-cache-time-option = Robust Manifest Cache Time
 settings-menu-development-robust-manifest-cache-time-option-description = Set the time for which to cache manifest data.

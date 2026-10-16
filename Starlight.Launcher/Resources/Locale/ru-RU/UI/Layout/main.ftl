@@ -11,7 +11,13 @@ settings-logins-unrecoverable-action = Подробнее
 
 main-layout-data-folder-no-access = Лаунчер не может записывать в папку данных "{ $path }". Загрузка и обновление файлов игры не будут работать. Выберите другую папку в настройках.
 main-layout-data-folder-no-access-action = Настройки
+main-layout-settings-unreadable = Не удалось прочитать { $files } (возможно, файл занят другой программой). Изменения сейчас не сохранятся и пропадут после перезапуска. Закройте программу, которая держит файл, и перезапустите лаунчер.
+main-layout-settings-unreadable-action = Открыть папку
 main-layout-bug-report = Сообщить об ошибке
 
 update-failed-title = Обновление не установилось
 update-failed-text = Лаунчер скачал обновление, но Flatpak его не установил. Установите новый .flatpak со страницы релизов вручную (flatpak install --reinstall <файл>). Подробности:
+
+main-layout-render-error = Что-то пошло не так. Попробуйте обновить страницу.
+main-layout-unhandled-error = Произошла непредвиденная ошибка.
+main-layout-reload = Перезагрузить

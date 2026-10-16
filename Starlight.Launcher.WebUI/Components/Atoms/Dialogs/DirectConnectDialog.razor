@@ -1,23 +1,26 @@
 @using MudBlazor
+@using Starlight.Launcher.WebUI.Localization
+
+@inherits LocalizedComponentBase
 
 <MudDialog>
     <DialogContent>
         <MudTextField @bind-Value="Address"
-                      Label="Server Address"
+                      Label="@L["direct-connect-dialog-address"]"
                       Placeholder="ss14://localhost"
                       Variant="Variant.Outlined"
                       Immediate="true"
                       AutoFocus="true"
                       OnKeyDown="HandleKeyDown" />
         <MudCheckBox @bind-Value="AddToFavorites"
-                     Label="Add to Favorites"
+                     Label="@L["direct-connect-dialog-add-to-favorites"]"
                      Class="mt-2" />
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton OnClick="Cancel">@L["general-cancel"]</MudButton>
         <MudButton Variant="Variant.Filled"
                    Class="cta-btn-primary"
                    Disabled="@(string.IsNullOrWhiteSpace(Address))"
-                   OnClick="Submit">Connect</MudButton>
+                   OnClick="Submit">@L["direct-connect-dialog-connect"]</MudButton>
     </DialogActions>
 </MudDialog>

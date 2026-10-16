@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
+using Starlight.Launcher.WebUI.Localization;
 
 namespace Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 
-public partial class DirectConnectDialog : ComponentBase
+public partial class DirectConnectDialog : LocalizedComponentBase
 {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
 

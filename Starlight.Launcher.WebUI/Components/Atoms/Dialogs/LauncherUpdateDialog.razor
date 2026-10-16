@@ -1,10 +1,14 @@
+@using Starlight.Launcher.WebUI.Localization
+
+@inherits LocalizedComponentBase
+
 <MudDialog>
     <TitleContent>
         <div class="d-flex align-center gap-3">
             <div class="sl-dialog-icon">
                 <MudIcon Icon="@Icons.Material.Filled.SystemUpdateAlt" Size="Size.Small" />
             </div>
-            <MudText Typo="Typo.h6">Updating launcher</MudText>
+            <MudText Typo="Typo.h6">@L["launcher-update-dialog-title"]</MudText>
         </div>
     </TitleContent>
     <DialogContent>
@@ -17,13 +21,13 @@
 
                 case Phase.Done:
                     <MudAlert Severity="Severity.Success" Dense="true">
-                        Download complete. The installer will now open and the launcher will close.
+                        @L["launcher-update-dialog-done"]
                     </MudAlert>
                     break;
 
                 case Phase.Installing:
                     <div class="d-flex flex-column gap-3 py-2">
-                        <MudText Class="connect-meta">Installing update...</MudText>
+                        <MudText Class="connect-meta">@L["launcher-update-dialog-installing"]</MudText>
                         <div class="dl-bar">
                             <div class="dl-bar-fill indeterminate"></div>
                         </div>
@@ -34,7 +38,7 @@
                     <div class="d-flex flex-column gap-3 py-2">
                         <div class="d-flex align-end justify-space-between">
                             <MudText Class="connect-meta">
-                                @(_phase == Phase.Downloading ? "Downloading update..." : "Preparing...")
+                                @(_phase == Phase.Downloading ? L["launcher-update-dialog-downloading"] : L["launcher-update-dialog-preparing"])
                             </MudText>
                             @if (_hasDeterminateProgress)
                             {
@@ -60,7 +64,7 @@
                                 @if (_haveSpeed && _smoothedBytesPerSec > 1)
                                 {
                                     <MudText Typo="Typo.caption">
-                                        @Format((long)_smoothedBytesPerSec)/s@(_eta is { } eta ? $" · {eta} left" : "")
+                                        @Format((long)_smoothedBytesPerSec)/s@(_eta is { } eta ? $" · {L.GetString("launcher-update-dialog-eta", ("eta", eta))}" : "")
                                     </MudText>
                                 }
                             </div>
@@ -73,11 +77,11 @@
     <DialogActions>
         @if (_phase == Phase.Failed)
         {
-            <MudButton Variant="Variant.Filled" Class="cta-btn-primary" OnClick="Close">Close</MudButton>
+            <MudButton Variant="Variant.Filled" Class="cta-btn-primary" OnClick="Close">@L["general-close"]</MudButton>
         }
         else if (_phase == Phase.Downloading)
         {
-            <MudButton Color="Color.Error" OnClick="Cancel">Cancel</MudButton>
+            <MudButton Color="Color.Error" OnClick="Cancel">@L["general-cancel"]</MudButton>
         }
     </DialogActions>
 </MudDialog>

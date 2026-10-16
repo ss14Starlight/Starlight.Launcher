@@ -152,7 +152,7 @@ public partial class Home : LocalizedComponentBase, IDisposable
     private async Task OpenDirectConnect()
     {
         var dialog = await _dialogService.ShowAsync<DirectConnectDialog>(
-            "Direct Connect");
+            L["home-menu-dirrect-connect"]);
         var dialogResult = await dialog.Result;
 
         if (dialogResult is null || dialogResult.Canceled)

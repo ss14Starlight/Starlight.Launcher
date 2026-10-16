@@ -71,7 +71,7 @@
             </ChildContent>
             <ErrorContent Context="ex">
                 <MudAlert Severity="Severity.Error" Class="ma-4">
-                    <MudText>Something went wrong. Please try refreshing the page.</MudText>
+                    <MudText>@L["main-layout-render-error"]</MudText>
                 </MudAlert>
             </ErrorContent>
         </ErrorBoundary>
@@ -108,7 +108,7 @@
 </MudLayout>
 
 <div id="blazor-error-ui">
-    An unhandled error has occurred.
-    <a href="" class="reload">Reload</a>
+    @L["main-layout-unhandled-error"]
+    <a href="" class="reload">@L["main-layout-reload"]</a>
     <a class="dismiss">🗙</a>
 </div>
