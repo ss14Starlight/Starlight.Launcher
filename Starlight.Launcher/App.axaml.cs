@@ -126,6 +126,10 @@ public partial class App : Application
                         () => Services.GetRequiredService<LocalServerManager>().StopAndWaitAsync(),
                         TimeSpan.FromSeconds(20));
 
+                    await Step(".NET runtime updates stop",
+                        () => Services.GetRequiredService<DotnetRuntimeManager>().StopBackgroundUpdatesAsync(),
+                        TimeSpan.FromSeconds(5));
+
                     await Step("commands stop", () =>
                     {
                         commands.Shutdown();

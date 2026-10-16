@@ -36,6 +36,7 @@ public sealed partial class DotnetRuntimeManager
 
     private static readonly TimeSpan SystemProbeTimeout = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan UpdateCheckInterval = TimeSpan.FromDays(3);
+    private static readonly TimeSpan FailedUpdateCheckRetryInterval = TimeSpan.FromHours(6);
 
     private static string MuxerFileName => OperatingSystem.IsWindows() ? "dotnet.exe" : "dotnet";
 
@@ -48,6 +49,7 @@ public sealed partial class DotnetRuntimeManager
     private readonly HashSet<string> _stagingDirs = new(StringComparer.Ordinal);
     private readonly HashSet<string> _updatingChannels = new(StringComparer.Ordinal);
     private readonly List<Task> _backgroundUpdates = [];
+    private readonly CancellationTokenSource _shutdown = new();
 
     public DotnetRuntimeManager(HttpClient http, SettingsService settings)
         : this(http, () => Path.Combine(settings.GetSettings().DirLauncherData, "dotnet"))
@@ -403,7 +405,7 @@ public sealed partial class DotnetRuntimeManager
         var key = UpdateCheckKey(requirements);
         lock (_updateLock)
         {
-            if (!_updatingChannels.Add(key))
+            if (_shutdown.IsCancellationRequested || !_updatingChannels.Add(key))
                 return;
 
             _ = _backgroundUpdates.RemoveAll(t => t.IsCompleted);
@@ -411,11 +413,16 @@ public sealed partial class DotnetRuntimeManager
             {
                 try
                 {
-                    await UpdateAsync(requirements, cached);
+                    await UpdateAsync(requirements, cached, _shutdown.Token);
+                }
+                catch (OperationCanceledException) when (_shutdown.IsCancellationRequested)
+                {
+                    Log.Information("Background update of the .NET {Version} runtime cancelled", requirements.DisplayVersion);
                 }
                 catch (Exception e)
                 {
                     Log.Warning(e, "Background update of the .NET {Version} runtime failed", requirements.DisplayVersion);
+                    MarkUpdateChecked(requirements, retryAfter: FailedUpdateCheckRetryInterval);
                 }
                 finally
                 {
@@ -432,9 +439,18 @@ public sealed partial class DotnetRuntimeManager
             return Task.WhenAll(_backgroundUpdates);
     }
 
-    private async Task UpdateAsync(DotnetRuntimeRequirements requirements, DotnetInstallation cached)
+    public Task StopBackgroundUpdatesAsync()
     {
-        var archive = await FindArchiveAsync(requirements, CancellationToken.None);
+        lock (_updateLock)
+        {
+            _shutdown.Cancel();
+            return Task.WhenAll(_backgroundUpdates);
+        }
+    }
+
+    private async Task UpdateAsync(DotnetRuntimeRequirements requirements, DotnetInstallation cached, CancellationToken cancel)
+    {
+        var archive = await FindArchiveAsync(requirements, cancel);
 
         var framework = requirements.NeedsAspNetCore ? DotnetRuntimeRequirements.AspNetCoreApp : DotnetRuntimeRequirements.NetCoreApp;
         var current = cached.Frameworks[framework].Max();
@@ -453,9 +469,9 @@ public sealed partial class DotnetRuntimeManager
 
         try
         {
-            await StageAsync(archive, tempDir, progress: null, requirements.DisplayVersion, CancellationToken.None);
+            await StageAsync(archive, tempDir, progress: null, requirements.DisplayVersion, cancel);
 
-            await _cacheLock.WaitAsync();
+            await _cacheLock.WaitAsync(cancel);
             try
             {
                 _ = Commit(archive, tempDir);
@@ -487,12 +503,13 @@ public sealed partial class DotnetRuntimeManager
         return !File.Exists(path) || DateTime.UtcNow - File.GetLastWriteTimeUtc(path) >= UpdateCheckInterval;
     }
 
-    private void MarkUpdateChecked(DotnetRuntimeRequirements requirements)
+    private void MarkUpdateChecked(DotnetRuntimeRequirements requirements, TimeSpan? retryAfter = null)
     {
+        var stamp = DateTime.UtcNow - (UpdateCheckInterval - (retryAfter ?? UpdateCheckInterval));
         try
         {
             File.WriteAllText(UpdateCheckPath(requirements), "");
-            File.SetLastWriteTimeUtc(UpdateCheckPath(requirements), DateTime.UtcNow);
+            File.SetLastWriteTimeUtc(UpdateCheckPath(requirements), stamp);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
