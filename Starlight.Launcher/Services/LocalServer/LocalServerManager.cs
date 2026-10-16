@@ -408,9 +408,15 @@ public sealed partial class LocalServerManager(HttpClient http, SettingsService 
 
     private string GetInstallDirectory(string manifestUrl, string buildHash)
     {
+        if (!IsValidBuildHash(buildHash))
+            throw new UpdateException($"Manifest contains an invalid build key: '{buildHash}'.");
+
         var settings = _settings.GetSettings();
         return Path.Combine(settings.DirLauncherData, "local-servers", GetSourceSlug(manifestUrl), buildHash);
     }
+
+    private static bool IsValidBuildHash(string buildHash) =>
+        buildHash.Length is > 0 and <= 128 && buildHash.All(char.IsAsciiHexDigit);
 
     private static string GetSourceSlug(string manifestUrl)
     {
