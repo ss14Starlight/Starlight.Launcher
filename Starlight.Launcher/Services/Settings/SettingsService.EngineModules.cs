@@ -31,7 +31,7 @@ sealed partial class SettingsService
 
         ModulesChanged?.Invoke();
 
-        ScheduleSaveInternal(ref _modulesSaveCts, () => SaveJsonAsync(_modulesPath, _modulesLock, _engineModules), "modules");
+        ScheduleSaveInternal(ref _modulesSaveCts, () => SaveJsonAsync(_modulesPath, _modulesLock, () => _engineModules), "modules");
     }
 
     public void RemoveInstalledModule(InstalledEngineModule module)
@@ -48,7 +48,7 @@ sealed partial class SettingsService
 
         ModulesChanged?.Invoke();
 
-        ScheduleSaveInternal(ref _modulesSaveCts, () => SaveJsonAsync(_modulesPath, _modulesLock, _engineModules), "modules");
+        ScheduleSaveInternal(ref _modulesSaveCts, () => SaveJsonAsync(_modulesPath, _modulesLock, () => _engineModules), "modules");
     }
 
     public void WriteModules(HashSet<InstalledEngineModule> modules)
@@ -65,7 +65,7 @@ sealed partial class SettingsService
 
         ModulesChanged?.Invoke();
 
-        ScheduleSaveInternal(ref _modulesSaveCts, () => SaveJsonAsync(_modulesPath, _modulesLock, _engineModules), "modules");
+        ScheduleSaveInternal(ref _modulesSaveCts, () => SaveJsonAsync(_modulesPath, _modulesLock, () => _engineModules), "modules");
     }
 
     public async Task<HashSet<InstalledEngineModule>> GetModulesAsync()
@@ -95,6 +95,6 @@ sealed partial class SettingsService
 
         ModulesChanged?.Invoke();
 
-        ScheduleSaveInternal(ref _modulesSaveCts, () => SaveJsonAsync(_modulesPath, _modulesLock, _engineModules), "modules");
+        ScheduleSaveInternal(ref _modulesSaveCts, () => SaveJsonAsync(_modulesPath, _modulesLock, () => _engineModules), "modules");
     }
 }

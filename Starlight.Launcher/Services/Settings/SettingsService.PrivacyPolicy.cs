@@ -39,7 +39,7 @@ public sealed partial class SettingsService
             _ = _settingsLock.Release();
         }
 
-        ScheduleSaveInternal(ref _settingsSaveCts, () => SaveJsonAsync(_filePath, _settingsLock, _settings), "settings");
+        ScheduleSaveInternal(ref _settingsSaveCts, () => SaveJsonAsync(_filePath, _settingsLock, () => _settings), "settings");
     }
 
     public void UpdateConnectedToPrivacyPolicy(string identifier)
@@ -55,6 +55,6 @@ public sealed partial class SettingsService
             _ = _settingsLock.Release();
         }
 
-        ScheduleSaveInternal(ref _settingsSaveCts, () => SaveJsonAsync(_filePath, _settingsLock, _settings), "settings");
+        ScheduleSaveInternal(ref _settingsSaveCts, () => SaveJsonAsync(_filePath, _settingsLock, () => _settings), "settings");
     }
 }

@@ -31,7 +31,7 @@ public sealed partial class SettingsService
 
         EnginesChanged?.Invoke();
 
-        ScheduleSaveInternal(ref _enginesSaveCts, () => SaveJsonAsync(_enginesPath, _enginesLock, _engineInstallations.Values), "engines");
+        ScheduleSaveInternal(ref _enginesSaveCts, () => SaveJsonAsync(_enginesPath, _enginesLock, () => _engineInstallations.Values), "engines");
     }
 
     public void RemoveInstalledEngine(string version)
@@ -48,7 +48,7 @@ public sealed partial class SettingsService
 
         EnginesChanged?.Invoke();
 
-        ScheduleSaveInternal(ref _enginesSaveCts, () => SaveJsonAsync(_enginesPath, _enginesLock, _engineInstallations.Values), "engines");
+        ScheduleSaveInternal(ref _enginesSaveCts, () => SaveJsonAsync(_enginesPath, _enginesLock, () => _engineInstallations.Values), "engines");
     }
 
     public void WriteEngines(Dictionary<string, InstalledEngineVersion> engines)
@@ -65,7 +65,7 @@ public sealed partial class SettingsService
 
         EnginesChanged?.Invoke();
 
-        ScheduleSaveInternal(ref _enginesSaveCts, () => SaveJsonAsync(_enginesPath, _enginesLock, _engineInstallations.Values), "engines");
+        ScheduleSaveInternal(ref _enginesSaveCts, () => SaveJsonAsync(_enginesPath, _enginesLock, () => _engineInstallations.Values), "engines");
     }
 
     public async Task<Dictionary<string, InstalledEngineVersion>> GetEnginesAsync()
@@ -95,6 +95,6 @@ public sealed partial class SettingsService
 
         EnginesChanged?.Invoke();
 
-        ScheduleSaveInternal(ref _enginesSaveCts, () => SaveJsonAsync(_enginesPath, _enginesLock, _engineInstallations.Values), "engines");
+        ScheduleSaveInternal(ref _enginesSaveCts, () => SaveJsonAsync(_enginesPath, _enginesLock, () => _engineInstallations.Values), "engines");
     }
 }

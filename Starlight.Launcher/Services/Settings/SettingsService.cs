@@ -59,6 +59,13 @@ public sealed partial class SettingsService : IAsyncDisposable
 
     private readonly ConcurrentDictionary<string, Task> _pendingSaves = new();
 
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> _writeLocks = new();
+
+    private readonly ConcurrentDictionary<string, byte> _unreadablePaths = new();
+
+    private const int LoadAttempts = 3;
+    private const int LoadRetryDelayMs = 200;
+
     #endregion
 
     public SettingsService(ILogger<SettingsService> logger, ILoginKeyProvider keyProvider)
@@ -109,12 +116,29 @@ public sealed partial class SettingsService : IAsyncDisposable
         _pendingSaves[what] = task;
     }
 
-    private async Task SaveJsonAsync<T>(string path, SemaphoreSlim slim, T obj)
+    private async Task SaveJsonAsync<T>(string path, SemaphoreSlim slim, Func<T> snapshot)
     {
-        await slim.WaitAsync();
+        if (_unreadablePaths.ContainsKey(path))
+        {
+            _logger.LogWarning("Skipping save of {path}: it failed to load at startup, keeping the file on disk intact", path);
+            return;
+        }
+
+        var writeLock = _writeLocks.GetOrAdd(path, _ => new SemaphoreSlim(1, 1));
+        await writeLock.WaitAsync();
         try
         {
-            var json = JsonSerializer.Serialize(obj, _jsonOptions);
+            string json;
+            await slim.WaitAsync();
+            try
+            {
+                json = JsonSerializer.Serialize(snapshot(), _jsonOptions);
+            }
+            finally
+            {
+                _ = slim.Release();
+            }
+
             await WriteFileSafeAsync(json, Path.GetDirectoryName(path)!, path);
 #if DEBUG
             _logger.LogDebug("{path} saved", path);
@@ -126,7 +150,7 @@ public sealed partial class SettingsService : IAsyncDisposable
         }
         finally
         {
-            slim.Release();
+            _ = writeLock.Release();
         }
     }
 
@@ -134,11 +158,11 @@ public sealed partial class SettingsService : IAsyncDisposable
     {
         var tasks = new List<Task>
         {
-            SaveJsonAsync(_filePath, _settingsLock, _settings),
-            SaveJsonAsync(_favoritesPath, _favoritesLock, _favorites),
+            SaveJsonAsync(_filePath, _settingsLock, () => _settings),
+            SaveJsonAsync(_favoritesPath, _favoritesLock, () => _favorites),
             SaveLoginsEncryptedAsync(),
-            SaveJsonAsync(_enginesPath, _enginesLock, _engineInstallations.Values),
-            SaveJsonAsync(_modulesPath, _modulesLock, _engineModules)
+            SaveJsonAsync(_enginesPath, _enginesLock, () => _engineInstallations.Values),
+            SaveJsonAsync(_modulesPath, _modulesLock, () => _engineModules)
         };
         await Task.WhenAll(tasks);
     }
@@ -192,7 +216,7 @@ public sealed partial class SettingsService : IAsyncDisposable
         }
 
         NotifySettingsChanged(old, settings);
-        ScheduleSaveInternal(ref _settingsSaveCts, () => SaveJsonAsync(_filePath, _settingsLock, _settings), "settings");
+        ScheduleSaveInternal(ref _settingsSaveCts, () => SaveJsonAsync(_filePath, _settingsLock, () => _settings), "settings");
     }
 
     public void UpdateSettings(Func<AppSettings, AppSettings> update)
@@ -211,7 +235,7 @@ public sealed partial class SettingsService : IAsyncDisposable
         }
 
         NotifySettingsChanged(old, updated);
-        ScheduleSaveInternal(ref _settingsSaveCts, () => SaveJsonAsync(_filePath, _settingsLock, _settings), "settings");
+        ScheduleSaveInternal(ref _settingsSaveCts, () => SaveJsonAsync(_filePath, _settingsLock, () => _settings), "settings");
     }
 
     #endregion
@@ -252,7 +276,7 @@ public sealed partial class SettingsService : IAsyncDisposable
         }
 
         NotifySettingsChanged(old, settings);
-        ScheduleSaveInternal(ref _settingsSaveCts, () => SaveJsonAsync(_filePath, _settingsLock, _settings), "settings");
+        ScheduleSaveInternal(ref _settingsSaveCts, () => SaveJsonAsync(_filePath, _settingsLock, () => _settings), "settings");
     }
 
     #endregion
@@ -271,6 +295,8 @@ public sealed partial class SettingsService : IAsyncDisposable
         _enginesLock.Dispose();
         _modulesLock.Dispose();
         _keyLock.Dispose();
+        foreach (var writeLock in _writeLocks.Values)
+            writeLock.Dispose();
 
         GC.SuppressFinalize(this);
     }
@@ -296,20 +322,30 @@ public sealed partial class SettingsService : IAsyncDisposable
         finally { _ = _settingsLock.Release(); }
 
         NotifySettingsChanged(old, updated);
-        ScheduleSaveInternal(ref _settingsSaveCts, () => SaveJsonAsync(_filePath, _settingsLock, _settings), "settings");
+        ScheduleSaveInternal(ref _settingsSaveCts, () => SaveJsonAsync(_filePath, _settingsLock, () => _settings), "settings");
     }
 
     private T LoadJson<T>(string path, T fallback)
     {
+        string json;
         try
         {
-            if (!File.Exists(path))
-            {
-                _logger.LogInformation("Can't find {path} file, fallback to empty.", path);
-                return fallback;
-            }
+            json = ReadAllTextWithRetry(path);
+        }
+        catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
+        {
+            _logger.LogInformation("Can't find {path} file, fallback to empty.", path);
+            return fallback;
+        }
+        catch (Exception ex)
+        {
+            _unreadablePaths[path] = 0;
+            _logger.LogError(ex, "Failed to read {path}; using defaults for this session, changes won't be saved to it", path);
+            return fallback;
+        }
 
-            var json = File.ReadAllText(path);
+        try
+        {
             var result = JsonSerializer.Deserialize<T>(json) ?? fallback;
 
             _logger.LogInformation("Successfully loaded {path}", path);
@@ -327,6 +363,21 @@ public sealed partial class SettingsService : IAsyncDisposable
         {
             _logger.LogWarning(ex, "Failed to load {path}, using defaults", path);
             return fallback;
+        }
+    }
+
+    private static string ReadAllTextWithRetry(string path)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                return File.ReadAllText(path);
+            }
+            catch (IOException ex) when (attempt < LoadAttempts && ex is not FileNotFoundException and not DirectoryNotFoundException)
+            {
+                Thread.Sleep(LoadRetryDelayMs);
+            }
         }
     }
 }
