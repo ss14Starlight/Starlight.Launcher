@@ -105,4 +105,53 @@ public sealed class TransientDownloadErrorTests
     [Fact]
     public void UnrelatedException_IsFatal() =>
         Assert.Equal(DownloadErrorKind.Fatal, Classify(new InvalidOperationException()));
+
+    [Theory]
+    [InlineData(SocketError.TryAgain)]
+    [InlineData(SocketError.NoData)]
+    public void DnsSocketErrors_AreOffline(SocketError error) =>
+        Assert.Equal(DownloadErrorKind.Offline, Classify(new SocketException((int)error)));
+
+    [Fact]
+    public void ResponseEndedMidStream_IsTransient() =>
+        Assert.Equal(DownloadErrorKind.Transient, Classify(new HttpIOException(HttpRequestError.ResponseEnded)));
+
+    [Fact]
+    public void OfflineSocketErrorBehindIOException_IsOffline()
+    {
+        var e = new HttpRequestException(
+            HttpRequestError.ConnectionError,
+            null,
+            new IOException("wrapped", new SocketException((int)SocketError.NetworkUnreachable)));
+
+        Assert.Equal(DownloadErrorKind.Offline, Classify(e));
+    }
+
+    [Fact]
+    public void HttpRequestException_WithUnknownInner_IsTransient()
+    {
+        var e = new HttpRequestException("boom", new IOException("disk? no, network"));
+
+        Assert.Equal(DownloadErrorKind.Transient, Classify(e));
+    }
+
+    [Fact]
+    public void PlainIOException_IsFatal() =>
+        Assert.Equal(DownloadErrorKind.Fatal, Classify(new IOException("disk full")));
+
+    [Fact]
+    public void UserCancellation_IsFatal() =>
+        Assert.Equal(DownloadErrorKind.Fatal, Classify(new TaskCanceledException()));
+
+    [Fact]
+    public void TlsFailure_WithoutNetwork_StaysFatal()
+    {
+        var e = new HttpRequestException(HttpRequestError.SecureConnectionError, null, new AuthenticationException());
+
+        Assert.Equal(DownloadErrorKind.Fatal, Classify(e, networkAvailable: false));
+    }
+
+    [Fact]
+    public void TransientStatus_WithoutNetwork_IsOffline() =>
+        Assert.Equal(DownloadErrorKind.Offline, Classify(new HttpRequestException(null, null, HttpStatusCode.BadGateway), networkAvailable: false));
 }
