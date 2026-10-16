@@ -5,6 +5,7 @@ using Robust.Launcher.Api.Utility;
 using Serilog;
 using Starlight.Launcher.Services.GameLaunch;
 using Starlight.Launcher.Services.Settings;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO.Compression;
 
@@ -168,6 +169,21 @@ public sealed class ContentManager(SettingsService settings)
             return false;
         }
 
-        return proc.MainModule?.FileName == mainModule;
+        using (proc)
+        {
+            try
+            {
+                return proc.MainModule?.FileName == mainModule;
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+            catch (Win32Exception e)
+            {
+                Log.Debug(e, "Unable to inspect process {Pid}, assuming it is still a running client", pid);
+                return true;
+            }
+        }
     }
 }
