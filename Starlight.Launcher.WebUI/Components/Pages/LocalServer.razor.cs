@@ -6,6 +6,7 @@ using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 using Starlight.Launcher.WebUI.Components.Atoms.Settings;
 using Starlight.Launcher.WebUI.Localization;
+using Starlight.Launcher.WebUI.Models.Helpers;
 using Starlight.Launcher.WebUI.Models.LocalServer;
 using Starlight.Launcher.WebUI.Models.Settings;
 
@@ -13,6 +14,8 @@ namespace Starlight.Launcher.WebUI.Components.Pages;
 
 public partial class LocalServer : LocalizedComponentBase, IDisposable
 {
+    private const int MaxConsoleLines = 5000;
+
     [Inject] private IBridge _bridge { get; set; } = default!;
     [Inject] private IDialogService _dialog { get; set; } = default!;
     [Inject] private NavigationManager _navigation { get; set; } = default!;
@@ -32,7 +35,7 @@ public partial class LocalServer : LocalizedComponentBase, IDisposable
     private List<ServerCVarValue> _customCVars = [];
 
     private LocalServerState _state = new(LocalServerPhase.Idle);
-    private readonly List<LocalServerLogLine> _console = [];
+    private readonly RingBuffer<LocalServerLogLine> _console = new(MaxConsoleLines);
     private bool _autoScrollPending;
     private bool _autoScrollEnabled = true;
     private string _commandInput = "";
@@ -324,8 +327,6 @@ public partial class LocalServer : LocalizedComponentBase, IDisposable
     private void OnOutput(LocalServerLogLine line)
     {
         _console.Add(line);
-        if (_console.Count > 5000)
-            _console.RemoveAt(0);
 
         if (_autoScrollEnabled)
             _autoScrollPending = true;

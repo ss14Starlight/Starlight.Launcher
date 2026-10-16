@@ -5,6 +5,7 @@ using Robust.Launcher.Api.Models;
 using Robust.Launcher.Api.Utility;
 using Serilog;
 using Starlight.Launcher.Services.Settings;
+using Starlight.Launcher.WebUI.Models.Helpers;
 using Starlight.Launcher.WebUI.Models.LocalServer;
 using static Robust.Launcher.Api.Utility.Helpers;
 
@@ -22,7 +23,7 @@ public sealed partial class LocalServerManager(HttpClient http, SettingsService 
     private readonly SettingsService _settings = settings;
 
     private readonly Lock _lock = new();
-    private readonly List<LocalServerLogLine> _consoleBuffer = [];
+    private readonly RingBuffer<LocalServerLogLine> _consoleBuffer = new(MaxConsoleLines);
     private Process? _process;
     private Win32JobObject? _jobObject;
 
@@ -437,8 +438,6 @@ public sealed partial class LocalServerManager(HttpClient http, SettingsService 
         lock (_lock)
         {
             _consoleBuffer.Add(line);
-            if (_consoleBuffer.Count > MaxConsoleLines)
-                _consoleBuffer.RemoveAt(0);
         }
 
         OutputReceived?.Invoke(line);
