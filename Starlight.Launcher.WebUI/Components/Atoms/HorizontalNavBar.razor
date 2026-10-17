@@ -15,6 +15,18 @@
             <span>@L["main-layout-servers-tab"]</span>
         </div>
     </NavLink>
+    <NavLink href="/journal" Match="NavLinkMatch.All" class="bottom-nav-item" ActiveClass="active">
+        <div class="nav-inner">
+            <MudIcon Icon="@Icons.Material.Filled.History" Color="@(IsActive("/journal", NavLinkMatch.All) ? Color.Primary : Color.Default)" Size="Size.Medium" />
+            <span>@L["main-layout-journal-tab"]</span>
+        </div>
+    </NavLink>
+    <NavLink href="/friends" Match="NavLinkMatch.All" class="bottom-nav-item" ActiveClass="active">
+        <div class="nav-inner">
+            <MudIcon Icon="@Icons.Material.Filled.Group" Color="@(IsActive("/friends", NavLinkMatch.All) ? Color.Primary : Color.Default)" Size="Size.Medium" />
+            <span>@L["main-layout-friends-tab"]</span>
+        </div>
+    </NavLink>
     <NavLink href="/hub" Match="NavLinkMatch.All" class="bottom-nav-item" ActiveClass="active">
         <div class="nav-inner">
             <MudIcon Icon="@Icons.Material.Filled.Link" Color="@(IsActive("/hub", NavLinkMatch.All) ? Color.Primary : Color.Default)" Size="Size.Medium" />

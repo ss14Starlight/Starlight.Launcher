@@ -54,6 +54,7 @@ public partial class Servers : LocalizedComponentBase, IDisposable
 
         _bridge.ServersChanged += OnServersChanged;
         _bridge.StatusChanged += OnStatusChanged;
+        _bridge.ServerNotesChanged += OnNotesChanged;
 
         RebuildFromFetcher();
     }
@@ -175,10 +176,25 @@ public partial class Servers : LocalizedComponentBase, IDisposable
             ServerSortMode.Players => query.OrderByDescending(GetPlayers),
             ServerSortMode.Name => query.OrderBy(s => s.Name ?? s.Address, StringComparer.OrdinalIgnoreCase),
             ServerSortMode.Ping => query.OrderBy(GetPing),
+            ServerSortMode.Rating => SortByRating(query),
             _ => query,
         };
 
         _filteredServers = [.. query];
+    }
+
+    private IEnumerable<ServerStatusData> SortByRating(IEnumerable<ServerStatusData> query)
+    {
+        var notes = _bridge.GetServerNotes();
+        return query
+            .OrderByDescending(s => notes.TryGetValue(s.Address, out var note) ? note.Rating : 0)
+            .ThenByDescending(GetPlayers);
+    }
+
+    private void OnNotesChanged()
+    {
+        if (_filters.SortBy == ServerSortMode.Rating)
+            OnFiltersChanged();
     }
 
     private void HandleRefresh() => _bridge.RequestRefresh();
@@ -351,6 +367,7 @@ public partial class Servers : LocalizedComponentBase, IDisposable
         _bridge.StatusChanged -= OnStatusChanged;
         _filters.Changed -= OnFiltersChanged;
         _bridge.FavoritesChanged -= OnFavoritesChanged;
+        _bridge.ServerNotesChanged -= OnNotesChanged;
         _disposeCts.Cancel();
         _disposeCts.Dispose();
         _filterCts?.Dispose();

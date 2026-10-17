@@ -9,6 +9,7 @@ using Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Models.Data;
 using Starlight.Launcher.WebUI.Models.DiscordRichPresence;
+using Starlight.Launcher.WebUI.Models.Journal;
 using Starlight.Launcher.WebUI.Models.LauncherUpdater;
 using Starlight.Launcher.WebUI.Models.Settings;
 using Starlight.Launcher.WebUI.Services;
@@ -84,11 +85,63 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
         _navigation.LocationChanged += OnLocationChanged;
         _bridge.LoginsUnrecoverable += OnLoginsUnrecover;
         _bridge.ConfirmForeignEngine += OnConfirmForeignEngine;
+        _bridge.NotificationRaised += OnNotificationRaised;
 
         if (settings.CollapseInTrayOnStart)
             _bridge.HideWindow(); // If layout is initialized - window exists, so we can hide it right away if the user wants that.
 
         _bridge.CleanupOldInstallers();
+    }
+
+    private void OnNotificationRaised(LauncherNotification notification) => _ = InvokeAsync(() =>
+    {
+        var severity = notification.Kind switch
+        {
+            LauncherNotificationKind.AutoConnect or LauncherNotificationKind.SlotFree => Severity.Success,
+            LauncherNotificationKind.Info => Severity.Normal,
+            _ => Severity.Info,
+        };
+
+        _ = _snackbar.Add(
+            $"{notification.Title}: {notification.Message}",
+            severity,
+            config =>
+            {
+                if (notification.Kind == LauncherNotificationKind.FriendRequest)
+                {
+                    config.Action = L["main-layout-notification-open-friends"];
+                    config.ActionColor = MudBlazor.Color.Primary;
+                    config.OnClick = __ =>
+                    {
+                        _navigation.NavigateTo("/friends");
+                        return Task.CompletedTask;
+                    };
+                }
+                else if (notification.Address is { } address && notification.Kind != LauncherNotificationKind.AutoConnect)
+                {
+                    config.Action = L["main-layout-notification-connect"];
+                    config.ActionColor = MudBlazor.Color.Primary;
+                    config.OnClick = __ => ShowConnecting(address);
+                }
+            });
+    });
+
+    private Task ShowConnecting(string address)
+    {
+        var parameters = new DialogParameters<ConnectingDialog>
+        {
+            { x => x.Address, address },
+            { x => x.Title, null }
+        };
+
+        return _dialogService.ShowAsync<ConnectingDialog>(null, parameters, new DialogOptions
+        {
+            BackdropClick = false,
+            CloseOnEscapeKey = false,
+            CloseButton = false,
+            MaxWidth = MaxWidth.ExtraSmall,
+            FullWidth = true
+        });
     }
 
     private void OnLoginsUnrecover() =>
@@ -406,6 +459,7 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
         _locationChangingRegistration?.Dispose();
         _bridge.LoginsUnrecoverable -= OnLoginsUnrecover;
         _bridge.ConfirmForeignEngine -= OnConfirmForeignEngine;
+        _bridge.NotificationRaised -= OnNotificationRaised;
         if (_titleBar is not null) await _titleBar.DisposeAsync();
         _selfRef?.Dispose();
     }

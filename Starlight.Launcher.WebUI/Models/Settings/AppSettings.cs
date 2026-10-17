@@ -237,6 +237,25 @@ public partial record AppSettings
 
     #endregion
 
+    #region Journal
+
+    /// <summary>
+    /// Poll favorite servers in the background and remember their player counts for the activity heatmap.
+    /// </summary>
+    public bool TrackServerActivity { get; init; } = true;
+
+    /// <summary>
+    /// Record when and where the game was played, including round ids and maps.
+    /// </summary>
+    public bool RecordPlayHistory { get; init; } = true;
+
+    /// <summary>
+    /// Show watch alerts and friend requests as operating system notifications, not only inside the launcher.
+    /// </summary>
+    public bool DesktopNotifications { get; init; } = true;
+
+    #endregion
+
     #region Starlight API
 
     /// <summary>

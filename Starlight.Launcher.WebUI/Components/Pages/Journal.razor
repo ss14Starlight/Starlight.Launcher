@@ -1,0 +1,249 @@
+@page "/journal"
+@using Starlight.Launcher.WebUI.Localization
+@using Starlight.Launcher.WebUI.Models.Journal
+@using Starlight.Launcher.WebUI.Models.Replays
+
+@implements IDisposable
+@inherits LocalizedComponentBase
+
+<div class="journal-page">
+    <MudPaper Elevation="0" Class="journal-header">
+        <div class="journal-header__icon">
+            <MudIcon Icon="@Icons.Material.Filled.History" Size="Size.Large" />
+        </div>
+        <div class="journal-header__text">
+            <MudText Typo="Typo.h5" Class="journal-header__title">@L["journal-title"]</MudText>
+            <div class="journal-header__chips">
+                <span class="journal-chip"><MudIcon Icon="@Icons.Material.Outlined.Schedule" />@FormatDuration(_totalTime)</span>
+                <span class="journal-chip"><MudIcon Icon="@Icons.Material.Outlined.SportsEsports" />@L.GetString("journal-sessions-count", ("count", _sessions.Count))</span>
+                <span class="journal-chip"><MudIcon Icon="@Icons.Material.Outlined.Tag" />@L.GetString("journal-rounds-count", ("count", _roundsCount))</span>
+                @if (_active is { } active)
+                {
+                    <span class="journal-chip journal-chip--live"><MudIcon Icon="@Icons.Material.Filled.Circle" />@L.GetString("journal-playing-now", ("server", active.ServerName ?? active.Address))</span>
+                }
+            </div>
+        </div>
+    </MudPaper>
+
+    <MudTabs Elevation="0" ApplyEffectsToContainer="false" Class="journal-tabs" TabPanelsClass="journal-panel" ActivePanelIndexChanged="OnTabChanged">
+        <MudTabPanel Text="@L["journal-tab-overview"]" Icon="@Icons.Material.Filled.Insights">
+            @if (_sessions.Count == 0)
+            {
+                <div class="journal-empty">
+                    <MudIcon Icon="@Icons.Material.Outlined.HourglassEmpty" />
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">@L["journal-empty"]</MudText>
+                </div>
+            }
+            else
+            {
+                <div class="journal-grid">
+                    <MudPaper Elevation="0" Class="journal-card journal-card--wrapped">
+                        <MudText Typo="Typo.overline" Class="mud-text-secondary">@L.GetString("journal-year-title", ("year", _year.Year))</MudText>
+                        <div class="journal-year">
+                            <div class="journal-stat">
+                                <span class="journal-stat__value">@FormatHours(_year.Time)</span>
+                                <span class="journal-stat__label">@L["journal-year-hours"]</span>
+                            </div>
+                            <div class="journal-stat">
+                                <span class="journal-stat__value">@_year.Sessions</span>
+                                <span class="journal-stat__label">@L["journal-year-sessions"]</span>
+                            </div>
+                            <div class="journal-stat">
+                                <span class="journal-stat__value">@_year.Rounds</span>
+                                <span class="journal-stat__label">@L["journal-year-rounds"]</span>
+                            </div>
+                            <div class="journal-stat">
+                                <span class="journal-stat__value">@_year.Servers</span>
+                                <span class="journal-stat__label">@L["journal-year-servers"]</span>
+                            </div>
+                        </div>
+                        <div class="journal-facts">
+                            @if (_year.TopServer is { } top)
+                            {
+                                <div class="journal-fact"><MudIcon Icon="@Icons.Material.Outlined.EmojiEvents" />@L.GetString("journal-year-top-server", ("server", top.Name), ("time", FormatDuration(top.Time)))</div>
+                            }
+                            @if (_year.TopMap is { } map)
+                            {
+                                <div class="journal-fact"><MudIcon Icon="@Icons.Material.Outlined.Map" />@L.GetString("journal-year-top-map", ("map", map.Name), ("count", map.Count))</div>
+                            }
+                            @if (_year.Longest is { } longest)
+                            {
+                                <div class="journal-fact"><MudIcon Icon="@Icons.Material.Outlined.Timer" />@L.GetString("journal-year-longest", ("time", FormatDuration(longest.Duration)), ("server", longest.ServerName ?? longest.Address))</div>
+                            }
+                            @if (_year.FavoriteHour is { } hour)
+                            {
+                                <div class="journal-fact"><MudIcon Icon="@Icons.Material.Outlined.Bedtime" />@L.GetString("journal-year-favorite-hour", ("hour", hour.ToString("00")))</div>
+                            }
+                        </div>
+                    </MudPaper>
+
+                    <MudPaper Elevation="0" Class="journal-card">
+                        <MudText Typo="Typo.overline" Class="mud-text-secondary">@L["journal-last-days"]</MudText>
+                        <div class="journal-days">
+                            @foreach (var day in _days)
+                            {
+                                <div class="journal-day" title="@($"{day.Date:d}: {FormatDuration(day.Time)}")">
+                                    <div class="journal-day__bar-wrap">
+                                        <div class="journal-day__bar" style="@BarHeight(day.Time, _maxDay)"></div>
+                                    </div>
+                                    <span class="journal-day__label">@day.Date.Day</span>
+                                </div>
+                            }
+                        </div>
+                    </MudPaper>
+
+                    <MudPaper Elevation="0" Class="journal-card journal-card--wide">
+                        <MudText Typo="Typo.overline" Class="mud-text-secondary">@L["journal-top-servers"]</MudText>
+                        @foreach (var server in _servers.Take(10))
+                        {
+                            <div class="journal-server">
+                                <div class="journal-server__head">
+                                    <span class="journal-server__name">@server.Name</span>
+                                    <span class="journal-server__time">@FormatDuration(server.Time)</span>
+                                </div>
+                                <div class="journal-server__track">
+                                    <div class="journal-server__fill" style="@BarWidth(server.Time, _servers[0].Time)"></div>
+                                </div>
+                            </div>
+                        }
+                    </MudPaper>
+                </div>
+            }
+        </MudTabPanel>
+
+        <MudTabPanel Text="@L["journal-tab-rounds"]" Icon="@Icons.Material.Filled.FormatListNumbered">
+            <div class="journal-toolbar">
+                <MudTextField T="string" @bind-Value="_roundsQuery" Immediate="true" DebounceInterval="200"
+                              Placeholder="@L["journal-rounds-search"]" Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="journal-search" />
+                <MudSpacer />
+                <MudButton Variant="Variant.Text" Color="Color.Error" StartIcon="@Icons.Material.Filled.DeleteSweep"
+                           Disabled="_sessions.Count == 0" OnClick="ClearHistory">@L["journal-clear-history"]</MudButton>
+            </div>
+
+            @if (FilteredSessions.Count == 0)
+            {
+                <div class="journal-empty">
+                    <MudIcon Icon="@Icons.Material.Outlined.SearchOff" />
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">@(_sessions.Count == 0 ? L["journal-empty"] : L["journal-rounds-nothing-found"])</MudText>
+                </div>
+            }
+            else
+            {
+                <div class="journal-list">
+                    <Virtualize Items="FilteredSessions" Context="session" ItemSize="72" OverscanCount="4">
+                        <div class="journal-session" @key="session.Id">
+                            <div class="journal-session__main">
+                                <span class="journal-session__server">@(session.ServerName ?? session.Address)</span>
+                                <span class="journal-session__meta">
+                                    @session.StartUtc.ToLocalTime().ToString("g") · @FormatDuration(session.Duration)
+                                    @if (session.EndUtc is null)
+                                    {
+                                        <span class="journal-session__live">@L["journal-session-live"]</span>
+                                    }
+                                </span>
+                            </div>
+                            <div class="journal-session__rounds">
+                                @foreach (var round in session.Rounds)
+                                {
+                                    <span class="journal-round">
+                                        @if (round.RoundId is { } id)
+                                        {
+                                            <span class="journal-round__id">@($"#{id}")</span>
+                                        }
+                                        @if (round.Map is { } map)
+                                        {
+                                            <span>@map</span>
+                                        }
+                                        @if (round.Preset is { } preset)
+                                        {
+                                            <span class="journal-round__preset">@preset</span>
+                                        }
+                                        @if (round.RoundId is { } copyId)
+                                        {
+                                            <MudTooltip Text="@L["journal-round-copy"]">
+                                                <MudIconButton Icon="@Icons.Material.Outlined.ContentCopy" Size="Size.Small" OnClick="() => CopyAsync(copyId.ToString())" />
+                                            </MudTooltip>
+                                        }
+                                        @if (FindReplay(round) is { } replay)
+                                        {
+                                            <MudTooltip Text="@L["journal-round-watch-replay"]">
+                                                <MudIconButton Icon="@Icons.Material.Outlined.Movie" Size="Size.Small" Color="Color.Primary"
+                                                               Disabled="_downloading is not null" OnClick="() => WatchReplay(replay)" />
+                                            </MudTooltip>
+                                        }
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    </Virtualize>
+                </div>
+            }
+        </MudTabPanel>
+
+        <MudTabPanel Text="@L["journal-tab-replays"]" Icon="@Icons.Material.Filled.Movie">
+            <div class="journal-toolbar">
+                <MudTextField T="string" @bind-Value="_replaysQuery" Immediate="true" DebounceInterval="200"
+                              Placeholder="@L["journal-replays-search"]" Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense" Class="journal-search" />
+                <MudSpacer />
+                <MudIconButton Icon="@Icons.Material.Filled.Refresh" Disabled="_replaysLoading" OnClick="() => LoadReplaysAsync(true)" />
+            </div>
+
+            @if (_downloading is { } downloading)
+            {
+                <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2">
+                    @L.GetString("journal-replay-downloading", ("name", downloading.FileName), ("percent", Math.Round(_downloadProgress * 100)))
+                    <MudProgressLinear Value="_downloadProgress * 100" Color="Color.Primary" Class="mt-1" />
+                </MudAlert>
+            }
+
+            @if (_replaysLoading && _replays is null)
+            {
+                <div class="journal-empty"><MudProgressCircular Indeterminate="true" Color="Color.Primary" /></div>
+            }
+            else if (_replays is null || !_replaysOk)
+            {
+                <div class="journal-empty">
+                    <MudIcon Icon="@Icons.Material.Outlined.CloudOff" />
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">@L["journal-replays-unavailable"]</MudText>
+                </div>
+            }
+            else if (FilteredReplays.Count == 0)
+            {
+                <div class="journal-empty">
+                    <MudIcon Icon="@Icons.Material.Outlined.SearchOff" />
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">@L["journal-replays-nothing-found"]</MudText>
+                </div>
+            }
+            else
+            {
+                <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mb-2">@L["journal-replays-hint"]</MudText>
+                <div class="journal-list">
+                    <Virtualize Items="FilteredReplays" Context="replay" ItemSize="56" OverscanCount="6">
+                        <div class="journal-replay" @key="replay.FileName">
+                            <div class="journal-replay__main">
+                                <span class="journal-replay__title">
+                                    @($"#{replay.Round}")
+                                    @if (replay.Server is { } server)
+                                    {
+                                        <span class="journal-replay__server">@server</span>
+                                    }
+                                    @if (PlayedIn(replay))
+                                    {
+                                        <span class="journal-replay__mine">@L["journal-replay-played"]</span>
+                                    }
+                                </span>
+                                <span class="journal-replay__meta">@replay.Date.ToString("g")@(replay.Size is { } size ? $" · {FormatSize(size)}" : "")</span>
+                            </div>
+                            <MudButton Variant="@(_bridge.IsReplayDownloaded(replay) ? Variant.Outlined : Variant.Filled)" Color="Color.Primary" Size="Size.Small"
+                                       StartIcon="@Icons.Material.Rounded.PlayArrow" Disabled="_downloading is not null" OnClick="() => WatchReplay(replay)">
+                                @L["journal-replay-watch"]
+                            </MudButton>
+                        </div>
+                    </Virtualize>
+                </div>
+            }
+        </MudTabPanel>
+    </MudTabs>
+</div>

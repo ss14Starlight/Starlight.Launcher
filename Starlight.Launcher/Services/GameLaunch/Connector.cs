@@ -14,6 +14,7 @@ using Starlight.Launcher.Models.Logging;
 using Starlight.Launcher.Services.Auth;
 using Starlight.Launcher.Services.Discord;
 using Starlight.Launcher.Services.EngineManager;
+using Starlight.Launcher.Services.Journal;
 using Starlight.Launcher.Services.Logging;
 using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI.Models.Connector;
@@ -28,7 +29,7 @@ namespace Starlight.Launcher.Services.GameLaunch;
 /// Responsible for actually launching the game.
 /// Either by connecting to a game server, or by launching a local content bundle.
 /// </summary>
-public partial class Connector(Updater updater, IEngineManager engineManager, HttpClient http, LoginManager login, SettingsService settings, INativeTray tray, DiscordRichPresence presence, ClientLogManager clientLogs) : ObservableObject
+public partial class Connector(Updater updater, IEngineManager engineManager, HttpClient http, LoginManager login, SettingsService settings, INativeTray tray, DiscordRichPresence presence, ClientLogManager clientLogs, JournalService journal) : ObservableObject
 {
     private readonly Updater _updater = updater;
     private readonly LoginManager _loginManager = login;
@@ -38,6 +39,8 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
     private readonly INativeTray _tray = tray;
     private readonly DiscordRichPresence _presence = presence;
     private readonly ClientLogManager _clientLogs = clientLogs;
+    private readonly JournalService _journal = journal;
+    private (string Address, string? Name)? _launchTarget;
     private TaskCompletionSource<PrivacyPolicyAcceptResult>? _acceptPrivacyPolicyTcs;
 
     private int _activeLaunches;
@@ -152,6 +155,7 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
     private async Task ConnectInternalAsync(string address, string? displayName, CancellationToken cancel)
     {
         Status = ConnectionStatus.Connecting;
+        _launchTarget = (address, displayName);
 
         var (info, parsedAddr, infoAddr) = await GetServerInfoAsync(address, cancel);
 
@@ -242,6 +246,7 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
 
     private void Cleanup()
     {
+        _launchTarget = null;
         PrivacyPolicyInfo = null;
         _acceptPrivacyPolicyTcs = null;
         PrivacyPolicyDifferentVersion = default;
@@ -369,7 +374,8 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
 
                 session?.SetState(PresenceState.InGame);
 
-                await waitClient;
+                using (BeginJournalSession(contentBundle))
+                    await waitClient;
 
                 if (settings.UnCollapseFromTrayAfterEnd)
                     Dispatcher.UIThread.Post(_tray.ShowWindow);
@@ -384,6 +390,22 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
         }
 
         Status = ConnectionStatus.ClientExited;
+    }
+
+    private IDisposable? BeginJournalSession(bool contentBundle)
+    {
+        if (contentBundle || _launchTarget is not { } target || !_settings.GetSettings().RecordPlayHistory)
+            return null;
+
+        try
+        {
+            return _journal.BeginSession(target.Address, target.Name);
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "Can't record the play session");
+            return null;
+        }
     }
 
     /// <summary>

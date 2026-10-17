@@ -69,6 +69,7 @@ Created by the **Starlight Team**, it focuses on:
 | 🛰️ **Configurable build CDNs** | Prioritized, mirror-aware engine sources with signature verification |
 | 👥 **Multi-auth support** | You can use different auth servers! |
 | 🔔 **Tray integration** | Collapse to tray on minimize or close, native to each platform |
+| 📒 **Journal** | Play time per server and day, rounds you played with ids and maps, a yearly summary |
 
 ---
 

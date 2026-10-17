@@ -14,7 +14,9 @@ using Starlight.Launcher.Services.Auth;
 using Starlight.Launcher.Services.Bridge;
 using Starlight.Launcher.Services.Discord;
 using Starlight.Launcher.Services.EngineManager;
+using Starlight.Launcher.Services.Journal;
 using Starlight.Launcher.Services.LocalServer;
+using Starlight.Launcher.Services.Replays;
 using Starlight.Launcher.Services.LocalServer.Dotnet;
 using Starlight.Launcher.Services.Localization;
 using Starlight.Launcher.Services.Logging;
@@ -76,6 +78,8 @@ public partial class App : Application
             }
 
             Services.GetRequiredService<TrayCoordinator>().Initialize();
+
+            Services.GetRequiredService<ServerMonitor>().Start();
 
             var commands = Services.GetRequiredService<LauncherCommands>();
             var messaging = Services.GetRequiredService<LauncherMessaging>();
@@ -142,6 +146,12 @@ public partial class App : Application
                         () => Task.Run(async () => await _blazorHost.DisposeAsync()),
                         TimeSpan.FromSeconds(5));
 
+                    await Step("journal flush", () =>
+                    {
+                        Services.GetRequiredService<ServerMonitor>().Stop();
+                        Services.GetRequiredService<FriendsService>().Stop();
+                        return Services.GetRequiredService<JournalService>().FlushAsync();
+                    }, TimeSpan.FromSeconds(5));
                     await Step("settings flush", settings.FlushPendingSavesAsync, TimeSpan.FromSeconds(5));
                 }
                 finally
@@ -282,6 +292,8 @@ public partial class App : Application
         _ = services.AddSingleton<ClientLogManager>();
         _ = services.AddSingleton<DotnetRuntimeManager>();
         _ = services.AddSingleton<LocalServerManager>();
+        _ = services.AddSingleton<JournalService>();
+        _ = services.AddSingleton<ServerMonitor>();
         _ = services.AddTransient<Connector>();
         _ = services.AddSingleton<UiActivity>();
         _ = services.AddSingleton<UiTicker>();

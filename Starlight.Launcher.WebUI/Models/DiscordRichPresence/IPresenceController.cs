@@ -1,6 +1,6 @@
 namespace Starlight.Launcher.WebUI.Models.DiscordRichPresence;
 
-public readonly record struct ServerPresence(string? Name = null, int Players = 0, int MaxPlayers = 0);
+public readonly record struct ServerPresence(string? Name = null, int Players = 0, int MaxPlayers = 0, string? Map = null, DateTime? RoundStart = null);
 
 public interface IPresenceController
 {
