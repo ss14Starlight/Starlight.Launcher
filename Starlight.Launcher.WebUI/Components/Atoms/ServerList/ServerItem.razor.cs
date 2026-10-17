@@ -7,6 +7,7 @@ using Starlight.Launcher.WebUI.Services;
 using Starlight.Launcher.WebUI.Localization;
 using Microsoft.AspNetCore.Components;
 using Starlight.Launcher.WebUI.Models.DiscordRichPresence;
+using Starlight.Launcher.WebUI.Models.Journal;
 
 namespace Starlight.Launcher.WebUI.Components.Atoms.ServerList;
 
@@ -26,12 +27,75 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
 
     private List<string>? _displayTags;
 
+    private int _rating;
+    private bool _watched;
+    private ServerActivity? _activity;
+
     protected override void OnParametersSet()
-        => _displayTags = Data.Tags?
+    {
+        _displayTags = Data.Tags?
             .Select(ParseTag)
             .Where(t => !string.IsNullOrEmpty(t))
             .Take(3)
             .ToList();
+        LoadJournal();
+    }
+
+    private void LoadJournal()
+    {
+        _rating = _bridge.GetServerNote(Data.Address)?.Rating ?? 0;
+        _watched = _bridge.GetServerWatch(Data.Address) is not null;
+        if (_expanded)
+            _activity = _bridge.GetServerActivity(Data.Address);
+    }
+
+    private async void OnJournalChanged()
+    {
+        try
+        {
+            await InvokeAsync(() =>
+            {
+                LoadJournal();
+                StateHasChanged();
+            });
+        }
+        catch (ObjectDisposedException) { }
+    }
+
+    private List<(string Icon, string Text, string Title)> _infoChips
+    {
+        get
+        {
+            var chips = new List<(string, string, string)>();
+            if (Data.Map is { } map)
+                chips.Add((Icons.Material.Outlined.Map, map, L["servers-list-item-map"]));
+            if (Data.Preset is { } preset)
+                chips.Add((Icons.Material.Outlined.Casino, preset, L["servers-list-item-preset"]));
+            if (Data.RoundId is { } round)
+                chips.Add((Icons.Material.Outlined.Tag, round.ToString(), L["servers-list-item-round-id"]));
+            if (Data.PanicBunker)
+                chips.Add((Icons.Material.Outlined.Shield, L["servers-list-item-panic-bunker"], L["servers-list-item-panic-bunker-tooltip"]));
+            return chips;
+        }
+    }
+
+    private async Task OpenWatch()
+    {
+        var parameters = new DialogParameters<ServerWatchDialog>
+        {
+            { x => x.Address, Data.Address },
+            { x => x.ServerName, Data.Name },
+            { x => x.HubAddress, Data.HubAddress },
+            { x => x.SoftMaxPlayers, Data.SoftMaxPlayerCount },
+        };
+
+        _ = await _dialogService.ShowAsync<ServerWatchDialog>(null, parameters, new DialogOptions
+        {
+            MaxWidth = MaxWidth.ExtraSmall,
+            FullWidth = true,
+            CloseOnEscapeKey = true,
+        });
+    }
 
     private static string ParseTag(string tag)
     {
@@ -48,6 +112,8 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
     {
         Data.Changed += OnDataChanged;
         _ticker.Tick += OnTick;
+        _bridge.ServerNotesChanged += OnJournalChanged;
+        _bridge.ServerWatchesChanged += OnJournalChanged;
     }
 
     private async void OnTick()
@@ -88,6 +154,7 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
 
         if (_expanded)
         {
+            _activity = _bridge.GetServerActivity(Data.Address);
             _viewingScope?.Dispose();
             _viewingScope = _bridge.Presence.Activate(PresenceState.ViewingServer, new ServerPresence(Data.Name, Data.PlayerCount, Data.SoftMaxPlayerCount));
         }
@@ -199,6 +266,8 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
 
         _ticker.Tick -= OnTick;
         Data.Changed -= OnDataChanged;
+        _bridge.ServerNotesChanged -= OnJournalChanged;
+        _bridge.ServerWatchesChanged -= OnJournalChanged;
         _viewingScope?.Dispose();
     }
 }

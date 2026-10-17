@@ -20,7 +20,16 @@ public static class ServerApi
         int SoftMaxPlayerCount,
         [property: JsonPropertyName("round_start_time")] string? RoundStartTime,
         [property: JsonPropertyName("run_level")] GameRunLevel? RunLevel,
-        [property: JsonPropertyName("tags")] string[]? Tags);
+        [property: JsonPropertyName("tags")] string[]? Tags)
+    {
+        [JsonPropertyName("map")] public string? Map { get; init; }
+
+        [JsonPropertyName("round_id")] public int? RoundId { get; init; }
+
+        [JsonPropertyName("preset")] public string? Preset { get; init; }
+
+        [JsonPropertyName("panic_bunker")] public bool? PanicBunker { get; init; }
+    }
 
     /// <summary>
     /// Represents the current state of the game round.

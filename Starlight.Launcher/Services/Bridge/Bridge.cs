@@ -11,8 +11,11 @@ using Starlight.Launcher.Services.ContentManagement;
 using Starlight.Launcher.Services.DeepLink;
 using Starlight.Launcher.Services.Discord;
 using Starlight.Launcher.Services.EngineManager;
+using Starlight.Launcher.Services.Friends;
 using Starlight.Launcher.Services.GameLaunch;
+using Starlight.Launcher.Services.Journal;
 using Starlight.Launcher.Services.LocalServer;
+using Starlight.Launcher.Services.Replays;
 using Starlight.Launcher.Services.ServerStatus;
 using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI.Bridge;
@@ -26,7 +29,8 @@ public sealed partial class Bridge(LauncherCommands commands, Connector connecto
     LauncherUpdater launcherUpdater, LoginManager loginManager, ServerInfoLoader serverInfoLoader,
     SettingsService settings, Updater updater, IFileDialogService fileDialog,
     INativeTray tray, LocalServerManager localServer, StarlightAuthApi starlightAuth,
-    EngineSourceGuard engineSourceGuard, ContentManager content, IEngineManager engineManager) : IBridge
+    EngineSourceGuard engineSourceGuard, ContentManager content, IEngineManager engineManager,
+    JournalService journal, ServerMonitor monitor, FriendsService friends, ReplaysService replays) : IBridge
 {
     private readonly LauncherCommands _commands = commands;
     private readonly Connector _connector = connector;
@@ -46,6 +50,10 @@ public sealed partial class Bridge(LauncherCommands commands, Connector connecto
     private readonly EngineSourceGuard _engineSourceGuard = engineSourceGuard;
     private readonly ContentManager _content = content;
     private readonly IEngineManager _engineManager = engineManager;
+    private readonly JournalService _journal = journal;
+    private readonly ServerMonitor _monitor = monitor;
+    private readonly FriendsService _friends = friends;
+    private readonly ReplaysService _replays = replays;
     private Window? _window;
 
     public void OpenBrowser(string url)

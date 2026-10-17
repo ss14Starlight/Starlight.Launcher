@@ -1,4 +1,5 @@
 @using Robust.Launcher.Api.Models.ServerStatus
+@using Starlight.Launcher.WebUI.Components.Atoms.Journal
 @using Starlight.Launcher.WebUI.Localization;
 
 @inherits LocalizedComponentBase
@@ -13,6 +14,12 @@
             <div class="server-card__title-block">
                 <div class="server-card__title-line">
                     <span class="server-card__name">@(Data.Name ?? Data.Address)</span>
+                    @if (_rating > 0)
+                    {
+                        <span class="server-card__rating" title="@L["server-note-rating-tooltip"]">
+                            <MudIcon Icon="@Icons.Material.Rounded.Star" Class="server-card__rating-icon" />@_rating
+                        </span>
+                    }
                     @if (Data.StatusInfo == ServerStatusInfoCode.Fetching)
                     {
                         <MudProgressCircular Size="Size.Small" Indeterminate="true"
@@ -78,6 +85,11 @@
                                Color="Color.Primary" OnClick="HandleFavorites" />
             </MudTooltip>
 
+            <MudTooltip Color="Color.Primary" Text="@L["servers-list-item-watch"]">
+                <MudIconButton Icon="@(_watched ? Icons.Material.Rounded.NotificationsActive : Icons.Material.Rounded.NotificationsNone)"
+                               Color="@(_watched ? Color.Primary : Color.Default)" OnClick="OpenWatch" />
+            </MudTooltip>
+
             <MudTooltip Color="Color.Error" Text="@L["servers-list-item-ignore"]">
                 <MudIconButton Icon="@Icons.Material.Rounded.VisibilityOff"
                                Class="server-card__ignore-btn"
@@ -88,6 +100,17 @@
 
     <MudCollapse Expanded="_expanded">
         <div class="server-card__details">
+            @if (_infoChips.Count > 0)
+            {
+                <div class="server-card__info">
+                    @foreach (var (icon, text, title) in _infoChips)
+                    {
+                        <span class="server-card__info-chip" title="@title">
+                            <MudIcon Icon="@icon" Class="server-card__info-icon" />@text
+                        </span>
+                    }
+                </div>
+            }
             <div class="server-card__description">
                 @if (!string.IsNullOrWhiteSpace(Data.Description))
                 {
@@ -113,6 +136,12 @@
                                  OnClick="@(() => OnInfoClick(link.Url))">@link.Name</MudChip>
                     }
                 </div>
+            }
+
+            @if (_expanded)
+            {
+                <ActivityHeatmap Activity="_activity" />
+                <ServerNoteEditor Address="@Data.Address" ServerName="@Data.Name" />
             }
         </div>
     </MudCollapse>

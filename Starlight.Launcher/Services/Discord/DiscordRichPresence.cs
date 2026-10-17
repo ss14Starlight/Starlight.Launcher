@@ -13,7 +13,9 @@ public readonly record struct PresenceContext(
     string? ServerName = null,
     int Players = 0,
     int MaxPlayers = 0,
-    int ProgressPercent = -1);
+    int ProgressPercent = -1,
+    string? Map = null,
+    DateTime? RoundStart = null);
 
 public sealed class DiscordRichPresence : IPresenceController, IDisposable
 {
@@ -259,7 +261,9 @@ public sealed class DiscordRichPresence : IPresenceController, IDisposable
             winner.Server.Name,
             winner.Server.Players,
             winner.Server.MaxPlayers,
-            winner.ProgressPercent));
+            winner.ProgressPercent,
+            winner.Server.Map,
+            winner.Server.RoundStart));
     }
 
     private static bool UsesOwnTimer(PresenceState state) => state
@@ -331,7 +335,8 @@ public sealed class DiscordRichPresence : IPresenceController, IDisposable
             Details = Truncate(BuildDetails(ctx)),
             State = Truncate(BuildStateText(ctx)),
             Assets = _assetsByState[(int)ctx.State],
-            Timestamps = new Timestamps(ctx.StartedAt),
+            // In game the round clock says more than how long the client has been open.
+            Timestamps = new Timestamps(ctx is { State: PresenceState.InGame, RoundStart: { } roundStart } ? roundStart.ToUniversalTime() : ctx.StartedAt),
             Buttons = _showButtons ? _presenceButtons : null
         };
 
@@ -377,9 +382,9 @@ public sealed class DiscordRichPresence : IPresenceController, IDisposable
             ? $"Downloading content - {ctx.ProgressPercent}%"
             : "Downloading content",
         PresenceState.LaunchingGame => "Launching game",
-        PresenceState.InGame => ctx is { Players: > 0, MaxPlayers: > 0 }
+        PresenceState.InGame => (ctx is { Players: > 0, MaxPlayers: > 0 }
             ? $"In Game - {ctx.Players}/{ctx.MaxPlayers}"
-            : "Playing Space Station 14",
+            : "Playing Space Station 14") + (string.IsNullOrWhiteSpace(ctx.Map) ? "" : $" · {ctx.Map}"),
         PresenceState.Reconnecting => "Reconnecting",
         _ => "Space Station 14"
     };
@@ -701,7 +706,9 @@ public sealed class DiscordRichPresence : IPresenceController, IDisposable
                         SetServer(new ServerPresence(
                             string.IsNullOrWhiteSpace(status.Name) ? _server.Name : status.Name,
                             status.Players,
-                            status.SoftMaxPlayers > 0 ? status.SoftMaxPlayers : status.MaxPlayers));
+                            status.SoftMaxPlayers > 0 ? status.SoftMaxPlayers : status.MaxPlayers,
+                            string.IsNullOrWhiteSpace(status.Map) ? null : status.Map,
+                            DateTime.TryParse(status.RoundStartTime, null, System.Globalization.DateTimeStyles.RoundtripKind, out var roundStart) ? roundStart : null));
                     }
                 }
                 catch (OperationCanceledException)
@@ -753,6 +760,8 @@ public sealed class DiscordRichPresence : IPresenceController, IDisposable
             [property: JsonPropertyName("name")] string? Name,
             [property: JsonPropertyName("players")] int Players,
             [property: JsonPropertyName("soft_max_players")] int SoftMaxPlayers,
-            [property: JsonPropertyName("max_players")] int MaxPlayers);
+            [property: JsonPropertyName("max_players")] int MaxPlayers,
+            [property: JsonPropertyName("map")] string? Map,
+            [property: JsonPropertyName("round_start_time")] string? RoundStartTime);
     }
 }

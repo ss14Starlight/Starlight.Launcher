@@ -69,7 +69,13 @@ Created by the **Starlight Team**, it focuses on:
 | 🛰️ **Configurable build CDNs** | Prioritized, mirror-aware engine sources with signature verification |
 | 👥 **Multi-auth support** | You can use different auth servers! |
 | 🔔 **Tray integration** | Collapse to tray on minimize or close, native to each platform |
+| 🗺️ **Round details** | Map, game mode, round id and panic bunker state right in the server card |
+| 📈 **Server activity** | Heatmap of when people actually play on your favorite servers |
+| 🔕 **Server watches** | Notifications on lobby, new round, player count or a free slot, plus auto-connect |
+| 📝 **Notes and ratings** | Private notes and star ratings for servers, sortable in the list |
 | 📒 **Journal** | Play time per server and day, rounds you played with ids and maps, a yearly summary |
+| 🎬 **Replays** | Browse and watch Starlight replays in one click, linked to the rounds you played |
+| 🧑‍🤝‍🧑 **Friends** | Friend list through the Starlight account, with the server each friend is on |
 
 ---
 

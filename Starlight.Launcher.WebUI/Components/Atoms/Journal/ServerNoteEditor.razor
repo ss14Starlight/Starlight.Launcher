@@ -1,0 +1,24 @@
+@using Starlight.Launcher.WebUI.Localization
+
+@inherits LocalizedComponentBase
+
+<div class="note-editor" @onclick:stopPropagation="true" @onkeydown:stopPropagation="true">
+    <div class="note-editor__header">
+        <span class="note-editor__title">@L["server-note-title"]</span>
+        <MudRating SelectedValue="_rating" SelectedValueChanged="OnRatingChanged" MaxValue="5" Size="Size.Small" Color="Color.Warning" />
+        @if (_rating > 0)
+        {
+            <MudIconButton Icon="@Icons.Material.Rounded.Close" Size="Size.Small" OnClick="() => OnRatingChanged(0)" />
+        }
+    </div>
+    <MudTextField T="string"
+                  Value="_note"
+                  ValueChanged="OnNoteChanged"
+                  Placeholder="@L["server-note-placeholder"]"
+                  Variant="Variant.Outlined"
+                  Margin="Margin.Dense"
+                  Lines="3"
+                  MaxLength="2000"
+                  Immediate="true"
+                  DebounceInterval="600" />
+</div>

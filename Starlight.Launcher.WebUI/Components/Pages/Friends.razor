@@ -1,0 +1,146 @@
+@page "/friends"
+@using Starlight.Launcher.WebUI.Localization
+@using Starlight.Launcher.WebUI.Models.Friends
+
+@implements IDisposable
+@inherits LocalizedComponentBase
+
+<div class="friends-page">
+    <MudPaper Elevation="0" Class="friends-header">
+        <div class="friends-header__icon">
+            <MudIcon Icon="@Icons.Material.Filled.Group" Size="Size.Large" />
+        </div>
+        <div class="friends-header__text">
+            <MudText Typo="Typo.h5" Class="friends-header__title">@L["friends-title"]</MudText>
+            @if (_list is { } header)
+            {
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                    @L.GetString("friends-summary", ("online", header.Friends.Count(f => f.Presence is not null)), ("total", header.Friends.Length))
+                </MudText>
+            }
+        </div>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Primary" Variant="Variant.Filled"
+                       Disabled="_loading" OnClick="LoadAsync" />
+    </MudPaper>
+
+    <div class="friends-body">
+        @if (_loading && _list is null)
+        {
+            <div class="friends-empty"><MudProgressCircular Indeterminate="true" Color="Color.Primary" /></div>
+        }
+        else if (_status is FriendsStatus.NotLinked or FriendsStatus.Unauthorized)
+        {
+            <div class="friends-empty">
+                <MudIcon Icon="@Icons.Material.Outlined.LinkOff" />
+                <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                    @(_status == FriendsStatus.NotLinked ? L["friends-not-linked"] : L["friends-unauthorized"])
+                </MudText>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/auth">@L["friends-open-accounts"]</MudButton>
+            </div>
+        }
+        else if (_status == FriendsStatus.Unavailable && _list is null)
+        {
+            <div class="friends-empty">
+                <MudIcon Icon="@Icons.Material.Outlined.CloudOff" />
+                <MudText Typo="Typo.body2" Class="mud-text-secondary">@L["friends-unavailable"]</MudText>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="LoadAsync">@L["friends-retry"]</MudButton>
+            </div>
+        }
+        else if (_list is { } list)
+        {
+            <MudPaper Elevation="0" Class="friends-card">
+                <div class="friends-add">
+                    <MudTextField T="string" @bind-Value="_newFriend" Immediate="true"
+                                  Placeholder="@L["friends-add-placeholder"]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.PersonAdd"
+                                  OnKeyDown="OnAddKeyDown" Class="friends-add__field" />
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(string.IsNullOrWhiteSpace(_newFriend) || _busy)"
+                               OnClick="SendRequestAsync">@L["friends-add-button"]</MudButton>
+                </div>
+                <div class="friends-share">
+                    <MudSwitch T="bool" Value="list.SharePresence" ValueChanged="SetSharePresenceAsync" Color="Color.Primary"
+                               Disabled="_busy" Label="@L["friends-share-presence"]" />
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">@L["friends-share-presence-description"]</MudText>
+                </div>
+            </MudPaper>
+
+            @if (list.Incoming.Length > 0)
+            {
+                <MudText Typo="Typo.overline" Class="mud-text-secondary">@L.GetString("friends-incoming", ("count", list.Incoming.Length))</MudText>
+                <MudPaper Elevation="0" Class="friends-card friends-card--list">
+                    @foreach (var user in list.Incoming)
+                    {
+                        <div class="friend-row" @key="user.UserId">
+                            <MudAvatar Size="Size.Small" Color="Color.Primary">@Initial(user.Name)</MudAvatar>
+                            <span class="friend-row__name">@user.Name</span>
+                            <MudSpacer />
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Disabled="_busy"
+                                       OnClick="() => AcceptAsync(user)">@L["friends-accept"]</MudButton>
+                            <MudButton Variant="Variant.Text" Size="Size.Small" Disabled="_busy"
+                                       OnClick="() => RemoveAsync(user.UserId, null)">@L["friends-decline"]</MudButton>
+                        </div>
+                    }
+                </MudPaper>
+            }
+
+            <MudText Typo="Typo.overline" Class="mud-text-secondary">@L["friends-list"]</MudText>
+            <MudPaper Elevation="0" Class="friends-card friends-card--list">
+                @if (list.Friends.Length == 0)
+                {
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary pa-2">@L["friends-list-empty"]</MudText>
+                }
+                @foreach (var friend in list.Friends)
+                {
+                    <div class="friend-row" @key="friend.UserId">
+                        <MudBadge Dot="true" Overlap="true" Bordered="true" Origin="Origin.BottomRight"
+                                  Color="@(friend.Presence is null ? Color.Dark : Color.Success)">
+                            <MudAvatar Size="Size.Small" Color="Color.Primary">@Initial(friend.Name)</MudAvatar>
+                        </MudBadge>
+                        <div class="friend-row__info">
+                            <span class="friend-row__name">@friend.Name</span>
+                            @if (friend.Presence is { } presence)
+                            {
+                                <span class="friend-row__presence">
+                                    @L.GetString("friends-playing-on", ("server", presence.ServerName ?? presence.Address ?? ""), ("time", PlayingFor(presence.SinceUtc)))
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="friend-row__presence friend-row__presence--offline">@L["friends-not-playing"]</span>
+                            }
+                        </div>
+                        <MudSpacer />
+                        @if (friend.Presence?.Address is { } address)
+                        {
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                                       StartIcon="@Icons.Material.Rounded.PlayArrow" OnClick="() => Join(address, friend.Presence.ServerName)">
+                                @L["friends-join"]
+                            </MudButton>
+                        }
+                        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                            <MudMenuItem Icon="@Icons.Material.Outlined.PersonRemove" OnClick="() => RemoveAsync(friend.UserId, friend.Name)">@L["friends-remove"]</MudMenuItem>
+                        </MudMenu>
+                    </div>
+                }
+            </MudPaper>
+
+            @if (list.Outgoing.Length > 0)
+            {
+                <MudText Typo="Typo.overline" Class="mud-text-secondary">@L.GetString("friends-outgoing", ("count", list.Outgoing.Length))</MudText>
+                <MudPaper Elevation="0" Class="friends-card friends-card--list">
+                    @foreach (var user in list.Outgoing)
+                    {
+                        <div class="friend-row" @key="user.UserId">
+                            <MudAvatar Size="Size.Small" Variant="Variant.Outlined">@Initial(user.Name)</MudAvatar>
+                            <span class="friend-row__name">@user.Name</span>
+                            <MudSpacer />
+                            <MudButton Variant="Variant.Text" Size="Size.Small" Disabled="_busy"
+                                       OnClick="() => RemoveAsync(user.UserId, null)">@L["friends-cancel-request"]</MudButton>
+                        </div>
+                    }
+                </MudPaper>
+            }
+        }
+    </div>
+</div>

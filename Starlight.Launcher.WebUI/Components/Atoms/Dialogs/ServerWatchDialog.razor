@@ -1,0 +1,38 @@
+@using MudBlazor
+@using Starlight.Launcher.WebUI.Localization
+
+@inherits LocalizedComponentBase
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@L["server-watch-dialog-title"]</MudText>
+        <MudText Typo="Typo.caption" Class="mud-text-secondary">@(ServerName ?? Address)</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">@L["server-watch-dialog-description"]</MudText>
+
+        <MudSwitch T="bool" @bind-Value="_onLobby" Color="Color.Primary" Label="@L["server-watch-dialog-lobby"]" />
+        <MudSwitch T="bool" @bind-Value="_onNewRound" Color="Color.Primary" Label="@L["server-watch-dialog-new-round"]" />
+        <MudSwitch T="bool" @bind-Value="_onSlotFree" Color="Color.Primary" Label="@L["server-watch-dialog-slot-free"]" />
+
+        <div class="d-flex align-center gap-3 mt-2">
+            <MudSwitch T="bool" @bind-Value="_playersEnabled" Color="Color.Primary" Label="@L["server-watch-dialog-players"]" />
+            <MudNumericField T="int" @bind-Value="_playersThreshold" Disabled="!_playersEnabled"
+                             Min="1" Max="1000" Variant="Variant.Outlined" Margin="Margin.Dense" Style="max-width: 110px" />
+        </div>
+
+        <MudDivider Class="my-3" />
+
+        <MudSwitch T="bool" @bind-Value="_autoConnect" Color="Color.Success" Label="@L["server-watch-dialog-auto-connect"]" />
+        <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">@L["server-watch-dialog-auto-connect-description"]</MudText>
+    </DialogContent>
+    <DialogActions>
+        @if (Existing is not null)
+        {
+            <MudButton Color="Color.Error" OnClick="Clear">@L["server-watch-dialog-clear"]</MudButton>
+        }
+        <MudSpacer />
+        <MudButton OnClick="Cancel">@L["general-cancel"]</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save">@L["server-watch-dialog-save"]</MudButton>
+    </DialogActions>
+</MudDialog>

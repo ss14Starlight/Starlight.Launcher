@@ -1,0 +1,35 @@
+@using Starlight.Launcher.WebUI.Localization
+
+@inherits LocalizedComponentBase
+
+@if (Activity is { } activity && _max > 0)
+{
+    <div class="heatmap" @onclick:stopPropagation="true">
+        <div class="heatmap__header">
+            <span class="heatmap__title">@L["activity-heatmap-title"]</span>
+            @if (_peak is { } peak)
+            {
+                <span class="heatmap__peak">@L.GetString("activity-heatmap-peak", ("day", DayName(peak.Day)), ("hour", peak.Hour.ToString("00")), ("players", Math.Round(peak.Players)))</span>
+            }
+        </div>
+        <div class="heatmap__grid">
+            <span></span>
+            @for (var hour = 0; hour < 24; hour++)
+            {
+                <span class="heatmap__hour">@(hour % 6 == 0 ? hour.ToString("00") : "")</span>
+            }
+            @foreach (var day in _days)
+            {
+                <span class="heatmap__day">@DayName(day)</span>
+                @for (var hour = 0; hour < 24; hour++)
+                {
+                    var avg = activity.Average(day, hour);
+                    <span class="heatmap__cell @(avg is null ? "heatmap__cell--empty" : null)"
+                          style="@CellStyle(avg)"
+                          title="@CellTitle(day, hour, avg)"></span>
+                }
+            }
+        </div>
+        <span class="heatmap__hint">@L.GetString("activity-heatmap-hint", ("samples", activity.TotalSamples))</span>
+    </div>
+}

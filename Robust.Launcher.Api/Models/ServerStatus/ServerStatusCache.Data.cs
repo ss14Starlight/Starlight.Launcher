@@ -79,6 +79,30 @@ public sealed class ServerStatusData : ObservableObject, IServerStatusData
         set => SetProperty(ref field, value);
     }
 
+    public string? Map
+    {
+        get;
+        set => SetProperty(ref field, value);
+    }
+
+    public string? Preset
+    {
+        get;
+        set => SetProperty(ref field, value);
+    }
+
+    public int? RoundId
+    {
+        get;
+        set => SetProperty(ref field, value);
+    }
+
+    public bool PanicBunker
+    {
+        get;
+        set => SetProperty(ref field, value);
+    }
+
     public ServerInfoLink[]? Links
     {
         get;

@@ -22,4 +22,5 @@ public enum ServerSortMode
     Players,
     Name,
     Ping,
+    Rating,
 }

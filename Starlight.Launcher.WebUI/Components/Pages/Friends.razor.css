@@ -1,0 +1,123 @@
+.friends-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    padding: 24px;
+    gap: 16px;
+    box-sizing: border-box;
+}
+
+::deep .friends-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    border-radius: 16px;
+    background: var(--mud-palette-surface);
+    border: 1px solid var(--mud-palette-lines-default);
+    flex: 0 0 auto;
+}
+
+.friends-header__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    color: var(--mud-palette-primary);
+    background: oklch(from var(--mud-palette-primary) l c h / 0.14);
+    flex-shrink: 0;
+}
+
+::deep .friends-header__title {
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.friends-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 760px;
+    width: 100%;
+}
+
+.friends-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 48px 16px;
+    text-align: center;
+    color: var(--mud-palette-text-disabled);
+}
+
+::deep .friends-card {
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: var(--mud-palette-surface);
+    border: 1px solid var(--mud-palette-lines-default);
+    margin-bottom: 8px;
+}
+
+::deep .friends-card--list {
+    padding: 4px 8px;
+}
+
+.friends-add {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+::deep .friends-add__field {
+    flex: 1 1 auto;
+}
+
+.friends-share {
+    margin-top: 8px;
+}
+
+.friend-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    border-bottom: 1px solid var(--mud-palette-divider);
+}
+
+    .friend-row:last-child {
+        border-bottom: none;
+    }
+
+.friend-row__info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.friend-row__name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.friend-row__presence {
+    font-size: 0.75rem;
+    color: var(--mud-palette-success);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.friend-row__presence--offline {
+    color: var(--mud-palette-text-disabled);
+}

@@ -263,6 +263,43 @@
     opacity: 0.55;
 }
 
+.server-card__rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--mud-palette-warning);
+    flex-shrink: 0;
+}
+
+.server-card__rating-icon {
+    font-size: 14px !important;
+}
+
+.server-card__info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.server-card__info-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--mud-palette-action-default-hover);
+    font-size: 0.75rem;
+    color: var(--mud-palette-text-primary);
+}
+
+.server-card__info-icon {
+    font-size: 14px !important;
+    opacity: 0.6;
+}
+
 .server-card__links {
     display: flex;
     flex-wrap: wrap;

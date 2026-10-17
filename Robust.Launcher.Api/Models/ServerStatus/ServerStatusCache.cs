@@ -239,10 +239,15 @@ public sealed class ServerStatusCache(HttpClient http, ILogger<ServerStatusCache
             ServerApi.GameRunLevel.PostRound or ServerApi.GameRunLevel.PreRoundLobby => GameRoundStatus.InLobby,
             _ => GameRoundStatus.Unknown,
         };
-        if (status.RoundStartTime != null)
-        {
-            data.RoundStartTime = DateTime.Parse(status.RoundStartTime, null, System.Globalization.DateTimeStyles.RoundtripKind);
-        }
+        data.RoundStartTime = status.RoundStartTime != null
+            && DateTime.TryParse(status.RoundStartTime, null, System.Globalization.DateTimeStyles.RoundtripKind, out var roundStart)
+            ? roundStart
+            : null;
+
+        data.Map = string.IsNullOrWhiteSpace(status.Map) ? null : status.Map;
+        data.Preset = string.IsNullOrWhiteSpace(status.Preset) ? null : status.Preset;
+        data.RoundId = status.RoundId is > 0 ? status.RoundId : null;
+        data.PanicBunker = status.PanicBunker == true;
 
         var baseTags = status.Tags ?? [];
         var inferredTags = ServerTagInfer.InferTags(status);
