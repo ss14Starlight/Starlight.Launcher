@@ -107,11 +107,12 @@ registerPaint('animated-lines', class {
                 pts.push(p);
             }
 
+            const layerGlow = layer.sizeScale >= 1 ? glow : 0;
             ctx.fillStyle = dotColor;
-            if (glow > 0) ctx.shadowColor = dotColor;
+            if (layerGlow > 0) ctx.shadowColor = dotColor;
             for (const p of layerPts) {
                 ctx.globalAlpha = p.tw;
-                if (glow > 0) ctx.shadowBlur = glow * p.r * 4 * p.tw;
+                if (layerGlow > 0) ctx.shadowBlur = layerGlow * p.r * 4 * p.tw;
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.r * (0.9 + 0.1 * p.tw), 0, 2 * Math.PI);
                 ctx.fill();
@@ -127,10 +128,13 @@ registerPaint('animated-lines', class {
 
             const cell = linkDist;
             const grid = new Map();
-            const key = (a, b) => a + ',' + b;
+            const cellKey = (gx, gy) => (gx + 4096) * 8192 + (gy + 4096);
 
             for (let i = 0; i < pts.length; i++) {
-                const k = key(Math.floor(pts[i].x / cell), Math.floor(pts[i].y / cell));
+                const p = pts[i];
+                p.gx = Math.floor(p.x / cell);
+                p.gy = Math.floor(p.y / cell);
+                const k = cellKey(p.gx, p.gy);
                 let bucket = grid.get(k);
                 if (!bucket) grid.set(k, bucket = []);
                 bucket.push(i);
@@ -138,11 +142,9 @@ registerPaint('animated-lines', class {
 
             for (let i = 0; i < pts.length; i++) {
                 const a = pts[i];
-                const gx = Math.floor(a.x / cell);
-                const gy = Math.floor(a.y / cell);
                 for (let ox = -1; ox <= 1; ox++) {
                     for (let oy = -1; oy <= 1; oy++) {
-                        const bucket = grid.get(key(gx + ox, gy + oy));
+                        const bucket = grid.get(cellKey(a.gx + ox, a.gy + oy));
                         if (!bucket) continue;
                         for (const j of bucket) {
                             if (j <= i) continue;

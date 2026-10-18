@@ -403,7 +403,7 @@ h1:focus {
     --x: .15;
     --y: -.05;
     order: 0;
-    animation: app-bg-drive 1200s steps(36000) infinite;
+    animation: app-bg-drive 1200s steps(28800) infinite;
     view-transition-name: app-bg;
     --twinkle: .6;
     --twinkle-speed: 1;
@@ -482,7 +482,6 @@ h1:focus {
         inset: 0;
         pointer-events: none;
         background: radial-gradient( 60% 50% at 25% 20%, oklch(from oklch(var(--c-primary)) calc(l + .12) c h / .10), transparent 70% ), radial-gradient( 55% 45% at 80% 85%, oklch(from oklch(var(--c-secondary)) calc(l + .12) c h / .08), transparent 70% );
-        mix-blend-mode: screen;
         animation: shimmer-x 71s linear infinite, shimmer-y 113s linear infinite;
     }
 

@@ -90,6 +90,7 @@
 		<ProjectReference Include="..\Robust.Launcher.Api\Robust.Launcher.Api.csproj" />
 		<ProjectReference Include="..\Starlight.Launcher.Analyzer\Starlight.Launcher.Analyzer.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 		<ProjectReference Include="..\Starlight.Launcher.WebUI\Starlight.Launcher.WebUI.csproj" />
+		<ProjectReference Include="..\Robust.Loader\Robust.Loader.csproj" Condition="'$(_IsPublishing)' != 'true'" ReferenceOutputAssembly="false" Private="false" />
 	</ItemGroup>
 
 	<Target Name="CopyWebUiStaticAssets" AfterTargets="Build;Publish">
