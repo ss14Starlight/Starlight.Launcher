@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using Serilog;
 using Starlight.Launcher.Models.Helpers;
 using Starlight.Launcher.Services.Auth;
@@ -42,8 +43,14 @@ public sealed class ReplaysService(HttpClient http, StarlightAuthApi starlight, 
         var path = LocalPath(replay);
         if (File.Exists(path))
         {
-            File.SetLastWriteTimeUtc(path, DateTime.UtcNow);
-            return new FileResult(path);
+            if (IsValidZip(path))
+            {
+                File.SetLastWriteTimeUtc(path, DateTime.UtcNow);
+                return new FileResult(path);
+            }
+
+            Log.Warning("Cached replay {Path} is not a valid zip, downloading it again", path);
+            File.Delete(path);
         }
 
         _ = Directory.CreateDirectory(CacheDir);
@@ -55,10 +62,10 @@ public sealed class ReplaysService(HttpClient http, StarlightAuthApi starlight, 
             var total = response.Content.Headers.ContentLength ?? replay.Size;
 
             await using var source = await response.Content.ReadAsStreamAsync(cancel);
+            long read = 0;
             await using (var target = File.Create(temp))
             {
                 var buffer = new byte[81920];
-                long read = 0;
                 int n;
                 while ((n = await source.ReadAsync(buffer, cancel)) > 0)
                 {
@@ -68,11 +75,36 @@ public sealed class ReplaysService(HttpClient http, StarlightAuthApi starlight, 
                         progress?.Report(Math.Min(1, (double)read / total.Value));
                 }
             }
+
+            if (response.Content.Headers.ContentLength is { } expected && read != expected)
+            {
+                File.Delete(temp);
+                throw new IOException($"Replay download was cut short: got {read} of {expected} bytes");
+            }
+        }
+
+        if (!IsValidZip(temp))
+        {
+            File.Delete(temp);
+            throw new InvalidDataException("Downloaded replay is not a valid zip archive");
         }
 
         File.Move(temp, path, true);
         Prune();
         return new FileResult(path);
+    }
+
+    private static bool IsValidZip(string path)
+    {
+        try
+        {
+            using var zip = ZipFile.OpenRead(path);
+            return true;
+        }
+        catch (InvalidDataException)
+        {
+            return false;
+        }
     }
 
     private string LocalPath(ReplayEntry replay)
