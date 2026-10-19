@@ -202,9 +202,18 @@ settings-menu-clear-failed = Couldn't delete the data. See the launcher logs for
 
 settings-menu-development-client-category = Game client
 settings-menu-development-tracy-option = Tracy Profiler
-settings-menu-development-tracy-option-description = Launch the game with the Tracy profiler enabled (prof.tracy.enabled). Connect to it with the Tracy profiler app while the game is running. Costs some performance.
+settings-menu-development-tracy-option-description = Launch the game with the Tracy profiler enabled (prof.tracy.enabled). The profiler must be version 0.13.1, newer or older versions won't connect. Costs some performance.
 settings-menu-development-tracy-localhost-option = Tracy: localhost only
 settings-menu-development-tracy-localhost-option-description = Only accept Tracy connections from this computer. When disabled, Tracy listens on all network interfaces.
+settings-menu-development-tracy-launch-option = Tracy: open profiler automatically
+settings-menu-development-tracy-launch-option-description = Download Tracy 0.13.1 on first launch and open it already connected to the game. Windows only, on Linux build the profiler yourself.
+settings-menu-development-crash-dumps-option = Crash dumps
+settings-menu-development-crash-dumps-option-description = Write a memory dump when the game crashes, including native crashes (access violation / SIGSEGV). Open it with dotnet-dump analyze, WinDbg or Visual Studio. A dump can take over a gigabyte.
+settings-menu-development-crash-dumps-retain-option = Crash dumps to keep
+settings-menu-development-crash-dumps-retain-option-description = Older dumps are deleted before each launch.
+settings-menu-development-crash-dumps-folder-option = Crash dumps folder
+settings-menu-development-crash-dumps-folder-option-description = The client log also lists the dump written for a crash.
+settings-menu-development-crash-dumps-folder-button = Open
 settings-menu-development-cvars-option = Client CVar Overrides
 settings-menu-development-cvars-option-description = Extra cvars passed to the game client on launch. Cvars the server replicates to clients are still overridden by the server.
 settings-menu-development-cvars-option-helper = One key=value per line or separated by ";", lines starting with # are ignored

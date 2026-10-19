@@ -202,9 +202,18 @@ settings-menu-clear-failed = Не удалось удалить данные. П
 
 settings-menu-development-client-category = Игровой клиент
 settings-menu-development-tracy-option = Профайлер Tracy
-settings-menu-development-tracy-option-description = Запускать игру с включённым профайлером Tracy (prof.tracy.enabled). Подключитесь к нему приложением Tracy, пока игра запущена. Немного снижает производительность.
+settings-menu-development-tracy-option-description = Запускать игру с включённым профайлером Tracy (prof.tracy.enabled). Нужен профайлер версии 0.13.1, другие версии не подключатся. Немного снижает производительность.
 settings-menu-development-tracy-localhost-option = Tracy: только localhost
 settings-menu-development-tracy-localhost-option-description = Принимать подключения Tracy только с этого компьютера. Если выключено, Tracy слушает на всех сетевых интерфейсах.
+settings-menu-development-tracy-launch-option = Tracy: открывать профайлер автоматически
+settings-menu-development-tracy-launch-option-description = Скачать Tracy 0.13.1 при первом запуске и открыть его уже подключённым к игре. Только Windows, на Linux профайлер нужно собрать самостоятельно.
+settings-menu-development-crash-dumps-option = Дампы при краше
+settings-menu-development-crash-dumps-option-description = Записывать дамп памяти, когда игра падает, включая нативные краши (access violation / SIGSEGV). Открывается через dotnet-dump analyze, WinDbg или Visual Studio. Дамп может занимать больше гигабайта.
+settings-menu-development-crash-dumps-retain-option = Сколько дампов хранить
+settings-menu-development-crash-dumps-retain-option-description = Старые дампы удаляются перед каждым запуском.
+settings-menu-development-crash-dumps-folder-option = Папка с дампами
+settings-menu-development-crash-dumps-folder-option-description = Путь к дампу краша также пишется в лог клиента.
+settings-menu-development-crash-dumps-folder-button = Открыть
 settings-menu-development-cvars-option = Переопределение CVar клиента
 settings-menu-development-cvars-option-description = Дополнительные cvar, передаваемые игровому клиенту при запуске. Cvar, которые сервер реплицирует клиентам, всё равно будут перезаписаны сервером.
 settings-menu-development-cvars-option-helper = По одной паре key=value на строку или через ";", строки с # игнорируются

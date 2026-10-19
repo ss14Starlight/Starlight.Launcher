@@ -202,9 +202,18 @@ settings-menu-clear-failed = Impossibile eliminare i dati. Consulta i log del la
 
 settings-menu-development-client-category = Client di gioco
 settings-menu-development-tracy-option = Profiler Tracy
-settings-menu-development-tracy-option-description = Avvia il gioco con il profiler Tracy abilitato (prof.tracy.enabled). Collegati con l'app Tracy mentre il gioco è in esecuzione. Riduce leggermente le prestazioni.
+settings-menu-development-tracy-option-description = Avvia il gioco con il profiler Tracy abilitato (prof.tracy.enabled). Serve il profiler versione 0.13.1, altre versioni non si collegano. Riduce leggermente le prestazioni.
 settings-menu-development-tracy-localhost-option = Tracy: solo localhost
 settings-menu-development-tracy-localhost-option-description = Accetta connessioni Tracy solo da questo computer. Se disabilitato, Tracy ascolta su tutte le interfacce di rete.
+settings-menu-development-tracy-launch-option = Tracy: apri il profiler automaticamente
+settings-menu-development-tracy-launch-option-description = Scarica Tracy 0.13.1 al primo avvio e aprilo già collegato al gioco. Solo Windows, su Linux compila il profiler da solo.
+settings-menu-development-crash-dumps-option = Dump dei crash
+settings-menu-development-crash-dumps-option-description = Scrive un dump della memoria quando il gioco va in crash, anche per crash nativi (access violation / SIGSEGV). Aprilo con dotnet-dump analyze, WinDbg o Visual Studio. Un dump può superare un gigabyte.
+settings-menu-development-crash-dumps-retain-option = Dump da conservare
+settings-menu-development-crash-dumps-retain-option-description = I dump più vecchi vengono eliminati prima di ogni avvio.
+settings-menu-development-crash-dumps-folder-option = Cartella dei dump
+settings-menu-development-crash-dumps-folder-option-description = Anche il log del client indica il dump scritto per un crash.
+settings-menu-development-crash-dumps-folder-button = Apri
 settings-menu-development-cvars-option = Override CVar del client
 settings-menu-development-cvars-option-description = CVar aggiuntive passate al client all'avvio. Le CVar replicate dal server vengono comunque sovrascritte dal server.
 settings-menu-development-cvars-option-helper = Una coppia key=value per riga o separate da ";", le righe che iniziano con # vengono ignorate

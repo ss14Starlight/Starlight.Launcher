@@ -12,6 +12,7 @@ using Starlight.Launcher.Models.EngineManager;
 using Starlight.Launcher.Services;
 using Starlight.Launcher.Services.Auth;
 using Starlight.Launcher.Services.Bridge;
+using Starlight.Launcher.Services.Diagnostics;
 using Starlight.Launcher.Services.Discord;
 using Starlight.Launcher.Services.EngineManager;
 using Starlight.Launcher.Services.Friends;
@@ -296,6 +297,7 @@ public partial class App : Application
         _ = services.AddSingleton<DotnetRuntimeManager>();
         _ = services.AddSingleton<LocalServerManager>();
         _ = services.AddSingleton<JournalService>();
+        _ = services.AddSingleton<TracyProfiler>();
         _ = services.AddSingleton<ServerMonitor>();
         _ = services.AddSingleton<FriendsService>();
         _ = services.AddSingleton<ReplaysService>();

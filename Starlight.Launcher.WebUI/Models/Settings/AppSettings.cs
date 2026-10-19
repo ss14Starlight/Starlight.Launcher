@@ -213,6 +213,27 @@ public partial record AppSettings
     public bool TracyOnlyLocalhost { get; init; } = true;
 
     /// <summary>
+    /// Download the matching Tracy profiler on first use and open it connected to the game (Windows only).
+    /// </summary>
+    public bool TracyLaunchProfiler { get; init; } = true;
+
+    /// <summary>
+    /// Have the .NET runtime write a dump when the client crashes (<c>DOTNET_DbgEnableMiniDump</c>).
+    /// </summary>
+    public bool CrashDumpsEnabled { get; init; }
+
+    /// <summary>
+    /// How many crash dumps to keep, older ones are deleted before each launch. Heap dumps are often over a gigabyte.
+    /// </summary>
+    public int CrashDumpsRetain { get; init; } = 3;
+
+    [JsonIgnore]
+    public string DirCrashDumps => Path.Combine(DirLauncherData, "crash-dumps");
+
+    [JsonIgnore]
+    public string DirTools => Path.Combine(DirLauncherData, "tools");
+
+    /// <summary>
     /// Extra client cvars passed on launch, as <c>key=value</c> pairs separated by <c>;</c> or new lines.
     /// </summary>
     public string ClientCVarOverrides { get; init; } = "";

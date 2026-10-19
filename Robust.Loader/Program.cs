@@ -37,9 +37,30 @@ internal class Program
 
     private IntPtr LoadContextOnResolvingUnmanaged(Assembly assembly, string unmanaged)
     {
-        var ourDir = Path.GetDirectoryName(typeof(Program).Assembly.Location);
-        var a = Path.Combine(ourDir!, unmanaged);
-        return NativeLibrary.TryLoad(a, out var handle) ? handle : IntPtr.Zero;
+        var ourDir = Path.GetDirectoryName(typeof(Program).Assembly.Location)!;
+        var os = OperatingSystem.IsWindows() ? "win" : OperatingSystem.IsMacOS() ? "osx" : "linux";
+        var arch = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
+        string[] dirs =
+        [
+            ourDir,
+            Path.Combine(ourDir, "runtimes", RuntimeInformation.RuntimeIdentifier, "native"),
+            Path.Combine(ourDir, "runtimes", $"{os}-{arch}", "native"),
+        ];
+
+        var ext = OperatingSystem.IsWindows() ? ".dll" : OperatingSystem.IsMacOS() ? ".dylib" : ".so";
+        string[] names = Path.HasExtension(unmanaged) ? [unmanaged] : [unmanaged, unmanaged + ext, "lib" + unmanaged + ext];
+
+        foreach (var dir in dirs)
+        {
+            foreach (var name in names)
+            {
+                var path = Path.Combine(dir, name);
+                if (File.Exists(path) && NativeLibrary.TryLoad(path, out var handle))
+                    return handle;
+            }
+        }
+
+        return IntPtr.Zero;
     }
 
     private bool Run()

@@ -12,6 +12,7 @@ using Robust.Launcher.Api.Utility;
 using Serilog;
 using Starlight.Launcher.Models.Logging;
 using Starlight.Launcher.Services.Auth;
+using Starlight.Launcher.Services.Diagnostics;
 using Starlight.Launcher.Services.Discord;
 using Starlight.Launcher.Services.EngineManager;
 using Starlight.Launcher.Services.Journal;
@@ -29,7 +30,7 @@ namespace Starlight.Launcher.Services.GameLaunch;
 /// Responsible for actually launching the game.
 /// Either by connecting to a game server, or by launching a local content bundle.
 /// </summary>
-public partial class Connector(Updater updater, IEngineManager engineManager, HttpClient http, LoginManager login, SettingsService settings, INativeTray tray, DiscordRichPresence presence, ClientLogManager clientLogs, JournalService journal) : ObservableObject
+public partial class Connector(Updater updater, IEngineManager engineManager, HttpClient http, LoginManager login, SettingsService settings, INativeTray tray, DiscordRichPresence presence, ClientLogManager clientLogs, JournalService journal, TracyProfiler tracy) : ObservableObject
 {
     private readonly Updater _updater = updater;
     private readonly LoginManager _loginManager = login;
@@ -40,6 +41,7 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
     private readonly DiscordRichPresence _presence = presence;
     private readonly ClientLogManager _clientLogs = clientLogs;
     private readonly JournalService _journal = journal;
+    private readonly TracyProfiler _tracy = tracy;
     private (string Address, string? Name)? _launchTarget;
     private TaskCompletionSource<PrivacyPolicyAcceptResult>? _acceptPrivacyPolicyTcs;
 
@@ -524,12 +526,31 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
                 args.Add($"build.{name}={value}");
             }
 
-            if (settings.TracyEnabled)
+            if (settings.TracyEnabled && !TracyProfiler.ClientSupported)
+            {
+                Log.Warning("Tracy is not supported on {Os} {Arch}, launching without it", RuntimeInformation.OSDescription, RuntimeInformation.ProcessArchitecture);
+            }
+            else if (settings.TracyEnabled)
             {
                 args.Add("--cvar");
                 args.Add("prof.tracy.enabled=true");
                 if (settings.TracyOnlyLocalhost)
                     cVars.Add(("TRACY_ONLY_LOCALHOST", "1"));
+
+                if (settings.TracyLaunchProfiler)
+                    _ = _tracy.LaunchForClientAsync(CancellationToken.None);
+            }
+
+            if (settings.CrashDumpsEnabled)
+            {
+                try
+                {
+                    cVars.AddRange(CrashDumps.GetEnvironment(settings));
+                }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                {
+                    Log.Warning(e, "Can't prepare the crash dump folder, launching without crash dumps");
+                }
             }
 
             // Audio options for the Starlight engine. Official engines just ignore unknown cvars passed this way.
@@ -884,9 +905,11 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
             if (glFailure)
                 ForceCompatMode();
 
+            var dumps = FindCrashDumps(process, exitCode);
+
             try
             {
-                await session.WriteExitAsync(exitCode);
+                await session.WriteExitAsync(exitCode, dumps);
             }
             catch (Exception e)
             {
@@ -894,6 +917,25 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
             }
 
             await session.DisposeAsync();
+        }
+    }
+
+    private List<string> FindCrashDumps(Process process, int? exitCode)
+    {
+        if (exitCode is null or 0 || !_settings.GetSettings().CrashDumpsEnabled)
+            return [];
+
+        try
+        {
+            var dumps = CrashDumps.FindForProcess(_settings.GetSettings(), process.Id).ToList();
+            foreach (var dump in dumps)
+                Log.Warning("Client crashed, dump written to {Dump}", dump);
+            return dumps;
+        }
+        catch (Exception e)
+        {
+            Log.Warning(e, "Failed to look for client crash dumps");
+            return [];
         }
     }
 

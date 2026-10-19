@@ -107,10 +107,13 @@ public sealed class ClientLogSession : IAsyncDisposable
             await _stderr.WriteTextAsync(text);
     }
 
-    public async ValueTask WriteExitAsync(int? exitCode)
+    public async ValueTask WriteExitAsync(int? exitCode, IEnumerable<string>? crashDumps = null)
     {
         var text = $"\n--- CLIENT EXITED (code: {exitCode?.ToString() ?? "unknown"}) " +
                    $"at {DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss zzz} ---\n";
+
+        foreach (var dump in crashDumps ?? [])
+            text += $"--- CRASH DUMP: {dump} ---\n";
 
         await _stdout.WriteTextAsync(text);
         if (_stderr != null)

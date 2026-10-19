@@ -80,6 +80,13 @@ public partial class Settings : LocalizedComponentBase, IDisposable
         "settings-menu-clear-content-success",
         _bridge.ClearContentAsync);
 
+    private async Task OnOpenCrashDumps()
+    {
+        var dir = (await _bridge.GetSettingsAsync()).DirCrashDumps;
+        _ = Directory.CreateDirectory(dir);
+        _bridge.OpenPath(dir);
+    }
+
     private async Task ClearDataAsync(string titleKey, string textKey, string successKey, Func<Task<DataResetResult>> clear)
     {
         var confirmed = await _dialog.ShowMessageBoxAsync(
