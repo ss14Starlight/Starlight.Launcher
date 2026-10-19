@@ -27,7 +27,7 @@
         <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">@L["server-watch-dialog-auto-connect-description"]</MudText>
     </DialogContent>
     <DialogActions>
-        @if (Existing is not null)
+        @if (_existing is not null)
         {
             <MudButton Color="Color.Error" OnClick="Clear">@L["server-watch-dialog-clear"]</MudButton>
         }

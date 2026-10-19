@@ -17,18 +17,18 @@ public partial class FilePathOption : LocalizedComponentBase
     [Parameter] public string Icon { get; set; } = default!;
     [Parameter] public string Label { get; set; } = "";
     [Parameter] public string Helper { get; set; } = "";
-    [Parameter] public bool HelperOnFocus { get; set; } = false;
+    [Parameter] public bool HelperOnFocus { get; set; }
 
     /// <summary>
     /// Determines should we show open folder/file button.
     /// </summary>
-    [Parameter] public bool ShowOpenButton { get; set; } = false;
+    [Parameter] public bool ShowOpenButton { get; set; }
 
     /// <summary>
     /// Allows typing the path manually. If false, the value can only be
     /// changed through the picker dialog (field is read-only).
     /// </summary>
-    [Parameter] public bool AllowManualInput { get; set; } = false;
+    [Parameter] public bool AllowManualInput { get; set; }
 
     /// <summary>
     /// Means that this component will control value change by itself.
@@ -48,10 +48,11 @@ public partial class FilePathOption : LocalizedComponentBase
         await base.OnInitializedAsync();
         if (SelfValueControlInitialization is null)
             return;
+
         Value = await SelfValueControlInitialization.Invoke();
     }
 
-    private async Task OpenFolderAsync() => _bridge.OpenPath(Value);
+    private void OpenFolder() => _bridge.OpenPath(Value);
 
     private Task OnValueChanged(string value) => ApplyValueAsync(value);
 

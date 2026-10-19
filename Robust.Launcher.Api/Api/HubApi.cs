@@ -13,19 +13,10 @@ namespace Robust.Launcher.Api.Api;
 /// <summary>
 /// Provides methods for interacting with the hub API.
 /// </summary>
-public sealed class HubApi
+public sealed class HubApi(HttpClient http, ILogger<HubApi> logger)
 {
-    private readonly HttpClient _http;
-    private readonly ILogger<HubApi> _logger;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="HubApi"/> class.
-    /// </summary>
-    public HubApi(HttpClient http, ILogger<HubApi> logger)
-    {
-        _http = http;
-        _logger = logger;
-    }
+    private readonly HttpClient _http = http;
+    private readonly ILogger<HubApi> _logger = logger;
 
     /// <summary>
     /// Retrieves the list of available servers from the hub.
@@ -60,6 +51,7 @@ public sealed class HubApi
                 lastError = ex;
             }
         }
+
         throw lastError ?? new HubApiException("No URLs in fallback set");
     }
 

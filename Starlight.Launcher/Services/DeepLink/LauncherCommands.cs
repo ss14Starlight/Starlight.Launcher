@@ -9,7 +9,7 @@ using Starlight.Launcher.Services.GameLaunch;
 
 namespace Starlight.Launcher.Services.DeepLink;
 
-public partial class LauncherCommands(ILogger<LauncherCommands> logger, LoginManager loginManager, Connector connector, DiscordAuthService discordAuth, SteamAuthService steamAuth)
+public class LauncherCommands(ILogger<LauncherCommands> logger, LoginManager loginManager, Connector connector, DiscordAuthService discordAuth, SteamAuthService steamAuth)
 {
     private readonly ILogger<LauncherCommands> _logger = logger;
     private readonly LoginManager _loginManager = loginManager;
@@ -90,6 +90,15 @@ public partial class LauncherCommands(ILogger<LauncherCommands> logger, LoginMan
 
     public async ValueTask QueueMessage(LauncherActivationMessage message) => await CommandChannel.Writer.WriteAsync(message);
 
+    /// <summary>
+    /// Queues without waiting, for event handlers. The channel is unbounded, so this only fails after <see cref="Shutdown"/>.
+    /// </summary>
+    public void TryQueueMessage(LauncherActivationMessage message)
+    {
+        if (!CommandChannel.Writer.TryWrite(message))
+            _logger.LogWarning("Dropped launcher command {Kind}: the command queue is already shut down", message.Kind);
+    }
+
     public void Shutdown() => CommandChannel.Writer.Complete();
 
     public async void RunCommandTask()
@@ -144,6 +153,7 @@ public partial class LauncherCommands(ILogger<LauncherCommands> logger, LoginMan
                 {
                     _logger.LogError("Bad auth deep link payload: {Payload}", LauncherActivationMessage.RedactPayload(message.Kind, uriString));
                 }
+
                 break;
 
             case { Kind: LauncherActivationKind.SteamAuth, Payload: { } uriString }:
@@ -156,6 +166,7 @@ public partial class LauncherCommands(ILogger<LauncherCommands> logger, LoginMan
                 {
                     _logger.LogError("Bad auth deep link payload: {Payload}", LauncherActivationMessage.RedactPayload(message.Kind, uriString));
                 }
+
                 break;
 
             default:

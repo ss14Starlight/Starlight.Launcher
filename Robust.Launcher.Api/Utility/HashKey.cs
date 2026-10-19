@@ -11,9 +11,9 @@ public struct HashKey(byte[] data) : IEquatable<HashKey>
 
     public readonly bool Equals(HashKey other) => Data.AsSpan().SequenceEqual(other.Data);
 
-    public readonly override bool Equals(object? obj) => obj is HashKey other && Equals(other);
+    public override readonly bool Equals(object? obj) => obj is HashKey other && Equals(other);
 
-    public readonly override int GetHashCode()
+    public override readonly int GetHashCode()
     {
         var hc = new HashCode();
         hc.AddBytes(Data);

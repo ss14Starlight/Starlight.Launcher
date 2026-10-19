@@ -4,24 +4,24 @@ namespace Starlight.Launcher.Tests;
 
 public sealed class DotnetRuntimeTests
 {
-    private static RuntimeVersion V(string text) =>
-        RuntimeVersion.TryParse(text, out var v) ? v : throw new FormatException(text);
+    private static RuntimeVersion V(string text)
+        => RuntimeVersion.TryParse(text, out var v) ? v : throw new FormatException(text);
 
     [Theory]
     [InlineData("10.0.13", 10, 0, 13, null)]
     [InlineData("10.0", 10, 0, 0, null)]
     [InlineData("11.0.0-rc.2.26504.105", 11, 0, 0, "rc.2.26504.105")]
     [InlineData("10.0.1+abcdef", 10, 0, 1, null)]
-    public void ParsesVersions(string text, int major, int minor, int patch, string? prerelease) =>
-        Assert.Equal(new RuntimeVersion(major, minor, patch, prerelease), V(text));
+    public void ParsesVersions(string text, int major, int minor, int patch, string? prerelease)
+        => Assert.Equal(new RuntimeVersion(major, minor, patch, prerelease), V(text));
 
     [Theory]
     [InlineData("")]
     [InlineData("10")]
     [InlineData("a.b.c")]
     [InlineData("10.0.0-")]
-    public void RejectsInvalidVersions(string text) =>
-        Assert.False(RuntimeVersion.TryParse(text, out _));
+    public void RejectsInvalidVersions(string text)
+        => Assert.False(RuntimeVersion.TryParse(text, out _));
 
     [Theory]
     [InlineData("10.0.1", "10.0.2")]
@@ -29,8 +29,8 @@ public sealed class DotnetRuntimeTests
     [InlineData("10.0.0-rc.2", "10.0.0-rc.10")]
     [InlineData("10.0.0-preview.7", "10.0.0-rc.1")]
     [InlineData("9.0.9", "10.0.0")]
-    public void OrdersVersions(string lower, string higher) =>
-        Assert.True(V(lower) < V(higher));
+    public void OrdersVersions(string lower, string higher)
+        => Assert.True(V(lower) < V(higher));
 
     [Theory]
     [InlineData(RollForwardPolicy.Minor, "10.0.13", true)]
@@ -43,13 +43,13 @@ public sealed class DotnetRuntimeTests
     [InlineData(RollForwardPolicy.Major, "11.0.0", true)]
     [InlineData(RollForwardPolicy.Disable, "10.0.2", true)]
     [InlineData(RollForwardPolicy.Disable, "10.0.3", false)]
-    public void RollForward(RollForwardPolicy policy, string candidate, bool expected) =>
-        Assert.Equal(expected, new FrameworkRequirement("Microsoft.NETCore.App", V("10.0.2"), policy).IsSatisfiedBy(V(candidate)));
+    public void RollForward(RollForwardPolicy policy, string candidate, bool expected)
+        => Assert.Equal(expected, new FrameworkRequirement("Microsoft.NETCore.App", V("10.0.2"), policy).IsSatisfiedBy(V(candidate)));
 
     [Fact]
     public void ParsesFrameworkDependentConfig()
     {
-        var req = DotnetRuntimeRequirements.Parse("""
+        var req = DotnetRuntimeRequirements.Parse(/*lang=json,strict*/ """
             {
               "runtimeOptions": {
                 "tfm": "net10.0",
@@ -70,7 +70,7 @@ public sealed class DotnetRuntimeTests
     [Fact]
     public void AspNetCoreImpliesBaseRuntime()
     {
-        var req = DotnetRuntimeRequirements.Parse("""
+        var req = DotnetRuntimeRequirements.Parse(/*lang=json,strict*/ """
             {
               "runtimeOptions": {
                 "frameworks": [ { "name": "Microsoft.AspNetCore.App", "version": "10.0.0", "rollForward": "Major" } ]
@@ -85,8 +85,8 @@ public sealed class DotnetRuntimeTests
     }
 
     [Fact]
-    public void SelfContainedConfigNeedsNoRuntime() =>
-        Assert.Null(DotnetRuntimeRequirements.Parse("""
+    public void SelfContainedConfigNeedsNoRuntime()
+        => Assert.Null(DotnetRuntimeRequirements.Parse(/*lang=json,strict*/ """
             {
               "runtimeOptions": {
                 "includedFrameworks": [ { "name": "Microsoft.NETCore.App", "version": "10.0.13" } ]

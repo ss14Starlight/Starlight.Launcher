@@ -1,5 +1,4 @@
 using System.Runtime.InteropServices;
-using System.Text;
 using Avalonia.Controls;
 using Avalonia.Platform;
 using Avalonia.Threading;
@@ -16,13 +15,13 @@ public partial class MainWindow : Window
     ///     How long the WebView gets to bring up an adapter before we assume it never will and put an
     ///     error on screen. Cold WebKitGTK/WebView2 starts are slow, so this is deliberately generous.
     /// </summary>
-    private static readonly TimeSpan AdapterTimeout = TimeSpan.FromSeconds(20);
+    private static readonly TimeSpan _adapterTimeout = TimeSpan.FromSeconds(20);
 
     /// <summary>
     ///     Linux only: how long the page gets to finish loading once the adapter exists. The WebView stays
     ///     hidden until then, so a WebKit that starts but never draws would otherwise leave an empty window.
     /// </summary>
-    private static readonly TimeSpan PageLoadTimeout = TimeSpan.FromSeconds(25);
+    private static readonly TimeSpan _pageLoadTimeout = TimeSpan.FromSeconds(25);
 
     private readonly UiActivity _activity;
     private readonly ILocalizationManager? _loc;
@@ -116,6 +115,7 @@ public partial class MainWindow : Window
 
             if (!OperatingSystem.IsWindows())
                 return;
+
             await Task.Delay(500);
             if (TryGetPlatformHandle()?.Handle is { } hwnd)
                 UnlayerChildren(hwnd);
@@ -153,7 +153,7 @@ public partial class MainWindow : Window
         if (_adapterCreated || _adapterWatchdog is not null)
             return;
 
-        _adapterWatchdog = new DispatcherTimer { Interval = AdapterTimeout };
+        _adapterWatchdog = new DispatcherTimer { Interval = _adapterTimeout };
         _adapterWatchdog.Tick += (_, _) =>
         {
             _adapterWatchdog?.Stop();
@@ -170,7 +170,7 @@ public partial class MainWindow : Window
         if (_pageLoaded || _pageWatchdog is not null)
             return;
 
-        _pageWatchdog = new DispatcherTimer { Interval = PageLoadTimeout };
+        _pageWatchdog = new DispatcherTimer { Interval = _pageLoadTimeout };
         _pageWatchdog.Tick += (_, _) =>
         {
             _pageWatchdog?.Stop();
@@ -203,34 +203,47 @@ public partial class MainWindow : Window
         WebViewFallback.IsVisible = true;
 
         if (pageNeverLoaded)
-            Log.Error("WebView page did not finish loading within {Timeout}; showing fallback UI. {Details}", PageLoadTimeout, details);
+            Log.Error("WebView page did not finish loading within {Timeout}; showing fallback UI. {Details}", _pageLoadTimeout, details);
         else
-            Log.Error("WebView adapter was not created within {Timeout}; showing fallback UI. {Details}", AdapterTimeout, details);
+            Log.Error("WebView adapter was not created within {Timeout}; showing fallback UI. {Details}", _adapterTimeout, details);
     }
 
     private string Loc(string key, params (string, object?)[] args)
         => _loc?.GetString(key, args) ?? key;
 
-    const int GWL_EXSTYLE = -20;
-    const int WS_EX_LAYERED = 0x00080000;
+    private const int GWL_EXSTYLE = -20;
+    private const int WS_EX_LAYERED = 0x00080000;
 
-    [DllImport("user32.dll", SetLastError = true)] static extern int GetWindowLong(IntPtr h, int i);
-    [DllImport("user32.dll", SetLastError = true)] static extern int SetWindowLong(IntPtr h, int i, int v);
-    [DllImport("user32.dll")] static extern bool EnumChildWindows(IntPtr h, EnumWindowsProc cb, IntPtr p);
-    [DllImport("user32.dll")] static extern int GetClassName(IntPtr h, StringBuilder s, int n);
-    delegate bool EnumWindowsProc(IntPtr h, IntPtr p);
+    [LibraryImport("user32.dll", EntryPoint = "GetWindowLongW", SetLastError = true)]
+    private static partial int GetWindowLong(IntPtr hWnd, int nIndex);
 
-    static void UnlayerChildren(IntPtr root)
-        => EnumChildWindows(root, (h, _) =>
+    [LibraryImport("user32.dll", EntryPoint = "SetWindowLongW", SetLastError = true)]
+    private static partial int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+
+    [LibraryImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static unsafe partial bool EnumChildWindows(IntPtr hWndParent, delegate* unmanaged<IntPtr, IntPtr, int> lpEnumFunc, IntPtr lParam);
+
+    [LibraryImport("user32.dll", EntryPoint = "GetClassNameW")]
+    private static unsafe partial int GetClassName(IntPtr hWnd, char* lpClassName, int nMaxCount);
+
+    private static unsafe void UnlayerChildren(IntPtr root)
+        => EnumChildWindows(root, &UnlayerCallback, IntPtr.Zero);
+
+    [UnmanagedCallersOnly]
+    private static unsafe int UnlayerCallback(IntPtr h, IntPtr _)
+    {
+        const int Max = 256;
+        var buf = stackalloc char[Max];
+        var len = GetClassName(h, buf, Max);
+
+        if (len > 0 && new ReadOnlySpan<char>(buf, len).Contains("AvaloniaDumbWindow", StringComparison.Ordinal))
         {
-            var sb = new StringBuilder(256);
-            _ = GetClassName(h, sb, sb.Capacity);
-            if (sb.ToString().Contains("AvaloniaDumbWindow"))
-            {
-                var ex = GetWindowLong(h, GWL_EXSTYLE);
-                if ((ex & WS_EX_LAYERED) != 0)
-                    _ = SetWindowLong(h, GWL_EXSTYLE, ex & ~WS_EX_LAYERED);
-            }
-            return true;
-        }, IntPtr.Zero);
+            var ex = GetWindowLong(h, GWL_EXSTYLE);
+            if ((ex & WS_EX_LAYERED) != 0)
+                _ = SetWindowLong(h, GWL_EXSTYLE, ex & ~WS_EX_LAYERED);
+        }
+
+        return 1;
+    }
 }

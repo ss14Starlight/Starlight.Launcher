@@ -56,7 +56,6 @@ public partial class Friends : LocalizedComponentBase, IDisposable
             return;
 
         _loading = true;
-        StateHasChanged();
         try
         {
             var result = await _bridge.GetFriendsAsync(_cts.Token);
@@ -68,7 +67,6 @@ public partial class Friends : LocalizedComponentBase, IDisposable
         finally
         {
             _loading = false;
-            StateHasChanged();
         }
     }
 
@@ -159,7 +157,7 @@ public partial class Friends : LocalizedComponentBase, IDisposable
         }
     }
 
-    private Task Join(string address, string? name)
+    private Task<IDialogReference> Join(string address, string? name)
     {
         var parameters = new DialogParameters<ConnectingDialog>
         {

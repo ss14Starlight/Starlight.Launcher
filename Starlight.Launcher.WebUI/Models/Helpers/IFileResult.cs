@@ -6,7 +6,7 @@ public interface IFileResult
 
     string FullPath { get; init; }
 
-    Task <Stream> OpenReadAsync();
+    Task<Stream> OpenReadAsync();
 
     Task<Stream> OpenWriteAsync();
 }

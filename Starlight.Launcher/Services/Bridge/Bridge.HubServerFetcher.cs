@@ -1,4 +1,3 @@
-
 using Robust.Launcher.Api.Models.ServerStatus;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Models.HubServerFetcher;

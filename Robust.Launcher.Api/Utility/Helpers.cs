@@ -41,11 +41,10 @@ public static class Helpers
     public static async Task<T> AsJson<T>(this HttpContent content) where T : notnull
     {
         var str = await content.ReadAsStringAsync();
-        return JsonSerializer.Deserialize<T>(str, JsonWebOptions) ??
-               throw new JsonException("AsJson: did not expect null response");
+        return JsonSerializer.Deserialize<T>(str, JsonWebOptions)
+            ?? throw new JsonException("AsJson: did not expect null response");
     }
 
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "<Pending>")]
     public static unsafe void MarkDirectoryCompress(string path)
     {
         if (OperatingSystem.IsLinux())
@@ -54,7 +53,7 @@ public static class Helpers
             return;
         }
 
-        if (!OperatingSystem.IsWindows())
+        if (!OperatingSystem.IsWindowsVersionAtLeast(6, 1))
             return;
 
         fixed (char* pPath = path)
@@ -115,8 +114,8 @@ public static class Helpers
     }
 
     public static async Task DownloadToStream(this HttpClient client, string uri, Stream stream,
-        DownloadProgressCallback? progress = null, CancellationToken cancel = default) =>
-        await Task.Run(async () =>
+        DownloadProgressCallback? progress = null, CancellationToken cancel = default)
+        => await Task.Run(async () =>
             {
                 using var response = await client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, cancel);
                 _ = response.EnsureSuccessStatusCode();
@@ -146,7 +145,7 @@ public static class Helpers
                     {
                         await stream.WriteAsync(buffer.AsMemory(0, read), cancel);
 
-                        reads += 1;
+                        reads++;
                         totalRead += read;
                         if (totalLength.HasValue && reads % 20 == 0)
                         {
@@ -160,7 +159,8 @@ public static class Helpers
     {
         var f = new UnixFileInfo(path);
         f.FileAccessPermissions |=
-            FileAccessPermissions.UserExecute | FileAccessPermissions.GroupExecute |
-            FileAccessPermissions.OtherExecute;
+            FileAccessPermissions.UserExecute
+                | FileAccessPermissions.GroupExecute
+                | FileAccessPermissions.OtherExecute;
     }
 }

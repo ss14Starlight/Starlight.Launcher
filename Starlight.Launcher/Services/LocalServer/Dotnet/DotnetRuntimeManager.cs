@@ -1,8 +1,10 @@
 using System.Diagnostics;
 using System.Formats.Tar;
+using System.Globalization;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Robust.Launcher.Api.Models;
@@ -20,8 +22,8 @@ public sealed record DotnetInstallation(
     IReadOnlyDictionary<string, List<RuntimeVersion>> Frameworks,
     bool IsLauncherManaged)
 {
-    public RuntimeVersion? NetCoreVersion =>
-        Frameworks.TryGetValue(DotnetRuntimeRequirements.NetCoreApp, out var v) && v.Count > 0 ? v.Max() : null;
+    public RuntimeVersion? NetCoreVersion
+        => Frameworks.TryGetValue(DotnetRuntimeRequirements.NetCoreApp, out var v) && v.Count > 0 ? v.Max() : null;
 }
 
 public readonly record struct DotnetInstallProgress(string Version, bool Installing, long Downloaded = 0, long Total = 0);
@@ -34,11 +36,13 @@ public sealed partial class DotnetRuntimeManager
 
     private const string ReleaseMetadataUrl = "https://builds.dotnet.microsoft.com/dotnet/release-metadata/{0}/releases.json";
 
-    private static readonly TimeSpan SystemProbeTimeout = TimeSpan.FromSeconds(10);
-    private static readonly TimeSpan UpdateCheckInterval = TimeSpan.FromDays(3);
-    private static readonly TimeSpan FailedUpdateCheckRetryInterval = TimeSpan.FromHours(6);
+    private static readonly CompositeFormat _releaseMetadataFormat = CompositeFormat.Parse(ReleaseMetadataUrl);
 
-    private static string MuxerFileName => OperatingSystem.IsWindows() ? "dotnet.exe" : "dotnet";
+    private static readonly TimeSpan _systemProbeTimeout = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan _updateCheckInterval = TimeSpan.FromDays(3);
+    private static readonly TimeSpan _failedUpdateCheckRetryInterval = TimeSpan.FromHours(6);
+
+    private static string s_muxerFileName => OperatingSystem.IsWindows() ? "dotnet.exe" : "dotnet";
 
     private readonly HttpClient _http;
     private readonly Func<string> _cacheDirectory;
@@ -46,8 +50,8 @@ public sealed partial class DotnetRuntimeManager
     private readonly SemaphoreSlim _cacheLock = new(1, 1);
 
     private readonly Lock _updateLock = new();
-    private readonly HashSet<string> _stagingDirs = new(StringComparer.Ordinal);
-    private readonly HashSet<string> _updatingChannels = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _stagingDirs = [with(StringComparer.Ordinal)];
+    private readonly HashSet<string> _updatingChannels = [with(StringComparer.Ordinal)];
     private readonly List<Task> _backgroundUpdates = [];
     private readonly CancellationTokenSource _shutdown = new();
 
@@ -62,7 +66,7 @@ public sealed partial class DotnetRuntimeManager
         _cacheDirectory = cacheDirectory;
     }
 
-    private string CacheDirectory => _cacheDirectory();
+    private string _cacheDirectoryString => _cacheDirectory();
 
     public async Task<DotnetInstallation> EnsureRuntimeAsync(
         DotnetRuntimeRequirements requirements,
@@ -78,10 +82,9 @@ public sealed partial class DotnetRuntimeManager
                 return cached;
             }
 
-            if (PickBest(await ProbeSystemAsync(cancel), requirements) is { } system)
-                return system;
-
-            return await DownloadAsync(requirements, progress, cancel);
+            return PickBest(await ProbeSystemAsync(cancel), requirements) is { } system
+                ? system
+                : await DownloadAsync(requirements, progress, cancel);
         }
         finally
         {
@@ -94,7 +97,7 @@ public sealed partial class DotnetRuntimeManager
         await _cacheLock.WaitAsync();
         try
         {
-            var cacheDir = CacheDirectory;
+            var cacheDir = _cacheDirectoryString;
             if (!Directory.Exists(cacheDir))
                 return;
 
@@ -130,15 +133,15 @@ public sealed partial class DotnetRuntimeManager
         }
     }
 
-    private static DotnetInstallation? PickBest(IEnumerable<DotnetInstallation> installs, DotnetRuntimeRequirements requirements) =>
-        installs
+    private static DotnetInstallation? PickBest(IEnumerable<DotnetInstallation> installs, DotnetRuntimeRequirements requirements)
+        => installs
             .Where(i => requirements.IsSatisfiedBy(i.Frameworks))
             .MaxBy(i => i.NetCoreVersion);
 
     private List<DotnetInstallation> ScanCache()
     {
         var result = new List<DotnetInstallation>();
-        var cacheDir = CacheDirectory;
+        var cacheDir = _cacheDirectoryString;
         if (!Directory.Exists(cacheDir))
             return result;
 
@@ -147,7 +150,7 @@ public sealed partial class DotnetRuntimeManager
             if (Path.GetFileName(dir).StartsWith('.'))
                 continue;
 
-            var muxer = Path.Combine(dir, MuxerFileName);
+            var muxer = Path.Combine(dir, s_muxerFileName);
             if (!File.Exists(Path.Combine(dir, InstallMarkerFileName)) || !File.Exists(muxer))
                 continue;
 
@@ -185,7 +188,8 @@ public sealed partial class DotnetRuntimeManager
     {
         var candidates = new List<string>();
         if (Environment.GetEnvironmentVariable("DOTNET_ROOT") is { Length: > 0 } dotnetRoot)
-            candidates.Add(Path.Combine(dotnetRoot, MuxerFileName));
+            candidates.Add(Path.Combine(dotnetRoot, s_muxerFileName));
+
         candidates.Add("dotnet");
 
         var byRoot = new Dictionary<string, Dictionary<string, List<RuntimeVersion>>>(StringComparer.OrdinalIgnoreCase);
@@ -207,20 +211,20 @@ public sealed partial class DotnetRuntimeManager
                     continue;
 
                 if (!byRoot.TryGetValue(root, out var frameworks))
-                    byRoot[root] = frameworks = new Dictionary<string, List<RuntimeVersion>>(StringComparer.Ordinal);
+                    byRoot[root] = frameworks = [with(StringComparer.Ordinal)];
 
                 var name = match.Groups["name"].Value;
                 if (!frameworks.TryGetValue(name, out var versions))
                     frameworks[name] = versions = [];
+
                 if (!versions.Contains(version))
                     versions.Add(version);
             }
         }
 
-        return byRoot
-            .Select(kv => new DotnetInstallation(kv.Key, Path.Combine(kv.Key, MuxerFileName), kv.Value, IsLauncherManaged: false))
-            .Where(i => File.Exists(i.Muxer) && MatchesProcessArchitecture(i))
-            .ToList();
+        return [.. byRoot
+            .Select(kv => new DotnetInstallation(kv.Key, Path.Combine(kv.Key, s_muxerFileName), kv.Value, IsLauncherManaged: false))
+            .Where(i => File.Exists(i.Muxer) && MatchesProcessArchitecture(i))];
     }
 
     private static bool MatchesProcessArchitecture(DotnetInstallation install)
@@ -254,7 +258,7 @@ public sealed partial class DotnetRuntimeManager
                 return null;
 
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancel);
-            timeout.CancelAfter(SystemProbeTimeout);
+            timeout.CancelAfter(_systemProbeTimeout);
 
             var stdout = process.StandardOutput.ReadToEndAsync(timeout.Token);
             _ = process.StandardError.ReadToEndAsync(timeout.Token);
@@ -323,7 +327,7 @@ public sealed partial class DotnetRuntimeManager
 
     private string NewTempDir()
     {
-        var cacheDir = CacheDirectory;
+        var cacheDir = _cacheDirectoryString;
         EnsureDirectoryExists(cacheDir);
         return Path.Combine(cacheDir, TempDirPrefix + Guid.NewGuid().ToString("N"));
     }
@@ -375,7 +379,7 @@ public sealed partial class DotnetRuntimeManager
             await TarFile.ExtractToDirectoryAsync(gzip, tempDir, overwriteFiles: true, cancel);
         }
 
-        var muxer = Path.Combine(tempDir, MuxerFileName);
+        var muxer = Path.Combine(tempDir, s_muxerFileName);
         if (!File.Exists(muxer))
             throw new UpdateException("Downloaded .NET runtime archive does not contain the dotnet host.");
 
@@ -387,14 +391,14 @@ public sealed partial class DotnetRuntimeManager
 
     private DotnetInstallation Commit(RuntimeArchive archive, string tempDir)
     {
-        var finalDir = Path.Combine(CacheDirectory, $"{archive.Flavor}-{archive.Version}-{archive.Rid}");
+        var finalDir = Path.Combine(_cacheDirectoryString, $"{archive.Flavor}-{archive.Version}-{archive.Rid}");
 
         if (Directory.Exists(finalDir))
             Directory.Delete(finalDir, recursive: true);
 
         Directory.Move(tempDir, finalDir);
 
-        return new DotnetInstallation(finalDir, Path.Combine(finalDir, MuxerFileName), ScanSharedFrameworks(finalDir), IsLauncherManaged: true);
+        return new DotnetInstallation(finalDir, Path.Combine(finalDir, s_muxerFileName), ScanSharedFrameworks(finalDir), IsLauncherManaged: true);
     }
 
     private void ScheduleUpdateCheck(DotnetRuntimeRequirements requirements, DotnetInstallation cached)
@@ -422,7 +426,7 @@ public sealed partial class DotnetRuntimeManager
                 catch (Exception e)
                 {
                     Log.Warning(e, "Background update of the .NET {Version} runtime failed", requirements.DisplayVersion);
-                    MarkUpdateChecked(requirements, retryAfter: FailedUpdateCheckRetryInterval);
+                    MarkUpdateChecked(requirements, retryAfter: _failedUpdateCheckRetryInterval);
                 }
                 finally
                 {
@@ -487,25 +491,26 @@ public sealed partial class DotnetRuntimeManager
         {
             lock (_updateLock)
                 _ = _stagingDirs.Remove(tempDir);
+
             TryDeleteDirectory(tempDir);
         }
     }
 
-    private static string UpdateCheckKey(DotnetRuntimeRequirements requirements) =>
-        $"{(requirements.NeedsAspNetCore ? "aspnetcore" : "runtime")}-{requirements.DisplayVersion}";
+    private static string UpdateCheckKey(DotnetRuntimeRequirements requirements)
+        => $"{(requirements.NeedsAspNetCore ? "aspnetcore" : "runtime")}-{requirements.DisplayVersion}";
 
-    private string UpdateCheckPath(DotnetRuntimeRequirements requirements) =>
-        Path.Combine(CacheDirectory, UpdateCheckFilePrefix + UpdateCheckKey(requirements));
+    private string UpdateCheckPath(DotnetRuntimeRequirements requirements)
+        => Path.Combine(_cacheDirectoryString, UpdateCheckFilePrefix + UpdateCheckKey(requirements));
 
     private bool IsUpdateCheckDue(DotnetRuntimeRequirements requirements)
     {
         var path = UpdateCheckPath(requirements);
-        return !File.Exists(path) || DateTime.UtcNow - File.GetLastWriteTimeUtc(path) >= UpdateCheckInterval;
+        return !File.Exists(path) || DateTime.UtcNow - File.GetLastWriteTimeUtc(path) >= _updateCheckInterval;
     }
 
     private void MarkUpdateChecked(DotnetRuntimeRequirements requirements, TimeSpan? retryAfter = null)
     {
-        var stamp = DateTime.UtcNow - (UpdateCheckInterval - (retryAfter ?? UpdateCheckInterval));
+        var stamp = DateTime.UtcNow - (_updateCheckInterval - (retryAfter ?? _updateCheckInterval));
         try
         {
             File.WriteAllText(UpdateCheckPath(requirements), "");
@@ -523,7 +528,7 @@ public sealed partial class DotnetRuntimeManager
         var flavor = requirements.NeedsAspNetCore ? "aspnetcore-runtime" : "dotnet-runtime";
         var componentKey = requirements.NeedsAspNetCore ? "aspnetcore-runtime" : "runtime";
 
-        await using var stream = await _http.GetStreamAsync(string.Format(ReleaseMetadataUrl, channel), cancel);
+        await using var stream = await _http.GetStreamAsync(string.Format(CultureInfo.InvariantCulture, _releaseMetadataFormat, channel), cancel);
         using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: cancel);
 
         if (!doc.RootElement.TryGetProperty("releases", out var releases))
@@ -533,7 +538,9 @@ public sealed partial class DotnetRuntimeManager
         {
             if (!TryGetComponent(release, "runtime", out var runtimeVersion, out _)
                 || !TryGetComponent(release, componentKey, out var componentVersion, out var files))
+            {
                 continue;
+            }
 
             var provided = new Dictionary<string, List<RuntimeVersion>>
             {
@@ -567,12 +574,12 @@ public sealed partial class DotnetRuntimeManager
         return null;
     }
 
-    private static bool IsRuntimeArchive(string name, string flavor) =>
-        name.StartsWith(flavor + "-", StringComparison.Ordinal)
-        && !name.StartsWith(flavor + "-composite-", StringComparison.Ordinal)
-        && (OperatingSystem.IsWindows()
-            ? name.EndsWith(".zip", StringComparison.Ordinal)
-            : name.EndsWith(".tar.gz", StringComparison.Ordinal));
+    private static bool IsRuntimeArchive(string name, string flavor)
+        => name.StartsWith(flavor + "-", StringComparison.Ordinal)
+            && !name.StartsWith(flavor + "-composite-", StringComparison.Ordinal)
+            && (OperatingSystem.IsWindows()
+                ? name.EndsWith(".zip", StringComparison.Ordinal)
+                : name.EndsWith(".tar.gz", StringComparison.Ordinal));
 
     private static bool TryGetComponent(JsonElement release, string key, out RuntimeVersion version, out JsonElement files)
     {
@@ -587,10 +594,10 @@ public sealed partial class DotnetRuntimeManager
             && files.ValueKind == JsonValueKind.Array;
     }
 
-    private static bool IsNetworkError(Exception e, CancellationToken cancel) =>
-        e is HttpRequestException or HttpIOException or TimeoutException or DownloadStalledException
-        || (e is OperationCanceledException && !cancel.IsCancellationRequested)
-        || (e is IOException && e.InnerException is System.Net.Sockets.SocketException);
+    private static bool IsNetworkError(Exception e, CancellationToken cancel)
+        => e is HttpRequestException or HttpIOException or TimeoutException or DownloadStalledException
+            || (e is OperationCanceledException && !cancel.IsCancellationRequested)
+            || (e is IOException && e.InnerException is System.Net.Sockets.SocketException);
 
     private static void TryDeleteDirectory(string dir)
     {

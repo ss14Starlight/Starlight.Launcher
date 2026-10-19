@@ -1,12 +1,18 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
+using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Localization;
+using Starlight.Launcher.WebUI.Services;
 
 namespace Starlight.Launcher.WebUI.Components.Atoms;
 
 public sealed partial class HorizontalNavBar : LocalizedComponentBase, IDisposable
 {
     [Inject] private NavigationManager _navigation { get; set; } = default!;
+    [Inject] private IBridge _bridge { get; set; } = default!;
+    [Inject] private AppState _state { get; set; } = default!;
+
+    private bool _developerMode;
 
     private bool IsActive(string href, NavLinkMatch match = NavLinkMatch.Prefix)
     {
@@ -23,13 +29,25 @@ public sealed partial class HorizontalNavBar : LocalizedComponentBase, IDisposab
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
         => InvokeAsync(StateHasChanged);
 
+    private void OnAppStateChanged()
+    {
+        _developerMode = _bridge.GetSettings().DeveloperMode;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
     protected override void OnInitialized()
-        => _navigation.LocationChanged += OnLocationChanged;
+    {
+        base.OnInitialized();
+        _developerMode = _bridge.GetSettings().DeveloperMode;
+        _navigation.LocationChanged += OnLocationChanged;
+        _state.OnChange += OnAppStateChanged;
+    }
 
     public override void Dispose()
     {
         base.Dispose();
 
         _navigation.LocationChanged -= OnLocationChanged;
+        _state.OnChange -= OnAppStateChanged;
     }
 }

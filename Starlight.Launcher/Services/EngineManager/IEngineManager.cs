@@ -22,10 +22,13 @@ public interface IEngineManager
         DownloadProgressCallback? progress = null,
         CancellationToken cancel = default);
 
-    /// <returns>True if something new had to be installed.</returns>
+    /// <summary>
+    /// Downloads engine module if necessary
+    /// </summary>
+    ///<returns>True if something new had to be installed.</returns>
     Task<bool> DownloadModuleIfNecessary(
         string moduleName,
-        string engineVersion,
+        string moduleVersion,
         EngineModuleManifest manifest,
         DownloadProgressCallback? progress = null,
         CancellationToken cancel = default);

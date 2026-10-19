@@ -34,17 +34,19 @@ public partial class PresenceStateListOption : LocalizedComponentBase
 
         if (string.IsNullOrEmpty(ResetButtonTooltip))
             ResetButtonTooltip = L["settings-presence-state-list-option-reset"];
+
         if (string.IsNullOrEmpty(PriorityTooltip))
             PriorityTooltip = L["settings-presence-state-list-option-priority-tooltip"];
+
         if (string.IsNullOrEmpty(PinnedTooltip))
             PinnedTooltip = L["settings-presence-state-list-option-idle-tooltip"];
     }
 
-    private string StateTitle(PresenceState state) =>
-        L[$"presence-state-{state.ToString().ToLowerInvariant()}"];
+    private string StateTitle(PresenceState state)
+        => L[$"presence-state-{state.ToString().ToLowerInvariant()}"];
 
-    private string StateDescription(PresenceState state) =>
-        L[$"presence-state-{state.ToString().ToLowerInvariant()}-description"];
+    private string StateDescription(PresenceState state)
+        => L[$"presence-state-{state.ToString().ToLowerInvariant()}-description"];
 
     private bool CanMoveDown(int index)
     {

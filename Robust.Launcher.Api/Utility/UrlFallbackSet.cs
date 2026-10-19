@@ -29,6 +29,7 @@ public sealed class UrlFallbackSet
         {
             if (stats.RequestCount.Length != urls.Length)
                 throw new ArgumentException("Stats has wrong length!");
+
             Stats = stats;
         }
         else
@@ -45,6 +46,7 @@ public sealed class UrlFallbackSet
         {
             if (stats.RequestCount.Length != Urls.Length)
                 throw new ArgumentException("Stats has wrong length!");
+
             Stats = stats;
         }
         else
@@ -77,7 +79,8 @@ public sealed class UrlFallbackSet
         return await msg.Content.ReadAsStringAsync(cancel).ConfigureAwait(false);
     }
 
-    public async Task<HttpResponseMessage> GetAsync(HttpClient httpClient, CancellationToken cancel = default) => await SendAsync(httpClient, url => new HttpRequestMessage(HttpMethod.Get, url), cancel)
+    public async Task<HttpResponseMessage> GetAsync(HttpClient httpClient, CancellationToken cancel = default)
+        => await SendAsync(httpClient, url => new HttpRequestMessage(HttpMethod.Get, url), cancel)
             .ConfigureAwait(false);
 
     public async Task<HttpResponseMessage> PostAsync(HttpClient httpClient, HttpContent content,
@@ -95,7 +98,8 @@ public sealed class UrlFallbackSet
             Urls.Length,
             (i, token) => AttemptConnection(httpClient, builder(Urls[i]), token),
             AttemptDelay,
-            cancel).ConfigureAwait(false);
+            cancel)
+            .ConfigureAwait(false);
 
         Stats.AddSuccessfulRequest(index);
 
@@ -104,25 +108,8 @@ public sealed class UrlFallbackSet
         return response;
     }
 
-    private static async Task<HttpResponseMessage> AttemptConnection(
-        HttpClient httpClient,
-        HttpRequestMessage message,
-        CancellationToken cancel)
-    {
-        // if (new Random().Next(2) == 0)
-        // {
-        //     Log.Error("Dropped the URL: {Message}", message);
-        //     throw new InvalidOperationException("OOPS");
-        // }
-
-        var response = await httpClient.SendAsync(
-            message,
-            HttpCompletionOption.ResponseHeadersRead,
-            cancel
-        ).ConfigureAwait(false);
-
-        return response;
-    }
+    private static async Task<HttpResponseMessage> AttemptConnection(HttpClient httpClient, HttpRequestMessage message, CancellationToken cancel)
+        => await httpClient.SendAsync(message, HttpCompletionOption.ResponseHeadersRead, cancel).ConfigureAwait(false);
 
     public string GetMostSuccessfulUrl()
     {

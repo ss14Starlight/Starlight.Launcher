@@ -6,6 +6,7 @@ namespace Starlight.Launcher.Services.Auth;
 internal static class LoginKeyIo
 {
     private const int Attempts = 4;
+
     private static readonly TimeSpan _retryDelay = TimeSpan.FromMilliseconds(150);
 
     public static Task<string> ReadTextWithRetryAsync(string path)

@@ -9,22 +9,23 @@ public sealed class LocalizationKeysTests
 {
     private const string DefaultLocale = "en-US";
 
-    private static readonly Dictionary<string, Dictionary<string, string>> s_keysByCulture = LoadKeys();
+    private static readonly Dictionary<string, Dictionary<string, string>> _keysByCulture = LoadKeys();
 
-    internal static IReadOnlyDictionary<string, string> DefaultKeys => s_keysByCulture[DefaultLocale];
+    internal static IReadOnlyDictionary<string, string> DefaultKeys => _keysByCulture[DefaultLocale];
 
     public static TheoryData<string> Translations()
     {
         var data = new TheoryData<string>();
-        foreach (var culture in s_keysByCulture.Keys.Where(c => c != DefaultLocale).Order())
+        foreach (var culture in _keysByCulture.Keys.Where(c => c != DefaultLocale).Order())
             data.Add(culture);
+
         return data;
     }
 
     [Fact]
     public void DefaultLocaleAndTranslationsAreEmbedded()
     {
-        Assert.Contains(DefaultLocale, s_keysByCulture.Keys);
+        Assert.Contains(DefaultLocale, _keysByCulture.Keys);
         Assert.NotEmpty(Translations());
     }
 
@@ -32,8 +33,8 @@ public sealed class LocalizationKeysTests
     [MemberData(nameof(Translations))]
     public void TranslationHasEveryDefaultKey(string culture)
     {
-        var translated = s_keysByCulture[culture];
-        var missing = s_keysByCulture[DefaultLocale]
+        var translated = _keysByCulture[culture];
+        var missing = _keysByCulture[DefaultLocale]
             .Where(kv => !translated.ContainsKey(kv.Key))
             .Select(kv => $"{kv.Value}: {kv.Key}")
             .Order()
@@ -46,8 +47,8 @@ public sealed class LocalizationKeysTests
     [MemberData(nameof(Translations))]
     public void TranslationHasNoUnknownKeys(string culture)
     {
-        var defaults = s_keysByCulture[DefaultLocale];
-        var extra = s_keysByCulture[culture]
+        var defaults = _keysByCulture[DefaultLocale];
+        var extra = _keysByCulture[culture]
             .Where(kv => !defaults.ContainsKey(kv.Key))
             .Select(kv => $"{kv.Value}: {kv.Key}")
             .Order()

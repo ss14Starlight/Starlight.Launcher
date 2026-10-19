@@ -8,8 +8,6 @@ namespace Robust.Launcher.Api.Utility;
 
 public sealed class Blake2BHasherStream : Stream
 {
-    private readonly bool _reader;
-
     public readonly int OutputLength;
     public readonly Stream WrappingStream;
 
@@ -19,7 +17,7 @@ public sealed class Blake2BHasherStream : Stream
     {
         OutputLength = outputLength;
         WrappingStream = wrapping;
-        _reader = reader;
+        CanRead = reader;
 
         _ = CryptoGenericHashBlake2B.Init(ref State, key, outputLength);
     }
@@ -103,9 +101,9 @@ public sealed class Blake2BHasherStream : Stream
         _ = CryptoGenericHashBlake2B.Update(ref State, buffer.AsSpan(offset, count));
     }
 
-    public override bool CanRead => _reader;
+    public override bool CanRead { get; }
     public override bool CanSeek => false;
-    public override bool CanWrite => !_reader;
+    public override bool CanWrite => !CanRead;
     public override long Length => throw new NotSupportedException();
 
     public override long Position

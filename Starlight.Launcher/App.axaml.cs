@@ -36,7 +36,7 @@ using Starlight.Launcher.Services.WebUI;
 
 namespace Starlight.Launcher;
 
-public partial class App : Application
+public class App : Application
 {
     internal static LauncherMessaging? PendingMessaging { get; set; }
 
@@ -65,10 +65,12 @@ public partial class App : Application
             Services.GetRequiredService<DiscordRichPresence>().Initialize();
 
             var settings = Services.GetRequiredService<SettingsService>();
-            _ = Task.Run(async () => await settings.InitializeLoginsAsync());
+            // Off the UI thread and not awaited: decrypting logins (DPAPI / keyring) and the first token
+            // refresh must not hold back the window. Both log their own failures.
+            _ = Task.Run(settings.InitializeLoginsAsync);
 
             Services.GetRequiredService<HubServerFetcher>().RequestInitialUpdate();
-            _ = Task.Run(async () => await Services.GetRequiredService<LoginManager>().InitializeAsync());
+            _ = Task.Run(Services.GetRequiredService<LoginManager>().InitializeAsync);
             try
             {
                 Services.GetRequiredService<ContentManager>().Initialize();
@@ -133,6 +135,13 @@ public partial class App : Application
                         () => Services.GetRequiredService<LocalServerManager>().StopAndWaitAsync(),
                         TimeSpan.FromSeconds(20));
 
+                    await Step("diagnostic tools stop", () =>
+                    {
+                        // dotnet-monitor would otherwise keep listening after the launcher is gone.
+                        Services.GetRequiredService<DotnetTools>().StopAll();
+                        return Task.CompletedTask;
+                    }, TimeSpan.FromSeconds(5));
+
                     await Step(".NET runtime updates stop",
                         () => Services.GetRequiredService<DotnetRuntimeManager>().StopBackgroundUpdatesAsync(),
                         TimeSpan.FromSeconds(5));
@@ -165,7 +174,7 @@ public partial class App : Application
                 }
             };
 
-            window.Closing += (_ , e) =>
+            window.Closing += (_, e) =>
             {
                 if (settings.GetSettings().CollapseInTrayOnClose)
                 {
@@ -183,11 +192,11 @@ public partial class App : Application
 
                 var current = window.WindowState;
 
-                if (previousState != WindowState.Minimized &&
-                    current == WindowState.Minimized)
+                if (previousState != WindowState.Minimized
+                    && current == WindowState.Minimized
+                    && settings.GetSettings().CollapseInTrayOnMinimize)
                 {
-                    if (settings.GetSettings().CollapseInTrayOnMinimize)
-                        Services.GetRequiredService<INativeTray>().HideWindow();
+                    Services.GetRequiredService<INativeTray>().HideWindow();
                 }
 
                 previousState = current;
@@ -201,7 +210,7 @@ public partial class App : Application
         base.OnFrameworkInitializationCompleted();
     }
 
-    private readonly object _uriActivationLock = new();
+    private readonly Lock _uriActivationLock = new();
     private readonly List<LauncherActivationMessage> _pendingUriActivations = [];
     private LauncherCommands? _uriActivationTarget;
 
@@ -235,7 +244,7 @@ public partial class App : Application
                 }
             }
 
-            _ = target.QueueMessage(message);
+            target.TryQueueMessage(message);
         };
     }
 
@@ -250,14 +259,14 @@ public partial class App : Application
         }
 
         foreach (var message in pending)
-            _ = commands.QueueMessage(message);
+            commands.TryQueueMessage(message);
     }
 
     private static void RegisterServices(IServiceCollection services)
     {
         _ = services.AddLogging(b => b.ClearProviders()
-            .AddSerilog(Serilog.Log.Logger)
-            .AddFilter("Microsoft.AspNetCore", Microsoft.Extensions.Logging.LogLevel.Warning));
+            .AddSerilog(Log.Logger)
+            .AddFilter("Microsoft.AspNetCore", LogLevel.Warning));
 
         _ = OperatingSystem.IsWindows()
             ? services.AddSingleton<ILoginKeyProvider, DpapiKeyProvider>()
@@ -298,6 +307,11 @@ public partial class App : Application
         _ = services.AddSingleton<LocalServerManager>();
         _ = services.AddSingleton<JournalService>();
         _ = services.AddSingleton<TracyProfiler>();
+        _ = services.AddSingleton<ClientDiagnostics>();
+        _ = services.AddSingleton<DiagnosticsBundle>();
+        _ = services.AddSingleton<ClientConsole>();
+        _ = services.AddSingleton<DotnetTools>();
+        _ = services.AddSingleton<RenderDocInstaller>();
         _ = services.AddSingleton<ServerMonitor>();
         _ = services.AddSingleton<FriendsService>();
         _ = services.AddSingleton<ReplaysService>();

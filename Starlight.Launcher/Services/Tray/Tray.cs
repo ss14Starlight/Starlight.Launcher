@@ -34,13 +34,14 @@ public sealed class TrayCoordinator(INativeTray tray, SettingsService settings, 
             app.ActualThemeVariantChanged += (_, _) => RefreshPalette();
     }
 
-    private List<TrayMenuItem> BuildMenu() =>
-    [
-        new("Starlight Launcher", Icon: TrayMenuIcon.AppLogo, IsHeader: true),
-        TrayMenuItem.Separator,
-        new(_loc["tray-menu-open"], () => Dispatcher.UIThread.Post(_tray.ShowWindow), Icon: TrayMenuIcon.Open),
-        new(_loc["tray-menu-quit"], QuitApp, Icon: TrayMenuIcon.Quit, IsDanger: true),
-    ];
+    private List<TrayMenuItem> BuildMenu()
+        =>
+        [
+            new("Starlight Launcher", Icon: TrayMenuIcon.AppLogo, IsHeader: true),
+            TrayMenuItem.Separator,
+            new(_loc["tray-menu-open"], () => Dispatcher.UIThread.Post(_tray.ShowWindow), Icon: TrayMenuIcon.Open),
+            new(_loc["tray-menu-quit"], QuitApp, Icon: TrayMenuIcon.Quit, IsDanger: true),
+        ];
 
     private void RefreshPalette() => _tray.ApplyPalette(GetPalette());
 

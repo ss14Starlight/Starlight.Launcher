@@ -13,9 +13,7 @@ public sealed class LauncherUriRouterTests
     [InlineData("starlight://auth.example.com/steam", LauncherActivationKind.Connect)]
     [InlineData("starlight://play.example.com:1212", LauncherActivationKind.Connect)]
     public void Classify_RoutesByHostAndProvider(string uri, LauncherActivationKind expected)
-    {
-        Assert.Equal(expected, LauncherUriRouter.Classify(new Uri(uri)).Kind);
-    }
+        => Assert.Equal(expected, LauncherUriRouter.Classify(new Uri(uri)).Kind);
 
     [Fact]
     public void Classify_Connect_KeepsFullAddressAsPayload()

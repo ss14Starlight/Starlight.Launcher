@@ -2,11 +2,8 @@ using System;
 
 namespace Robust.Launcher.Api.Models;
 
-public class UpdateException : Exception
+public class UpdateException(string message) : Exception(message)
 {
-    public UpdateException(string message) : base(message)
-    {
-    }
 }
 
 public sealed class NoEngineForPlatformException(string message) : UpdateException(message);

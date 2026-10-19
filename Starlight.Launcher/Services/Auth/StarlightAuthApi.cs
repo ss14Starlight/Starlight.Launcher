@@ -7,10 +7,9 @@ using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI.Models.BugReport;
 using Starlight.Launcher.WebUI.Models.DiscordAuthService;
 using Starlight.Launcher.WebUI.Models.NullLink;
-using Starlight.Launcher.WebUI.Models.StarlightAuthService;
+using Starlight.Launcher.WebUI.Models.SteamAuthService;
 using System.Net;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 
 namespace Starlight.Launcher.Services.Auth;
 
@@ -175,7 +174,7 @@ public sealed class StarlightAuthApi(HttpClient http, SettingsService settings, 
         }
 
         return await resp.Content.ReadFromJsonAsync<DiscordUserResponse>(cancellationToken: timeout.Token)
-               ?? throw new DiscordAuthException("Empty response.");
+            ?? throw new DiscordAuthException("Empty response.");
     }
 
     /// <summary>
@@ -197,7 +196,7 @@ public sealed class StarlightAuthApi(HttpClient http, SettingsService settings, 
         }
 
         return await resp.Content.ReadFromJsonAsync<SteamUserResponse>(cancellationToken: timeout.Token)
-               ?? throw new SteamAuthException("Empty response.");
+            ?? throw new SteamAuthException("Empty response.");
     }
 
     /// <summary>

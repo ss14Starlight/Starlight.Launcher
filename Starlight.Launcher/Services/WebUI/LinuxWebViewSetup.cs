@@ -43,12 +43,14 @@ public static class LinuxWebViewSetup
                     wpe.PreferWebKitGtkInstead = backend == WebViewAdapterType.WebKitGtk;
                     if (rendering is { } mode)
                         wpe.RenderingMode = mode;
+
                     break;
 
                 // Raised once WebKitGTK actually builds its adapter.
                 case GtkWebViewEnvironmentRequestedEventArgs gtk:
                     if (offscreen is { } useOffscreen)
                         gtk.ExperimentalOffscreen = useOffscreen;
+
                     break;
             }
         };
@@ -62,11 +64,11 @@ public static class LinuxWebViewSetup
     {
         static string Env(string name) => Environment.GetEnvironmentVariable(name) is { Length: > 0 } v ? v : "-";
 
-        return $"type={Env("XDG_SESSION_TYPE")} desktop={Env("XDG_CURRENT_DESKTOP")} " +
-               $"wayland={Env("WAYLAND_DISPLAY")} x11={Env("DISPLAY")} flatpak={(Settings.InstallKindDetector.IsFlatpak ? "yes" : "no")} " +
-               $"compositing-off={Env("WEBKIT_DISABLE_COMPOSITING_MODE")} dmabuf-off={Env("WEBKIT_DISABLE_DMABUF_RENDERER")} " +
-               $"dmabuf-shm={Env("WEBKIT_DMABUF_RENDERER_FORCE_SHM")} " +
-               $"{BackendVariable}={Env(BackendVariable)} {OffscreenVariable}={Env(OffscreenVariable)}";
+        return $"type={Env("XDG_SESSION_TYPE")} desktop={Env("XDG_CURRENT_DESKTOP")} "
+            + $"wayland={Env("WAYLAND_DISPLAY")} x11={Env("DISPLAY")} flatpak={(Settings.InstallKindDetector.IsFlatpak ? "yes" : "no")} "
+            + $"compositing-off={Env("WEBKIT_DISABLE_COMPOSITING_MODE")} dmabuf-off={Env("WEBKIT_DISABLE_DMABUF_RENDERER")} "
+            + $"dmabuf-shm={Env("WEBKIT_DMABUF_RENDERER_FORCE_SHM")} "
+            + $"{BackendVariable}={Env(BackendVariable)} {OffscreenVariable}={Env(OffscreenVariable)}";
     }
 
     /// <summary>A one-line, log- and UI-friendly summary of which backends are present.</summary>
@@ -74,9 +76,10 @@ public static class LinuxWebViewSetup
         => string.Join("; ", _candidates.Select(c =>
         {
             var info = Probe(c);
-            return info is null
-                ? $"{c}: unknown"
-                : info is { IsInstalled: true, IsSupported: true }
+            if (info is null)
+                return $"{c}: unknown";
+
+            return info is { IsInstalled: true, IsSupported: true }
                 ? $"{c}: available{(string.IsNullOrEmpty(info.Version) ? "" : $" ({info.Version})")}"
                 : $"{c}: unavailable{(string.IsNullOrEmpty(info.UnavailableReason) ? "" : $" - {info.UnavailableReason}")}";
         }));

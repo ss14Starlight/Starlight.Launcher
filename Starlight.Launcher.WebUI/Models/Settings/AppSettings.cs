@@ -6,7 +6,7 @@ using Starlight.Launcher.WebUI.Models.ServerStatus;
 
 namespace Starlight.Launcher.WebUI.Models.Settings;
 
-public partial record AppSettings
+public record AppSettings
 {
     #region Paths
 
@@ -42,7 +42,7 @@ public partial record AppSettings
     public string DirEngineInstallations => Path.Combine(DirLauncherData, "engines");
     public string DirModuleInstallations => Path.Combine(DirLauncherData, "modules");
 
-    #endregion
+    #endregion Paths
 
     #region General
 
@@ -53,7 +53,7 @@ public partial record AppSettings
     /// <summary>
     /// A list of hub urls to use for server lists
     /// </summary>
-    public List<Hub> Hubs { get; init; } = [ new Hub() { HubUri = new Uri("https://hub.spacestation14.com/"), Priority = 0} ];
+    public List<Hub> Hubs { get; init; } = [new Hub() { HubUri = new Uri("https://hub.spacestation14.com/"), Priority = 0 }];
     /// <summary>
     /// List of server names and IPs which will be ignored in servers list.
     /// </summary>
@@ -61,7 +61,7 @@ public partial record AppSettings
     /// <summary>
     /// Currently selected language. Should be a key from LocalizationsIndex. Default is "en-US"
     /// </summary>
-    public string? SelectedLanguage { get; init; } = null;
+    public string? SelectedLanguage { get; init; }
 
     /// <summary>
     /// Prevents launch of multiple game instances
@@ -78,9 +78,11 @@ public partial record AppSettings
     /// Empty means never shown.
     /// </summary>
     public string LastSeenChangelogVersion { get; set; } = "";
-    #endregion
+
+    #endregion General
 
     #region Appearance
+
     /// <summary>
     /// App theme
     /// </summary>
@@ -105,7 +107,7 @@ public partial record AppSettings
     /// <summary>
     /// Determines should we place search bar at the bottom of APP or at the top
     /// </summary>
-    public ElementPosition ServerListToolBarSearchPosition { get; init ; } = ElementPosition.Top;
+    public ElementPosition ServerListToolBarSearchPosition { get; init; } = ElementPosition.Top;
 
     /// <summary>
     /// Determines should we place TAGS bar at the bottom of APP or at the top
@@ -157,13 +159,17 @@ public partial record AppSettings
     public bool ShowPresenceButtons { get; set; } = true;
 
     public List<PresenceStateOption> PresenceStates { get; set; } = DiscordRichPresence.PresenceStates.CreateDefault();
-    #endregion
+
+    #endregion Appearance
 
     #region Cache
+
     public ServerListFilters CachedFilters { get; set; } = new ServerListFilters();
-    #endregion
+
+    #endregion Cache
 
     #region Game / launch
+
     /// <summary>
     /// Force render compatibility mode (GLES2).
     /// </summary>
@@ -189,7 +195,6 @@ public partial record AppSettings
     /// <summary>
     /// How long to keep cached copies of Robust manifests (builds/modules) before redownloading. Set to zero or negative to disable caching entirely.
     /// </summary>
-
     public TimeSpan RobustManifestCacheTime = TimeSpan.FromMinutes(15);
 
     /// <summary>
@@ -227,8 +232,24 @@ public partial record AppSettings
     /// </summary>
     public int CrashDumpsRetain { get; init; } = 3;
 
+    /// <summary>
+    /// Root sawmill level passed as <c>--loglevel root=...</c> (Verbose, Debug, Info, Warning, Error). Null keeps the engine default.
+    /// </summary>
+    public string? ClientLogLevel { get; init; }
+
+    /// <summary>
+    /// Load RenderDoc into the client so frames can be captured (Robust <c>display.renderdoc</c>).
+    /// </summary>
+    public bool RenderDocEnabled { get; init; }
+
     [JsonIgnore]
     public string DirCrashDumps => Path.Combine(DirLauncherData, "crash-dumps");
+
+    /// <summary>
+    /// Traces, GC dumps, stacks and counter recordings made from the Development page.
+    /// </summary>
+    [JsonIgnore]
+    public string DirDiagnosticCaptures => Path.Combine(DirLauncherData, "diagnostics", "captures");
 
     [JsonIgnore]
     public string DirTools => Path.Combine(DirLauncherData, "tools");
@@ -256,7 +277,7 @@ public partial record AppSettings
     /// </summary>
     public int InterruptibleDownloadKeepHours = 7 * 24;
 
-    #endregion
+    #endregion Game / launch
 
     #region Journal
 
@@ -275,7 +296,7 @@ public partial record AppSettings
     /// </summary>
     public bool DesktopNotifications { get; init; } = true;
 
-    #endregion
+    #endregion Journal
 
     #region Starlight API
 
@@ -284,26 +305,41 @@ public partial record AppSettings
     /// </summary>
     public string StarlightAPIUrl { get; set; } = "https://starlight.network/";
 
-    #endregion
+    #endregion Starlight API
 
     #region Privacy policies
 
     /// <summary>
-    /// Determines if user accepted policy when entering development tab. 
+    /// Determines if user accepted policy when entering development tab.
     /// </summary>
-    public bool DevPolicyAccepted { get; set; } = false;
+    public bool DevPolicyAccepted { get; set; }
+
+    /// <summary>
+    /// Stored developer mode switch. Null for settings from before the switch existed.
+    /// </summary>
+    [JsonPropertyName("DeveloperMode")]
+    public bool? DeveloperModeStored { get; init; }
+
+    /// <summary>
+    /// Shows the Development page, and makes the launch options and tools set there apply.
+    /// Whoever already accepted the old Development tab warning keeps it.
+    /// </summary>
+    [JsonIgnore]
+    public bool DeveloperMode => DeveloperModeStored ?? DevPolicyAccepted;
 
     /// <summary>
     ///Privacy policies accepted by the user, the key is the policy identifier.
     /// </summary>
-    public Dictionary<string, AcceptedPrivacyPolicy> AcceptedPrivacyPolicies { get; init; } = new();
-    #endregion
+    public Dictionary<string, AcceptedPrivacyPolicy> AcceptedPrivacyPolicies { get; init; } = [];
+
+    #endregion Privacy policies
 
     #region Auth
+
     /// <summary>
     /// Currently selected login.
     /// </summary>
-    public Guid? SelectedLoginId { get; set; } = null;
+    public Guid? SelectedLoginId { get; set; }
 
     /// <summary>
     /// Auth servers in priority order. User-editable, any count.
@@ -313,13 +349,11 @@ public partial record AppSettings
     /// <summary>
     /// Currently selected auth server.
     /// </summary>
-
     public string? SelectedAuthServer = "https://auth.spacestation14.com/";
 
     /// <summary>
     /// Fallback name which will be used if there's no logins.
     /// </summary>
-
     public const string FallbackUsername = "JoeGenero";
 
     /// <summary>
@@ -327,7 +361,7 @@ public partial record AppSettings
     /// </summary>
     public bool DeauthOnChange = true;
 
-    #endregion
+    #endregion Auth
 
     #region Logs
 
@@ -352,7 +386,8 @@ public partial record AppSettings
     /// </summary>
     [JsonIgnore] // This is a computed property, not a setting.
     public string DirClientLogsDefault => Path.Combine(DirLauncherData, "client-logs");
-    #endregion
+
+    #endregion Logs
 
     #region Cdns
 
@@ -376,7 +411,7 @@ public partial record AppSettings
     /// <summary>
     /// User's configured CDN list. If empty, <see cref="DefaultRobustCdns"/> will be used.
     /// </summary>
-    public List<RobustCdnConfig>? RobustCdns { get; set; } = null;
+    public List<RobustCdnConfig>? RobustCdns { get; set; }
 
     /// <summary>
     /// Internal default CDN list. Used if <see cref="RobustCdns"/> is empty.
@@ -392,7 +427,7 @@ public partial record AppSettings
     /// </summary>
     public bool AllowCdnsKeyChange { get; set; }
 
-    #endregion
+    #endregion Cdns
 
     #region Local Server
 
@@ -400,14 +435,14 @@ public partial record AppSettings
     /// Determines if the user has acknowledged the risks of running unsandboxed local server
     /// builds fetched from a user-supplied manifest URL. Gates the "Local Server" page.
     /// </summary>
-    public bool LocalServerPolicyAccepted { get; set; } = false;
+    public bool LocalServerPolicyAccepted { get; set; }
 
     /// <summary>
     /// User-configured manifest sources for local server builds.
     /// </summary>
-    public List<LocalServerSourceConfig> LocalServerSources { get; init; } = [ new () { Name="Starlight", Url="https://cdn.starlight.network/fork/starlight/manifest", Enabled=true }, new() { Name="Wizdens", Url= "https://wizards.cdn.spacestation14.com/fork/wizards/manifest", Enabled=true }];
+    public List<LocalServerSourceConfig> LocalServerSources { get; init; } = [new() { Name = "Starlight", Url = "https://cdn.starlight.network/fork/starlight/manifest", Enabled = true }, new() { Name = "Wizdens", Url = "https://wizards.cdn.spacestation14.com/fork/wizards/manifest", Enabled = true }];
 
-    #endregion
+    #endregion Local Server
 
 }
 

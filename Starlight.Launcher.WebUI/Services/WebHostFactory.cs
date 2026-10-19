@@ -13,7 +13,7 @@ using MudBlazor;
 using MudBlazor.Services;
 using Starlight.Launcher.WebUI.Components;
 
-namespace Starlight.Launcher.WebUI;
+namespace Starlight.Launcher.WebUI.Services;
 
 public static class WebHostFactory
 {
@@ -102,13 +102,14 @@ public static class WebHostFactory
 
     private static bool TokenEquals(string? candidate, string expected)
         => candidate is not null
-           && CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(candidate), Encoding.UTF8.GetBytes(expected));
+            && CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(candidate), Encoding.UTF8.GetBytes(expected));
 
     public static Uri GetListenAddress(WebApplication app)
     {
         var feature = app.Services
             .GetRequiredService<IServer>()
-            .Features.Get<IServerAddressesFeature>();
+            .Features
+            .Get<IServerAddressesFeature>();
 
         var address = feature?.Addresses.FirstOrDefault()
             ?? throw new InvalidOperationException("Kestrel didn't report a bound address.");

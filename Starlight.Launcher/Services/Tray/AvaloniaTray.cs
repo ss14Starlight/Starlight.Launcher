@@ -164,8 +164,8 @@ public sealed class AvaloniaTray : INativeTray
         });
     }
 
-    private static Window? GetWindow() =>
-        (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+    private static Window? GetWindow()
+        => (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
 
     private static Bitmap? LoadBitmap(string path)
     {

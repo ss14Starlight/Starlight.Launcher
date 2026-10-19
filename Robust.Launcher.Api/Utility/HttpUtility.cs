@@ -17,7 +17,7 @@ public static class HttpUtility
         private readonly HttpContent _originalContent;
         private bool _contentConsumed;
 
-        public DecompressedContent(HttpContent originalContent)
+        protected DecompressedContent(HttpContent originalContent)
         {
             _originalContent = originalContent;
             _contentConsumed = false;
@@ -51,14 +51,13 @@ public static class HttpUtility
             decompressedStream.CopyTo(stream);
         }
 
-        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context) =>
-            SerializeToStreamAsync(stream, context, CancellationToken.None);
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context)
+            => SerializeToStreamAsync(stream, context, CancellationToken.None);
 
         protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context,
             CancellationToken cancellationToken)
         {
-            using var decompressedStream = await CreateContentReadStreamAsync(cancellationToken)
-                .ConfigureAwait(false);
+            await using var decompressedStream = await CreateContentReadStreamAsync(cancellationToken).ConfigureAwait(false);
 
             await decompressedStream.CopyToAsync(stream, cancellationToken).ConfigureAwait(false);
         }
@@ -70,8 +69,8 @@ public static class HttpUtility
             return task.GetAwaiter().GetResult();
         }
 
-        protected override Task<Stream> CreateContentReadStreamAsync(CancellationToken cancellationToken) =>
-            CreateContentReadStreamAsyncCore(async: true, cancellationToken).AsTask();
+        protected override Task<Stream> CreateContentReadStreamAsync(CancellationToken cancellationToken)
+            => CreateContentReadStreamAsyncCore(async: true, cancellationToken).AsTask();
 
         private async ValueTask<Stream> CreateContentReadStreamAsyncCore(bool async,
             CancellationToken cancellationToken)

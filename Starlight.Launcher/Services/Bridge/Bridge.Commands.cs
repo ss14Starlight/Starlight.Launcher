@@ -1,4 +1,3 @@
-
 using Starlight.Launcher.WebUI.Bridge;
 
 namespace Starlight.Launcher.Services.Bridge;

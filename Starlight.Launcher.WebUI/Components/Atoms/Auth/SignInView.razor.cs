@@ -8,7 +8,7 @@ using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Components.Pages;
 using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Models.DiscordAuthService;
-using Starlight.Launcher.WebUI.Models.StarlightAuthService;
+using Starlight.Launcher.WebUI.Models.SteamAuthService;
 
 namespace Starlight.Launcher.WebUI.Components.Atoms.Auth;
 
@@ -21,57 +21,51 @@ public partial class SignInView : LocalizedComponentBase
     [Inject] private AuthApi _authApi { get; set; } = default!;
     [Inject] private ISnackbar _snackbar { get; set; } = default!;
 
-    private bool Busy;
+    private bool _busy;
 
-    private string Password = "";
-    private string TfaCode = "";
-    private bool TfaRequired;
-    private string? Error;
-    private bool ShowResend;
-    private bool Pwd;
+    private string _password = "";
+    private string _tfaCode = "";
+    private bool _tfaRequired;
+    private string? _error;
+    private bool _showResend;
+    private bool _pwd;
+
     [Inject] private IBridge _bridge { get; set; } = default!;
 
     private async Task OnSignInKey(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter" && !Busy)
+        if (e.Key == "Enter" && !_busy)
             await DoSignIn();
     }
 
     private async Task DoSignIn()
     {
-        Error = null;
-        ShowResend = false;
+        _error = null;
+        _showResend = false;
 
-        if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrEmpty(Password))
+        if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrEmpty(_password))
         {
-            Error = L["auth-menu-enter-info-error"];
+            _error = L["auth-menu-enter-info-error"];
             return;
         }
 
         if ((await _bridge.GetSettingsAsync()).SelectedAuthServer is not { } authServer)
         {
-            Error = L["auth-menu-no-server-error"];
+            _error = L["auth-menu-no-server-error"];
             return;
         }
 
-        Busy = true;
+        _busy = true;
         await InvokeAsync(StateHasChanged);
         try
         {
-            AuthApi.AuthenticateRequest request;
-            if (RelogUserId.HasValue)
-            {
-                request = new AuthApi.AuthenticateRequest(
-                    null, RelogUserId.Value, Password,
-                    TfaRequired ? TfaCode : null);
-            }
-            else
-            {
-                request = new AuthApi.AuthenticateRequest(
-                    Username, null, Password,
-                    TfaRequired ? TfaCode : null);
-            }
-
+            var request = RelogUserId.HasValue
+                ? new AuthApi.AuthenticateRequest(
+                    null, RelogUserId.Value, _password,
+                    _tfaRequired ? _tfaCode : null)
+                : new AuthApi.AuthenticateRequest(
+                    Username, null, _password,
+                    _tfaRequired ? _tfaCode : null);
             var result = await _authApi.AuthenticateAsync(request, new UrlFallbackSet(authServer));
 
             if (result.IsSuccess)
@@ -86,44 +80,44 @@ public partial class SignInView : LocalizedComponentBase
             switch (result.Code)
             {
                 case AuthApi.AuthenticateDenyResponseCode.InvalidCredentials:
-                    Error = L["auth-menu-incorrect-info-error"];
+                    _error = L["auth-menu-incorrect-info-error"];
                     break;
 
                 case AuthApi.AuthenticateDenyResponseCode.AccountUnconfirmed:
-                    Error = L["auth-menu-unconfirmed-info-error"];
-                    ShowResend = true;
+                    _error = L["auth-menu-unconfirmed-info-error"];
+                    _showResend = true;
                     break;
 
                 case AuthApi.AuthenticateDenyResponseCode.TfaRequired:
-                    TfaRequired = true;
-                    Error = L["auth-menu-tfa-required-error"];
+                    _tfaRequired = true;
+                    _error = L["auth-menu-tfa-required-error"];
                     break;
 
                 case AuthApi.AuthenticateDenyResponseCode.TfaInvalid:
-                    TfaRequired = true;
-                    Error = L["auth-menu-tfa-invalid-error"];
+                    _tfaRequired = true;
+                    _error = L["auth-menu-tfa-invalid-error"];
                     break;
 
                 case AuthApi.AuthenticateDenyResponseCode.AccountLocked:
-                    Error = L["auth-menu-account-blocked-error"];
+                    _error = L["auth-menu-account-blocked-error"];
                     break;
 
                 default:
-                    Error = string.Join("\n", result.Errors);
+                    _error = string.Join("\n", result.Errors);
                     break;
             }
         }
         finally
         {
-            Busy = false;
+            _busy = false;
             await InvokeAsync(StateHasChanged);
         }
     }
 
     private async Task LoginWithDiscord()
     {
-        Busy = true;
-        Error = null;
+        _busy = true;
+        _error = null;
         await InvokeAsync(StateHasChanged);
         try
         {
@@ -132,28 +126,28 @@ public partial class SignInView : LocalizedComponentBase
         }
         catch (OperationCanceledException)
         {
-            Error = L["auth-menu-discord-login-error"];
+            _error = L["auth-menu-discord-login-error"];
         }
         catch (DiscordAuthException ex)
         {
-            Error = ex.Message;
+            _error = ex.Message;
         }
         catch (Exception ex)
         {
             Log.Warning(ex, "Discord login failed");
-            Error = L["auth-menu-discord-connect-fail"];
+            _error = L["auth-menu-discord-connect-fail"];
         }
         finally
         {
-            Busy = false;
+            _busy = false;
             await InvokeAsync(StateHasChanged);
         }
     }
 
     private async Task LoginWithSteam()
     {
-        Busy = true;
-        Error = null;
+        _busy = true;
+        _error = null;
         await InvokeAsync(StateHasChanged);
         try
         {
@@ -162,20 +156,20 @@ public partial class SignInView : LocalizedComponentBase
         }
         catch (OperationCanceledException)
         {
-            Error = L["auth-menu-steam-login-error"];
+            _error = L["auth-menu-steam-login-error"];
         }
         catch (SteamAuthException ex)
         {
-            Error = ex.Message;
+            _error = ex.Message;
         }
         catch (Exception ex)
         {
             Log.Warning(ex, "Steam login failed");
-            Error = L["auth-menu-steam-connect-fail"];
+            _error = L["auth-menu-steam-connect-fail"];
         }
         finally
         {
-            Busy = false;
+            _busy = false;
             await InvokeAsync(StateHasChanged);
         }
     }
@@ -188,17 +182,16 @@ public partial class SignInView : LocalizedComponentBase
             return;
         }
 
-        Busy = true;
+        _busy = true;
         await InvokeAsync(StateHasChanged);
         try
         {
             if (Username.Contains('@'))
             {
                 var errors = await _authApi.ResendConfirmationAsync(Username, new UrlFallbackSet(authServer));
-                if (errors == null)
-                    _ = _snackbar.Add(L.GetString("auth-menu-email-resent"), Severity.Success);
-                else
-                    _ = _snackbar.Add(string.Join("\n", errors), Severity.Error);
+                _ = errors == null
+                    ? _snackbar.Add(L.GetString("auth-menu-email-resent"), Severity.Success)
+                    : _snackbar.Add(string.Join("\n", errors), Severity.Error);
             }
             else
             {
@@ -207,7 +200,7 @@ public partial class SignInView : LocalizedComponentBase
         }
         finally
         {
-            Busy = false;
+            _busy = false;
             await InvokeAsync(StateHasChanged);
         }
     }

@@ -9,7 +9,7 @@ using System.Diagnostics;
 
 namespace Starlight.Launcher.Services.ServerStatus;
 
-public sealed partial class HubServerFetcher(HubApi hub, SettingsService settings, ServerStatusCache cache) : IServerSource, IDisposable
+public sealed class HubServerFetcher(HubApi hub, SettingsService settings, ServerStatusCache cache) : IServerSource, IDisposable
 {
     #region Injections
 
@@ -17,7 +17,7 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
     private readonly SettingsService _settings = settings;
     private readonly ServerStatusCache _cache = cache;
 
-    #endregion
+    #endregion Injections
 
     #region Data and state
 
@@ -26,14 +26,14 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
     private readonly List<ServerStatusData> _allServers = [];
     private const int MaxConcurrentPerHub = 2;
 
-    #endregion
+    #endregion Data and state
 
     #region Public Data Access
 
     public RefreshListStatus Status { get; private set; } = RefreshListStatus.NotUpdated;
     public IReadOnlyList<ServerStatusData> AllServers { get; private set; } = [];
 
-    #endregion
+    #endregion Public Data Access
 
     #region Synchronization
 
@@ -44,18 +44,18 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _hubThrottles =
         new(StringComparer.OrdinalIgnoreCase);
 
-    private readonly Dictionary<string, DateTimeOffset> _hubBackoffUntil = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, int> _hubFailCount = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, DateTimeOffset> _hubBackoffUntil = [with(StringComparer.OrdinalIgnoreCase)];
+    private readonly Dictionary<string, int> _hubFailCount = [with(StringComparer.OrdinalIgnoreCase)];
     private readonly Lock _backoffLock = new();
 
-    #endregion
+    #endregion Synchronization
 
     #region Actions
 
     public event Action? ServersChanged;
     public event Action<RefreshListStatus>? StatusChanged;
 
-    #endregion
+    #endregion Actions
 
     #region Public Methods
 
@@ -97,19 +97,17 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
         _ = RefreshServerListSafe(newCts.Token);
     }
 
-    #endregion
+    #endregion Public Methods
 
     #region Main Logic
 
-    /// <summary>
-    /// Requests server lists from all hubs and updates the internal list. This is called by RequestRefresh, which also handles cancellation and error catching.
-    /// </summary>
     private async Task RefreshServerList(CancellationToken cancel)
     {
         var sw = Stopwatch.StartNew();
 
         lock (_serversLock)
             _allServers.Clear();
+
         SetStatus(RefreshListStatus.UpdatingMaster);
 
         var entries = new Dictionary<string, HubServerListEntry>(StringComparer.OrdinalIgnoreCase);
@@ -137,6 +135,7 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
                 allSucceeded = false;
                 continue;
             }
+
             requests.Add((_hubApi.GetServers(UrlFallbackSet.FromSingle(hub.HubUri), requestToken), hub.HubUri));
         }
 
@@ -216,9 +215,6 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
         return FireAndForgetUpdateInfo(statusData);
     }
 
-    /// <summary>
-    /// Trying to update info for a server. This is fire-and-forget and updates the ServerStatusData in-place. It also handles backoff for hubs that return 429 or time out.
-    /// </summary>
     private async Task FireAndForgetUpdateInfo(ServerStatusData statusData)
     {
         var hubAddress = statusData.HubAddress!;
@@ -250,7 +246,8 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
                     {
                         _ = throttle.Release();
                     }
-                }).ConfigureAwait(false);
+                })
+                .ConfigureAwait(false);
         }
         catch (HubApiException ex) when (ex.IsRateLimited)
         {
@@ -273,13 +270,10 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
         }
     }
 
-    #endregion
+    #endregion Main Logic
 
     #region BackOff(Drop on failure)
 
-    /// <summary>
-    /// Returns true if the hub is currently backed off, and sets the remaining backoff time. If the backoff has expired, it will clear the backoff state and return false.
-    /// </summary>
     private bool IsHubBackedOff(string hubAddress, out TimeSpan remaining)
     {
         lock (_backoffLock)
@@ -289,16 +283,15 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
                 remaining = until - DateTimeOffset.UtcNow;
                 if (remaining > TimeSpan.Zero)
                     return true;
+
                 _ = _hubBackoffUntil.Remove(hubAddress);
             }
         }
+
         remaining = TimeSpan.Zero;
         return false;
     }
 
-    /// <summary>
-    /// Sets hub as "backedoff" to avoid making requests to it for a certain duration. The duration increases exponentially with the number of consecutive failures, and can be overridden by a hint (e.g. Retry-After header). Returns the backoff duration that was set.
-    /// </summary>
     private TimeSpan SetHubBackoff(string hubAddress, TimeSpan? hint = null)
     {
         TimeSpan duration;
@@ -306,7 +299,7 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
         {
             var count = _hubFailCount.TryGetValue(hubAddress, out var c) ? c + 1 : 1;
             _hubFailCount[hubAddress] = count;
-            if (hint.HasValue && hint.Value > TimeSpan.FromSeconds(5))
+            if (hint > TimeSpan.FromSeconds(5))
             {
                 duration = hint.Value;
             }
@@ -319,29 +312,21 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
 
             _hubBackoffUntil[hubAddress] = DateTimeOffset.UtcNow + duration;
         }
+
         Log.Warning("Hub {Hub} backed off for {Duration} (hint: {Hint})",
             hubAddress, duration, hint);
         return duration;
     }
 
-    #endregion
+    #endregion BackOff(Drop on failure)
 
     #region Helpers
 
-    /// <summary>
-    /// Returns unique throttle for the given hub address. This is used to limit concurrent requests to the same hub, to avoid hitting rate limits too quickly.
-    /// </summary>
     private SemaphoreSlim GetHubThrottle(string hubAddress)
         => _hubThrottles.GetOrAdd(hubAddress, _ => new SemaphoreSlim(MaxConcurrentPerHub, MaxConcurrentPerHub));
 
-    /// <summary>
-    /// Updates the info for a server. This is called by ServerStatusCache when it wants to update info for a server that came from a hub. It will call FireAndForgetUpdateInfo, which does the actual work of fetching the info and updating the ServerStatusData in-place.
-    /// </summary>
     void IServerSource.UpdateInfoFor(ServerStatusData statusData) => _ = UpdateInfoForAsync(statusData);
 
-    /// <summary>
-    /// Handles a failed hub request. This is called by RefreshServerList when processing the results of hub requests. It checks the type of failure and updates the backoff state for the hub accordingly. It also logs the failure with appropriate severity and details.
-    /// </summary>
     private void HandleHubFailure(Task task, Uri hub, CancellationToken cancel)
     {
         var ex = task.Exception?.InnerException ?? task.Exception;
@@ -351,6 +336,7 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
                 Log.Information("Hub {Hub} request canceled by caller", hub);
             else
                 Log.Warning("Hub {Hub} request timed out", hub);
+
             return;
         }
 
@@ -365,7 +351,6 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
             else if (hubEx.IsTimeout)
             {
                 Log.Warning("Hub {Hub} timed out", hub);
-                // SetHubBackoff(hub.AbsoluteUri);
             }
             else
             {
@@ -380,18 +365,12 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
         }
     }
 
-    /// <summary>
-    /// Helper method to dispose a CancellationTokenSource after a delay. This is used to avoid disposing a CTS that might still be in use by an ongoing request, while also ensuring that we don't leak CTS instances indefinitely.
-    /// </summary>
     private static async Task DisposeCtsAfterDelay(CancellationTokenSource cts)
     {
         await Task.Delay(TimeSpan.FromSeconds(15)).ConfigureAwait(false);
         try { cts.Dispose(); } catch { }
     }
 
-    /// <summary>
-    /// Helper method to call RefreshServerList with error handling. This is used by RequestRefresh to perform the refresh while catching any unhandled exceptions and updating the status accordingly. This ensures that an exception in RefreshServerList doesn't crash the application and provides feedback on the failure. The actual refresh logic is in RefreshServerList, which can assume that exceptions will be caught by this method.
-    /// </summary>
     private async Task RefreshServerListSafe(CancellationToken cancel)
     {
         try
@@ -409,9 +388,6 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
         }
     }
 
-    /// <summary>
-    /// Helper method to reset the failure count and backoff state for a hub. This is called when a hub request succeeds, to allow future requests to the hub to proceed without unnecessary backoff. This is important to ensure that a temporary failure doesn't cause long-term unavailability of a hub if it recovers.
-    /// </summary>
     private void ResetHubFailures(string hubAddress)
     {
         lock (_backoffLock)
@@ -421,18 +397,15 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
         }
     }
 
-    /// <summary>
-    /// Helper method to update the status and raise the StatusChanged event. This is used to centralize the logic for changing the status, including logging and avoiding redundant updates. This ensures that all status changes are logged consistently and that the event is only raised when the status actually changes.
-    /// </summary>
     private void SetStatus(RefreshListStatus newStatus)
     {
         if (Status == newStatus) return;
-        Log.Information("Server list status: {Old} → {New}", Status, newStatus);
+        Log.Information("Server list status: {Old} -> {New}", Status, newStatus);
         Status = newStatus;
         StatusChanged?.Invoke(newStatus);
     }
 
-    #endregion
+    #endregion Helpers
 
     #region Implementations
 
@@ -442,16 +415,18 @@ public sealed partial class HubServerFetcher(HubApi hub, SettingsService setting
         _disposed = true;
 
         try { _refreshCancel?.Cancel(); } catch { }
+
         try { _refreshCancel?.Dispose(); } catch { }
 
         foreach (var sem in _hubThrottles.Values)
         {
             try { sem.Dispose(); } catch { }
         }
+
         _hubThrottles.Clear();
 
         try { _lock.Dispose(); } catch { }
     }
 
-    #endregion
+    #endregion Implementations
 }

@@ -13,10 +13,12 @@ public enum ConnectionStatus
     ClientExited,
     Cancelled,
     NotAContentBundle,
+
     /// <summary>
     /// The launcher couldn't write to the data folder (e.g. it requires admin rights).
     /// </summary>
     AccessDenied,
+
     /// <summary>
     /// The download stopped receiving data (usually a VPN/proxy or unstable connection).
     /// </summary>

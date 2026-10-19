@@ -77,9 +77,15 @@ public sealed class BandwidthStream(Stream baseStream) : Stream
     {
         if (disposing)
             _baseStream.Dispose();
+
+        base.Dispose(disposing);
     }
 
-    public override ValueTask DisposeAsync() => _baseStream.DisposeAsync();
+    public override async ValueTask DisposeAsync()
+    {
+        await _baseStream.DisposeAsync();
+        await base.DisposeAsync();
+    }
 
     public override int Read(byte[] buffer, int offset, int count)
     {

@@ -1,3 +1,4 @@
+using Starlight.Launcher.Services.Diagnostics;
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
@@ -18,14 +19,14 @@ public sealed partial class LocalServerManager(HttpClient http, SettingsService 
 
     private const string InstallMarkerFileName = ".starlight-install-complete";
 
-    private static readonly TimeSpan GracefulShutdownTimeout = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan _gracefulShutdownTimeout = TimeSpan.FromSeconds(10);
 
     private readonly HttpClient _http = http;
     private readonly SettingsService _settings = settings;
     private readonly DotnetRuntimeManager _dotnet = dotnet;
 
     private readonly Lock _lock = new();
-    private readonly RingBuffer<LocalServerLogLine> _consoleBuffer = new(MaxConsoleLines);
+    private readonly RingBuffer<LocalServerLogLine> _consoleBuffer = [with(MaxConsoleLines)];
     private Process? _process;
     private Win32JobObject? _jobObject;
 
@@ -153,7 +154,7 @@ public sealed partial class LocalServerManager(HttpClient http, SettingsService 
 
         try
         {
-            await process.WaitForExitAsync().WaitAsync(GracefulShutdownTimeout);
+            await process.WaitForExitAsync().WaitAsync(_gracefulShutdownTimeout);
             return true;
         }
         catch (TimeoutException)
@@ -170,7 +171,7 @@ public sealed partial class LocalServerManager(HttpClient http, SettingsService 
         lock (_lock)
             process = _process;
 
-        if (process == null || process.HasExited)
+        if (process?.HasExited != false)
             return false;
 
         try
@@ -256,16 +257,21 @@ public sealed partial class LocalServerManager(HttpClient http, SettingsService 
 
     private List<DotnetRuntimeRequirements> GetInstalledRuntimeRequirements()
     {
-        var root = Path.Combine(_settings.GetSettings().DirLauncherData, "local-servers");
-        if (!Directory.Exists(root))
-            return [];
+        // The Development page's dotnet-* tools share this runtime cache, don't prune theirs.
+        List<DotnetRuntimeRequirements> inUse = [DotnetTools.RuntimeRequirements];
 
-        return Directory.EnumerateDirectories(root)
-            .SelectMany(Directory.EnumerateDirectories)
-            .Where(dir => File.Exists(Path.Combine(dir, InstallMarkerFileName)))
-            .Select(DotnetRuntimeRequirements.TryLoad)
-            .OfType<DotnetRuntimeRequirements>()
-            .ToList();
+        var root = Path.Combine(_settings.GetSettings().DirLauncherData, "local-servers");
+        return !Directory.Exists(root)
+            ? inUse
+            :
+            [
+                .. Directory.EnumerateDirectories(root)
+                    .SelectMany(Directory.EnumerateDirectories)
+                    .Where(dir => File.Exists(Path.Combine(dir, InstallMarkerFileName)))
+                    .Select(DotnetRuntimeRequirements.TryLoad)
+                    .OfType<DotnetRuntimeRequirements>(),
+                .. inUse,
+            ];
     }
 
     private void LaunchProcess(string installDir, string exePath, DotnetInstallation? runtime)
@@ -321,7 +327,7 @@ public sealed partial class LocalServerManager(HttpClient http, SettingsService 
         try
         {
             _jobObject ??= Win32JobObject.CreateKillOnCloseJob();
-            if (_jobObject is null || !_jobObject.AssignProcess(process.Handle))
+            if (_jobObject?.AssignProcess(process.Handle) != true)
                 Log.Warning("Failed to bind local server process to a kill-on-close job object; it may survive an unexpected launcher exit.");
         }
         catch (Exception e)
@@ -471,8 +477,8 @@ public sealed partial class LocalServerManager(HttpClient http, SettingsService 
 
     private const string ServerAssemblyFileName = "Robust.Server.dll";
 
-    private static string GetServerExecutablePath(string installDir) =>
-        Path.Combine(installDir, OperatingSystem.IsWindows() ? "Robust.Server.exe" : "Robust.Server");
+    private static string GetServerExecutablePath(string installDir)
+        => Path.Combine(installDir, OperatingSystem.IsWindows() ? "Robust.Server.exe" : "Robust.Server");
 
     private string GetInstallDirectory(string manifestUrl, string buildHash)
     {
@@ -483,8 +489,8 @@ public sealed partial class LocalServerManager(HttpClient http, SettingsService 
         return Path.Combine(settings.DirLauncherData, "local-servers", GetSourceSlug(manifestUrl), buildHash);
     }
 
-    private static bool IsValidBuildHash(string buildHash) =>
-        buildHash.Length is > 0 and <= 128 && buildHash.All(char.IsAsciiHexDigit);
+    private static bool IsValidBuildHash(string buildHash)
+        => buildHash.Length is > 0 and <= 128 && buildHash.All(char.IsAsciiHexDigit);
 
     private static string GetSourceSlug(string manifestUrl)
     {

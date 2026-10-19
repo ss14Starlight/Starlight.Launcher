@@ -10,9 +10,9 @@ internal static class LoginsCipher
 
     private static readonly byte[] _magic = "SLE1"u8.ToArray(); // Starlight Logins Encrypted v1
 
-    public static bool LooksEncrypted(byte[] data) =>
-        data.Length >= _magic.Length + NonceSize + TagSize
-        && data.AsSpan(0, _magic.Length).SequenceEqual(_magic);
+    public static bool LooksEncrypted(byte[] data)
+        => data.Length >= _magic.Length + NonceSize + TagSize
+            && data.AsSpan(0, _magic.Length).SequenceEqual(_magic);
 
     public static byte[] Encrypt(byte[] key, byte[] plaintext)
     {
@@ -25,13 +25,19 @@ internal static class LoginsCipher
 
         var result = new byte[_magic.Length + NonceSize + TagSize + cipher.Length];
         var pos = 0;
-        Buffer.BlockCopy(_magic, 0, result, pos, _magic.Length); pos += _magic.Length;
-        Buffer.BlockCopy(nonce, 0, result, pos, NonceSize); pos += NonceSize;
-        Buffer.BlockCopy(tag, 0, result, pos, TagSize); pos += TagSize;
+        Buffer.BlockCopy(_magic, 0, result, pos, _magic.Length);
+        pos += _magic.Length;
+        Buffer.BlockCopy(nonce, 0, result, pos, NonceSize);
+        pos += NonceSize;
+        Buffer.BlockCopy(tag, 0, result, pos, TagSize);
+        pos += TagSize;
         Buffer.BlockCopy(cipher, 0, result, pos, cipher.Length);
         return result;
     }
 
+    /// <summary>
+    /// Decrypts data via key
+    /// </summary>
     /// <exception cref="CryptographicException">Wrong key or tampered data.</exception>
     public static byte[] Decrypt(byte[] key, byte[] data)
     {

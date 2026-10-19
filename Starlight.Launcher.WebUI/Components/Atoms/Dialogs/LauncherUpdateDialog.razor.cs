@@ -15,7 +15,17 @@ public sealed partial class LauncherUpdateDialog : LocalizedComponentBase
 
     [Parameter] public ReleaseAsset Asset { get; set; } = default!;
 
-    private enum Phase { Downloading, Done, Installing, Failed }
+    private enum Phase
+    {
+        Downloading,
+
+        Done,
+
+        Installing,
+
+        Failed
+    }
+
     private Phase _phase = Phase.Downloading;
     private string? _error;
 
@@ -102,7 +112,7 @@ public sealed partial class LauncherUpdateDialog : LocalizedComponentBase
         _downloaded = p.downloaded;
         _total = p.total;
 
-        _bridge.Presence.SetProgress(PresenceState.UpdatingLauncher, (int) (_total > 0 ? (double)_downloaded / _total : 0));
+        _bridge.Presence.SetProgress(PresenceState.UpdatingLauncher, (int)(_total > 0 ? (double)_downloaded / _total : 0));
         // StateHasChanged is driven by the poll timer to avoid flooding the UI thread.
     }
 
@@ -153,6 +163,7 @@ public sealed partial class LauncherUpdateDialog : LocalizedComponentBase
     {
         if (!_cts.IsCancellationRequested)
             _cts.Cancel();
+
         _mudDialog.Cancel();
     }
 
@@ -168,6 +179,7 @@ public sealed partial class LauncherUpdateDialog : LocalizedComponentBase
             v /= 1024;
             i++;
         }
+
         return $"{v:0.#} {units[i]}";
     }
 
@@ -179,6 +191,7 @@ public sealed partial class LauncherUpdateDialog : LocalizedComponentBase
 
         if (!_cts.IsCancellationRequested)
             _cts.Cancel();
+
         _cts.Dispose();
     }
 }

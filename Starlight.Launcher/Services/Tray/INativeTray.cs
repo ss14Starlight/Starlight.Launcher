@@ -1,6 +1,6 @@
 using Starlight.Launcher.Models.Tray;
 
-namespace Starlight.Launcher.Services;
+namespace Starlight.Launcher.Services.Tray;
 
 public interface INativeTray : IDisposable
 {
@@ -10,6 +10,8 @@ public interface INativeTray : IDisposable
     void ShowWindow();
     void HideWindow();
     void UpdateTooltip(string text);
+
     bool IsWindowVisible { get; }
+
     event EventHandler? IconActivated;
 }

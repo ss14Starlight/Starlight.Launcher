@@ -16,7 +16,7 @@ public sealed class DiscordAuthService(StarlightAuthApi api, LoginManager loginM
     protected override async Task<(Guid UserId, string Username)> GetUserAsync(string token, CancellationToken cancel)
     {
         var info = await Api.GetDiscordUserAsync(token, cancel)
-                   ?? throw new DiscordAuthException("Failed to retrieve user information.");
+            ?? throw new DiscordAuthException("Failed to retrieve user information.");
 
         return (info.UserId, info.Username);
     }

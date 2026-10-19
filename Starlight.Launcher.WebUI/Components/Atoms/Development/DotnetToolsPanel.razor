@@ -1,0 +1,143 @@
+@using Starlight.Launcher.WebUI.Localization
+@using Starlight.Launcher.WebUI.Models.Diagnostics
+@inherits LocalizedComponentBase
+
+<MudPaper Class="sl-option-card pa-4 mb-2" Outlined="true" Elevation="0">
+    <MudText Typo="Typo.body1">dotnet-trace</MudText>
+    <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mb-2">@L["development-tool-trace-description"]</MudText>
+    <div class="d-flex flex-wrap align-center gap-3">
+        <MudSelect T="string" @bind-Value="_traceProfile" Label="@L["development-tool-trace-profile"]" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense" Class="tool-field-wide">
+            @foreach (var (value, key) in _traceProfiles)
+            {
+                <MudSelectItem Value="@value">@L[key]</MudSelectItem>
+            }
+        </MudSelect>
+        <MudSelect T="string" @bind-Value="_traceFormat" Label="@L["development-tool-trace-format"]" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense" Class="tool-field">
+            <MudSelectItem Value="@("NetTrace")">NetTrace</MudSelectItem>
+            <MudSelectItem Value="@("Speedscope")">Speedscope</MudSelectItem>
+            <MudSelectItem Value="@("Chromium")">Chromium</MudSelectItem>
+        </MudSelect>
+        <MudNumericField T="int" @bind-Value="_traceSeconds" Label="@L["development-tool-duration"]" Min="1" Max="3600" Variant="Variant.Outlined" Margin="Margin.Dense" Class="tool-field-narrow" />
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.FiberManualRecord"
+                   Disabled="@(!Supported(DiagnosticTool.Trace))"
+                   OnClick="@(() => Start(new ToolRequest(DiagnosticTool.Trace, _traceProfile, _traceSeconds, _traceFormat)))">
+            @L["development-tool-record"]
+        </MudButton>
+    </div>
+</MudPaper>
+
+<MudPaper Class="sl-option-card pa-4 mb-2" Outlined="true" Elevation="0">
+    <MudText Typo="Typo.body1">dotnet-counters</MudText>
+    <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mb-2">@L["development-tool-counters-description"]</MudText>
+    <div class="d-flex flex-wrap align-center gap-3">
+        <MudNumericField T="int" @bind-Value="_countersSeconds" Label="@L["development-tool-duration"]" Min="1" Max="3600" Variant="Variant.Outlined" Margin="Margin.Dense" Class="tool-field-narrow" />
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.FiberManualRecord"
+                   Disabled="@(!Supported(DiagnosticTool.Counters))"
+                   OnClick="@(() => Start(new ToolRequest(DiagnosticTool.Counters, DurationSeconds: _countersSeconds)))">
+            @L["development-tool-record"]
+        </MudButton>
+    </div>
+</MudPaper>
+
+<MudPaper Class="sl-option-card pa-4 mb-2" Outlined="true" Elevation="0">
+    <div class="d-flex align-center">
+        <div class="flex-grow-1 mr-4">
+            <MudText Typo="Typo.body1">dotnet-gcdump</MudText>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">@L["development-tool-gcdump-description"]</MudText>
+        </div>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Memory"
+                   Disabled="@(!Supported(DiagnosticTool.GcDump))"
+                   OnClick="@(() => Start(new ToolRequest(DiagnosticTool.GcDump)))">
+            @L["development-tool-collect"]
+        </MudButton>
+    </div>
+</MudPaper>
+
+<MudPaper Class="sl-option-card pa-4 mb-2" Outlined="true" Elevation="0">
+    <div class="d-flex align-center">
+        <div class="flex-grow-1 mr-4">
+            <MudText Typo="Typo.body1">dotnet-stack</MudText>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">@L["development-tool-stack-description"]</MudText>
+        </div>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AccountTree"
+                   Disabled="@(!Supported(DiagnosticTool.Stack))"
+                   OnClick="@(() => Start(new ToolRequest(DiagnosticTool.Stack)))">
+            @L["development-tool-collect"]
+        </MudButton>
+    </div>
+</MudPaper>
+
+<MudPaper Class="sl-option-card pa-4 mb-2" Outlined="true" Elevation="0">
+    <div class="d-flex align-center">
+        <div class="flex-grow-1 mr-4">
+            <MudText Typo="Typo.body1">dotnet-monitor</MudText>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">@L["development-tool-monitor-description"]</MudText>
+        </div>
+        @if (ActiveMonitor() is { } monitor)
+        {
+            <MudButton Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.OpenInBrowser" Class="mr-2"
+                       Disabled="@(monitor.Status != ToolRunStatus.Running)"
+                       OnClick="@(() => _bridge.OpenBrowser($"{monitor.Url}/processes"))">
+                @L["development-tool-monitor-open"]
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Stop"
+                       OnClick="@(() => _bridge.StopTool(monitor.Id))">
+                @L["development-tool-stop"]
+            </MudButton>
+        }
+        else
+        {
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow"
+                       OnClick="@(() => Start(new ToolRequest(DiagnosticTool.Monitor)))">
+                @L["development-tool-start"]
+            </MudButton>
+        }
+    </div>
+</MudPaper>
+
+<div class="d-flex align-center mt-4 mb-2">
+    <MudText Typo="Typo.overline" Class="mud-text-secondary">@L["development-tool-runs"]</MudText>
+    <MudSpacer />
+    <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.FolderOpen" OnClick="OpenCapturesFolder">
+        @L["development-tool-open-captures"]
+    </MudButton>
+</div>
+
+@if (_runs.Count == 0)
+{
+    <MudText Typo="Typo.caption" Class="mud-text-secondary">@L["development-tool-no-runs"]</MudText>
+}
+
+@foreach (var run in _runs)
+{
+    <MudPaper Class="sl-option-card pa-3 mb-2" Outlined="true" Elevation="0" @key="run.Id">
+        <div class="d-flex align-center flex-wrap gap-2">
+            <MudText Typo="Typo.body2"><b>@ToolName(run.Tool)</b></MudText>
+            @if (run.Pid is { } pid)
+            {
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">@L.GetString("client-diagnostics-pid", ("pid", pid))</MudText>
+            }
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">@run.StartedAt.ToString("HH:mm:ss")</MudText>
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@StatusColor(run.Status)">@L[$"development-tool-status-{run.Status.ToString().ToLowerInvariant()}"]</MudChip>
+            <MudSpacer />
+            @if (run.Status is ToolRunStatus.Installing or ToolRunStatus.Running)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Stop" Size="Size.Small" Color="Color.Error" OnClick="@(() => _bridge.StopTool(run.Id))" />
+            }
+            else
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="@(() => _bridge.RemoveToolRun(run.Id))" />
+            }
+            <MudIconButton Icon="@(_expanded.Contains(run.Id) ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)" Size="Size.Small"
+                           OnClick="@(() => ToggleExpanded(run.Id))" />
+        </div>
+        @if (run.OutputPath is { } output && run.Status == ToolRunStatus.Completed)
+        {
+            <MudText Typo="Typo.caption" Class="mud-text-secondary d-block tool-path">@output</MudText>
+        }
+        @if (_expanded.Contains(run.Id))
+        {
+            <pre class="tool-output">@string.Join('\n', run.Output.TakeLast(200))</pre>
+        }
+    </MudPaper>
+}

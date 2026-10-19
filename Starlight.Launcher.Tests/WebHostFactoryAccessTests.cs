@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
-using Starlight.Launcher.WebUI;
+using Starlight.Launcher.WebUI.Services;
 
 namespace Starlight.Launcher.Tests;
 
@@ -35,6 +35,7 @@ public sealed class WebHostFactoryAccessTests : IAsyncLifetime
         var request = new HttpRequestMessage(HttpMethod.Get, path);
         if (cookie != null)
             request.Headers.Add("Cookie", $"{CookieName}={cookie}");
+
         return request;
     }
 

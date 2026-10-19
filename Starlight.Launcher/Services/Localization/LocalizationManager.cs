@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Reflection;
 using System.Text;
 using Linguini.Bundle;
@@ -129,7 +129,7 @@ public sealed class LocalizationManager(ILogger<LocalizationManager> logger, Set
         {
             try
             {
-                using var stream = s_assembly.GetManifestResourceStream(resource);
+                await using var stream = s_assembly.GetManifestResourceStream(resource);
 
                 if (stream == null)
                     continue;
@@ -169,6 +169,7 @@ public sealed class LocalizationManager(ILogger<LocalizationManager> logger, Set
         {
             if (!_resourcesByCulture.ContainsKey(cultureName))
                 throw new ArgumentException($"Culture {cultureName} is not available");
+
             var culture = new CultureInfo(cultureName);
             await SwitchLanguageAsync(culture);
             Changed?.Invoke();
@@ -186,8 +187,11 @@ public sealed class LocalizationManager(ILogger<LocalizationManager> logger, Set
     private CultureInfo? MatchCultureAgainstAvailable(CultureInfo culture)
     {
         foreach (var parent in EnumerateParents(culture))
+        {
             if (_resourcesByCulture.ContainsKey(parent.Name))
                 return parent;
+        }
+
         return null;
     }
 

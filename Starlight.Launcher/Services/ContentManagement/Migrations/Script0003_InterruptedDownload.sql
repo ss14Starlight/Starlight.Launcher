@@ -1,4 +1,4 @@
-﻿-- Represents a content download that was interrupted.
+-- Represents a content download that was interrupted.
 -- Used to reference the content blobs that were successfully downloaded,
 -- so that they are not immediately garbage collected.
 CREATE TABLE InterruptedDownload(

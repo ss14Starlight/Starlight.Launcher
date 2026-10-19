@@ -6,7 +6,7 @@ namespace Starlight.Launcher.WebUI.Services;
 /// </summary>
 public sealed class UiActivity
 {
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private TaskCompletionSource _activated = CompletedSource();
 
     public bool IsActive { get; private set; } = true;

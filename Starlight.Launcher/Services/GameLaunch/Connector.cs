@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.IO.Compression;
-using System.Net.Http.Json;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
@@ -18,6 +17,7 @@ using Starlight.Launcher.Services.EngineManager;
 using Starlight.Launcher.Services.Journal;
 using Starlight.Launcher.Services.Logging;
 using Starlight.Launcher.Services.Settings;
+using Starlight.Launcher.Services.Tray;
 using Starlight.Launcher.WebUI.Models.Connector;
 using Starlight.Launcher.WebUI.Models.DiscordRichPresence;
 using Starlight.Launcher.WebUI.Models.Helpers;
@@ -30,7 +30,7 @@ namespace Starlight.Launcher.Services.GameLaunch;
 /// Responsible for actually launching the game.
 /// Either by connecting to a game server, or by launching a local content bundle.
 /// </summary>
-public partial class Connector(Updater updater, IEngineManager engineManager, HttpClient http, LoginManager login, SettingsService settings, INativeTray tray, DiscordRichPresence presence, ClientLogManager clientLogs, JournalService journal, TracyProfiler tracy) : ObservableObject
+public class Connector(Updater updater, IEngineManager engineManager, HttpClient http, LoginManager login, SettingsService settings, INativeTray tray, DiscordRichPresence presence, ClientLogManager clientLogs, JournalService journal, TracyProfiler tracy, RenderDocInstaller renderDoc, ClientConsole console) : ObservableObject
 {
     private readonly Updater _updater = updater;
     private readonly LoginManager _loginManager = login;
@@ -42,6 +42,8 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
     private readonly ClientLogManager _clientLogs = clientLogs;
     private readonly JournalService _journal = journal;
     private readonly TracyProfiler _tracy = tracy;
+    private readonly RenderDocInstaller _renderDoc = renderDoc;
+    private readonly ClientConsole _console = console;
     private (string Address, string? Name)? _launchTarget;
     private TaskCompletionSource<PrivacyPolicyAcceptResult>? _acceptPrivacyPolicyTcs;
 
@@ -205,11 +207,10 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
                 _settings.UpdateConnectedToPrivacyPolicy(identifier);
                 return;
             }
-            else
-            {
-                Log.Debug("User previously accepted privacy policy but version has changed!");
-                PrivacyPolicyDifferentVersion = true;
-            }
+
+            Log.Debug("User previously accepted privacy policy but version has changed!");
+
+            PrivacyPolicyDifferentVersion = true;
         }
 
         // Ask user for privacy policy acceptance by waiting here.
@@ -265,7 +266,7 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
 
             _ = zipStream.Seek(0, SeekOrigin.Begin);
 
-            using var zipFile = new ZipArchive(zipStream, ZipArchiveMode.Read);
+            await using var zipFile = new ZipArchive(zipStream, ZipArchiveMode.Read);
 
             var metadataJson = zipFile.GetEntry("rt_content_bundle.json");
             if (metadataJson == null)
@@ -275,7 +276,7 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
             }
 
             ContentBundleMetadata? metadata;
-            using (var metadataStream = metadataJson.Open())
+            await using (var metadataStream = metadataJson.Open())
             {
                 metadata = JsonSerializer.Deserialize<ContentBundleMetadata>(metadataStream);
             }
@@ -328,7 +329,6 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
 
             if (metadata.ServerGC == true)
                 installation = installation with { ServerGC = true };
-
         }
 
         Log.Debug("Launching client");
@@ -381,6 +381,7 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
 
                 if (settings.UnCollapseFromTrayAfterEnd)
                     Dispatcher.UIThread.Post(_tray.ShowWindow);
+
                 return;
             }
 
@@ -451,12 +452,15 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
 
             if (account.LoginInfo.Token != null && !string.IsNullOrWhiteSpace(account.LoginInfo.Token.Token))
                 cVars.Add(("ROBUST_AUTH_TOKEN", account.LoginInfo.Token.Token));
+
             // Older clients always pick the Steam token over the Discord one when both are present, so a
             // dead Steam token would lock the player out even with a fresh Discord login. Don't hand those over.
             if (account.LoginInfo.DiscordToken is { } discord && !string.IsNullOrWhiteSpace(discord.Token) && !discord.IsTimeExpired())
                 cVars.Add(("STARLIGHT_AUTH_DISCORDTOKEN", discord.Token));
+
             if (account.LoginInfo.SteamToken is { } steam && !string.IsNullOrWhiteSpace(steam.Token) && !steam.IsTimeExpired())
                 cVars.Add(("STARLIGHT_AUTH_STEAMTOKEN", steam.Token));
+
             cVars.Add(("ROBUST_AUTH_USERID", account.LoginInfo.UserId.ToString()));
             cVars.Add(("ROBUST_AUTH_PUBKEY", info.AuthInformation.PublicKey));
             if ((account.LoginInfo.AuthServerUrl ?? settings.SelectedAuthServer) is { } authServer)
@@ -526,32 +530,9 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
                 args.Add($"build.{name}={value}");
             }
 
-            if (settings.TracyEnabled && !TracyProfiler.ClientSupported)
-            {
-                Log.Warning("Tracy is not supported on {Os} {Arch}, launching without it", RuntimeInformation.OSDescription, RuntimeInformation.ProcessArchitecture);
-            }
-            else if (settings.TracyEnabled)
-            {
-                args.Add("--cvar");
-                args.Add("prof.tracy.enabled=true");
-                if (settings.TracyOnlyLocalhost)
-                    cVars.Add(("TRACY_ONLY_LOCALHOST", "1"));
-
-                if (settings.TracyLaunchProfiler)
-                    _ = _tracy.LaunchForClientAsync(CancellationToken.None);
-            }
-
-            if (settings.CrashDumpsEnabled)
-            {
-                try
-                {
-                    cVars.AddRange(CrashDumps.GetEnvironment(settings));
-                }
-                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-                {
-                    Log.Warning(e, "Can't prepare the crash dump folder, launching without crash dumps");
-                }
-            }
+            // Everything from the Development page only applies while developer mode is on.
+            if (settings.DeveloperMode)
+                await AddDevelopmentOptionsAsync(settings, args, cVars);
 
             // Audio options for the Starlight engine. Official engines just ignore unknown cvars passed this way.
             // Only pass non-defaults so the client's own value isn't overridden for nothing.
@@ -582,6 +563,64 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
             // Access errors (e.g. an unwritable client logs folder) propagate so the user sees why the launch failed.
             Log.Error(e, "Exception while starting client");
             return null;
+        }
+    }
+
+    private async Task AddDevelopmentOptionsAsync(AppSettings settings, List<string> args, List<(string, string)> cVars)
+    {
+        if (settings.TracyEnabled && !TracyProfiler.ClientSupported)
+        {
+            // The loader has no TracyClient native here, the engine would die on its first profiling zone.
+            Log.Warning("Tracy is not supported on {Os} {Arch}, launching without it", RuntimeInformation.OSDescription, RuntimeInformation.ProcessArchitecture);
+        }
+        else if (settings.TracyEnabled)
+        {
+            args.Add("--cvar");
+            args.Add("prof.tracy.enabled=true");
+            if (settings.TracyOnlyLocalhost)
+                cVars.Add(("TRACY_ONLY_LOCALHOST", "1"));
+
+            // TracyClient prefers IPv6, and localhost-only then binds just ::1, which the profiler dialling
+            // 127.0.0.1 never reaches. IPv4 works for both the auto-opened profiler and LAN connections.
+            cVars.Add(("TRACY_ONLY_IPV4", "1"));
+
+            // Don't hold the game back on the first download, the profiler keeps retrying until the client listens.
+            if (settings.TracyLaunchProfiler)
+                _ = _tracy.LaunchForClientAsync(CancellationToken.None);
+        }
+
+        if (settings.CrashDumpsEnabled)
+        {
+            try
+            {
+                cVars.AddRange(CrashDumps.GetEnvironment(settings));
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                Log.Warning(e, "Can't prepare the crash dump folder, launching without crash dumps");
+            }
+        }
+
+        // Not a cvar: the client reads sawmill levels from its command line before the config is loaded.
+        if (!string.IsNullOrWhiteSpace(settings.ClientLogLevel))
+        {
+            args.Add("--loglevel");
+            args.Add($"root={settings.ClientLogLevel}");
+        }
+
+        if (settings.RenderDocEnabled && RenderDocInstaller.Supported)
+        {
+            try
+            {
+                await _renderDoc.EnsureInstalledAsync(CancellationToken.None);
+                cVars.AddRange(_renderDoc.GetClientEnvironment());
+                args.Add("--cvar");
+                args.Add("display.renderdoc=true");
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Can't set up RenderDoc, launching without it");
+            }
         }
     }
 
@@ -657,8 +696,8 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
         _ => new ConnectException(ConnectionStatus.UpdateError, e),
     };
 
-    private static ConnectionStatus GetFailureStatus(Exception e, ConnectionStatus fallback) =>
-        DataDirectoryAccess.IsAccessDenied(e) ? ConnectionStatus.AccessDenied : fallback;
+    private static ConnectionStatus GetFailureStatus(Exception e, ConnectionStatus fallback)
+        => DataDirectoryAccess.IsAccessDenied(e) ? ConnectionStatus.AccessDenied : fallback;
 
     private async Task<ContentLaunchInfo> InstallContentBundleAsync(
         ZipArchive archive,
@@ -705,6 +744,7 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
                     info.BuildInformation.ManifestDownloadUrl = new Uri(apiAddress, "download").ToString();
                 }
             }
+
             return (info, parsedAddress, infoAddr);
         }
         catch (Exception e) when (e is JsonException or HttpRequestException or InvalidDataException)
@@ -804,7 +844,7 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
 
         var logSession = await _clientLogs.BeginSessionAsync(new ClientLogContext(
             Target: launchInfo.OverlayZip ?? "content-db",
-            EngineVersion: engineVersion.ToString()));
+            EngineVersion: engineVersion));
 
         startInfo.RedirectStandardOutput = true;
         startInfo.RedirectStandardError = true;
@@ -852,7 +892,7 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
     {
         var glFailure = false;
 
-        async Task DoPipe(StreamReader reader, Stream writer)
+        async Task DoPipe(StreamReader reader, Stream writer, ClientConsole.LineSplitter console)
         {
             var readStream = reader.BaseStream;
             var buf = new byte[4096];
@@ -863,10 +903,12 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
                 if (read == 0)
                 {
                     Log.Debug("EOF, ending pipe logging for {pid}.", process.Id);
+                    console.Flush();
                     return;
                 }
 
                 await writer.WriteAsync(buf.AsMemory(0, read));
+                console.Write(buf.AsSpan(0, read));
 
                 if (compatMode || glFailure)
                     continue;
@@ -879,11 +921,13 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
             }
         }
 
+        _console.AddLine($"=== Client started, PID {process.Id} ===", isError: false);
+
         try
         {
             await Task.WhenAll(
-                DoPipe(process.StandardOutput, session.Stdout),
-                DoPipe(process.StandardError, session.Stderr));
+                DoPipe(process.StandardOutput, session.Stdout, _console.CreateSplitter(isError: false)),
+                DoPipe(process.StandardError, session.Stderr, _console.CreateSplitter(isError: true)));
         }
         catch (Exception e)
         {
@@ -916,13 +960,17 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
                 Log.Warning(e, "Failed to write client log footer");
             }
 
+            _console.AddLine($"=== Client exited, code {exitCode?.ToString() ?? "unknown"} ===", isError: exitCode is not 0);
+            foreach (var dump in dumps)
+                _console.AddLine($"Crash dump: {dump}", isError: true);
+
             await session.DisposeAsync();
         }
     }
 
     private List<string> FindCrashDumps(Process process, int? exitCode)
     {
-        if (exitCode is null or 0 || !_settings.GetSettings().CrashDumpsEnabled)
+        if (exitCode is null or 0 || _settings.GetSettings() is not { DeveloperMode: true, CrashDumpsEnabled: true })
             return [];
 
         try
@@ -930,6 +978,7 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
             var dumps = CrashDumps.FindForProcess(_settings.GetSettings(), process.Id).ToList();
             foreach (var dump in dumps)
                 Log.Warning("Client crashed, dump written to {Dump}", dump);
+
             return dumps;
         }
         catch (Exception e)
@@ -1081,13 +1130,11 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
 
                 return startInfo;
             }
-            else
+
+            return new ProcessStartInfo
             {
-                return new ProcessStartInfo
-                {
-                    FileName = Path.Combine(basePath, "Robust.Loader"),
-                };
-            }
+                FileName = Path.Combine(basePath, "Robust.Loader"),
+            };
         }
 
         throw new NotSupportedException("Unsupported platform.");
@@ -1102,6 +1149,12 @@ public partial class Connector(Updater updater, IEngineManager engineManager, Ht
 
         public ConnectException(ConnectionStatus status, Exception inner)
             : base($"Failed to connect: {status}", inner) => Status = status;
+
+        public ConnectException() { }
+
+        public ConnectException(string? message) : base(message) { }
+
+        public ConnectException(string? message, Exception? innerException) : base(message, innerException) { }
     }
 }
 
@@ -1118,17 +1171,17 @@ public sealed record ContentBundleMetadata(
         => BaseBuild == null
             ? throw new InvalidOperationException("Metadata must have base build!")
             : new ServerBuildInformation
-        {
-            DownloadUrl = BaseBuild.DownloadUrl,
-            ManifestUrl = BaseBuild.ManifestUrl,
-            ManifestDownloadUrl = BaseBuild.ManifestDownloadUrl,
-            EngineVersion = EngineVersion,
-            Version = BaseBuild.Version,
-            ForkId = BaseBuild.ForkId,
-            Hash = BaseBuild.Hash,
-            ManifestHash = BaseBuild.ManifestHash,
-            Acz = false
-        };
+            {
+                DownloadUrl = BaseBuild.DownloadUrl,
+                ManifestUrl = BaseBuild.ManifestUrl,
+                ManifestDownloadUrl = BaseBuild.ManifestDownloadUrl,
+                EngineVersion = EngineVersion,
+                Version = BaseBuild.Version,
+                ForkId = BaseBuild.ForkId,
+                Hash = BaseBuild.Hash,
+                ManifestHash = BaseBuild.ManifestHash,
+                Acz = false
+            };
 }
 
 public sealed record ContentBundleBaseBuild(

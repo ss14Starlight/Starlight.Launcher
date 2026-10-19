@@ -1,4 +1,4 @@
-﻿namespace Starlight.Launcher.WebUI.Models.Data;
+namespace Starlight.Launcher.WebUI.Models.Data;
 
 public record AcceptedPrivacyPolicy
 {

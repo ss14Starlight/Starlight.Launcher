@@ -67,20 +67,22 @@ internal static class ExecutableArchitecture
 
         Span<byte> pe = stackalloc byte[6];
         file.Position = peOffset;
-        if (file.ReadAtLeast(pe, pe.Length, throwOnEndOfStream: false) < pe.Length
-            || pe[0] != 'P' || pe[1] != 'E' || pe[2] != 0 || pe[3] != 0)
-            return [];
-
-        return BinaryPrimitives.ReadUInt16LittleEndian(pe[4..]) switch
-        {
-            0x014C => [Architecture.X86],
-            0x8664 => [Architecture.X64],
-            0xAA64 => [Architecture.Arm64],
-            _ => []
-        };
+        return file.ReadAtLeast(pe, pe.Length, throwOnEndOfStream: false) < pe.Length
+            || pe[0] != 'P'
+            || pe[1] != 'E'
+            || pe[2] != 0
+            || pe[3] != 0
+            ? []
+            : BinaryPrimitives.ReadUInt16LittleEndian(pe[4..]) switch
+            {
+                0x014C => [Architecture.X86],
+                0x8664 => [Architecture.X64],
+                0xAA64 => [Architecture.Arm64],
+                _ => []
+            };
     }
 
-    private static IReadOnlyList<Architecture> ReadMachO(FileStream file, ReadOnlySpan<byte> header)
+    private static List<Architecture> ReadMachO(FileStream file, ReadOnlySpan<byte> header)
     {
         var magic = BinaryPrimitives.ReadUInt32BigEndian(header);
         switch (magic)
@@ -91,7 +93,6 @@ internal static class ExecutableArchitecture
 
             // FAT_MAGIC / FAT_MAGIC_64 (universal binary), always big endian.
             case 0xCAFEBABE or 0xCAFEBABF:
-            {
                 var count = BinaryPrimitives.ReadUInt32BigEndian(header[4..]);
                 var entrySize = magic == 0xCAFEBABF ? 32 : 20;
                 if (count is 0 or > 16)
@@ -110,8 +111,6 @@ internal static class ExecutableArchitecture
                 }
 
                 return result;
-            }
-
             default:
                 return [];
         }

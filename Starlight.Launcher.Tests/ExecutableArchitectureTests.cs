@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Starlight.Launcher.Services.LocalServer.Dotnet;
 
@@ -9,7 +8,8 @@ public sealed class ExecutableArchitectureTests
     [Fact]
     public void CurrentHostMatchesProcessArchitecture()
     {
-        var host = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule!.FileName;
+        var host = Environment.ProcessPath;
+        Assert.NotNull(host);
         Assert.True(ExecutableArchitecture.Matches(host, RuntimeInformation.ProcessArchitecture));
     }
 
@@ -44,6 +44,6 @@ public sealed class ExecutableArchitectureTests
     }
 
     [Fact]
-    public void MissingFileDoesNotMatch() =>
-        Assert.False(ExecutableArchitecture.Matches(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N")), Architecture.X64));
+    public void MissingFileDoesNotMatch()
+        => Assert.False(ExecutableArchitecture.Matches(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N")), Architecture.X64));
 }

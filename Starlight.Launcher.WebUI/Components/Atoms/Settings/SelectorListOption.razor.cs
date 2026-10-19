@@ -1,17 +1,18 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
 
 namespace Starlight.Launcher.WebUI.Components.Atoms.Settings;
 
 public partial class SelectorListOption : ComponentBase
 {
     [Parameter, EditorRequired] public List<string> Values { get; set; }
-    [Parameter] public string? SelectedValue { get; set; } = null;
+    [Parameter] public string? SelectedValue { get; set; }
     [Parameter] public EventCallback<string?> ValueChanged { get; set; }
     [Parameter] public string Title { get; set; } = default!;
     [Parameter] public string Description { get; set; } = default!;
     [Parameter] public string Icon { get; set; } = default!;
     [Parameter] public bool EmptyOption { get; set; } = true;
     [Parameter] public string EmptyOptionName { get; set; } = "Nothing Selected";
+
     /// <summary>
     /// Means that this component will control value change by itself.
     /// </summary>
@@ -25,13 +26,16 @@ public partial class SelectorListOption : ComponentBase
         await base.OnInitializedAsync();
         if (SelfValueControlInitialization is null)
             return;
+
         SelectedValue = await SelfValueControlInitialization.Invoke();
     }
 
     private async Task OnValueChanged(string? value)
     {
         if (!SelfValueControl)
+        {
             await ValueChanged.InvokeAsync(value);
+        }
         else
         {
             SelectedValue = value;

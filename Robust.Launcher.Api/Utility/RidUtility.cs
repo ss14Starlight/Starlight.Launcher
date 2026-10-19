@@ -10,6 +10,14 @@ namespace Robust.Launcher.Api.Utility;
 
 public static class RidUtility
 {
+    private static readonly (OSPlatform Platform, string Name)[] _osNames =
+    [
+        (OSPlatform.Windows, "win"),
+        (OSPlatform.Linux, "linux"),
+        (OSPlatform.FreeBSD, "freebsd"),
+        (OSPlatform.OSX, "osx"),
+    ];
+
     public static string? FindBestRid(ICollection<string> runtimes, string? currentRid = null)
     {
         var catalog = LoadRidCatalog();
@@ -31,8 +39,7 @@ public static class RidUtility
         // Breadth-first search.
         var q = new Queue<string>();
         if (!catalog.Runtimes.TryGetValue(currentRid, out var root))
-            // RID doesn't exist in catalog???
-            return null;
+            return null; // RID doesn't exist in catalog???
 
         root.Discovered = true;
         q.Enqueue(currentRid);
@@ -59,38 +66,17 @@ public static class RidUtility
     }
 
     private static string GuessRid()
-        => RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
-        ? RuntimeInformation.ProcessArchitecture switch
+    {
+        var arch = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
+
+        foreach (var (platform, os) in _osNames)
         {
-            Architecture.X86 => "linux-x86",
-            Architecture.X64 => "linux-x64",
-            Architecture.Arm => "linux-arm",
-            Architecture.Arm64 => "linux-arm64",
-            _ => "unknown"
+            if (RuntimeInformation.IsOSPlatform(platform))
+                return $"{os}-{arch}";
         }
-        : RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD)
-        ? RuntimeInformation.ProcessArchitecture switch
-        {
-            Architecture.X64 => "freebsd-x64",
-            _ => "unknown"
-        }
-        : RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-        ? RuntimeInformation.ProcessArchitecture switch
-        {
-            Architecture.X86 => "win-x86",
-            Architecture.X64 => "win-x64",
-            Architecture.Arm => "win-arm",
-            Architecture.Arm64 => "win-arm64",
-            _ => "unknown"
-        }
-        : !RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
-        ? "unknown"
-        : RuntimeInformation.ProcessArchitecture switch
-        {
-            Architecture.X64 => "osx-x64",
-            Architecture.Arm64 => "osx-arm64",
-            _ => "unknown"
-        };
+
+        return "unknown";
+    }
 
     private static RidCatalog LoadRidCatalog()
     {
@@ -101,14 +87,13 @@ public static class RidUtility
         return JsonSerializer.Deserialize<RidCatalog>(ms.GetBuffer().AsSpan(0, (int)ms.Length))!;
     }
 
-#pragma warning disable 649
     private sealed class RidCatalog
     {
         [JsonInclude]
         [JsonPropertyName("runtimes")]
         public Dictionary<string, Runtime> Runtimes = default!;
 
-        public class Runtime
+        public sealed class Runtime
         {
             public bool Discovered;
 
@@ -117,5 +102,4 @@ public static class RidUtility
             public string[] Imports = default!;
         }
     }
-#pragma warning restore 649
 }

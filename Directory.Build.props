@@ -1,7 +1,23 @@
 <Project>
+	<!-- Settings shared by every project. Project files only declare what is specific to them. -->
 	<PropertyGroup>
-	  <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-	  <EnableNETAnalyzers>true</EnableNETAnalyzers>
-	  <AnalysisLevel>latest</AnalysisLevel>
+		<Nullable>enable</Nullable>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<Deterministic>true</Deterministic>
+	</PropertyGroup>
+
+	<!-- Code analysis: .editorconfig decides severities, the build enforces them. -->
+	<PropertyGroup>
+		<EnableNETAnalyzers>true</EnableNETAnalyzers>
+		<AnalysisLevel>latest</AnalysisLevel>
+		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+	</PropertyGroup>
+
+	<!-- FreeBSD has no prebuilt e_sqlite3, use the system library there. -->
+	<PropertyGroup Condition="$([MSBuild]::IsOSPlatform('FreeBSD'))">
+		<UseSystemSqlite>True</UseSystemSqlite>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(UseSystemSqlite)' == 'True'">
+		<DefineConstants>$(DefineConstants);USE_SYSTEM_SQLITE</DefineConstants>
 	</PropertyGroup>
 </Project>

@@ -34,19 +34,25 @@ public sealed class StallTimeoutStream(Stream baseStream, TimeSpan timeout) : St
         }
     }
 
-    public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
-        ReadAsync(buffer.AsMemory(offset, count), cancellationToken).AsTask();
+    public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        => ReadAsync(buffer.AsMemory(offset, count), cancellationToken).AsTask();
 
-    public override int Read(byte[] buffer, int offset, int count) =>
-        ReadAsync(buffer.AsMemory(offset, count)).AsTask().GetAwaiter().GetResult();
+    public override int Read(byte[] buffer, int offset, int count)
+        => ReadAsync(buffer.AsMemory(offset, count)).AsTask().GetAwaiter().GetResult();
 
     protected override void Dispose(bool disposing)
     {
         if (disposing)
             baseStream.Dispose();
+
+        base.Dispose(disposing);
     }
 
-    public override ValueTask DisposeAsync() => baseStream.DisposeAsync();
+    public override async ValueTask DisposeAsync()
+    {
+        await baseStream.DisposeAsync();
+        await base.DisposeAsync();
+    }
 
     public override bool CanRead => true;
     public override bool CanSeek => false;

@@ -5,7 +5,7 @@
 
 <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
     <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Class="icon-btn-ghost"
-                    OnClick="() => OnModeSwitch?.Invoke(Mode.AccountList)" Disabled="Busy" />
+                    OnClick="() => OnModeSwitch?.Invoke(Mode.AccountList)" Disabled="_busy" />
     <MudText Typo="Typo.h5">@L["auth-menu-link-account-title"]</MudText>
 </MudStack>
 
@@ -15,30 +15,30 @@
 
 <MudTextField @bind-Value="Username"
                 Label="@L["auth-menu-username-label"]"
-                Variant="Variant.Outlined" Immediate="true" Disabled="Busy" Class="mb-3 auth-field" />
+                Variant="Variant.Outlined" Immediate="true" Disabled="_busy" Class="mb-3 auth-field" />
 
-<MudTextField @bind-Value="Password"
-                Label="@L["auth-menu-password-label"]"
-                InputType="InputType.Password"
-                Variant="Variant.Outlined" Immediate="true" Disabled="Busy" Class="mb-3 auth-field"
-                OnKeyDown="OnLinkKey" />
+<MudTextField @bind-Value="_password"
+              Label="@L["auth-menu-password-label"]"
+              InputType="InputType.Password"
+              Variant="Variant.Outlined" Immediate="true" Disabled="_busy" Class="mb-3 auth-field"
+              OnKeyDown="OnLinkKey" />
 
-@if (TfaRequired)
+@if (_tfaRequired)
 {
-    <MudTextField @bind-Value="TfaCode"
-                    Label="@L["auth-menu-2fa-label"]"
-                    Variant="Variant.Outlined" Immediate="true" Disabled="Busy" Class="mb-3 auth-field"
-                    OnKeyDown="OnLinkKey" />
+    <MudTextField @bind-Value="_tfaCode"
+                  Label="@L["auth-menu-2fa-label"]"
+                  Variant="Variant.Outlined" Immediate="true" Disabled="_busy" Class="mb-3 auth-field"
+                  OnKeyDown="OnLinkKey" />
 }
 
-@if (!string.IsNullOrEmpty(Error))
+@if (!string.IsNullOrEmpty(_error))
 {
-    <MudAlert Severity="Severity.Error" Class="mb-3 error-alert">@Error</MudAlert>
+    <MudAlert Severity="Severity.Error" Class="mb-3 error-alert">@_error</MudAlert>
 }
 
 <MudButton Variant="Variant.Filled" Color="Color.Primary"
-            FullWidth="true" Disabled="Busy" OnClick="DoLinkAccount" Class="cta-btn-primary">
-    @if (Busy)
+            FullWidth="true" Disabled="_busy" OnClick="DoLinkAccount" Class="cta-btn-primary">
+    @if (_busy)
     {
         <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
         <span>@L["auth-menu-link-account-busy"]</span>

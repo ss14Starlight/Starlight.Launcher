@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
 using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Models.HubServerFetcher;
 using Starlight.Launcher.WebUI.Models.ServerStatus;
@@ -14,10 +14,10 @@ public partial class SearchBar : LocalizedComponentBase
     [Parameter] public EventCallback OnRefresh { get; set; }
     [Parameter] public bool TagsExpandButton { get; set; } = true;
 
-    private bool _hasActiveTagFilters =>
-        Filters.SelectedRP.Count > 0 ||
-        Filters.SelectedLang.Count > 0 ||
-        Filters.SelectedRegion.Count > 0;
+    private bool _hasActiveTagFilters
+        => Filters.SelectedRP.Count > 0
+            || Filters.SelectedLang.Count > 0
+            || Filters.SelectedRegion.Count > 0;
 
     private void ToggleTagsExpanded()
     {
@@ -56,6 +56,7 @@ public partial class SearchBar : LocalizedComponentBase
         Filters.HideAdult = !Filters.HideAdult;
         if (Filters.HideAdult)
             Filters.OnlyAdult = false;
+
         Filters.NotifyChanged();
     }
 
@@ -64,6 +65,7 @@ public partial class SearchBar : LocalizedComponentBase
         Filters.OnlyAdult = !Filters.OnlyAdult;
         if (Filters.OnlyAdult)
             Filters.HideAdult = false;
+
         Filters.NotifyChanged();
     }
 

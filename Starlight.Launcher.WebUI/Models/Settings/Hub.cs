@@ -1,4 +1,3 @@
-
 namespace Starlight.Launcher.WebUI.Models.Settings;
 
 public record Hub

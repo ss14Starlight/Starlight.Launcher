@@ -11,6 +11,7 @@ public sealed class ServerInfo
     public string? ConnectAddress { get; set; }
 
     [JsonInclude, JsonPropertyName("build")] public ServerBuildInformation? BuildInformation;
+
     [JsonPropertyName("auth")] public ServerAuthInformation AuthInformation { get; set; } = default!;
 
     [JsonPropertyName("desc")] public string? Desc { get; set; }
@@ -32,7 +33,7 @@ public class ServerAuthInformation
 public class ServerBuildInformation
 {
     [JsonInclude, JsonPropertyName("download_url")]
-    public string? DownloadUrl = default!;
+    public string? DownloadUrl;
 
     [JsonInclude, JsonPropertyName("manifest_url")]
     public string? ManifestUrl;

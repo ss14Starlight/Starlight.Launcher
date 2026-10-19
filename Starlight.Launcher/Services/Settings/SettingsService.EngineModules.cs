@@ -2,7 +2,7 @@ using Robust.Launcher.Api.Models.Data;
 
 namespace Starlight.Launcher.Services.Settings;
 
-sealed partial class SettingsService
+public sealed partial class SettingsService
 {
     public HashSet<InstalledEngineModule> GetModules()
     {

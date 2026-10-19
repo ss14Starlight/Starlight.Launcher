@@ -13,7 +13,7 @@
             }
             else
             {
-                <span>@Initial</span>
+                <span>@_initial</span>
             }
         </div>
 
@@ -128,7 +128,7 @@
                 </div>
                 <div class="stat-tile">
                     <span class="stat-label">@L["auth-profile-top-role"]</span>
-                    <span class="stat-value stat-value-text" title="@(topRole?.Name)">@(topRole?.Name ?? "—")</span>
+                    <span class="stat-value stat-value-text" title="@(topRole?.Name)">@(topRole?.Name ?? "-")</span>
                     @if (topRole != null)
                     {
                         <span class="stat-sub">@FormatMinutes(topRole.Value.Minutes)</span>

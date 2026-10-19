@@ -1,7 +1,7 @@
 namespace Starlight.Launcher.Services.LocalServer.Dotnet;
 
 public readonly record struct RuntimeVersion(int Major, int Minor, int Patch, string? Prerelease = null)
-    : IComparable<RuntimeVersion>
+    : IComparable<RuntimeVersion>, IComparable
 {
     public bool IsPrerelease => Prerelease is not null;
 
@@ -24,6 +24,7 @@ public readonly record struct RuntimeVersion(int Major, int Minor, int Patch, st
             prerelease = span[(dash + 1)..].ToString();
             if (prerelease.Length == 0)
                 return false;
+
             span = span[..dash];
         }
 
@@ -51,19 +52,30 @@ public readonly record struct RuntimeVersion(int Major, int Minor, int Patch, st
         var c = Major.CompareTo(other.Major);
         if (c != 0)
             return c;
+
         c = Minor.CompareTo(other.Minor);
         if (c != 0)
             return c;
+
         c = Patch.CompareTo(other.Patch);
         return c != 0 ? c : ComparePrerelease(Prerelease, other.Prerelease);
     }
+
+    public int CompareTo(object? obj)
+        => obj switch
+        {
+            null => 1,
+            _ => obj is RuntimeVersion x ? CompareTo(x) : throw new ArgumentException("", nameof(obj))
+        };
 
     private static int ComparePrerelease(string? a, string? b)
     {
         if (a == b)
             return 0;
+
         if (a is null)
             return 1;
+
         if (b is null)
             return -1;
 
@@ -94,6 +106,6 @@ public readonly record struct RuntimeVersion(int Major, int Minor, int Patch, st
     public static bool operator <=(RuntimeVersion a, RuntimeVersion b) => a.CompareTo(b) <= 0;
     public static bool operator >=(RuntimeVersion a, RuntimeVersion b) => a.CompareTo(b) >= 0;
 
-    public override string ToString() =>
-        Prerelease is null ? $"{Major}.{Minor}.{Patch}" : $"{Major}.{Minor}.{Patch}-{Prerelease}";
+    public override string ToString()
+        => Prerelease is null ? $"{Major}.{Minor}.{Patch}" : $"{Major}.{Minor}.{Patch}-{Prerelease}";
 }

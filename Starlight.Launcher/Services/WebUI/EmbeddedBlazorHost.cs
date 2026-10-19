@@ -7,7 +7,7 @@ using Starlight.Launcher.Services.Auth;
 using Starlight.Launcher.Services.ContentManagement;
 using Starlight.Launcher.Services.DeepLink;
 using Starlight.Launcher.Services.Settings;
-using Starlight.Launcher.WebUI;
+using Starlight.Launcher.Services.Tray;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Services;

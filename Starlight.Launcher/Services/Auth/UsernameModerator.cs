@@ -61,8 +61,8 @@ public static class UsernameModerator
             : "The username doesn't contain enough Latin letters to use.");
     }
 
-    private static UsernameModerationResult Reject(string reason) =>
-        new(UsernameModerationOutcome.Rejected, string.Empty, reason);
+    private static UsernameModerationResult Reject(string reason)
+        => new(UsernameModerationOutcome.Rejected, string.Empty, reason);
 
     private static string TryNormalize(string s)
     {
@@ -130,7 +130,12 @@ public static class UsernameModerator
 
             if (keep)
             {
-                if (pendingSpace) { _ = sb.Append(' '); pendingSpace = false; }
+                if (pendingSpace)
+                {
+                    _ = sb.Append(' ');
+                    pendingSpace = false;
+                }
+
                 _ = sb.Append((char)v);
             }
             else if (v == ' ')
@@ -174,6 +179,7 @@ public static class UsernameModerator
             if (n++ == MaxLength) break;
             _ = sb.Append(rune);
         }
+
         return sb.ToString().TrimEnd();
     }
 }

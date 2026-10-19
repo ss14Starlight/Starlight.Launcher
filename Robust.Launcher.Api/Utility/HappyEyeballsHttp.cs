@@ -72,7 +72,7 @@ public static class HappyEyeballsHttp
         var endPoint = context.DnsEndPoint;
         var resolvedAddresses = await GetIpsForHost(endPoint, cancellationToken).ConfigureAwait(false);
         if (resolvedAddresses.Length == 0)
-            throw new Exception($"Host {context.DnsEndPoint.Host} resolved to no IPs!");
+            throw new InvalidOperationException($"Host {context.DnsEndPoint.Host} resolved to no IPs!");
 
         // Sort as specified in the RFC, interleaving.
         var ips = SortInterleaved(resolvedAddresses);
@@ -113,7 +113,7 @@ public static class HappyEyeballsHttp
                 await Task.Delay(SlowIpv6, cancel).ConfigureAwait(false);
 
                 if (BrokenIpv6)
-                    throw new Exception("Oh no I can't reach the network this is SO SAD.");
+                    throw new InvalidOperationException("Oh no I can't reach the network this is SO SAD.");
             }
 #endif
 
@@ -236,11 +236,9 @@ public static class HappyEyeballsHttp
                 successTask = completedTask;
                 break;
             }
-            else
-            {
-                // Faulted. Remove it.
-                _ = tasks.Remove(completedTask);
-            }
+
+            // Faulted. Remove it.
+            _ = tasks.Remove(completedTask);
         }
 
         Debug.Assert(allTasks.Count > 0);

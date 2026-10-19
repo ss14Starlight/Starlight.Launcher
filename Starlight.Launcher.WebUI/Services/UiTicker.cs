@@ -6,7 +6,7 @@ namespace Starlight.Launcher.WebUI.Services;
 /// </summary>
 public sealed class UiTicker : IDisposable
 {
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private readonly UiActivity _activity;
     private System.Timers.Timer? _timer;
     private Action? _tick;
@@ -36,6 +36,7 @@ public sealed class UiTicker : IDisposable
                 _tick -= value;
                 if (--_subscribers < 0)
                     _subscribers = 0;
+
                 UpdateTimer();
             }
         }

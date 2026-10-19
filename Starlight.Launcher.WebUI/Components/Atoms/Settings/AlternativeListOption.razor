@@ -54,7 +54,7 @@
                                   Margin="Margin.Dense"
                                   Label="@TextFieldLabel"
                                   Placeholder="https://example.com"
-                                  Validation="@(new Func<string, string?>(ValidateUrl))"
+                                  Validation="@(new Func<string, string?>(Starlight.Launcher.WebUI.Models.Helpers.UrlValidation.HttpOrHttps))"
                                   Class="flex-grow-1" />
 
                     <MudTooltip Text="@L["settings-alternative-list-option-move-up"]">

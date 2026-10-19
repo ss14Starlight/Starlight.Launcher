@@ -24,5 +24,5 @@ public partial interface IBridge
 
     void ConfirmPrivacyPolicy(PrivacyPolicyAcceptResult result);
 
-    event PropertyChangedEventHandler? ConnectionPropertyChanged;
+    INotifyPropertyChanged Connection { get; }
 }

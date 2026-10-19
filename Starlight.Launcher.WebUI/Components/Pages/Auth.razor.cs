@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using Robust.Launcher.Api.Models;
 using Serilog;
@@ -6,7 +6,7 @@ using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Models.Auth;
 using Starlight.Launcher.WebUI.Models.DiscordAuthService;
-using Starlight.Launcher.WebUI.Models.StarlightAuthService;
+using Starlight.Launcher.WebUI.Models.SteamAuthService;
 
 namespace Starlight.Launcher.WebUI.Components.Pages;
 
@@ -27,7 +27,7 @@ public partial class Auth : LocalizedComponentBase, IDisposable
 
     private Guid? _viewedUserId;
 
-    private LoggedInAccount? ViewedAccount
+    private LoggedInAccount? _viewedAccount
     {
         get
         {
@@ -45,7 +45,6 @@ public partial class Auth : LocalizedComponentBase, IDisposable
         if (_bridge.GetLoginEntries().Count == 0)
         {
             _mode = Mode.SignIn;
-            StateHasChanged();
         }
     }
 
@@ -55,6 +54,7 @@ public partial class Auth : LocalizedComponentBase, IDisposable
     {
         base.Dispose();
         _bridge.LoginEntriesChanged -= OnLoginsChanged;
+        GC.SuppressFinalize(this);
     }
 
     private void ViewAccount(LoggedInAccount account)
@@ -126,14 +126,14 @@ public partial class Auth : LocalizedComponentBase, IDisposable
         StateHasChanged();
     }
 
-    private void LinkSteam(LoggedInAccount account) =>
-        Task.Run(async () => await RunAttach(true, account, L.GetString("auth-menu-steam-linked-status", ("account", account.LoginInfo.Username))));
+    private void LinkSteam(LoggedInAccount account)
+        => Task.Run(async () => await RunAttach(true, account, L.GetString("auth-menu-steam-linked-status", ("account", account.LoginInfo.Username))));
 
-    private void LinkDiscord(LoggedInAccount account) =>
-        Task.Run(async () => await RunAttach(false, account, L.GetString("auth-menu-discord-linked-status", ("account", account.LoginInfo.Username))));
+    private void LinkDiscord(LoggedInAccount account)
+        => Task.Run(async () => await RunAttach(false, account, L.GetString("auth-menu-discord-linked-status", ("account", account.LoginInfo.Username))));
 
-    private void ReloginDiscord(LoggedInAccount account) =>
-        Task.Run(async () => await RunAttach(false, account, L["auth-menu-discord-renewed"], navigateHome: true));
+    private void ReloginDiscord(LoggedInAccount account)
+        => Task.Run(async () => await RunAttach(false, account, L["auth-menu-discord-renewed"], navigateHome: true));
 
     private async Task RunAttach(bool steam, LoggedInAccount account, string success, bool navigateHome = false)
     {

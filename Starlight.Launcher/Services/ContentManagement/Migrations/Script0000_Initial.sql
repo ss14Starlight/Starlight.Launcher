@@ -1,4 +1,4 @@
-﻿-- Describes a single server version currently stored in this database.
+-- Describes a single server version currently stored in this database.
 CREATE TABLE ContentVersion(
     -- Autoincrement to avoid use-after-free type stuff if somebody clears the DB while the game is running.
     Id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -44,7 +44,7 @@ public partial class LocalServerSourceListOption : LocalizedComponentBase
             L["local-server-source-warning-title"], options);
 
         var result = await dialog.Result;
-        return result is not null && !result.Canceled;
+        return result?.Canceled == false;
     }
 
     private async Task AddSource()
@@ -89,16 +89,5 @@ public partial class LocalServerSourceListOption : LocalizedComponentBase
             await ValueChanged.InvokeAsync(Value);
         else
             SelfValueControlAction?.Invoke(Value);
-    }
-
-    private static string? ValidateUrl(string value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return "URL is required";
-        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri))
-            return "Invalid URL";
-        if (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp)
-            return "Invalid URL scheme";
-        return null;
     }
 }

@@ -26,11 +26,9 @@ public static class Migrator
 
         var appliedScripts = connection.Query<string>("SELECT ScriptName FROM main.SchemaVersions");
 
-        // ReSharper disable once InvokeAsExtensionMethod
-        var scriptsToApply = Enumerable.Concat(
-            MigrationFileScriptList(prefix),
-            MigrationCodeScriptList(prefix)
-        ).ExceptBy(appliedScripts, s => s.name).OrderBy(x => x.name);
+        var scriptsToApply = MigrationFileScriptList(prefix).Concat(MigrationCodeScriptList(prefix))
+            .ExceptBy(appliedScripts, s => s.name)
+            .OrderBy(x => x.name);
 
         var success = true;
         foreach (var (name, script) in scriptsToApply)
@@ -88,7 +86,7 @@ public static class Migrator
                 continue;
 
             var index = resourceName.LastIndexOf('.', resourceName.Length - 5, resourceName.Length - 4);
-            index += 1;
+            index++;
 
             var name = resourceName[(index + "Script".Length)..^4];
 

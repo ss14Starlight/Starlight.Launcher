@@ -13,6 +13,7 @@ public class LauncherMessaging
     private static readonly Encoding _noBomUtf8 = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
     private Task? _serverTask;
     private string _pipeName = "";
+
     private const int ConnectAttempts = 5;
     private const int ConnectTimeoutMs = 500;
 
@@ -28,7 +29,9 @@ public class LauncherMessaging
             actualPipeName = Path.Combine(runtimeDir, actualPipeName);
         }
         else if (!OperatingSystem.IsMacOS())
+        {
             actualPipeName += "_" + Convert.ToHexString(Encoding.UTF8.GetBytes(Environment.UserName));
+        }
 
         _pipeName = actualPipeName;
 

@@ -7,20 +7,20 @@ namespace Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 
 public partial class DirectConnectDialog : LocalizedComponentBase
 {
-    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [CascadingParameter] private IMudDialogInstance _mudDialog { get; set; } = null!;
 
-    private string Address { get; set; } = "";
-    private bool AddToFavorites { get; set; }
+    private string _address { get; set; } = "";
+    private bool _addToFavorites { get; set; }
 
     private void Submit()
-        => MudDialog.Close(DialogResult.Ok(
-            new DirectConnectResult(Address.Trim(), AddToFavorites)));
+        => _mudDialog.Close(DialogResult.Ok(
+            new DirectConnectResult(_address.Trim(), _addToFavorites)));
 
-    private void Cancel() => MudDialog.Cancel();
+    private void Cancel() => _mudDialog.Cancel();
 
     private void HandleKeyDown(KeyboardEventArgs e)
     {
-        if (e.Key is "Enter" or "NumpadEnter" && !string.IsNullOrWhiteSpace(Address))
+        if (e.Key is "Enter" or "NumpadEnter" && !string.IsNullOrWhiteSpace(_address))
             Submit();
     }
 }

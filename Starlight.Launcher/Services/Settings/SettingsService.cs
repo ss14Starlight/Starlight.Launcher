@@ -25,7 +25,7 @@ public sealed partial class SettingsService : IAsyncDisposable
     private List<FavoriteServer> _favorites;
     private readonly SemaphoreSlim _favoritesLock = new(1, 1);
     private readonly string _favoritesPath;
-    private volatile HashSet<string> _favoriteAddresses = new(StringComparer.OrdinalIgnoreCase);
+    private volatile HashSet<string> _favoriteAddresses = [with(StringComparer.OrdinalIgnoreCase)];
 
     private Dictionary<Guid, LoginInfo> _logins = [];
     private readonly SemaphoreSlim _loginsLock = new(1, 1);
@@ -66,7 +66,7 @@ public sealed partial class SettingsService : IAsyncDisposable
     private const int LoadAttempts = 3;
     private const int LoadRetryDelayMs = 200;
 
-    #endregion
+    #endregion Variables
 
     public SettingsService(ILogger<SettingsService> logger, ILoginKeyProvider keyProvider)
     {
@@ -101,7 +101,7 @@ public sealed partial class SettingsService : IAsyncDisposable
 
         var delay = _settings.SaveIntervalMs;
 
-        var task = Task.Run(async () =>
+        _pendingSaves[what] = Task.Run(async () =>
         {
             try
             {
@@ -114,8 +114,6 @@ public sealed partial class SettingsService : IAsyncDisposable
                 _logger.LogError(ex, "Auto-save failed for {what}", what);
             }
         });
-
-        _pendingSaves[what] = task;
     }
 
     private async Task SaveJsonAsync<T>(string path, SemaphoreSlim slim, Func<T> snapshot)
@@ -240,7 +238,7 @@ public sealed partial class SettingsService : IAsyncDisposable
         ScheduleSaveInternal(ref _settingsSaveCts, () => SaveJsonAsync(_filePath, _settingsLock, () => _settings), "settings");
     }
 
-    #endregion
+    #endregion Sync Methods
 
     #region Async Methods
 
@@ -281,7 +279,7 @@ public sealed partial class SettingsService : IAsyncDisposable
         ScheduleSaveInternal(ref _settingsSaveCts, () => SaveJsonAsync(_filePath, _settingsLock, () => _settings), "settings");
     }
 
-    #endregion
+    #endregion Async Methods
 
     public async ValueTask DisposeAsync()
     {
@@ -358,6 +356,7 @@ public sealed partial class SettingsService : IAsyncDisposable
         {
             var backup = path + $".corrupt-{DateTime.UtcNow:yyyyMMddHHmmss}.bak";
             try { File.Move(path, backup, true); } catch { /* best effort */ }
+
             _logger.LogError(ex, "Failed to parse {path}; backed up to {backup}, using defaults", path, backup);
             return fallback;
         }

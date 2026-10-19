@@ -4,7 +4,6 @@ using Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Localization;
 using System.Net;
-using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using Color = MudBlazor.Color;
 using Starlight.Launcher.WebUI.Models.Data;
@@ -18,6 +17,7 @@ public sealed partial class NullLinkHub : LocalizedComponentBase, IAsyncDisposab
     [Inject] private IBridge _bridge { get; set; } = default!;
     [Inject] private IDialogService _dialog { get; set; } = default!;
     [Inject] private UiActivity _activity { get; set; } = default!;
+
     private List<ServerListItem>? _servers;
     private string? _error;
     private CancellationTokenSource? _cts;
@@ -74,7 +74,7 @@ public sealed partial class NullLinkHub : LocalizedComponentBase, IAsyncDisposab
 
             var result = await _client.GetFromJsonAsync<List<ServerListItem>>(url, token);
 
-            _servers = result ?? new();
+            _servers = result ?? [];
             _lastUpdated = DateTime.UtcNow;
             _error = null;
         }
@@ -117,7 +117,7 @@ public sealed partial class NullLinkHub : LocalizedComponentBase, IAsyncDisposab
 
         if (alreadyExist is null or default(FavoriteServer?))
         {
-            favorites.Add(new FavoriteServer(StripMarkup(server.Title),server.ConnectionString, ""));
+            favorites.Add(new FavoriteServer(StripMarkup(server.Title), server.ConnectionString, ""));
             await _bridge.WriteFavoritesAsync(favorites);
         }
         else if (alreadyExist != null)
@@ -159,12 +159,7 @@ public sealed partial class NullLinkHub : LocalizedComponentBase, IAsyncDisposab
     };
 
     private static double GetPopulation(ServerListItem server)
-    {
-        if (server.MaxPlayers is null or 0)
-            return 0;
-
-        return (double)(server.Players ?? 0) / server.MaxPlayers.Value * 100;
-    }
+        => server.MaxPlayers is null or 0 ? 0 : (double)(server.Players ?? 0) / server.MaxPlayers.Value * 100;
 
     private static Color GetPopulationColor(ServerListItem server) => GetPopulation(server) switch
     {
@@ -173,8 +168,8 @@ public sealed partial class NullLinkHub : LocalizedComponentBase, IAsyncDisposab
         _ => Color.Success
     };
 
-    private static string FormatType(ServerType type) =>
-        type.ToString().Replace("_minus", "−").Replace("_plus", "+");
+    private static string FormatType(ServerType type)
+        => type.ToString().Replace("_minus", "−").Replace("_plus", "+");
 
     private static string FormatUptime(DateTime? startedAt)
     {
@@ -189,12 +184,12 @@ public sealed partial class NullLinkHub : LocalizedComponentBase, IAsyncDisposab
         if (elapsed < TimeSpan.Zero)
             elapsed = TimeSpan.Zero;
 
-        if (elapsed.TotalDays >= 1)
-            return $"{(int)elapsed.TotalDays}d {elapsed.Hours}h";
-        if (elapsed.TotalHours >= 1)
-            return $"{(int)elapsed.TotalHours}h {elapsed.Minutes}m";
-
-        return $"{elapsed.Minutes}m";
+        return elapsed switch
+        {
+            { TotalDays: >= 1 } => $"{(int)elapsed.TotalDays}d {elapsed.Hours}h",
+            { TotalHours: >= 1 } => $"{(int)elapsed.TotalHours}h {elapsed.Minutes}m",
+            _ => $"{elapsed.Minutes}m"
+        };
     }
 
     public async ValueTask DisposeAsync()
@@ -208,9 +203,8 @@ public sealed partial class NullLinkHub : LocalizedComponentBase, IAsyncDisposab
         _bridge.FavoritesChanged -= OnFavoritesChanged;
     }
 
-    private static readonly Regex _colorTagRegex = new(
-        @"\[color=([a-zA-Z0-9#(),.%\s]{1,32})\](.*?)\[/color\]",
-        RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled);
+    [GeneratedRegex(@"\[color=([a-zA-Z0-9#(),.%\s]{1,32})\](.*?)\[/color\]", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.Singleline, "en-US")]
+    private static partial Regex _colorTagRegex { get; }
 
     private static MarkupString ParseMarkup(string? text)
     {

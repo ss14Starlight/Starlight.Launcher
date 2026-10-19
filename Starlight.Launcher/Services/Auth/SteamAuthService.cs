@@ -1,4 +1,4 @@
-using Starlight.Launcher.WebUI.Models.StarlightAuthService;
+using Starlight.Launcher.WebUI.Models.SteamAuthService;
 
 namespace Starlight.Launcher.Services.Auth;
 
@@ -16,7 +16,7 @@ public sealed class SteamAuthService(StarlightAuthApi api, LoginManager loginMan
     protected override async Task<(Guid UserId, string Username)> GetUserAsync(string token, CancellationToken cancel)
     {
         var info = await Api.GetSteamUserAsync(token, cancel)
-                   ?? throw new SteamAuthException("Failed to retrieve user information.");
+            ?? throw new SteamAuthException("Failed to retrieve user information.");
 
         return (info.UserId, info.Username);
     }

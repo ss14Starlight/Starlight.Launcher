@@ -61,7 +61,7 @@ public sealed class AvaloniaFileDialogService(ILogger<AvaloniaFileDialogService>
             var results = await pickerTask;
             _logger.LogInformation("PickFileAsync: picker returned {Count} result(s)", results.Count);
 
-            var path = results.FirstOrDefault()?.TryGetLocalPath();
+            var path = results.Count > 0 ? results[0].TryGetLocalPath() : null;
             return path is null ? null : new FileResult(path);
         }
         catch (Exception ex)
@@ -110,7 +110,7 @@ public sealed class AvaloniaFileDialogService(ILogger<AvaloniaFileDialogService>
             var results = await pickerTask;
             _logger.LogInformation("PickFolderAsync: picker returned {Count} result(s)", results.Count);
 
-            var path = results.FirstOrDefault()?.TryGetLocalPath();
+            var path = results.Count > 0 ? results[0].TryGetLocalPath() : null;
             return path is null ? null : new FileResult(path);
         }
         catch (Exception ex)
@@ -123,8 +123,8 @@ public sealed class AvaloniaFileDialogService(ILogger<AvaloniaFileDialogService>
     /// <summary>
     /// Gets the application's main window.
     /// </summary>
-    private static Window? GetTopLevel() =>
-        (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+    private static Window? GetTopLevel()
+        => (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
 
     /// <summary>
     /// Converts a Win32-style file filter string into Avalonia file picker filters.

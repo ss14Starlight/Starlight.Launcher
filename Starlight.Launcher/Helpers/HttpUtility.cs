@@ -37,7 +37,6 @@ public static class HttpUtility
     /// </summary>
     public sealed class ZStdHttpContent(HttpContent originalContent) : DecompressedContent(originalContent)
     {
-
         /// <summary>
         /// Creates a stream that decompresses Zstandard-compressed content.
         /// </summary>

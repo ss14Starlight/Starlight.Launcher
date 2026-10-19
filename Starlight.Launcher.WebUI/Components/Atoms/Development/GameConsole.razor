@@ -1,0 +1,36 @@
+@using Starlight.Launcher.WebUI.Localization
+@inherits LocalizedComponentBase
+
+<MudPaper Class="game-console" Outlined="true" Elevation="0">
+    <div class="game-console-toolbar">
+        <MudTextField T="string" @bind-Value="_filter" Immediate="true" DebounceInterval="250" Variant="Variant.Outlined" Margin="Margin.Dense"
+                      Placeholder="@L["development-console-filter"]" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.FilterList"
+                      Clearable="true" Class="game-console-filter" />
+        <MudCheckBox T="bool" @bind-Value="_errorsOnly" Label="@L["development-console-errors-only"]" Dense="true" Size="Size.Small" />
+        <MudSpacer />
+        <MudTooltip Text="@L["local-server-console-autoscroll-tooltip"]">
+            <MudIconButton Icon="@Icons.Material.Filled.VerticalAlignBottom" Size="Size.Small"
+                           Color="@(_autoScroll ? Color.Primary : Color.Default)"
+                           OnClick="() => _autoScroll = !_autoScroll" />
+        </MudTooltip>
+        <MudTooltip Text="@L["development-console-copy"]">
+            <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Small" OnClick="CopyAsync" />
+        </MudTooltip>
+        <MudTooltip Text="@L["development-console-open-logs"]">
+            <MudIconButton Icon="@Icons.Material.Filled.FolderOpen" Size="Size.Small" OnClick="OpenLogsAsync" />
+        </MudTooltip>
+        <MudTooltip Text="@L["local-server-console-clear-tooltip"]">
+            <MudIconButton Icon="@Icons.Material.Filled.ClearAll" Size="Size.Small" OnClick="Clear" />
+        </MudTooltip>
+    </div>
+    <div class="game-console-log" id="game-console-log">
+        @if (_lines.Count == 0)
+        {
+            <div class="log-line log-empty">@L["development-console-empty"]</div>
+        }
+        @foreach (var line in Visible())
+        {
+            <div class="@(line.IsError ? "log-line log-line-error" : "log-line")"><span class="log-time">@line.Timestamp.ToString("HH:mm:ss")</span>@line.Text</div>
+        }
+    </div>
+</MudPaper>

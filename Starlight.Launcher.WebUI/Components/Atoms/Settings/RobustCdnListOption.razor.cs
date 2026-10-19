@@ -23,7 +23,7 @@ public partial class RobustCdnListOption : LocalizedComponentBase
     [Parameter] public string EmptyValuesString { get; set; } = "No CDNs configured. Click + to add one.";
     [Parameter] public string AddButtonTooltip { get; set; } = "Add CDN";
 
-    [Parameter] public bool AllowKeyEditing { get; set; } = false;
+    [Parameter] public bool AllowKeyEditing { get; set; }
 
     [Parameter] public bool SelfValueControl { get; set; } = true;
     [Parameter] public Action<List<RobustCdnConfig>>? SelfValueControlAction { get; set; }
@@ -62,7 +62,7 @@ public partial class RobustCdnListOption : LocalizedComponentBase
             L["settings-cdns-option-important-warning-title"], parameters, options);
 
         var result = await dialog.Result;
-        if (result is null || result.Canceled)
+        if (result?.Canceled != false)
             return false;
 
         _importantWarningAccepted = true;
@@ -85,13 +85,12 @@ public partial class RobustCdnListOption : LocalizedComponentBase
                 });
 
             var result = await dialog.Result;
-            if (result is null || result.Canceled)
+            if (result?.Canceled != false)
                 return;
         }
 
         _keysUnlocked = !_keysUnlocked;
         await _bridge.WriteSettingsAsync(await _bridge.GetSettingsAsync() with { AllowCdnsKeyChange = _keysUnlocked });
-        StateHasChanged();
     }
 
     private async Task UpdateKey(int index, string key)
@@ -119,6 +118,7 @@ public partial class RobustCdnListOption : LocalizedComponentBase
     {
         if (index < 0 || index >= Value.Count)
             return;
+
         if (!await ConfirmImportantAsync(Value[index]))
             return;
 
@@ -203,17 +203,6 @@ public partial class RobustCdnListOption : LocalizedComponentBase
             await ValueChanged.InvokeAsync(Value);
         else
             SelfValueControlAction?.Invoke(Value);
-    }
-
-    private static string? ValidateUrl(string value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return "URL is required";
-        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri))
-            return "Invalid URL";
-        if (uri.Scheme != Uri.UriSchemeHttps)
-            return "Only HTTPS allowed";
-        return null;
     }
 
     private static string? ValidateKey(string value)

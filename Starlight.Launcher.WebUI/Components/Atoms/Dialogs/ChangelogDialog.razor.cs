@@ -8,7 +8,7 @@ public partial class ChangelogDialog
 {
     [CascadingParameter] private IMudDialogInstance _mudDialog { get; set; } = default!;
 
-    [Parameter] public IReadOnlyList<ChangelogEntry> Entries { get; set; } = Array.Empty<ChangelogEntry>();
+    [Parameter] public IReadOnlyList<ChangelogEntry> Entries { get; set; } = [];
 
     private void Close() => _mudDialog.Close();
 }

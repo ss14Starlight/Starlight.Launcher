@@ -17,19 +17,10 @@ namespace Robust.Launcher.Api.Api;
 /// <summary>
 /// Provides methods for interacting with the authentication API.
 /// </summary>
-public sealed class AuthApi
+public sealed class AuthApi(HttpClient http, ILogger<AuthApi> logger)
 {
-    private readonly HttpClient _httpClient;
-    private readonly ILogger<AuthApi> _logger;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="AuthApi"/> class.
-    /// </summary>
-    public AuthApi(HttpClient http, ILogger<AuthApi> logger)
-    {
-        _httpClient = http;
-        _logger = logger;
-    }
+    private readonly HttpClient _httpClient = http;
+    private readonly ILogger<AuthApi> _logger = logger;
 
     /// <summary>
     /// Authenticates a user.
@@ -45,7 +36,7 @@ public sealed class AuthApi
             if (resp.IsSuccessStatusCode)
             {
                 var respJson = await resp.Content.AsJson<AuthenticateResponse>();
-                var token = new LoginToken() {  Token = respJson.Token, ExpireTime = respJson.ExpireTime };
+                var token = new LoginToken() { Token = respJson.Token, ExpireTime = respJson.ExpireTime };
                 return new AuthenticateResult(new LoginInfo
                 {
                     UserId = respJson.UserId,
@@ -162,7 +153,7 @@ public sealed class AuthApi
         catch (HttpRequestException httpE)
         {
             _logger.LogError(httpE, "HttpRequestException in ForgotPasswordAsync");
-            return new[] { $"Connection error to authentication server: {httpE.Message}" };
+            return [$"Connection error to authentication server: {httpE.Message}"];
         }
     }
 
@@ -359,7 +350,6 @@ public sealed class AuthApi
         /// </summary>
         public AuthenticateRequest(string username, string password) : this(username, null, password)
         {
-
         }
 
         /// <summary>
@@ -367,7 +357,6 @@ public sealed class AuthApi
         /// </summary>
         public AuthenticateRequest(Guid userId, string password) : this(null, userId, password)
         {
-
         }
     }
 
@@ -391,26 +380,32 @@ public sealed class AuthApi
         /// No response
         /// </summary>
         None = 0,
+
         /// <summary>
         /// Invalid credentials
         /// </summary>
         InvalidCredentials = 1,
+
         /// <summary>
         /// Account needs confirmation via email
         /// </summary>
         AccountUnconfirmed = 2,
+
         /// <summary>
         /// Account needs 2fa
         /// </summary>
         TfaRequired = 3,
+
         /// <summary>
         /// Invalid 2fa
         /// </summary>
         TfaInvalid = 4,
+
         /// <summary>
         /// Account banned
         /// </summary>
         AccountLocked = 5,
+
         /// <summary>
         /// Unknown
         /// </summary>
@@ -558,6 +553,7 @@ public enum RegisterResponseStatus
     /// Success
     /// </summary>
     Registered,
+
     /// <summary>
     /// Needs confirmation via email
     /// </summary>

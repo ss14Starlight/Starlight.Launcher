@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -56,6 +55,7 @@ public sealed class ServerStatusCache(HttpClient http, ILogger<ServerStatusCache
         reg.DidInitialStatusUpdate = true;
         lock (reg)
             reg.LastPingAttempt = DateTime.UtcNow;
+
         try
         {
             await reg.Semaphore.WaitAsync();
@@ -77,6 +77,7 @@ public sealed class ServerStatusCache(HttpClient http, ILogger<ServerStatusCache
     }
 
     private const int MaxConcurrentPings = 16;
+
     private static readonly TimeSpan _pingTimeout = TimeSpan.FromSeconds(3);
     private static readonly TimeSpan _pingRetryDelay = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan _pingMaxAge = TimeSpan.FromMinutes(2);
@@ -202,8 +203,8 @@ public sealed class ServerStatusCache(HttpClient http, ILogger<ServerStatusCache
                     _ = response.EnsureSuccessStatusCode();
 
                     status = await response.Content
-                                 .ReadFromJsonAsync<ServerApi.ServerStatus>(linkedToken.Token)
-                             ?? throw new InvalidDataException();
+                        .ReadFromJsonAsync<ServerApi.ServerStatus>(linkedToken.Token)
+                        ?? throw new InvalidDataException();
                 }
 
                 cancel.ThrowIfCancellationRequested();
@@ -305,6 +306,7 @@ public sealed class ServerStatusCache(HttpClient http, ILogger<ServerStatusCache
         {
             if (apiException.IsRateLimited)
                 _logger.LogDebug("Hub: {Url} returned 429 exception(Too Many Requests)!", apiException.RequestUrl);
+
             data.StatusInfo = ServerStatusInfoCode.Error;
             data.NotifyChanged();
             return;
@@ -356,8 +358,8 @@ public sealed class ServerStatusCache(HttpClient http, ILogger<ServerStatusCache
         _cachedData.Clear();
     }
 
-    void IServerSource.UpdateInfoFor(ServerStatusData statusData) =>
-        _ = UpdateInfoForCore(statusData, async cancel =>
+    void IServerSource.UpdateInfoFor(ServerStatusData statusData)
+        => _ = UpdateInfoForCore(statusData, async cancel =>
         {
             var uriBuilder = new UriBuilder(
                 UriHelper.GetServerInfoAddress(statusData.Address))

@@ -15,7 +15,6 @@ public static class UriHelper
 {
     public const string SchemeSs14 = "ss14";
 
-    // ReSharper disable once InconsistentNaming
     public const string SchemeSs14s = "ss14s";
 
     /// <summary>

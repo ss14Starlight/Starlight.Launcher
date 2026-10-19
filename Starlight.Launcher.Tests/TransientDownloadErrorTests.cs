@@ -8,8 +8,8 @@ namespace Starlight.Launcher.Tests;
 
 public sealed class TransientDownloadErrorTests
 {
-    private static DownloadErrorKind Classify(Exception e, bool networkAvailable = true) =>
-        TransientDownloadError.Classify(e, networkAvailable);
+    private static DownloadErrorKind Classify(Exception e, bool networkAvailable = true)
+        => TransientDownloadError.Classify(e, networkAvailable);
 
     [Fact]
     public void TlsFailure_IsFatal()
@@ -87,13 +87,11 @@ public sealed class TransientDownloadErrorTests
     [InlineData(HttpStatusCode.NotFound, DownloadErrorKind.Fatal)]
     [InlineData(HttpStatusCode.Forbidden, DownloadErrorKind.Fatal)]
     public void StatusCodes(HttpStatusCode status, DownloadErrorKind expected)
-    {
-        Assert.Equal(expected, Classify(new HttpRequestException(null, null, status)));
-    }
+        => Assert.Equal(expected, Classify(new HttpRequestException(null, null, status)));
 
     [Fact]
-    public void BareHttpRequestException_IsTransient() =>
-        Assert.Equal(DownloadErrorKind.Transient, Classify(new HttpRequestException("connection closed")));
+    public void BareHttpRequestException_IsTransient()
+        => Assert.Equal(DownloadErrorKind.Transient, Classify(new HttpRequestException("connection closed")));
 
     [Fact]
     public void StallAndTimeout_AreTransient()
@@ -103,18 +101,18 @@ public sealed class TransientDownloadErrorTests
     }
 
     [Fact]
-    public void UnrelatedException_IsFatal() =>
-        Assert.Equal(DownloadErrorKind.Fatal, Classify(new InvalidOperationException()));
+    public void UnrelatedException_IsFatal()
+        => Assert.Equal(DownloadErrorKind.Fatal, Classify(new InvalidOperationException()));
 
     [Theory]
     [InlineData(SocketError.TryAgain)]
     [InlineData(SocketError.NoData)]
-    public void DnsSocketErrors_AreOffline(SocketError error) =>
-        Assert.Equal(DownloadErrorKind.Offline, Classify(new SocketException((int)error)));
+    public void DnsSocketErrors_AreOffline(SocketError error)
+        => Assert.Equal(DownloadErrorKind.Offline, Classify(new SocketException((int)error)));
 
     [Fact]
-    public void ResponseEndedMidStream_IsTransient() =>
-        Assert.Equal(DownloadErrorKind.Transient, Classify(new HttpIOException(HttpRequestError.ResponseEnded)));
+    public void ResponseEndedMidStream_IsTransient()
+        => Assert.Equal(DownloadErrorKind.Transient, Classify(new HttpIOException(HttpRequestError.ResponseEnded)));
 
     [Fact]
     public void OfflineSocketErrorBehindIOException_IsOffline()
@@ -136,12 +134,12 @@ public sealed class TransientDownloadErrorTests
     }
 
     [Fact]
-    public void PlainIOException_IsFatal() =>
-        Assert.Equal(DownloadErrorKind.Fatal, Classify(new IOException("disk full")));
+    public void PlainIOException_IsFatal()
+        => Assert.Equal(DownloadErrorKind.Fatal, Classify(new IOException("disk full")));
 
     [Fact]
-    public void UserCancellation_IsFatal() =>
-        Assert.Equal(DownloadErrorKind.Fatal, Classify(new TaskCanceledException()));
+    public void UserCancellation_IsFatal()
+        => Assert.Equal(DownloadErrorKind.Fatal, Classify(new TaskCanceledException()));
 
     [Fact]
     public void TlsFailure_WithoutNetwork_StaysFatal()
@@ -152,6 +150,6 @@ public sealed class TransientDownloadErrorTests
     }
 
     [Fact]
-    public void TransientStatus_WithoutNetwork_IsOffline() =>
-        Assert.Equal(DownloadErrorKind.Offline, Classify(new HttpRequestException(null, null, HttpStatusCode.BadGateway), networkAvailable: false));
+    public void TransientStatus_WithoutNetwork_IsOffline()
+        => Assert.Equal(DownloadErrorKind.Offline, Classify(new HttpRequestException(null, null, HttpStatusCode.BadGateway), networkAvailable: false));
 }

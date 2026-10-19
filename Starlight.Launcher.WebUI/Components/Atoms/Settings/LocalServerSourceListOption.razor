@@ -59,7 +59,7 @@
                                   Immediate="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Placeholder="https://example.com/fork/name/manifest"
                                   Label="@L["local-server-sources-url-label"]"
-                                  Validation="@(new Func<string, string?>(ValidateUrl))"
+                                  Validation="@(new Func<string, string?>(Starlight.Launcher.WebUI.Models.Helpers.UrlValidation.HttpOrHttps))"
                                   Class="mt-2" />
                 </MudPaper>
             }

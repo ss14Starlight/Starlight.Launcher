@@ -8,8 +8,8 @@ public sealed class ExpandMirrorsTests
     private static RobustCdn Cdn(params string[] mirrors) => new(mirrors) { PublicKey = "" };
 
     [Fact]
-    public void NoCdns_ReturnsOriginalOnly() =>
-        Assert.Equal(["https://a.example/x.zip"], EngineManagerDynamic.ExpandMirrors("https://a.example/x.zip", []));
+    public void NoCdns_ReturnsOriginalOnly()
+        => Assert.Equal(["https://a.example/x.zip"], EngineManagerDynamic.ExpandMirrors("https://a.example/x.zip", []));
 
     [Fact]
     public void UrlOnMirror_ExpandsToAllMirrors_OriginalFirst()

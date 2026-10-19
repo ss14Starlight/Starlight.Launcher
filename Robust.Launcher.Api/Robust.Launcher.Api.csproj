@@ -1,10 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFramework>net10.0</TargetFramework>
 		<Version>1.0.0</Version>
-		<Nullable>enable</Nullable>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 	<ItemGroup>
 		<EmbeddedResource Include="Utility\runtime.json">
@@ -12,19 +10,19 @@
 		</EmbeddedResource>
 	</ItemGroup>
 	<ItemGroup>
-	  <PackageReference Include="CommunityToolkit.Mvvm" Version="[8.2.2]" />
-	  <PackageReference Include="Dapper" Version="2.1.79" />
-	  <PackageReference Include="Microsoft.Extensions.Logging" Version="11.0.0-preview.3.26207.106" />
-	  <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />
-	  <PackageReference Include="NSec.Cryptography" Version="24.9.0-preview.2" />
-	  <PackageReference Include="Serilog" Version="4.3.1" />
-	  <PackageReference Include="SharpZstd.Interop" Version="1.5.6" />
-	  <PackageReference Include="SpaceWizards.Sodium" Version="0.3.0" />
-	  <PackageReference Include="System.Net.Http.WinHttpHandler" Version="10.0.8" />
+	  <PackageReference Include="CommunityToolkit.Mvvm" />
+	  <PackageReference Include="Dapper" />
+	  <PackageReference Include="Microsoft.Extensions.Logging" />
+	  <PackageReference Include="Mono.Posix.NETStandard" />
+	  <PackageReference Include="NSec.Cryptography" />
+	  <PackageReference Include="Serilog" />
+	  <PackageReference Include="SharpZstd.Interop" />
+	  <PackageReference Include="SpaceWizards.Sodium" />
+	  <PackageReference Include="System.Net.Http.WinHttpHandler" />
 	  <PackageReference Include="SQLitePCLRaw.provider.sqlite3" Condition="'$(UseSystemSqlite)' == 'True'" />
-	  <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Condition="'$(UseSystemSqlite)' != 'True'" Version="3.0.3" />
-	  <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="10.0.8" />
-	  <PackageReference Include="TerraFX.Interop.Windows" Version="10.0.26100.6" />
-	  <PackageReference Include="YamlDotNet" Version="17.1.0" />
+	  <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Condition="'$(UseSystemSqlite)' != 'True'" />
+	  <PackageReference Include="Microsoft.Data.Sqlite.Core" />
+	  <PackageReference Include="TerraFX.Interop.Windows" />
+	  <PackageReference Include="YamlDotNet" />
 	</ItemGroup>
 </Project>

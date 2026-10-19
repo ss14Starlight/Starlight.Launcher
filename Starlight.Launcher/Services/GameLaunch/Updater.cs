@@ -12,7 +12,6 @@ using Starlight.Launcher.Services.GameLaunch;
 using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI.Models.DiscordRichPresence;
 using Starlight.Launcher.WebUI.Models.Updater;
-using System.Diagnostics.CodeAnalysis;
 using System.IO.Compression;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -32,7 +31,7 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
 
     // Pauses before each automatic retry of a download that failed on a network error.
     // Content blobs that made it are kept as an interrupted download, so each retry only fetches the rest.
-    private static readonly TimeSpan[] RetryDelays =
+    private static readonly TimeSpan[] _retryDelays =
     [
         TimeSpan.FromSeconds(2),
         TimeSpan.FromSeconds(5),
@@ -68,7 +67,7 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
 
     private async Task<T> GuardUpdateAsync<T>(Func<Task<T>> func, CancellationToken cancel)
     {
-        if (!_updateLock.Wait(0))
+        if (!_updateLock.Wait(0, cancel))
         {
             Log.Information("Another update is in progress, waiting for it to finish");
             await _updateLock.WaitAsync(cancel);
@@ -112,8 +111,7 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
         // So use a Lazy<Task<T>> to avoid loading it twice.
         var moduleManifest = NewModuleManifest(cancel);
 
-        // ReSharper disable once UseAwaitUsing
-        using var con = _manager.GetSqliteConnection();
+        await using var con = _manager.GetSqliteConnection();
         var versionRowId = await RetryTransientAsync(
             () => Task.Run(
                 () => TouchOrDownloadContentUpdateTransacted(buildInfo, con, moduleManifest, cancel),
@@ -134,8 +132,7 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
         ContentBundleMetadata metadata,
         CancellationToken cancel)
     {
-        // ReSharper disable once UseAwaitUsing
-        using var con = _manager.GetSqliteConnection();
+        await using var con = _manager.GetSqliteConnection();
 
         Status = UpdateStatus.LoadingContentBundle;
 
@@ -145,8 +142,7 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
 
         var versionId = await Task.Run(async () =>
         {
-            // ReSharper disable once UseAwaitUsing
-            using var transaction = con.BeginTransaction();
+            await using var transaction = con.BeginTransaction();
 
             // The launcher interprets a "content bundle" zip differently from one loaded via server download.
             // As such, we must keep these distinct in the database, even if the file is the same.
@@ -226,7 +222,9 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
 
                 if (baseBuildId is not { } baseId
                     || !TryCopyContentDependencies(con, versionId, baseId, metadata.EngineVersion))
+                {
                     await ResolveContentDependencies(con, versionId, metadata.EngineVersion, moduleManifest);
+                }
             }
             else
             {
@@ -310,7 +308,7 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
     {
         for (var i = 0; ; i++)
         {
-            DownloadErrorKind kind = default;
+            DownloadErrorKind kind;
             try
             {
                 var result = await attempt();
@@ -318,10 +316,10 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
                 return result;
             }
             catch (Exception e) when (!cancel.IsCancellationRequested
-                                      && (kind = TransientDownloadError.Classify(e)) != DownloadErrorKind.Fatal
-                                      && i < MaxRetries(kind))
+                && (kind = TransientDownloadError.Classify(e)) != DownloadErrorKind.Fatal
+                && i < MaxRetries(kind))
             {
-                var delay = RetryDelays[i];
+                var delay = _retryDelays[i];
                 var maxAttempts = MaxRetries(kind) + 1;
                 Log.Warning(e, "Download failed on a network error ({Kind}), retrying in {Delay} (attempt {Attempt}/{Max})",
                     kind, delay, i + 2, maxAttempts);
@@ -339,14 +337,14 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
 
     private const int MaxOfflineRetries = 1;
 
-    private static int MaxRetries(DownloadErrorKind kind) =>
-        kind == DownloadErrorKind.Offline ? MaxOfflineRetries : RetryDelays.Length;
+    private static int MaxRetries(DownloadErrorKind kind)
+        => kind == DownloadErrorKind.Offline ? MaxOfflineRetries : _retryDelays.Length;
 
-    private Lazy<Task<EngineModuleManifest>> NewModuleManifest(CancellationToken cancel) =>
-        new(() => _engineManager.GetEngineModuleManifest(cancel));
+    private Lazy<Task<EngineModuleManifest>> NewModuleManifest(CancellationToken cancel)
+        => new(() => _engineManager.GetEngineModuleManifest(cancel));
 
-    private Lazy<Task<EngineModuleManifest>> ResetIfFaulted(Lazy<Task<EngineModuleManifest>> manifest, CancellationToken cancel) =>
-        manifest is { IsValueCreated: true, Value.IsFaulted: true } ? NewModuleManifest(cancel) : manifest;
+    private Lazy<Task<EngineModuleManifest>> ResetIfFaulted(Lazy<Task<EngineModuleManifest>> manifest, CancellationToken cancel)
+        => manifest is { IsValueCreated: true, Value.IsFaulted: true } ? NewModuleManifest(cancel) : manifest;
 
     private void CullOldContentVersions(SqliteConnection con)
     {
@@ -384,24 +382,21 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
             var keep = count < maxForkVersions && totalCount < maxVersions;
             if (keep)
             {
-                count += 1;
-                totalCount += 1;
+                count++;
+                totalCount++;
+            }
+            else if (usedVersions.Contains(version.Id))
+            {
+                Log.Debug(
+                    "Not culling version {ForkId}/{ForkVersion}: in use by running client",
+                    version.ForkId,
+                    version.ForkVersion);
             }
             else
             {
-                if (usedVersions.Contains(version.Id))
-                {
-                    Log.Debug(
-                        "Not culling version {ForkId}/{ForkVersion}: in use by running client",
-                        version.ForkId,
-                        version.ForkVersion);
-                }
-                else
-                {
-                    Log.Debug("Culling version {ForkId}/{ForkVersion}", version.ForkId, version.ForkVersion);
-                    _ = con.Execute("DELETE FROM ContentVersion WHERE Id = @Id", new { version.Id });
-                    anythingRemoved = true;
-                }
+                Log.Debug("Culling version {ForkId}/{ForkVersion}", version.ForkId, version.ForkVersion);
+                _ = con.Execute("DELETE FROM ContentVersion WHERE Id = @Id", new { version.Id });
+                anythingRemoved = true;
             }
         }
 
@@ -451,12 +446,12 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
             var hash = Convert.FromHexString(manifestHashHex);
 
             found = con.QueryFirstOrDefault<ContentVersion>(
-                "SELECT * FROM ContentVersion cv " +
-                "WHERE Hash = @Hash " +
-                "ORDER BY ForkVersion = @ForkVersion " +
-                "AND ForkId = @ForkId " +
-                "AND (SELECT ModuleVersion FROM ContentEngineDependency ced WHERE ced.VersionId = cv.Id AND ModuleName = 'Robust') = @EngineVersion " +
-                "DESC",
+                "SELECT * FROM ContentVersion cv "
+                    + "WHERE Hash = @Hash "
+                    + "ORDER BY ForkVersion = @ForkVersion "
+                    + "AND ForkId = @ForkId "
+                    + "AND (SELECT ModuleVersion FROM ContentEngineDependency ced WHERE ced.VersionId = cv.Id AND ModuleName = 'Robust') = @EngineVersion "
+                    + "DESC",
                 new { Hash = hash, ForkVersion = buildInfo.Version, buildInfo.ForkId, buildInfo.EngineVersion });
         }
         else if (buildInfo.Hash is { } hashHex)
@@ -465,11 +460,11 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
             var hash = Convert.FromHexString(hashHex);
 
             found = con.QueryFirstOrDefault<ContentVersion>(
-                "SELECT * FROM ContentVersion cv WHERE ZipHash = @ZipHash " +
-                "ORDER BY ForkVersion = @ForkVersion " +
-                "AND ForkId = @ForkId " +
-                "AND (SELECT ModuleVersion FROM ContentEngineDependency ced WHERE ced.VersionId = cv.Id AND ModuleName = 'Robust') = @EngineVersion " +
-                "DESC",
+                "SELECT * FROM ContentVersion cv WHERE ZipHash = @ZipHash "
+                    + "ORDER BY ForkVersion = @ForkVersion "
+                    + "AND ForkId = @ForkId "
+                    + "AND (SELECT ModuleVersion FROM ContentEngineDependency ced WHERE ced.VersionId = cv.Id AND ModuleName = 'Robust') = @EngineVersion "
+                    + "DESC",
                 new { ZipHash = hash, ForkVersion = buildInfo.Version, buildInfo.ForkId, buildInfo.EngineVersion });
         }
         else
@@ -479,9 +474,9 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
             // Testing I guess?
 
             found = con.QueryFirstOrDefault<ContentVersion>(
-                "SELECT * FROM ContentVersion cv WHERE ForkId = @ForkId AND ForkVersion = @Version " +
-                "ORDER BY (SELECT ModuleVersion FROM ContentEngineDependency ced WHERE ced.VersionId = cv.Id AND ModuleName = 'Robust') = @EngineVersion " +
-                "DESC",
+                "SELECT * FROM ContentVersion cv WHERE ForkId = @ForkId AND ForkVersion = @Version "
+                    + "ORDER BY (SELECT ModuleVersion FROM ContentEngineDependency ced WHERE ced.VersionId = cv.Id AND ModuleName = 'Robust') = @EngineVersion "
+                    + "DESC",
                 new { buildInfo.ForkId, buildInfo.Version, buildInfo.EngineVersion });
         }
 
@@ -490,11 +485,10 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
             Log.Debug("Did not find matching version");
             return null;
         }
-        else
-        {
-            Log.Debug("Found matching version: {Version}", found.Id);
-            return found;
-        }
+
+        Log.Debug("Found matching version: {Version}", found.Id);
+
+        return found;
     }
 
     private async Task<long> TouchOrDownloadContentUpdate(
@@ -524,8 +518,7 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
         Lazy<Task<EngineModuleManifest>> moduleManifest,
         CancellationToken cancel)
     {
-        // ReSharper disable once UseAwaitUsing
-        using var transaction = con.BeginTransaction();
+        await using var transaction = con.BeginTransaction();
 
         var transactedState = new TransactedDownloadState();
 
@@ -587,7 +580,6 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
             _ = con.Execute("DELETE FROM ContentVersion WHERE Id = @Id", new { Id = contentVersion });
     }
 
-    [SuppressMessage("ReSharper", "MethodHasAsyncOverload")]
     private static async Task<long> DuplicateExistingVersion(
         ServerBuildInformation buildInfo,
         SqliteConnection con,
@@ -607,8 +599,8 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
                 "SELECT ModuleVersion FROM ContentEngineDependency WHERE ModuleName = 'Robust' AND VersionId = @Version",
                 new { Version = existingVersion.Id });
 
-        var changedFork = buildInfo.ForkId != existingVersion.ForkId ||
-                          buildInfo.Version != existingVersion.ForkVersion;
+        var changedFork = buildInfo.ForkId != existingVersion.ForkId
+            || buildInfo.Version != existingVersion.ForkVersion;
         var changedEngineVersion = engineVersion != curEngineVersion;
 
         if (changedFork || changedEngineVersion)
@@ -656,7 +648,8 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
                         WHERE VersionId = @OldVersion AND ModuleName != 'Robust'", new
                 {
                     OldVersion = existingVersion.Id
-                }).ToArray();
+                })
+                    .ToArray();
 
                 if (oldDependencies.Length > 0)
                 {
@@ -705,10 +698,10 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
 
     private static void TouchVersion(SqliteConnection con, long versionId) => con.Execute("UPDATE ContentVersion SET LastUsed = datetime('now') WHERE Id = @Version", new { Version = versionId });
 
+    /// <summary>
+    /// Downloads new version of server build
+    /// </summary>
     /// <returns>The manifest hash</returns>
-    [SuppressMessage("ReSharper", "MethodHasAsyncOverload")]
-    [SuppressMessage("ReSharper", "MethodHasAsyncOverloadWithCancellation")]
-    [SuppressMessage("ReSharper", "UseAwaitUsing")]
     private async Task<long> DownloadNewVersion(
         ServerBuildInformation buildInfo,
         SqliteConnection con,
@@ -732,13 +725,22 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
         // Store the created version ID so we can manually delete it later if necessary.
         state.MadeContentVersion = versionId;
 
-        var manifestHash = !string.IsNullOrEmpty(buildInfo.ManifestUrl)
+        byte[] manifestHash;
+        if (!string.IsNullOrEmpty(buildInfo.ManifestUrl)
             && !string.IsNullOrEmpty(buildInfo.ManifestDownloadUrl)
-            && !string.IsNullOrEmpty(buildInfo.ManifestHash)
-            ? await ManifestDownloadNewVersion(buildInfo, con, versionId, state, cancel)
-            : !string.IsNullOrEmpty(buildInfo.DownloadUrl)
-            ? await ZipDownloadNewVersion(buildInfo, con, versionId, cancel)
-            : throw new InvalidOperationException("No download information provided at all!");
+            && !string.IsNullOrEmpty(buildInfo.ManifestHash))
+        {
+            manifestHash = await ManifestDownloadNewVersion(buildInfo, con, versionId, state, cancel);
+        }
+        else if (!string.IsNullOrEmpty(buildInfo.DownloadUrl))
+        {
+            manifestHash = await ZipDownloadNewVersion(buildInfo, con, versionId, cancel);
+        }
+        else
+        {
+            throw new InvalidOperationException("No download information provided at all!");
+        }
+
         Log.Debug("Manifest hash: {ManifestHash}", Convert.ToHexString(manifestHash));
 
         _ = con.Execute(
@@ -776,7 +778,7 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
 
         var modules = manifestData.Modules;
 
-        if (modules.Length <= 0)
+        if (modules.Length == 0)
             return;
 
         var manifest = await moduleManifest.Value;
@@ -916,8 +918,7 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
             return null;
 
         using var streamReader = new StreamReader(resourceManifest);
-        var manifestData = _resourceManifestDeserializer.Deserialize<ResourceManifestData?>(streamReader);
-        return manifestData;
+        return _resourceManifestDeserializer.Deserialize<ResourceManifestData?>(streamReader);
     }
 
     private static byte[] TransformContentBundleZipHash(ReadOnlySpan<byte> zipHash)
@@ -934,7 +935,7 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
     public sealed class ResourceManifestData
     {
         public string[] Modules = [];
-        public bool MultiWindow = false;
+        public bool MultiWindow;
     }
 
     private sealed class TransactedDownloadState

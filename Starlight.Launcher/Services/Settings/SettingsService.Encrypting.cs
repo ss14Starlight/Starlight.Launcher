@@ -18,9 +18,9 @@ public sealed partial class SettingsService
 
     private static bool LooksEncrypted(byte[] data) => LoginsCipher.LooksEncrypted(data);
 
-    private async Task<byte[]> EncryptAsync(byte[] plaintext) =>
-        LoginsCipher.Encrypt(await GetLoginKeyAsync(), plaintext);
+    private async Task<byte[]> EncryptAsync(byte[] plaintext)
+        => LoginsCipher.Encrypt(await GetLoginKeyAsync(), plaintext);
 
-    private async Task<byte[]> DecryptAsync(byte[] data) =>
-        LoginsCipher.Decrypt(await GetLoginKeyAsync(), data);
+    private async Task<byte[]> DecryptAsync(byte[] data)
+        => LoginsCipher.Decrypt(await GetLoginKeyAsync(), data);
 }

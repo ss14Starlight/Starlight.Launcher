@@ -8,7 +8,17 @@ namespace Starlight.Launcher.Services.Diagnostics;
 /// </summary>
 public static class CrashDumps
 {
-    private const string Extension = ".dmp";
+    public const string Extension = ".dmp";
+
+    /// <summary>
+    /// Appended to the dump name by the runtime when <c>DOTNET_EnableCrashReport</c> is set.
+    /// </summary>
+    public const string CrashReportSuffix = ".crashreport.json";
+
+    /// <summary>
+    /// Prefix of dumps taken on request from a live client, so they aren't mistaken for crashes.
+    /// </summary>
+    public const string SnapshotPrefix = "snapshot-";
 
     private const string DumpType = "2";
 
@@ -22,21 +32,29 @@ public static class CrashDumps
         yield return ("DOTNET_DbgMiniDumpType", DumpType);
         yield return ("DOTNET_DbgMiniDumpName", Path.Combine(dir, $"%e-%p-%t{Extension}"));
         yield return ("DOTNET_CreateDumpDiagnostics", "1");
+
+        // Stacks of every thread as JSON next to the dump, readable without a debugger. Not implemented on Windows.
+        if (!OperatingSystem.IsWindows())
+            yield return ("DOTNET_EnableCrashReport", "1");
     }
 
     /// <summary>
-    /// Dumps written by the client with the given pid, if any.
+    /// Dumps and crash reports written by the client with the given pid when it crashed, if any.
     /// </summary>
     public static IEnumerable<string> FindForProcess(AppSettings settings, int pid)
     {
         var dir = settings.DirCrashDumps;
-        if (!Directory.Exists(dir))
-            return [];
-
-        return Directory.EnumerateFiles(dir, $"*-{pid}-*{Extension}");
+        return !Directory.Exists(dir)
+            ? []
+            : Directory.EnumerateFiles(dir, $"*-{pid}-*")
+                .Where(f => !Path.GetFileName(f).StartsWith(SnapshotPrefix, StringComparison.Ordinal)
+                    && (f.EndsWith(Extension, StringComparison.Ordinal) || f.EndsWith(CrashReportSuffix, StringComparison.Ordinal)));
     }
 
-    private static void Prune(string dir, int keep)
+    /// <summary>
+    /// Deletes all but the newest <paramref name="keep"/> dumps, together with their crash reports.
+    /// </summary>
+    public static void Prune(string dir, int keep)
     {
         var old = new DirectoryInfo(dir).EnumerateFiles($"*{Extension}")
             .OrderByDescending(f => f.LastWriteTimeUtc)
@@ -47,6 +65,7 @@ public static class CrashDumps
             try
             {
                 file.Delete();
+                File.Delete(file.FullName + CrashReportSuffix);
                 Log.Debug("Deleted old crash dump {File}", file.FullName);
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)

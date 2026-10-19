@@ -136,7 +136,9 @@ public sealed partial class EngineManagerDynamic : IEngineManager
         {
             if (!string.IsNullOrEmpty(installed.Sha256)
                 && string.Equals(installed.Sha256, buildInfo.Sha256, StringComparison.OrdinalIgnoreCase))
+            {
                 return new EngineInstallationResult(foundVersion.Version, false);
+            }
 
             Log.Information(
                 "Engine {Version} is installed but its hash ({Have}) does not match the requested build ({Want}); re-downloading.",
@@ -451,7 +453,7 @@ public sealed partial class EngineManagerDynamic : IEngineManager
         await ClearModuleDir(modPath, modVersionPath);
 
         var zipPath = FindOverrideZip(name, _settings.GetSettings().EngineOverridePath);
-        using var zip = File.OpenRead(zipPath);
+        await using var zip = File.OpenRead(zipPath);
 
         // Note: not marking directory as compressed since it would take a while to start.
         ExtractModule(name, modVersionPath, zip);
@@ -521,7 +523,9 @@ public sealed partial class EngineManagerDynamic : IEngineManager
         if (_verifiedEngineKeys.TryGetValue(engineVersion, out var cached)
             && cached with { PublicKey = "" } == stamp
             && cdns.Any(c => c.PublicKey == cached.PublicKey))
+        {
             return WriteLoaderKey(cached.PublicKey);
+        }
 
         using var stream = File.OpenRead(enginePath);
 
@@ -624,9 +628,7 @@ public sealed partial class EngineManagerDynamic : IEngineManager
             }
         }
 
-        var toCull = _settings.GetEngines().Values.Where(i => !modulesUsed.Contains(("Robust", i.Version))).ToArray();
-
-        foreach (var installation in toCull)
+        foreach (var installation in _settings.GetEngines().Values.Where(i => !modulesUsed.Contains(("Robust", i.Version))).ToArray())
         {
             Log.Debug("Culling unused version {engineVersion}", installation.Version);
 
@@ -638,9 +640,7 @@ public sealed partial class EngineManagerDynamic : IEngineManager
         }
 
         // Cull modules
-        var toCullModules = _settings.GetModules().Where(m => !modulesUsed.Contains((m.Name, m.Version))).ToArray();
-
-        foreach (var module in toCullModules)
+        foreach (var module in _settings.GetModules().Where(m => !modulesUsed.Contains((m.Name, m.Version))).ToArray())
         {
             Log.Debug("Culling unused module {EngineModule}", module);
 

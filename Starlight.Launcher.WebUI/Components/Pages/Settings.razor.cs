@@ -1,46 +1,37 @@
-﻿using System.Globalization;
+using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
-using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 using Starlight.Launcher.WebUI.Components.Atoms.Settings;
-using Starlight.Launcher.WebUI.Localization;
 using Starlight.Launcher.WebUI.Models.Data;
 using Starlight.Launcher.WebUI.Models.Settings;
 using Starlight.Launcher.WebUI.Services;
 
 namespace Starlight.Launcher.WebUI.Components.Pages;
 
-public partial class Settings : LocalizedComponentBase, IDisposable
+public partial class Settings : SettingsPageBase
 {
-    [Inject] private IBridge _bridge { get; set; } = default!;
-    [Inject] private AppState _state { get; set; } = default!;
     [Inject] private IDialogService _dialog { get; set; } = default!;
     [Inject] private IFileDialogService _fileDialog { get; set; } = default!;
     [Inject] private NavigationManager _navigation { get; set; } = default!;
     [Inject] private ISnackbar _snackbar { get; set; } = default!;
     [Inject] private ILogger<Settings> _logger { get; set; } = default!;
+
     private List<string> _availableLanguages = [];
 
     // Values of the engine's audio.output_mode cvar, null (the empty option) is automatic.
-    private static readonly List<string> AudioOutputModes = ["stereo", "headphones", "quad", "5.1", "7.1", "mono"];
+    private static readonly List<string> _audioOutputModes = ["stereo", "headphones", "quad", "5.1", "7.1", "mono"];
 
     private string AudioOutputModeName(string mode) => L[$"settings-menu-audio-output-mode-{mode switch { "5.1" => "surround51", "7.1" => "surround71", _ => mode }}"];
 
-    private MudTabs _tabs = null!;
-
-    private MudTabPanel _generalTab = null!;
-    private MudTabPanel _developmentTab = null!;
-
-    private AppSettings? _appSettingsCache = null;
-    private DateTime _lastCacheUpdate;
-    private readonly TimeSpan _cacheUpdateInterval = TimeSpan.FromSeconds(2);
+    private bool _developerMode;
 
     protected override async Task OnInitializedAsync()
     {
-        var settings = await _bridge.GetSettingsAsync();
-        _availableLanguages = L.EnumarateAllLoadedLanguages().Select(x => new CultureInfo(x).Name).ToList();
+        var settings = await Bridge.GetSettingsAsync();
+        _developerMode = settings.DeveloperMode;
+        _availableLanguages = L.EnumarateAllLoadedLanguages().ConvertAll(x => new CultureInfo(x).Name);
         await base.OnInitializedAsync();
     }
 
@@ -57,13 +48,13 @@ public partial class Settings : LocalizedComponentBase, IDisposable
 
         var settings = new AppSettings
         {
-            LastSeenChangelogVersion = _bridge.GetVersion()
+            LastSeenChangelogVersion = Bridge.GetVersion()
         };
 
-        await _bridge.WriteSettingsAsync(settings);
+        await Bridge.WriteSettingsAsync(settings);
 
-        _appSettingsCache = null;
-        _state.CallUpdate();
+        ResetSettingsCache();
+        State.CallUpdate();
 
         _navigation.NavigateTo("/settings", forceLoad: true);
     }
@@ -72,19 +63,25 @@ public partial class Settings : LocalizedComponentBase, IDisposable
         "settings-menu-clear-engines-confirm-title",
         "settings-menu-clear-engines-confirm-text",
         "settings-menu-clear-engines-success",
-        _bridge.ClearEnginesAsync);
+        Bridge.ClearEnginesAsync);
 
     private Task OnClearContent() => ClearDataAsync(
         "settings-menu-clear-content-confirm-title",
         "settings-menu-clear-content-confirm-text",
         "settings-menu-clear-content-success",
-        _bridge.ClearContentAsync);
+        Bridge.ClearContentAsync);
 
-    private async Task OnOpenCrashDumps()
+    private async Task OnCreateDiagnosticsBundle()
     {
-        var dir = (await _bridge.GetSettingsAsync()).DirCrashDumps;
-        _ = Directory.CreateDirectory(dir);
-        _bridge.OpenPath(dir);
+        var result = await Bridge.CreateDiagnosticsBundleAsync();
+        if (!result.Success || result.Path is null)
+        {
+            _ = _snackbar.Add(L["settings-menu-diagnostics-bundle-failed"], Severity.Error);
+            return;
+        }
+
+        _ = _snackbar.Add(L.GetString("settings-menu-diagnostics-bundle-success", ("path", result.Path)), Severity.Success);
+        Bridge.OpenPath(Path.GetDirectoryName(result.Path)!);
     }
 
     private async Task ClearDataAsync(string titleKey, string textKey, string successKey, Func<Task<DataResetResult>> clear)
@@ -111,7 +108,7 @@ public partial class Settings : LocalizedComponentBase, IDisposable
 
     private async Task CheckUpdate()
     {
-        var info = await _bridge.IsUpdateAvailable();
+        var info = await Bridge.IsUpdateAvailable();
         if (!info.IsUpdateAvailable)
         {
             _ = _snackbar.Add(L["settings-menu-update-latest"], Severity.Success);
@@ -124,7 +121,7 @@ public partial class Settings : LocalizedComponentBase, IDisposable
             config =>
             {
                 config.Action = L["settings-menu-update-download"];
-                config.ActionColor = MudBlazor.Color.Primary;
+                config.ActionColor = Color.Primary;
                 config.OnClick = __ =>
                 {
                     if (info.Asset is { } asset)
@@ -145,20 +142,22 @@ public partial class Settings : LocalizedComponentBase, IDisposable
                     }
                     else
                     {
-                        _bridge.OpenBrowser(info.ReleasePageUrl);
+                        Bridge.OpenBrowser(info.ReleasePageUrl);
                     }
+
                     return Task.CompletedTask;
                 };
             });
     }
 
-    private async void OnActivePanelIndexChanged(int value)
+    /// <summary>
+    /// Turning developer mode on shows the warning first, the switch only flips once it's accepted.
+    /// </summary>
+    private async Task OnDeveloperModeChanged(bool value)
     {
         try
         {
-            var index = _tabs.Panels.Select((value, index) => (value, index)).FirstOrDefault(x => ReferenceEquals(x.value, _developmentTab)).index;
-
-            if (value == index)
+            if (value)
             {
                 var options = new DialogOptions
                 {
@@ -168,21 +167,17 @@ public partial class Settings : LocalizedComponentBase, IDisposable
                     BackdropClick = false,
                 };
 
-                var settings = await _bridge.GetSettingsAsync();
-                if (!settings.DevPolicyAccepted)
-                {
-                    var dialog = await _dialog.ShowAsync<AlertDialog>(L["settings-development-tab-alert-title"], options);
-                    if (dialog.Dialog is AlertDialog alert)
-                    {
-                        alert.OnSuccess += async () => await UpdateSetting(s => s with { DevPolicyAccepted = true });
-                        alert.OnCancel += async () => await _tabs.ActivatePanelAsync(_generalTab);
-                    }
-                }
+                var dialog = await _dialog.ShowAsync<AlertDialog>(L["settings-development-tab-alert-title"], options);
+                if (await dialog.Result is not { Canceled: false })
+                    return;
             }
+
+            _developerMode = value;
+            await UpdateSetting(s => s with { DeveloperModeStored = value, DevPolicyAccepted = s.DevPolicyAccepted || value }, callWindowUpdate: true);
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Failed to handle settings tab change");
+            _logger.LogError(e, "Failed to switch developer mode");
         }
     }
 
@@ -200,7 +195,7 @@ public partial class Settings : LocalizedComponentBase, IDisposable
     {
         await UpdateSetting(s => s with { DirLauncherData = path });
 
-        if (await _bridge.IsDirectoryWritableAsync(path))
+        if (await Bridge.IsDirectoryWritableAsync(path))
             return;
 
         _ = await _dialog.ShowMessageBoxAsync(
@@ -209,44 +204,14 @@ public partial class Settings : LocalizedComponentBase, IDisposable
             yesText: L["general-close"]);
     }
 
-    private Task OnSettingChanged<T>(T value, Action<T>? setLocal, Func<AppSettings, T, AppSettings> update, bool callWindowUpdate = false)
-    {
-        setLocal?.Invoke(value);
-        return UpdateSetting(s => update(s, value), callWindowUpdate);
-    }
-
-    private async Task UpdateSetting(Func<AppSettings, AppSettings> update, bool callWindowUpdate = false)
-    {
-        await Task.Run(() => _bridge.UpdateSettings(update));
-        if (callWindowUpdate)
-            _state.CallUpdate();
-    }
-
-    private async Task<T> FetchSettings<T>(Func<AppSettings, T> func)
-    {
-        AppSettings settings;
-        if (_appSettingsCache != null &&
-            DateTime.Now - _lastCacheUpdate < _cacheUpdateInterval)
-        {
-            settings = _appSettingsCache;
-        }
-        else
-        {
-            settings = await _bridge.GetSettingsAsync();
-            _appSettingsCache = settings;
-            _lastCacheUpdate = DateTime.Now;
-        }
-
-        var result = func(settings);
-        return result;
-    }
-
     private static List<Hub> ConvertToHubList(List<(string Url, long Priority)> list)
     {
         List<Hub> hubUris = [];
-        foreach (var (Url, Priority) in list)
-            if (Uri.TryCreate(Url, UriKind.Absolute, out var uri))
-                hubUris.Add(new Hub { HubUri = uri, Priority = Priority });
+        foreach (var (url, priority) in list)
+        {
+            if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
+                hubUris.Add(new Hub { HubUri = uri, Priority = priority });
+        }
 
         return hubUris;
     }

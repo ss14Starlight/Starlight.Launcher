@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Robust.Launcher.Api.Models.ServerStatus;
@@ -138,8 +138,8 @@ public partial class Servers : LocalizedComponentBase, IDisposable
         {
             var q = _filters.SearchQuery.Trim();
             query = query.Where(s =>
-                (s.Name?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                s.Address.Contains(q, StringComparison.OrdinalIgnoreCase));
+                (s.Name?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false)
+                    || s.Address.Contains(q, StringComparison.OrdinalIgnoreCase));
         }
 
         if (_filters.SelectedRP.Count > 0)
@@ -164,6 +164,7 @@ public partial class Servers : LocalizedComponentBase, IDisposable
 
         if (_filters.HideEmpty)
             query = query.Where(s => GetPlayers(s) > 0);
+
         if (_filters.HideFull)
             query = query.Where(s => GetPlayers(s) < GetMaxPlayers(s));
 
@@ -233,6 +234,7 @@ public partial class Servers : LocalizedComponentBase, IDisposable
 
         if (settings.IgnoredServers.Any(x => x.Name == server.Name || x.Address == server.Address))
             return;
+
         _bridge.UpdateSettings(s => s with { IgnoredServers = [.. s.IgnoredServers, new IgnoredServer(server.Name, server.Address)] });
 
         ApplyFilters();
@@ -347,15 +349,18 @@ public partial class Servers : LocalizedComponentBase, IDisposable
     private static int GetPlayers(ServerStatusData s) => s.PlayerCount;
     private static int GetMaxPlayers(ServerStatusData s) => s.SoftMaxPlayerCount;
     private static int GetPing(ServerStatusData s) => (int?)(s.Ping?.TotalMilliseconds) ?? int.MaxValue;
-    private static IEnumerable<string> GetTags(ServerStatusData s) => s.Tags.Where(t => !string.IsNullOrWhiteSpace(t))!;
+    private static IEnumerable<string> GetTags(ServerStatusData s) => s.Tags.Where(t => !string.IsNullOrWhiteSpace(t));
     private static string? GetLanguage(ServerStatusData s) => s.Tags.FirstOrDefault(x => x.StartsWith("lang:"));
     private static string? GetRegion(ServerStatusData s) => s.Tags.FirstOrDefault(x => x.StartsWith("region:"));
 
     private static bool IsAdult(ServerStatusData s)
     {
         foreach (var t in GetTags(s))
+        {
             if (t is "18+" or "+18")
                 return true;
+        }
+
         return false;
     }
 

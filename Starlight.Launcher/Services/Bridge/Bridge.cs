@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
@@ -9,6 +9,7 @@ using Serilog;
 using Starlight.Launcher.Services.Auth;
 using Starlight.Launcher.Services.ContentManagement;
 using Starlight.Launcher.Services.DeepLink;
+using Starlight.Launcher.Services.Diagnostics;
 using Starlight.Launcher.Services.Discord;
 using Starlight.Launcher.Services.EngineManager;
 using Starlight.Launcher.Services.Friends;
@@ -18,6 +19,7 @@ using Starlight.Launcher.Services.LocalServer;
 using Starlight.Launcher.Services.Replays;
 using Starlight.Launcher.Services.ServerStatus;
 using Starlight.Launcher.Services.Settings;
+using Starlight.Launcher.Services.Tray;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Models.Helpers;
 using Starlight.Launcher.WebUI.Services;
@@ -30,7 +32,9 @@ public sealed partial class Bridge(LauncherCommands commands, Connector connecto
     SettingsService settings, Updater updater, IFileDialogService fileDialog,
     INativeTray tray, LocalServerManager localServer, StarlightAuthApi starlightAuth,
     EngineSourceGuard engineSourceGuard, ContentManager content, IEngineManager engineManager,
-    JournalService journal, ServerMonitor monitor, FriendsService friends, ReplaysService replays) : IBridge
+    JournalService journal, ServerMonitor monitor, FriendsService friends, ReplaysService replays,
+    ClientDiagnostics clientDiagnostics, DiagnosticsBundle diagnosticsBundle, ClientConsole clientConsole,
+    DotnetTools dotnetTools, RenderDocInstaller renderDoc) : IBridge
 {
     private readonly LauncherCommands _commands = commands;
     private readonly Connector _connector = connector;
@@ -54,6 +58,11 @@ public sealed partial class Bridge(LauncherCommands commands, Connector connecto
     private readonly ServerMonitor _monitor = monitor;
     private readonly FriendsService _friends = friends;
     private readonly ReplaysService _replays = replays;
+    private readonly ClientDiagnostics _clientDiagnostics = clientDiagnostics;
+    private readonly DiagnosticsBundle _diagnosticsBundle = diagnosticsBundle;
+    private readonly ClientConsole _clientConsole = clientConsole;
+    private readonly DotnetTools _dotnetTools = dotnetTools;
+    private readonly RenderDocInstaller _renderDoc = renderDoc;
     private Window? _window;
 
     public void OpenBrowser(string url)
@@ -114,14 +123,17 @@ public sealed partial class Bridge(LauncherCommands commands, Connector connecto
     [LibraryImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static partial bool ReleaseCapture();
+
     [LibraryImport("user32.dll", EntryPoint = "SendMessageW")]
     private static partial IntPtr SendMessage(IntPtr h, uint m, IntPtr w, IntPtr l);
+
     private const uint WM_NCLBUTTONDOWN = 0x00A1;
     private const int HTCAPTION = 2;
 
     public void BeginWindowDrag() => Dispatcher.UIThread.Post(() =>
     {
         if (!OperatingSystem.IsWindows()) { return; }
+
         if (_window?.TryGetPlatformHandle()?.Handle is not { } hwnd) return;
 
         try

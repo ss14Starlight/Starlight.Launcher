@@ -8,6 +8,7 @@ namespace Starlight.Launcher.Services.Journal;
 public sealed class JournalService
 {
     private const int MaxSessions = 3000;
+
     private static readonly TimeSpan _roundPollInterval = TimeSpan.FromSeconds(60);
 
     private readonly JsonFileStore<NotesDocument> _notes;
@@ -72,7 +73,7 @@ public sealed class JournalService
             .GroupBy(x => x.Address, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.Last(), StringComparer.OrdinalIgnoreCase));
 
-    #endregion
+    #endregion Notes
 
     #region Watches
 
@@ -93,7 +94,7 @@ public sealed class JournalService
         WatchesChanged?.Invoke();
     }
 
-    #endregion
+    #endregion Watches
 
     #region Activity
 
@@ -126,13 +127,13 @@ public sealed class JournalService
         LastSampleUtc = a.LastSampleUtc,
     };
 
-    #endregion
+    #endregion Activity
 
     #region History
 
     public PlaySession? ActiveSession => _active?.Session;
 
-    public List<PlaySession> GetSessions() => _history.Read(doc => doc.Sessions.Select(CloneSession).ToList());
+    public List<PlaySession> GetSessions() => _history.Read(doc => doc.Sessions.ConvertAll(CloneSession));
 
     public void ClearHistory()
     {
@@ -190,14 +191,7 @@ public sealed class JournalService
                 return;
 
             var last = session.Rounds.Count > 0 ? session.Rounds[^1] : null;
-            bool isNew;
-            if (last is null)
-                isNew = true;
-            else if (data.RoundId is { } id)
-                isNew = id != last.RoundId;
-            else // Without a round id the map is the best hint a new round started.
-                isNew = data.Map is not null && data.Map != last.Map;
-
+            var isNew = last is null || (data.RoundId is { } id ? id != last.RoundId : data.Map is not null && data.Map != last.Map);
             if (isNew && (data.RoundId is not null || data.Map is not null))
             {
                 session.Rounds.Add(new PlayedRound(data.RoundId, data.Map, data.Preset, DateTime.UtcNow));
@@ -277,7 +271,7 @@ public sealed class JournalService
         }
     }
 
-    #endregion
+    #endregion History
 
     private sealed class NotesDocument
     {
@@ -291,7 +285,7 @@ public sealed class JournalService
 
     private sealed class ActivityDocument
     {
-        public Dictionary<string, ServerActivity> Servers { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, ServerActivity> Servers { get; set; } = [with(StringComparer.OrdinalIgnoreCase)];
     }
 
     private sealed class HistoryDocument

@@ -14,40 +14,40 @@ public partial class ForgotPasswordView : LocalizedComponentBase
     [Inject] private AuthApi _authApi { get; set; } = default!;
     [Inject] private IBridge _bridge { get; set; } = default!;
 
-    private bool Busy;
-    private string Email = "";
-    private string? Error;
-    private bool Success;
+    private bool _busy;
+    private string _email = "";
+    private string? _error;
+    private bool _success;
 
     private async Task DoForgotPassword()
     {
-        Error = null;
+        _error = null;
 
         if ((await _bridge.GetSettingsAsync()).SelectedAuthServer is not { } authServer)
         {
-            Error = L["auth-menu-no-server-error"];
+            _error = L["auth-menu-no-server-error"];
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(Email) || !Email.Contains('@'))
+        if (string.IsNullOrWhiteSpace(_email) || !_email.Contains('@'))
         {
-            Error = L["auth-menu-forgot-notvalid-email-error"];
+            _error = L["auth-menu-forgot-notvalid-email-error"];
             return;
         }
 
-        Busy = true;
+        _busy = true;
         await InvokeAsync(StateHasChanged);
         try
         {
-            var errors = await _authApi.ForgotPasswordAsync(Email, new UrlFallbackSet(authServer));
+            var errors = await _authApi.ForgotPasswordAsync(_email, new UrlFallbackSet(authServer));
             if (errors == null)
-                Success = true;
+                _success = true;
             else
-                Error = string.Join("\n", errors);
+                _error = string.Join("\n", errors);
         }
         finally
         {
-            Busy = false;
+            _busy = false;
             await InvokeAsync(StateHasChanged);
         }
     }

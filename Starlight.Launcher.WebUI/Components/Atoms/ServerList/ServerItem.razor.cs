@@ -1,4 +1,4 @@
-﻿using MudBlazor;
+using MudBlazor;
 using Robust.Launcher.Api.Models.ServerStatus;
 using Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 using Starlight.Launcher.WebUI.Components.Pages;
@@ -20,9 +20,9 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
     [Parameter, EditorRequired] public ServerStatusData Data { get; set; } = default!;
     [Parameter] public EventCallback<ServerStatusData> OnFavorites { get; set; }
     [Parameter] public EventCallback<ServerStatusData> OnIgnore { get; set; }
-    [Parameter] public bool IsInFavorites { get; set; } = false;
+    [Parameter] public bool IsInFavorites { get; set; }
 
-    private bool _expanded = false;
+    private bool _expanded;
     private IPresenceScope? _viewingScope;
 
     private List<string>? _displayTags;
@@ -33,8 +33,7 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
 
     protected override void OnParametersSet()
     {
-        _displayTags = Data.Tags?
-            .Select(ParseTag)
+        _displayTags = Data.Tags?.Select(ParseTag)
             .Where(t => !string.IsNullOrEmpty(t))
             .Take(3)
             .ToList();
@@ -69,12 +68,16 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
             var chips = new List<(string, string, string)>();
             if (Data.Map is { } map)
                 chips.Add((Icons.Material.Outlined.Map, map, L["servers-list-item-map"]));
+
             if (Data.Preset is { } preset)
                 chips.Add((Icons.Material.Outlined.Casino, preset, L["servers-list-item-preset"]));
+
             if (Data.RoundId is { } round)
                 chips.Add((Icons.Material.Outlined.Tag, round.ToString(), L["servers-list-item-round-id"]));
+
             if (Data.PanicBunker)
                 chips.Add((Icons.Material.Outlined.Shield, L["servers-list-item-panic-bunker"], L["servers-list-item-panic-bunker-tooltip"]));
+
             return chips;
         }
     }
@@ -101,10 +104,13 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
     {
         if (tag.StartsWith("region:", StringComparison.OrdinalIgnoreCase))
             return Servers.ParseRegionTag(tag);
+
         if (tag.StartsWith("lang:", StringComparison.OrdinalIgnoreCase))
             return Servers.ParseLangTag(tag);
+
         if (tag.StartsWith("rp:", StringComparison.OrdinalIgnoreCase))
             return Servers.ParseRPTag(tag);
+
         return "";
     }
 
@@ -143,9 +149,9 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
 
     private async Task HandleClick()
     {
-        var needsFetch = Data.Status == ServerStatusCode.Online &&
-            (Data.StatusInfo is ServerStatusInfoCode.NotFetched or ServerStatusInfoCode.Error
-             || (string.IsNullOrEmpty(Data.Description) && Data.StatusInfo == ServerStatusInfoCode.Fetched));
+        var needsFetch = Data.Status == ServerStatusCode.Online
+            && (Data.StatusInfo is ServerStatusInfoCode.NotFetched or ServerStatusInfoCode.Error
+                || (string.IsNullOrEmpty(Data.Description) && Data.StatusInfo == ServerStatusInfoCode.Fetched));
 
         if (needsFetch)
             _bridge.Request(Data);
@@ -168,8 +174,8 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
 
     private async Task HandleIgnore() => await OnIgnore.InvokeAsync(Data);
 
-    private void OnInfoClick(string Url)
-        => _bridge.OpenBrowser(Url);
+    private void OnInfoClick(string url)
+        => _bridge.OpenBrowser(url);
 
     private async Task Play()
     {
@@ -248,7 +254,7 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
         _ => null,
     };
 
-    private string? ParseIcon(string? icon) => icon switch
+    private static string? ParseIcon(string? icon) => icon switch
     {
         null => null,
         "discord" => Icons.Custom.Brands.Discord,
@@ -269,5 +275,6 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
         _bridge.ServerNotesChanged -= OnJournalChanged;
         _bridge.ServerWatchesChanged -= OnJournalChanged;
         _viewingScope?.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

@@ -140,6 +140,7 @@ internal sealed class ContentDbFileApi : IFileApi, IDisposable
 
             initBlob = rowId;
         }
+
         CheckThrowSqliteErr(db, err, SQLITE_DONE);
 
         err = sqlite3_finalize(stmt);
@@ -231,6 +232,7 @@ internal sealed class ContentDbFileApi : IFileApi, IDisposable
                         {
                             ReadBlobZStd(buffer, blob, db, entry.DecompressionContext);
                         }
+
                         break;
                     }
                 case ContentCompressionScheme.None:
@@ -246,6 +248,7 @@ internal sealed class ContentDbFileApi : IFileApi, IDisposable
                 default:
                     throw new NotSupportedException($"Unknown compression scheme: {compression}");
             }
+
             return true;
         }
         finally
@@ -273,25 +276,28 @@ internal sealed class ContentDbFileApi : IFileApi, IDisposable
                 remainingInput -= toRead;
 
                 fixed (byte* inputPtr = buffer)
-                fixed (byte* outputPtr = into)
                 {
-                    var inputBuf = new ZSTD_inBuffer { src = inputPtr, pos = 0, size = (nuint)toRead };
-                    var outputBuf = new ZSTD_outBuffer { dst = outputPtr, pos = 0, size = (nuint)into.Length };
-
-                    var err = ZSTD_decompressStream(context, &outputBuf, &inputBuf);
-                    ZStdException.ThrowIfError(err);
-
-                    into = into[(int)outputBuf.pos..];
-
-                    // We know the output buffer always has enough space so if this returns > 0 then we need more input.
-                    if (err == (UIntPtr)0)
+                    fixed (byte* outputPtr = into)
                     {
-                        if (into.Length != 0)
+                        var inputBuf = new ZSTD_inBuffer { src = inputPtr, pos = 0, size = (nuint)toRead };
+                        var outputBuf = new ZSTD_outBuffer { dst = outputPtr, pos = 0, size = (nuint)into.Length };
+
+                        var err = ZSTD_decompressStream(context, &outputBuf, &inputBuf);
+                        ZStdException.ThrowIfError(err);
+
+                        into = into[(int)outputBuf.pos..];
+
+                        // We know the output buffer always has enough space so if this returns > 0 then we need more input.
+                        if (err == 0)
                         {
-                            // Safety check to avoid leaking any uninitialized data if I just screwed up.
-                            throw new InvalidOperationException("Failed to fill buffer!");
+                            if (into.Length != 0)
+                            {
+                                // Safety check to avoid leaking any uninitialized data if I just screwed up.
+                                throw new InvalidOperationException("Failed to fill buffer!");
+                            }
+
+                            return;
                         }
-                        return;
                     }
                 }
             }

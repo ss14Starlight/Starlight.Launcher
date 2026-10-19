@@ -1,17 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
 	<TargetFramework>net10.0</TargetFramework>
     <OutputType>WinExe</OutputType>
-    <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-	<GenerateDocumentationFile>true</GenerateDocumentationFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('FreeBSD'))">
-    <UseSystemSqlite>True</UseSystemSqlite>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(UseSystemSqlite)' == 'True'">
-    <DefineConstants>$(DefineConstants);USE_SYSTEM_SQLITE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,16 +17,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="10.0.8" />
+    <PackageReference Include="Microsoft.Data.Sqlite.Core" />
     <PackageReference Include="SQLitePCLRaw.provider.sqlite3" Condition="'$(UseSystemSqlite)' == 'True'" />
-    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Condition="'$(UseSystemSqlite)' != 'True'" Version="3.0.3" />
-    <PackageReference Include="NSec.Cryptography" Version="24.9.0-preview.2" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Condition="'$(UseSystemSqlite)' != 'True'" />
+    <PackageReference Include="NSec.Cryptography" />
     <!-- Add libsodium to control version, SpaceWizards.Sodium's dependency is behind -->
-    <PackageReference Include="Robust.Natives" Version="0.2.5" />
-    <PackageReference Include="Robust.Natives.Zstd" Version="0.1.1-zstd1.5.7" />
-    <PackageReference Include="SharpZstd.Interop" Version="1.5.6" />
-    <PackageReference Include="Tracy-CSharp" Version="0.13.1" IncludeAssets="native" />
-    <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="10.0.8" />
+    <PackageReference Include="Robust.Natives" />
+    <PackageReference Include="Robust.Natives.Zstd" />
+    <PackageReference Include="SharpZstd.Interop" />
+    <PackageReference Include="Tracy-CSharp" IncludeAssets="native" />
+    <PackageReference Include="Microsoft.NET.ILLink.Tasks" />
   </ItemGroup>
 
 </Project>

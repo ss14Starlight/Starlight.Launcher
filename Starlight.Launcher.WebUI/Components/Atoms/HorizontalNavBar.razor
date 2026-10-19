@@ -39,6 +39,15 @@
             <span>@L["main-layout-local-server-tab"]</span>
         </div>
     </NavLink>
+    @if (_developerMode)
+    {
+        <NavLink href="/development" Match="NavLinkMatch.All" class="bottom-nav-item" ActiveClass="active">
+            <div class="nav-inner">
+                <MudIcon Icon="@Icons.Material.Filled.DeveloperMode" Color="@(IsActive("/development", NavLinkMatch.All) ? Color.Primary : Color.Default)" Size="Size.Medium" />
+                <span>@L["main-layout-development-tab"]</span>
+            </div>
+        </NavLink>
+    }
     <NavLink href="/settings" Match="NavLinkMatch.Prefix" class="bottom-nav-item" ActiveClass="active">
         <div class="nav-inner">
             <MudIcon Icon="@Icons.Material.Filled.Settings" Color="@(IsActive("/settings", NavLinkMatch.All) ? Color.Primary : Color.Default)" Size="Size.Medium" />

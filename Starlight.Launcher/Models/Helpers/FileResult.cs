@@ -2,19 +2,13 @@ using Starlight.Launcher.WebUI.Models.Helpers;
 
 namespace Starlight.Launcher.Models.Helpers;
 
-public sealed class FileResult : IFileResult
+public sealed class FileResult(string fullPath) : IFileResult
 {
-    public string FileName { get; init; }
-    public string FullPath { get; init; }
+    public string FileName { get; init; } = Path.GetFileName(fullPath);
+    public string FullPath { get; init; } = fullPath;
 
-    public FileResult(string fullPath)
-    {
-        FullPath = fullPath;
-        FileName = Path.GetFileName(fullPath);
-    }
-
-    public Task<Stream> OpenReadAsync() =>
-        Task.FromResult<Stream>(File.OpenRead(FullPath));
+    public Task<Stream> OpenReadAsync()
+        => Task.FromResult<Stream>(File.OpenRead(FullPath));
 
     public Task<Stream> OpenWriteAsync()
     {

@@ -19,12 +19,12 @@ public sealed class TracyProfiler(HttpClient http, SettingsService settings)
 
     private readonly SemaphoreSlim _installLock = new(1, 1);
 
-    public static bool ClientSupported =>
-        RuntimeInformation.ProcessArchitecture == Architecture.X64 && (OperatingSystem.IsWindows() || OperatingSystem.IsLinux());
+    public static bool ClientSupported
+        => RuntimeInformation.ProcessArchitecture == Architecture.X64 && (OperatingSystem.IsWindows() || OperatingSystem.IsLinux());
 
     public static bool ProfilerDownloadSupported => OperatingSystem.IsWindows() && RuntimeInformation.OSArchitecture == Architecture.X64;
 
-    private string InstallDir => Path.Combine(settings.GetSettings().DirTools, $"tracy-{Version}");
+    private string _installDir => Path.Combine(settings.GetSettings().DirTools, $"tracy-{Version}");
 
     public async Task LaunchForClientAsync(CancellationToken cancel)
     {
@@ -47,7 +47,7 @@ public sealed class TracyProfiler(HttpClient http, SettingsService settings)
             var startInfo = new ProcessStartInfo(exe)
             {
                 UseShellExecute = false,
-                WorkingDirectory = Path.GetDirectoryName(exe)!,
+                WorkingDirectory = Path.GetDirectoryName(exe),
                 ArgumentList = { "-a", "127.0.0.1", "-p", ClientPort.ToString() },
             };
 
@@ -69,7 +69,7 @@ public sealed class TracyProfiler(HttpClient http, SettingsService settings)
         await _installLock.WaitAsync(cancel);
         try
         {
-            var dir = InstallDir;
+            var dir = _installDir;
             var exe = Path.Combine(dir, ProfilerExe);
             if (File.Exists(exe))
                 return exe;

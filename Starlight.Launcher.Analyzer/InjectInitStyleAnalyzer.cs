@@ -10,23 +10,22 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
-#pragma warning disable RS1038
+namespace Starlight.Launcher.Analyzer;
+
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-#pragma warning restore RS1038
 public sealed class InjectStyleAnalyzer : DiagnosticAnalyzer
 {
     public const string DiagnosticId = "MY0002";
+
     private static readonly DiagnosticDescriptor _rule = new(
         DiagnosticId,
         title: "[Inject] property style",
-#pragma warning disable RS1032
         messageFormat: "The [Inject] property '{0}' must be private or protected and should have 'default!' as value!",
-#pragma warning restore RS1032
         category: "Style",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(_rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [_rule];
 
     public override void Initialize(AnalysisContext context)
     {
@@ -48,8 +47,8 @@ public sealed class InjectStyleAnalyzer : DiagnosticAnalyzer
         var p = (PropertyDeclarationSyntax)context.Node;
 
         var hasInject = p.AttributeLists.SelectMany(l => l.Attributes).Any(a =>
-            context.SemanticModel.GetSymbolInfo(a, context.CancellationToken).Symbol is IMethodSymbol ctor &&
-            SymbolEqualityComparer.Default.Equals(ctor.ContainingType, inject));
+            context.SemanticModel.GetSymbolInfo(a, context.CancellationToken).Symbol is IMethodSymbol ctor
+                && SymbolEqualityComparer.Default.Equals(ctor.ContainingType, inject));
 
         if (!hasInject || InjectStyle.IsCanonical(p)) return;
 
@@ -62,8 +61,8 @@ public sealed class InjectStyleCodeFixProvider : CodeFixProvider
 {
     private const string Title = "Rewrite to 'private ... = default!;'";
 
-    public override ImmutableArray<string> FixableDiagnosticIds =>
-        ImmutableArray.Create(InjectStyleAnalyzer.DiagnosticId);
+    public override ImmutableArray<string> FixableDiagnosticIds
+        => [InjectStyleAnalyzer.DiagnosticId];
 
     public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
 
@@ -85,6 +84,6 @@ public sealed class InjectStyleCodeFixProvider : CodeFixProvider
     private static async Task<Document> FixAsync(Document doc, PropertyDeclarationSyntax property, CancellationToken ct)
     {
         var root = await doc.GetSyntaxRootAsync(ct).ConfigureAwait(false);
-        return doc.WithSyntaxRoot(root!.ReplaceNode(property, InjectStyle.Canonicalize(property)));
+        return doc.WithSyntaxRoot(root.ReplaceNode(property, InjectStyle.Canonicalize(property)));
     }
 }

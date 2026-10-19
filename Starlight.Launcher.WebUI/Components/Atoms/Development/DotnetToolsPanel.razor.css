@@ -1,0 +1,31 @@
+::deep .tool-field {
+    max-width: 160px;
+}
+
+::deep .tool-field-wide {
+    max-width: 260px;
+}
+
+::deep .tool-field-narrow {
+    max-width: 120px;
+}
+
+.tool-path {
+    word-break: break-all;
+    margin-top: 4px;
+}
+
+.tool-output {
+    margin: 8px 0 0;
+    max-height: 260px;
+    overflow: auto;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: #0d0f12;
+    color: #d7dbe0;
+    font-family: "Cascadia Code", "Consolas", ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+}

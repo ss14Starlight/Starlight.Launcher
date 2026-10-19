@@ -7,7 +7,6 @@ using Serilog;
 using SharpZstd.Interop;
 using Starlight.Launcher.WebUI.Models.Updater;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.IO.Compression;
 using static Robust.Launcher.Api.Utility.Helpers;
 
@@ -20,9 +19,6 @@ namespace Starlight.Launcher.Services;
 
 public sealed partial class Updater
 {
-    [SuppressMessage("ReSharper", "MethodHasAsyncOverload")]
-    [SuppressMessage("ReSharper", "MethodHasAsyncOverloadWithCancellation")]
-    [SuppressMessage("ReSharper", "UseAwaitUsing")]
     private async Task<byte[]> ZipDownloadNewVersion(
         ServerBuildInformation buildInfo,
         SqliteConnection con,
@@ -81,13 +77,10 @@ public sealed partial class Updater
         file.Position = 0;
 
         var newFileHashString = Convert.ToHexString(hash);
-        if (buildInformation.Hash is { } expectHash)
+        if (buildInformation.Hash is { } expectHash && !expectHash.Equals(newFileHashString, StringComparison.OrdinalIgnoreCase))
         {
-            if (!expectHash.Equals(newFileHashString, StringComparison.OrdinalIgnoreCase))
-            {
-                throw new InvalidOperationException(
-                    $"Hash mismatch. Expected: {expectHash}, got: {newFileHashString}");
-            }
+            throw new InvalidOperationException(
+                $"Hash mismatch. Expected: {expectHash}, got: {newFileHashString}");
         }
 
         Log.Verbose("Done downloading zip. Hash: {DownloadHash}", newFileHashString);
@@ -123,7 +116,7 @@ public sealed partial class Updater
                     Progress = (count++, zip.Entries.Count, ProgressUnit.None);
 
                 // Ignore directory entries.
-                if (entry.Name == "")
+                if (entry.Name?.Length == 0)
                     continue;
 
                 if (underlay)
@@ -156,7 +149,7 @@ public sealed partial class Updater
                     new { Hash = hash });
                 if (row == 0)
                 {
-                    newFileCount += 1;
+                    newFileCount++;
 
                     // Don't have this content blob yet, insert it into the database.
                     using var entryStream = entry.Open();

@@ -5,8 +5,7 @@ namespace Starlight.Launcher.WebUI.Components.Atoms.Settings;
 
 public partial class AlternativeListOption : LocalizedComponentBase
 {
-
-    [Parameter]public List<(string Value, long Priority)> Value { get; set; } = [];
+    [Parameter] public List<(string Value, long Priority)> Value { get; set; } = [];
     [Parameter] public EventCallback<List<(string Value, long Priority)>> ValueChanged { get; set; }
     [Parameter] public string Title { get; set; } = default!;
     [Parameter] public string Description { get; set; } = default!;
@@ -14,6 +13,7 @@ public partial class AlternativeListOption : LocalizedComponentBase
     [Parameter] public string EmptyValuesString { get; set; } = "There's no values added up. Click + to add one.";
     [Parameter] public string AddButtonTooltip { get; set; } = "Add Value";
     [Parameter] public string TextFieldLabel { get; set; } = "Value";
+
     /// <summary>
     /// Means that this component will control value change by itself.
     /// </summary>
@@ -26,6 +26,7 @@ public partial class AlternativeListOption : LocalizedComponentBase
         await base.OnInitializedAsync();
         if (SelfValueControlInitialization is null)
             return;
+
         Value = await SelfValueControlInitialization.Invoke();
     }
 
@@ -86,22 +87,6 @@ public partial class AlternativeListOption : LocalizedComponentBase
         if (!SelfValueControl)
             await ValueChanged.InvokeAsync(Value);
         else
-        {
             SelfValueControlAction?.Invoke(Value);
-        }
-    }
-
-    private static string? ValidateUrl(string value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return "URL is required";
-
-        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri))
-            return "Invalid URL";
-
-        if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
-            return "Only HTTP/HTTPS allowed";
-
-        return null;
     }
 }

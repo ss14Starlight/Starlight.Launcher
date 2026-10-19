@@ -1,0 +1,50 @@
+@using Starlight.Launcher.WebUI.Localization
+@inherits LocalizedComponentBase
+
+<MudPaper Class="sl-option-card pa-4 mb-2" Outlined="true" Elevation="0">
+    <div class="d-flex align-center">
+        <div class="sl-option-icon mr-4">
+            <MudIcon Icon="@Icon" Size="Size.Small" />
+        </div>
+        <div class="flex-grow-1 mr-4">
+            <MudText Typo="Typo.body1">@L["client-diagnostics-title"]</MudText>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                @if (_snapshot is { } snapshot)
+                {
+                    @L.GetString("client-diagnostics-running", ("pid", snapshot.Pid))
+                }
+                else
+                {
+                    @L["client-diagnostics-not-running"]
+                }
+            </MudText>
+        </div>
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   Class="sl-option-action"
+                   StartIcon="@(_dumping ? null : Icons.Material.Filled.Memory)"
+                   Disabled="@(_snapshot is null || _dumping)"
+                   OnClick="DumpAsync">
+            @if (_dumping)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="mr-2" Style="width: 16px; height: 16px;" />
+            }
+            @L["client-diagnostics-dump-button"]
+        </MudButton>
+    </div>
+    @if (_snapshot is not null)
+    {
+        <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mt-2">@L["client-diagnostics-dump-hint"]</MudText>
+        <MudSimpleTable Dense="true" Elevation="0" Class="mt-2">
+            <tbody>
+                @foreach (var (label, value) in Rows())
+                {
+                    <tr>
+                        <td>@label</td>
+                        <td style="text-align: right; font-variant-numeric: tabular-nums;">@value</td>
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    }
+</MudPaper>

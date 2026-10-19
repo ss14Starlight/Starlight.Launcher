@@ -18,10 +18,11 @@ public sealed class ServerMonitor(
     private static readonly TimeSpan _tick = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan _favoritePollInterval = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan _activitySampleInterval = TimeSpan.FromMinutes(5);
+
     private const int MaxParallelPolls = 6;
 
-    private readonly Dictionary<string, Snapshot> _last = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, DateTime> _lastPoll = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, Snapshot> _last = [with(StringComparer.OrdinalIgnoreCase)];
+    private readonly Dictionary<string, DateTime> _lastPoll = [with(StringComparer.OrdinalIgnoreCase)];
     private readonly CancellationTokenSource _cts = new();
 
     public event Action<LauncherNotification>? NotificationRaised;
@@ -80,6 +81,7 @@ public sealed class ServerMonitor(
         var hubs = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var f in favoriteList.Where(f => !string.IsNullOrEmpty(f.HubAddress)))
             hubs[f.Address] = f.HubAddress;
+
         foreach (var w in watches.Values.Where(w => !string.IsNullOrEmpty(w.HubAddress)))
             hubs[w.Address] = w.HubAddress!;
 
@@ -118,7 +120,8 @@ public sealed class ServerMonitor(
             var data = statusCache.GetStatusFor(address);
             var current = Snapshot.From(data);
 
-            if (current.Online && appSettings.TrackServerActivity
+            if (current.Online
+                && appSettings.TrackServerActivity
                 && (journal.LastActivitySample(address) is not { } sampled || now - sampled >= _activitySampleInterval - TimeSpan.FromSeconds(5)))
             {
                 journal.AddActivitySample(address, data.PlayerCount);
@@ -128,11 +131,11 @@ public sealed class ServerMonitor(
             _last[address] = current;
 
             if (watches.TryGetValue(address, out var watch))
-                Evaluate(watch, previous, current, data);
+                await Evaluate(watch, previous, current, data);
         }
     }
 
-    private void Evaluate(ServerWatch watch, Snapshot? previous, Snapshot current, ServerStatusData data)
+    private async Task Evaluate(ServerWatch watch, Snapshot? previous, Snapshot current, ServerStatusData data)
     {
         var server = data.Name ?? watch.Name ?? watch.Address;
 
@@ -144,7 +147,7 @@ public sealed class ServerMonitor(
                 loc.GetString("notify-autoconnect-title", ("server", server)),
                 loc.GetString("notify-autoconnect-body"),
                 watch.Address));
-            _ = commands.QueueMessage(new LauncherActivationMessage(LauncherActivationKind.Connect, watch.Address, "auto-connect"));
+            await commands.QueueMessage(new LauncherActivationMessage(LauncherActivationKind.Connect, watch.Address, "auto-connect"));
             return;
         }
 
@@ -191,16 +194,14 @@ public sealed class ServerMonitor(
     }
 
     private static bool IsNewRound(Snapshot previous, Snapshot current)
-    {
-        if (current.RoundStatus != GameRoundStatus.InRound)
-            return false;
-
-        if (previous.RoundStatus != GameRoundStatus.InRound)
-            return true;
-
-        return (current.RoundId is { } id && previous.RoundId is { } prevId && id != prevId)
-            || (current.RoundStart is { } start && previous.RoundStart is { } prevStart && start != prevStart);
-    }
+        => current.RoundStatus == GameRoundStatus.InRound
+            && (previous.RoundStatus != GameRoundStatus.InRound
+                || (current.RoundId is { } id
+                    && previous.RoundId is { } prevId
+                    && id != prevId)
+                || (current.RoundStart is { } start
+                    && previous.RoundStart is { } prevStart
+                    && start != prevStart));
 
     private sealed record Snapshot(bool Online, int Players, bool Full, GameRoundStatus RoundStatus, int? RoundId, DateTime? RoundStart)
     {

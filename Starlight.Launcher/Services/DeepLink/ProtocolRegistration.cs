@@ -31,33 +31,33 @@ internal static class ProtocolRegistration
 
             using (var progIdKey = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{ProgId}"))
             {
-                progIdKey!.SetValue("", "Starlight Launcher Protocol");
+                progIdKey.SetValue("", "Starlight Launcher Protocol");
                 using var iconKey = progIdKey.CreateSubKey("DefaultIcon");
-                iconKey!.SetValue("", $"\"{exePath}\",0");
+                iconKey.SetValue("", $"\"{exePath}\",0");
                 using var commandKey = progIdKey.CreateSubKey(@"shell\open\command");
-                commandKey!.SetValue("", command);
+                commandKey.SetValue("", command);
             }
 
             using (var capsKey = Registry.CurrentUser.CreateSubKey($@"Software\{AppRegName}\Capabilities"))
             {
-                capsKey!.SetValue("ApplicationName", "Starlight Launcher");
+                capsKey.SetValue("ApplicationName", "Starlight Launcher");
                 capsKey.SetValue("ApplicationDescription", "Starlight Launcher");
                 using var urlAssoc = capsKey.CreateSubKey("URLAssociations");
-                urlAssoc!.SetValue(Scheme, ProgId);
+                urlAssoc.SetValue(Scheme, ProgId);
             }
 
             using (var registeredApps = Registry.CurrentUser.CreateSubKey(@"Software\RegisteredApplications"))
             {
-                registeredApps!.SetValue(AppRegName, $@"Software\{AppRegName}\Capabilities");
+                registeredApps.SetValue(AppRegName, $@"Software\{AppRegName}\Capabilities");
             }
 
             using var schemeKey = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{Scheme}");
-            schemeKey!.SetValue("", $"URL:{Scheme} Protocol");
+            schemeKey.SetValue("", $"URL:{Scheme} Protocol");
             schemeKey.SetValue("URL Protocol", "");
             using var directIconKey = schemeKey.CreateSubKey("DefaultIcon");
-            directIconKey!.SetValue("", $"\"{exePath}\",0");
+            directIconKey.SetValue("", $"\"{exePath}\",0");
             using var directCommandKey = schemeKey.CreateSubKey(@"shell\open\command");
-            directCommandKey!.SetValue("", command);
+            directCommandKey.SetValue("", command);
         }
         catch (Exception ex)
         {
@@ -87,14 +87,14 @@ internal static class ProtocolRegistration
             var desktopPath = Path.Combine(desktopDir, "starlight-launcher.desktop");
 
             var desktopContent =
-                "[Desktop Entry]\n" +
-                "Type=Application\n" +
-                "Name=Starlight Launcher\n" +
-                "Comment=Starlight Launcher for Space Station 14\n" +
-                $"Exec=\"{exePath}\" %u\n" +
-                "Terminal=false\n" +
-                "Categories=Game;\n" +
-                "MimeType=x-scheme-handler/starlight;\n";
+                "[Desktop Entry]\n"
+                    + "Type=Application\n"
+                    + "Name=Starlight Launcher\n"
+                    + "Comment=Starlight Launcher for Space Station 14\n"
+                    + $"Exec=\"{exePath}\" %u\n"
+                    + "Terminal=false\n"
+                    + "Categories=Game;\n"
+                    + "MimeType=x-scheme-handler/starlight;\n";
 
             var existing = File.Exists(desktopPath) ? File.ReadAllText(desktopPath) : null;
             if (existing == desktopContent)
@@ -128,6 +128,9 @@ internal static class ProtocolRegistration
             Scheme, holder, ForceRegisterEnvVar);
         return true;
 #else
+        // Release builds always take the handler over.
+        _ = existing;
+        _ = ours;
         return false;
 #endif
     }
@@ -169,6 +172,7 @@ internal static class ProtocolRegistration
         var start = text.IndexOf('"');
         if (start < 0)
             return null;
+
         var end = text.IndexOf('"', start + 1);
         return end > start ? text[(start + 1)..end] : null;
     }

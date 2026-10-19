@@ -42,7 +42,7 @@ public abstract class StarlightOAuthService(StarlightAuthApi api, LoginManager l
         if (!moderation.IsUsable)
         {
             throw Error(moderation.Reason
-                        ?? $"Your {DisplayName} username can't be used. Please set a normal name and try again.");
+                ?? $"Your {DisplayName} username can't be used. Please set a normal name and try again.");
         }
 
         var info = new LoginInfo
@@ -57,7 +57,7 @@ public abstract class StarlightOAuthService(StarlightAuthApi api, LoginManager l
         loginManager.ActiveAccountId = info.UserId;
 
         return loginManager.ActiveAccount
-               ?? throw Error("The account was signed in but could not be selected.");
+            ?? throw Error("The account was signed in but could not be selected.");
     }
 
     public async Task AttachToAccountAsync(LoggedInAccount account, CancellationToken cancel = default)
@@ -216,7 +216,8 @@ public abstract class StarlightOAuthService(StarlightAuthApi api, LoginManager l
 
         var segment = uri.Segments
             .Select(s => s.Trim('/'))
-            .FirstOrDefault(s => !string.IsNullOrEmpty(s)) ?? "discord";
+            .FirstOrDefault(s => !string.IsNullOrEmpty(s))
+            ?? "discord";
 
         return string.Equals(segment, ProviderSlug, StringComparison.OrdinalIgnoreCase);
     }

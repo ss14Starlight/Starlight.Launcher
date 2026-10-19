@@ -42,15 +42,12 @@ public sealed record HandoffResult(string Token, string? RefreshToken, string? S
             }
         }
 
-        if (DateTimeOffset.TryParse(
+        return DateTimeOffset.TryParse(
                 expires,
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal,
-                out var absolute))
-        {
-            return absolute;
-        }
-
-        return null;
+                out var absolute)
+            ? absolute
+            : null;
     }
 }

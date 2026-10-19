@@ -26,6 +26,7 @@ public partial class IgnoredServersOption : LocalizedComponentBase
         await base.OnInitializedAsync();
         if (SelfValueControlInitialization is null)
             return;
+
         Value = await SelfValueControlInitialization.Invoke();
     }
 

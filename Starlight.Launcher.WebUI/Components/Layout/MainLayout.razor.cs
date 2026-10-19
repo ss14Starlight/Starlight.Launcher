@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using MudBlazor;
 using MudBlazor.Services;
@@ -25,6 +26,7 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
     [Inject] private ISnackbar _snackbar { get; set; } = default!;
     [Inject] private IDialogService _dialogService { get; set; } = default!;
     [Inject] private AppState _state { get; set; } = default!;
+    [Inject] private ILogger<MainLayout> _logger { get; set; } = default!;
 
     private static readonly TimeSpan _transitionStartTimeout = TimeSpan.FromMilliseconds(500);
 
@@ -32,20 +34,20 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
     private IDisposable? _locationChangingRegistration;
     private DotNetObjectReference<MainLayout>? _selfRef;
 
-    private bool _shouldShowAppBar => OperatingSystem.IsWindows();
+    private static bool s_shouldShowAppBar => OperatingSystem.IsWindows();
 
     Guid IBrowserViewportObserver.Id { get; } = Guid.NewGuid();
 
-    private bool _isSmallScreen = false;
+    private bool _isSmallScreen;
 
     private bool _changelogLoading;
 
-    private string BackgroundClass => new Uri(_navigation.Uri).AbsolutePath.TrimEnd('/') switch
+    private string _backgroundClass => new Uri(_navigation.Uri).AbsolutePath.TrimEnd('/') switch
     {
         "/servers" => "app-bg app-bg--servers",
         "/hub" => "app-bg app-bg--hub",
         "/local-server" => "app-bg app-bg--local",
-        "/settings" => "app-bg app-bg--settings",
+        "/settings" or "/development" => "app-bg app-bg--settings",
         _ => "app-bg",
     };
 
@@ -110,7 +112,7 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
                 if (notification.Kind == LauncherNotificationKind.FriendRequest)
                 {
                     config.Action = L["main-layout-notification-open-friends"];
-                    config.ActionColor = MudBlazor.Color.Primary;
+                    config.ActionColor = Color.Primary;
                     config.OnClick = __ =>
                     {
                         _navigation.NavigateTo("/friends");
@@ -120,13 +122,13 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
                 else if (notification.Address is { } address && notification.Kind != LauncherNotificationKind.AutoConnect)
                 {
                     config.Action = L["main-layout-notification-connect"];
-                    config.ActionColor = MudBlazor.Color.Primary;
+                    config.ActionColor = Color.Primary;
                     config.OnClick = __ => ShowConnecting(address);
                 }
             });
     });
 
-    private Task ShowConnecting(string address)
+    private Task<IDialogReference> ShowConnecting(string address)
     {
         var parameters = new DialogParameters<ConnectingDialog>
         {
@@ -144,14 +146,14 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
         });
     }
 
-    private void OnLoginsUnrecover() =>
-        _snackbar.Add(
+    private void OnLoginsUnrecover()
+        => _snackbar.Add(
             L["settings-logins-unrecoverable"],
             Severity.Error,
             config =>
             {
                 config.Action = L["settings-logins-unrecoverable-action"];
-                config.ActionColor = MudBlazor.Color.Primary;
+                config.ActionColor = Color.Primary;
                 config.OnClick = __ =>
                 {
                     _ = _dialogService.ShowAsync<LoginsUnrecoverableDialog>(
@@ -215,7 +217,7 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
             {
                 config.RequireInteraction = true;
                 config.Action = L["main-layout-data-folder-no-access-action"];
-                config.ActionColor = MudBlazor.Color.Primary;
+                config.ActionColor = Color.Primary;
                 config.OnClick = __ =>
                 {
                     _navigation.NavigateTo("/settings");
@@ -237,11 +239,12 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
             {
                 config.RequireInteraction = true;
                 config.Action = L["main-layout-settings-unreadable-action"];
-                config.ActionColor = MudBlazor.Color.Primary;
+                config.ActionColor = Color.Primary;
                 config.OnClick = __ =>
                 {
                     if (Path.GetDirectoryName(files[0]) is { } dir)
                         _bridge.OpenPath(dir);
+
                     return Task.CompletedTask;
                 };
             });
@@ -310,7 +313,7 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
                 config =>
                 {
                     config.Action = L["settings-menu-update-download"];
-                    config.ActionColor = MudBlazor.Color.Info;
+                    config.ActionColor = Color.Info;
                     config.OnClick = __ =>
                     {
                         if (info.Asset is { } asset)
@@ -333,6 +336,7 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
                         {
                             _bridge.OpenBrowser(info.ReleasePageUrl);
                         }
+
                         return Task.CompletedTask;
                     };
                 });
@@ -348,7 +352,6 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
             return;
 
         _changelogLoading = true;
-        StateHasChanged();
 
         IReadOnlyList<ChangelogEntry> entries;
         try
@@ -404,7 +407,7 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
         _bridge.Presence.SetNavigation(uri.AbsolutePath switch
         {
             "/" or "/hub" or "/servers" => PresenceState.SearchingServers,
-            "/settings" => PresenceState.SettingUp,
+            "/settings" or "/development" => PresenceState.SettingUp,
             "/auth" => PresenceState.ManagesLogins,
             _ => PresenceState.Idle
         });
@@ -423,32 +426,39 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
 
     private async Task ApplyThemeAsync()
     {
-        var settings = await _bridge.GetSettingsAsync();
-        await _jS.InvokeVoidAsync("appTheme.setAnimatedBackground", settings.AnimatedBackground);
-        var prefersDark = await _jS.InvokeAsync<bool>("appTheme.prefersDark");
-        var themeName = ToDataTheme(settings.Theme, prefersDark);
-
-        var today = DateOnly.FromDateTime(DateTime.Today);
-
-        if (_holidayTheme?.Date != today)
+        try
         {
-            var themes = HolidayThemes.For(today);
-            _holidayTheme = (today, themes.Count > 0 ? themes[Random.Shared.Next(themes.Count)] : null);
+            var settings = await _bridge.GetSettingsAsync();
+            await _jS.InvokeVoidAsync("appTheme.setAnimatedBackground", settings.AnimatedBackground);
+            var prefersDark = await _jS.InvokeAsync<bool>("appTheme.prefersDark");
+            var themeName = ToDataTheme(settings.Theme, prefersDark);
+
+            var today = DateOnly.FromDateTime(DateTime.Today);
+
+            if (_holidayTheme?.Date != today)
+            {
+                var themes = HolidayThemes.For(today);
+                _holidayTheme = (today, themes.Count > 0 ? themes[Random.Shared.Next(themes.Count)] : null);
+            }
+
+            if (_holidayTheme.Value.Theme is { } holidayTheme)
+                themeName = holidayTheme;
+
+            await _jS.InvokeVoidAsync("appTheme.set", themeName);
         }
-
-        if (_holidayTheme.Value.Theme is { } holidayTheme)
-            themeName = holidayTheme;
-
-        await _jS.InvokeVoidAsync("appTheme.set", themeName);
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Can't invoke JS to use required theme!");
+        }
     }
 
-    private void AppCalledRepaint() => _ = InvokeAsync((async () =>
+    private void AppCalledRepaint() => _ = InvokeAsync(async () =>
     {
         var settings = await _bridge.GetSettingsAsync();
         await ApplyThemeAsync();
         _elementPosition = settings.Navigation;
         StateHasChanged();
-    }));
+    });
 
     public async ValueTask DisposeAsync()
     {
@@ -468,23 +478,30 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
     {
         if (firstRender)
         {
-            if (_shouldShowAppBar)
+            try
             {
-                _selfRef = DotNetObjectReference.Create(this);
-                _titleBar = await _jS.InvokeAsync<IJSObjectReference>("import", "./js/titlebar.js");
-                await _titleBar.InvokeVoidAsync("init", _selfRef);
+                if (s_shouldShowAppBar)
+                {
+                    _selfRef = DotNetObjectReference.Create(this);
+                    _titleBar = await _jS.InvokeAsync<IJSObjectReference>("import", "./js/titlebar.js");
+                    await _titleBar.InvokeVoidAsync("init", _selfRef);
+                }
+
+                await ApplyThemeAsync();
+                await _jS.InvokeVoidAsync("slNav.init", _navigation.Uri);
+                _locationChangingRegistration = _navigation.RegisterLocationChangingHandler(OnLocationChanging);
+                await _browserViewportService.SubscribeAsync(this, fireImmediately: true);
+                await _jS.InvokeVoidAsync("eval", "document.getElementById('app')?.classList.add('loaded')");
+
+                await CheckDataFolderAccess();
+                CheckUnreadableSettingsFiles();
+                await ShowChangelogIfNeeded();
+                await CheckUpdate();
             }
-
-            await ApplyThemeAsync();
-            await _jS.InvokeVoidAsync("slNav.init", _navigation.Uri);
-            _locationChangingRegistration = _navigation.RegisterLocationChangingHandler(OnLocationChanging);
-            await _browserViewportService.SubscribeAsync(this, fireImmediately: true);
-            await _jS.InvokeVoidAsync("eval", "document.getElementById('app')?.classList.add('loaded')");
-
-            await CheckDataFolderAccess();
-            CheckUnreadableSettingsFiles();
-            await ShowChangelogIfNeeded();
-            await CheckUpdate();
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Can't invoke JS to use navigation animation!");
+            }
         }
 
         await base.OnAfterRenderAsync(firstRender);

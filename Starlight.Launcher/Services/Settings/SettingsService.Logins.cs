@@ -1,4 +1,4 @@
-﻿using System.Security.Cryptography;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
@@ -10,6 +10,7 @@ public sealed partial class SettingsService
 {
     private volatile bool _loginsLoaded;
     private readonly TaskCompletionSource _loginsLoadedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
     public event Action? LoginsUnrecoverable;
 
     public Task WaitForLoginsLoadedAsync() => _loginsLoadedTcs.Task;
@@ -23,8 +24,10 @@ public sealed partial class SettingsService
             try
             {
                 foreach (var (id, info) in loaded)
+                {
                     if (!_logins.ContainsKey(id))
                         _logins[id] = info;
+                }
             }
             finally { _ = _loginsLock.Release(); }
 
@@ -48,7 +51,7 @@ public sealed partial class SettingsService
         _loginsLock.Wait();
         try
         {
-            return new Dictionary<Guid, LoginInfo>(_logins);
+            return [with(_logins)];
         }
         finally
         {
@@ -146,7 +149,7 @@ public sealed partial class SettingsService
         await _loginsLock.WaitAsync();
         try
         {
-            return new Dictionary<Guid, LoginInfo>(_logins);
+            return [with(_logins)];
         }
         finally
         {
@@ -229,6 +232,7 @@ public sealed partial class SettingsService
             {
                 var backup = _loginsPath + $".undecryptable-{DateTime.UtcNow:yyyyMMddHHmmss}";
                 try { File.Move(_loginsPath, backup, true); } catch { /* best effort */ }
+
                 _logger.LogError(ex, "Logins could not be decrypted (key mismatch). Backed up to {backup}; re-auth required.", backup);
                 LoginsUnrecoverable?.Invoke();   // surface a toast/dialog
                 return [];

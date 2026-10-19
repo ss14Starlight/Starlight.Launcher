@@ -1,4 +1,3 @@
-
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Models.DiscordRichPresence;
 

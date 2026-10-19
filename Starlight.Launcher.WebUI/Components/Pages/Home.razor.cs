@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using Robust.Launcher.Api.Models.ServerStatus;
 using Starlight.Launcher.WebUI.Bridge;
@@ -17,6 +17,7 @@ public partial class Home : LocalizedComponentBase, IDisposable
     [Inject] private IDialogService _dialogService { get; set; } = default!;
 
     private List<ServerStatusData> _favoriteServers { get; set; } = null!;
+
     private readonly CancellationTokenSource _disposeCts = new();
     private int _rebuildScheduled;
 
@@ -31,7 +32,7 @@ public partial class Home : LocalizedComponentBase, IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private void RefreshServers() => _statusCache.Refresh(_favoriteServers.ToArray());
+    private void RefreshServers() => _statusCache.Refresh([.. _favoriteServers]);
 
     protected override async Task OnInitializedAsync()
     {
@@ -76,13 +77,13 @@ public partial class Home : LocalizedComponentBase, IDisposable
 
         var filteredServers = servers.Where(x => !settings.IgnoredServers.Any(s => s.Name == x.Name || s.Address == x.Address));
 
-        _favoriteServers = filteredServers.Select(x =>
+        _favoriteServers = [.. filteredServers.Select(x =>
         {
             var data = _statusCache.GetStatusFor(x.Address, x.HubAddress);
             _ = _statusCache.TryInitialUpdateStatus(data);
             data.Changed += OnServerDataChanged;
             return data;
-        }).ToList();
+        })];
     }
 
     private void UpdateFavorites(List<ServerStatusData> servers)
@@ -94,12 +95,12 @@ public partial class Home : LocalizedComponentBase, IDisposable
 
         var filteredServers = servers.Where(x => !settings.IgnoredServers.Any(s => s.Name == x.Name || s.Address == x.Address));
 
-        _favoriteServers = filteredServers.Select(x =>
+        _favoriteServers = [.. filteredServers.Select(x =>
         {
             _ = _statusCache.TryInitialUpdateStatus(x);
             x.Changed += OnServerDataChanged;
             return x;
-        }).ToList();
+        })];
     }
 
     private async void OnServerDataChanged()
@@ -144,6 +145,7 @@ public partial class Home : LocalizedComponentBase, IDisposable
 
         if (settings.IgnoredServers.Any(x => x.Name == server.Name || x.Address == server.Address))
             return;
+
         _bridge.UpdateSettings(s => s with { IgnoredServers = [.. s.IgnoredServers, new IgnoredServer(server.Name, server.Address)] });
 
         UpdateFavorites(_favoriteServers);
@@ -155,7 +157,7 @@ public partial class Home : LocalizedComponentBase, IDisposable
             L["home-menu-dirrect-connect"]);
         var dialogResult = await dialog.Result;
 
-        if (dialogResult is null || dialogResult.Canceled)
+        if (dialogResult?.Canceled != false)
             return;
 
         var result = (DirectConnectResult)dialogResult.Data!;
@@ -163,7 +165,11 @@ public partial class Home : LocalizedComponentBase, IDisposable
         if (result.AddToFavorites)
             await AddDirectFavorite(result.Address);
 
-        await ShowConnecting(p => { p.Add(x => x.Address, result.Address); p.Add(x => x.Title, null); } );
+        await ShowConnecting(p =>
+        {
+            p.Add(x => x.Address, result.Address);
+            p.Add(x => x.Title, null);
+        });
     }
 
     private async Task LoadReplay()
@@ -199,7 +205,8 @@ public partial class Home : LocalizedComponentBase, IDisposable
         favorites.Add(new FavoriteServer(address, address, ""));
         await _bridge.WriteFavoritesAsync(favorites);
     }
-    private Task ShowConnecting(Action<DialogParameters<ConnectingDialog>> configure)
+
+    private Task<IDialogReference> ShowConnecting(Action<DialogParameters<ConnectingDialog>> configure)
     {
         var parameters = new DialogParameters<ConnectingDialog>();
         configure(parameters);

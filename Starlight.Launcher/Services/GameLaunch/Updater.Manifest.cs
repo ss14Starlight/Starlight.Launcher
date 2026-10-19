@@ -9,7 +9,6 @@ using Starlight.Launcher.Helpers;
 using Starlight.Launcher.WebUI.Models.Updater;
 using System.Buffers.Binary;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Net.Http.Headers;
 
@@ -21,9 +20,6 @@ namespace Starlight.Launcher.Services;
 
 public sealed partial class Updater
 {
-    [SuppressMessage("ReSharper", "MethodHasAsyncOverload")]
-    [SuppressMessage("ReSharper", "MethodHasAsyncOverloadWithCancellation")]
-    [SuppressMessage("ReSharper", "UseAwaitUsing")]
     private async Task<byte[]> ManifestDownloadNewVersion(
         ServerBuildInformation buildInfo,
         SqliteConnection con,
@@ -52,7 +48,7 @@ public sealed partial class Updater
             Log.Debug(
                 "Missing {MissingContentBlobs} blobs, downloading from {ManifestDownloadUrl}",
                 toDownload.Count,
-                buildInfo.ManifestDownloadUrl!);
+                buildInfo.ManifestDownloadUrl);
 
             await ManifestDownloadMissingContent(
                 buildInfo,

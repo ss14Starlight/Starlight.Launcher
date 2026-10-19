@@ -68,6 +68,7 @@ public sealed class FriendsService(
         var result = await ActionAsync(HttpMethod.Put, "api/friends/settings", new { sharePresence = share }, cancel);
         if (result.Status == FriendsStatus.Loaded && share && journal.ActiveSession is { } session)
             OnActiveSessionChanged(session);
+
         return result;
     }
 
@@ -157,6 +158,7 @@ public sealed class FriendsService(
         {
             if (old is not null)
                 _ = Task.Run(() => SendQuietlyAsync(HttpMethod.Delete, "api/friends/presence", null, CancellationToken.None));
+
             return;
         }
 

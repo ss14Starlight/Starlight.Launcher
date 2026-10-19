@@ -22,7 +22,7 @@ public static class ZStd
 /// <summary>
 /// Represents a reusable Zstandard compression context.
 /// </summary>
-public sealed unsafe partial class ZStdCCtx : IDisposable
+public sealed unsafe class ZStdCCtx : IDisposable
 {
     /// <summary>
     /// Current compression context for this class.
@@ -54,16 +54,18 @@ public sealed unsafe partial class ZStdCCtx : IDisposable
         CheckDisposed();
 
         fixed (byte* dst = destination)
-        fixed (byte* src = source)
         {
-            var ret = Zstd.ZSTD_compressCCtx(
-                Context,
-                dst, (nuint)destination.Length,
-                src, (nuint)source.Length,
-                compressionLevel);
+            fixed (byte* src = source)
+            {
+                var ret = Zstd.ZSTD_compressCCtx(
+                    Context,
+                    dst, (nuint)destination.Length,
+                    src, (nuint)source.Length,
+                    compressionLevel);
 
-            ZStdException.ThrowIfError(ret);
-            return (int)ret;
+                ZStdException.ThrowIfError(ret);
+                return (int)ret;
+            }
         }
     }
 
@@ -94,7 +96,7 @@ public sealed unsafe partial class ZStdCCtx : IDisposable
 /// <summary>
 /// Represents a reusable Zstandard decompression context.
 /// </summary>
-public sealed unsafe partial class ZStdDCtx : IDisposable
+public sealed unsafe class ZStdDCtx : IDisposable
 {
     /// <summary>
     /// Current decompression context for this class
@@ -126,12 +128,14 @@ public sealed unsafe partial class ZStdDCtx : IDisposable
         CheckDisposed();
 
         fixed (byte* dst = destination)
-        fixed (byte* src = source)
         {
-            var ret = Zstd.ZSTD_decompressDCtx(Context, dst, (nuint)destination.Length, src, (nuint)source.Length);
+            fixed (byte* src = source)
+            {
+                var ret = Zstd.ZSTD_decompressDCtx(Context, dst, (nuint)destination.Length, src, (nuint)source.Length);
 
-            ZStdException.ThrowIfError(ret);
-            return (int)ret;
+                ZStdException.ThrowIfError(ret);
+                return (int)ret;
+            }
         }
     }
 
@@ -158,17 +162,19 @@ public sealed unsafe partial class ZStdDCtx : IDisposable
         CheckDisposed();
 
         fixed (byte* dst = destination)
-        fixed (byte* src = source)
         {
-            var outBuf = new ZSTD_outBuffer { dst = dst, pos = 0, size = (nuint)destination.Length };
-            var inBuf = new ZSTD_inBuffer { src = src, pos = (nuint)sourcePos, size = (nuint)source.Length };
+            fixed (byte* src = source)
+            {
+                var outBuf = new ZSTD_outBuffer { dst = dst, pos = 0, size = (nuint)destination.Length };
+                var inBuf = new ZSTD_inBuffer { src = src, pos = (nuint)sourcePos, size = (nuint)source.Length };
 
-            var ret = Zstd.ZSTD_decompressStream(Context, &outBuf, &inBuf);
-            ZStdException.ThrowIfError(ret);
+                var ret = Zstd.ZSTD_decompressStream(Context, &outBuf, &inBuf);
+                ZStdException.ThrowIfError(ret);
 
-            sourcePos = (int)inBuf.pos;
-            frameRemaining = ret;
-            return (int)outBuf.pos;
+                sourcePos = (int)inBuf.pos;
+                frameRemaining = ret;
+                return (int)outBuf.pos;
+            }
         }
     }
 
@@ -272,6 +278,8 @@ public sealed class ZStdDecompressStream(Stream baseStream, bool ownStream = tru
 
             ArrayPool<byte>.Shared.Return(_buffer);
         }
+
+        base.Dispose(disposing);
     }
 
     /// <summary>
@@ -315,17 +323,19 @@ public sealed class ZStdDecompressStream(Stream baseStream, bool ownStream = tru
             }
 
             fixed (byte* inputPtr = _buffer)
-            fixed (byte* outputPtr = buffer)
             {
-                var outputBuf = new ZSTD_outBuffer { dst = outputPtr, pos = 0, size = (nuint)buffer.Length };
-                var inputBuf = new ZSTD_inBuffer { src = inputPtr, pos = (nuint)_bufferPos, size = (nuint)_bufferSize };
-                var ret = Zstd.ZSTD_decompressStream(_ctx, &outputBuf, &inputBuf);
+                fixed (byte* outputPtr = buffer)
+                {
+                    var outputBuf = new ZSTD_outBuffer { dst = outputPtr, pos = 0, size = (nuint)buffer.Length };
+                    var inputBuf = new ZSTD_inBuffer { src = inputPtr, pos = (nuint)_bufferPos, size = (nuint)_bufferSize };
+                    var ret = Zstd.ZSTD_decompressStream(_ctx, &outputBuf, &inputBuf);
 
-                _bufferPos = (int)inputBuf.pos;
-                ZStdException.ThrowIfError(ret);
+                    _bufferPos = (int)inputBuf.pos;
+                    ZStdException.ThrowIfError(ret);
 
-                if (outputBuf.pos > 0)
-                    return (int)outputBuf.pos;
+                    if (outputBuf.pos > 0)
+                        return (int)outputBuf.pos;
+                }
             }
         } while (true);
     }
@@ -352,29 +362,30 @@ public sealed class ZStdDecompressStream(Stream baseStream, bool ownStream = tru
             var ret = DecompressChunk(this, buffer.Span);
             if (ret > 0)
                 return (int)ret;
-
         } while (true);
 
         static unsafe nuint DecompressChunk(ZStdDecompressStream stream, Span<byte> buffer)
         {
             fixed (byte* inputPtr = stream._buffer)
-            fixed (byte* outputPtr = buffer)
             {
-                ZSTD_outBuffer outputBuf = default;
-                outputBuf.dst = outputPtr;
-                outputBuf.pos = 0;
-                outputBuf.size = (nuint)buffer.Length;
-                ZSTD_inBuffer inputBuf = default;
-                inputBuf.src = inputPtr;
-                inputBuf.pos = (nuint)stream._bufferPos;
-                inputBuf.size = (nuint)stream._bufferSize;
+                fixed (byte* outputPtr = buffer)
+                {
+                    ZSTD_outBuffer outputBuf = default;
+                    outputBuf.dst = outputPtr;
+                    outputBuf.pos = 0;
+                    outputBuf.size = (nuint)buffer.Length;
+                    ZSTD_inBuffer inputBuf = default;
+                    inputBuf.src = inputPtr;
+                    inputBuf.pos = (nuint)stream._bufferPos;
+                    inputBuf.size = (nuint)stream._bufferSize;
 
-                var ret = Zstd.ZSTD_decompressStream(stream._ctx, &outputBuf, &inputBuf);
+                    var ret = Zstd.ZSTD_decompressStream(stream._ctx, &outputBuf, &inputBuf);
 
-                stream._bufferPos = (int)inputBuf.pos;
-                ZStdException.ThrowIfError(ret);
+                    stream._bufferPos = (int)inputBuf.pos;
+                    ZStdException.ThrowIfError(ret);
 
-                return outputBuf.pos;
+                    return outputBuf.pos;
+                }
             }
         }
     }
@@ -512,31 +523,33 @@ public sealed class ZStdCompressStream(Stream baseStream, bool ownStream = true)
         ThrowIfDisposed();
 
         fixed (byte* outPtr = _buffer)
-        fixed (byte* inPtr = buffer)
         {
-            ZSTD_outBuffer outBuf = default;
-            outBuf.size = (nuint)_buffer.Length;
-            outBuf.pos = (nuint)_bufferPos;
-            outBuf.dst = outPtr;
-
-            ZSTD_inBuffer inBuf = default;
-            inBuf.pos = 0;
-            inBuf.size = (nuint)buffer.Length;
-            inBuf.src = inPtr;
-
-            while (true)
+            fixed (byte* inPtr = buffer)
             {
-                var err = Zstd.ZSTD_compressStream2(_ctx, &outBuf, &inBuf, ZSTD_EndDirective.ZSTD_e_continue);
-                ZStdException.ThrowIfError(err);
-                _bufferPos = (int)outBuf.pos;
+                ZSTD_outBuffer outBuf = default;
+                outBuf.size = (nuint)_buffer.Length;
+                outBuf.pos = (nuint)_bufferPos;
+                outBuf.dst = outPtr;
 
-                if (inBuf.pos >= inBuf.size)
-                    break;
+                ZSTD_inBuffer inBuf = default;
+                inBuf.pos = 0;
+                inBuf.size = (nuint)buffer.Length;
+                inBuf.src = inPtr;
 
-                // Not all input data consumed. Flush output buffer and continue.
-                _baseStream.Write(_buffer.AsSpan(0, (int)outBuf.pos));
-                _bufferPos = 0;
-                outBuf.pos = 0;
+                while (true)
+                {
+                    var err = Zstd.ZSTD_compressStream2(_ctx, &outBuf, &inBuf, ZSTD_EndDirective.ZSTD_e_continue);
+                    ZStdException.ThrowIfError(err);
+                    _bufferPos = (int)outBuf.pos;
+
+                    if (inBuf.pos >= inBuf.size)
+                        break;
+
+                    // Not all input data consumed. Flush output buffer and continue.
+                    _baseStream.Write(_buffer.AsSpan(0, (int)outBuf.pos));
+                    _bufferPos = 0;
+                    outBuf.pos = 0;
+                }
             }
         }
     }

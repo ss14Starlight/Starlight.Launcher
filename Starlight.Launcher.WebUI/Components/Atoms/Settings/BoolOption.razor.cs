@@ -9,6 +9,7 @@ public partial class BoolOption : ComponentBase
     [Parameter] public string Title { get; set; } = default!;
     [Parameter] public string Description { get; set; } = default!;
     [Parameter] public string Icon { get; set; } = default!;
+
     /// <summary>
     /// Means that this component will control value change by itself.
     /// </summary>
@@ -21,13 +22,16 @@ public partial class BoolOption : ComponentBase
         await base.OnInitializedAsync();
         if (SelfValueControlInitialization is null)
             return;
+
         Value = await SelfValueControlInitialization.Invoke();
     }
 
     private async Task OnValueChanged(bool value)
     {
         if (!SelfValueControl)
+        {
             await ValueChanged.InvokeAsync(value);
+        }
         else
         {
             Value = value;

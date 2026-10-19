@@ -22,18 +22,14 @@ public sealed class LoginsEncryptionTests
 
     [Fact]
     public void Encrypt_UsesFreshNonceEachTime()
-    {
-        Assert.NotEqual(LoginsCipher.Encrypt(_key, _plaintext), LoginsCipher.Encrypt(_key, _plaintext));
-    }
+        => Assert.NotEqual(LoginsCipher.Encrypt(_key, _plaintext), LoginsCipher.Encrypt(_key, _plaintext));
 
     [Theory]
     [InlineData("[]")]
     [InlineData("""[{"UserId":"00000000-0000-0000-0000-000000000001"}]""")]
     [InlineData("SLE1")] // magic alone, too short to hold nonce + tag
     public void LegacyOrTruncatedFiles_AreNotTreatedAsEncrypted(string content)
-    {
-        Assert.False(LoginsCipher.LooksEncrypted(Encoding.UTF8.GetBytes(content)));
-    }
+        => Assert.False(LoginsCipher.LooksEncrypted(Encoding.UTF8.GetBytes(content)));
 
     [Fact]
     public void Decrypt_WithWrongKey_ThrowsCryptographicException()

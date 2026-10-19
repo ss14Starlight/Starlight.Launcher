@@ -38,12 +38,12 @@ public sealed class JournalTests
     [Fact]
     public void Status_ReadsRoundDetails()
     {
-        const string json = """
+        const string Json = """
             {"name":"Test","players":12,"soft_max_players":80,"run_level":1,"round_id":4242,
              "map":"Box Station","preset":"Traitor","panic_bunker":true,"round_start_time":"2026-10-17T10:00:00.0000000Z"}
             """;
 
-        var status = JsonSerializer.Deserialize<ServerApi.ServerStatus>(json)!;
+        var status = JsonSerializer.Deserialize<ServerApi.ServerStatus>(Json)!;
         var data = new ServerStatusData("ss14://test");
         ServerStatusCache.ApplyStatus(data, status);
 
@@ -52,7 +52,7 @@ public sealed class JournalTests
         Assert.Equal("Traitor", data.Preset);
         Assert.True(data.PanicBunker);
         Assert.Equal(GameRoundStatus.InRound, data.RoundStatus);
-        Assert.NotNull(data.RoundStartTime);
+        _ = Assert.NotNull(data.RoundStartTime);
     }
 
     [Fact]
@@ -102,7 +102,7 @@ public sealed class JournalTests
             var store = new JsonFileStore<Doc>(path);
 
             Assert.Empty(store.Read(d => d.Items.ToList()));
-            Assert.Single(Directory.GetFiles(dir, "store.json.corrupt-*.bak"));
+            _ = Assert.Single(Directory.GetFiles(dir, "store.json.corrupt-*.bak"));
         }
         finally
         {

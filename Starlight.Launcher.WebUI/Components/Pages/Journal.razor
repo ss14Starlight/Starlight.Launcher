@@ -1,7 +1,5 @@
 @page "/journal"
 @using Starlight.Launcher.WebUI.Localization
-@using Starlight.Launcher.WebUI.Models.Journal
-@using Starlight.Launcher.WebUI.Models.Replays
 
 @implements IDisposable
 @inherits LocalizedComponentBase
@@ -121,7 +119,7 @@
                            Disabled="_sessions.Count == 0" OnClick="ClearHistory">@L["journal-clear-history"]</MudButton>
             </div>
 
-            @if (FilteredSessions.Count == 0)
+            @if (_filteredSessions.Count == 0)
             {
                 <div class="journal-empty">
                     <MudIcon Icon="@Icons.Material.Outlined.SearchOff" />
@@ -131,7 +129,7 @@
             else
             {
                 <div class="journal-list">
-                    <Virtualize Items="FilteredSessions" Context="session" ItemSize="72" OverscanCount="4">
+                    <Virtualize Items="_filteredSessions" Context="session" ItemSize="72" OverscanCount="4">
                         <div class="journal-session" @key="session.Id">
                             <div class="journal-session__main">
                                 <span class="journal-session__server">@(session.ServerName ?? session.Address)</span>
@@ -209,7 +207,7 @@
                     <MudText Typo="Typo.body2" Class="mud-text-secondary">@L["journal-replays-unavailable"]</MudText>
                 </div>
             }
-            else if (FilteredReplays.Count == 0)
+            else if (_filteredReplays.Count == 0)
             {
                 <div class="journal-empty">
                     <MudIcon Icon="@Icons.Material.Outlined.SearchOff" />
@@ -220,7 +218,7 @@
             {
                 <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mb-2">@L["journal-replays-hint"]</MudText>
                 <div class="journal-list">
-                    <Virtualize Items="FilteredReplays" Context="replay" ItemSize="56" OverscanCount="6">
+                    <Virtualize Items="_filteredReplays" Context="replay" ItemSize="56" OverscanCount="6">
                         <div class="journal-replay" @key="replay.FileName">
                             <div class="journal-replay__main">
                                 <span class="journal-replay__title">

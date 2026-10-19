@@ -1,0 +1,75 @@
+@page "/development"
+
+@using Starlight.Launcher.WebUI.Components.Atoms.Settings
+@using Starlight.Launcher.WebUI.Components.Atoms.Development
+
+@inherits SettingsPageBase
+
+<div class="development-page">
+    @if (_loaded && !_developerMode)
+    {
+        <MudContainer MaxWidth="MaxWidth.Small" Class="pa-6">
+            <MudAlert Severity="Severity.Info">@L["development-page-disabled"]</MudAlert>
+            <MudButton Class="mt-4" Variant="Variant.Outlined" Href="/settings" StartIcon="@Icons.Material.Filled.Settings">@L["main-layout-settings-tab"]</MudButton>
+        </MudContainer>
+    }
+    else if (_loaded)
+    {
+        <MudTabs Elevation="0" ApplyEffectsToContainer="false" Class="settings-tabs pa-6" TabPanelsClass="settings-tabs-panels">
+            <MudTabPanel Text="@L["development-tab-launch"]" Icon="@Icons.Material.Filled.RocketLaunch">
+                <MudContainer MaxWidth="MaxWidth.Small" Class="pa-0">
+                    <MudText Typo="Typo.overline" Class="mud-text-secondary">@L["settings-menu-general-category"]</MudText>
+                    <BoolOption Title="@L["settings-menu-development-gles-option"]" Description="@L["settings-menu-development-gles-option-description"]" Icon="@Icons.Material.Filled.Accessibility" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.CompatMode)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { CompatMode = v })" />
+                    <BoolOption Title="@L["settings-menu-development-signing-option"]" Description="@L["settings-menu-development-signing-option-description"]" Icon="@Icons.Material.Filled.Signpost" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.DisableSigning)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { DisableSigning = v })" />
+                    <BoolOption Title="@L["settings-menu-development-engine-override-option"]" Description="@L["settings-menu-development-engine-override-option-description"]" Icon="@Icons.Material.Filled.Assignment" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.EngineOverrideEnabled)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { EngineOverrideEnabled = v })" />
+                    <FilePathOption Title="@L["settings-menu-development-engine-override-path-option"]" Description="@L["settings-menu-development-engine-override-path-option-description"]" Icon="@Icons.Material.Filled.Folder" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.EngineOverridePath)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { EngineOverridePath = v })" Helper="@L["settings-menu-development-engine-override-path-option-helper"]" Label="@L["settings-menu-development-engine-override-path-option-label"]" HelperOnFocus="true" PickAction="@(() => _fileDialog.PickFileAsync("Engine archive\0*.zip\0All Files\0*.*\0\0"))" />
+                    <TimeSpanOption Title="@L["settings-menu-development-robust-manifest-cache-time-option"]" Description="@L["settings-menu-development-robust-manifest-cache-time-option-description"]" Icon="@Icons.Material.Filled.Timer" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.RobustManifestCacheTime)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { RobustManifestCacheTime = v })" />
+                    <NumericFieldOption Title="@L["settings-menu-development-max-versions-option"]" Description="@L["settings-menu-development-max-versions-option-description"]" Icon="@Icons.Material.Filled.Numbers" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.MaxVersionsToKeep)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { MaxVersionsToKeep = v })" />
+                    <NumericFieldOption Title="@L["settings-menu-development-max-fork-versions-option"]" Description="@L["settings-menu-development-max-fork-versions-option-description"]" Icon="@Icons.Material.Filled.Numbers" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.MaxForkVersionsToKeep)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { MaxForkVersionsToKeep = v })" />
+                    <MudText Typo="Typo.overline" Class="mud-text-secondary mt-4 d-block">@L["settings-menu-development-client-category"]</MudText>
+                    <SelectorListOption Title="@L["development-log-level-option"]" Description="@L["development-log-level-option-description"]" EmptyOption="true" EmptyOptionName="@L["development-log-level-default"]" Icon="@Icons.Material.Filled.Notes" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings<string?>(s => s.ClientLogLevel)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { ClientLogLevel = v })" Values="_logLevels" DisplayTextSelector="@(x => x)" />
+                    <FieldOption Title="@L["settings-menu-development-cvars-option"]" Description="@L["settings-menu-development-cvars-option-description"]" Icon="@Icons.Material.Filled.Tune" Lines="4" Label="key=value" Helper="@L["settings-menu-development-cvars-option-helper"]" HelperOnFocus="true" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.ClientCVarOverrides)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { ClientCVarOverrides = v })" />
+                </MudContainer>
+            </MudTabPanel>
+
+            <MudTabPanel Text="@L["development-tab-profiling"]" Icon="@Icons.Material.Filled.Speed">
+                <MudContainer MaxWidth="MaxWidth.Small" Class="pa-0">
+                    <MudText Typo="Typo.overline" Class="mud-text-secondary">Tracy</MudText>
+                    <BoolOption Title="@L["settings-menu-development-tracy-option"]" Description="@L["settings-menu-development-tracy-option-description"]" Icon="@Icons.Material.Filled.Speed" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.TracyEnabled)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { TracyEnabled = v })" />
+                    <BoolOption Title="@L["settings-menu-development-tracy-localhost-option"]" Description="@L["settings-menu-development-tracy-localhost-option-description"]" Icon="@Icons.Material.Filled.Lock" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.TracyOnlyLocalhost)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { TracyOnlyLocalhost = v })" />
+                    <BoolOption Title="@L["settings-menu-development-tracy-launch-option"]" Description="@L["settings-menu-development-tracy-launch-option-description"]" Icon="@Icons.Material.Filled.Download" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.TracyLaunchProfiler)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { TracyLaunchProfiler = v })" />
+
+                    <MudText Typo="Typo.overline" Class="mud-text-secondary mt-4 d-block">RenderDoc</MudText>
+                    @if (_renderDoc is { Supported: true })
+                    {
+                        <BoolOption Title="@L["development-renderdoc-option"]" Description="@L.GetString("development-renderdoc-option-description", ("version", _renderDoc.Version))" Icon="@Icons.Material.Filled.Camera" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.RenderDocEnabled)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { RenderDocEnabled = v })" />
+                        <ActionOption Title="@L["development-renderdoc-open-option"]" Description="@L["development-renderdoc-open-option-description"]" Icon="@Icons.Material.Filled.OpenInNew" ButtonText="@L["development-renderdoc-open-button"]" ButtonIcon="@Icons.Material.Filled.Launch" Action="OnOpenRenderDoc" />
+                    }
+                    else
+                    {
+                        <MudAlert Severity="Severity.Info" Dense="true">@L["development-renderdoc-unsupported"]</MudAlert>
+                    }
+                </MudContainer>
+            </MudTabPanel>
+
+            <MudTabPanel Text="@L["development-tab-diagnostics"]" Icon="@Icons.Material.Filled.MonitorHeart">
+                <MudContainer MaxWidth="MaxWidth.Medium" Class="pa-0">
+                    <MudText Typo="Typo.overline" Class="mud-text-secondary">@L["development-crash-dumps-category"]</MudText>
+                    <BoolOption Title="@L["settings-menu-development-crash-dumps-option"]" Description="@L["settings-menu-development-crash-dumps-option-description"]" Icon="@Icons.Material.Filled.BugReport" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.CrashDumpsEnabled)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { CrashDumpsEnabled = v })" />
+                    <NumericFieldOption Title="@L["settings-menu-development-crash-dumps-retain-option"]" Description="@L["settings-menu-development-crash-dumps-retain-option-description"]" Icon="@Icons.Material.Filled.Numbers" SelfValueControl="true" SelfValueControlInitialization="async () => await FetchSettings(s => s.CrashDumpsRetain)" SelfValueControlAction="x => OnSettingChanged(x, null, (s, v) => s with { CrashDumpsRetain = v })" />
+                    <ActionOption Title="@L["settings-menu-development-crash-dumps-folder-option"]" Description="@L["settings-menu-development-crash-dumps-folder-option-description"]" Icon="@Icons.Material.Filled.FolderOpen" ButtonText="@L["settings-menu-development-crash-dumps-folder-button"]" ButtonIcon="@Icons.Material.Filled.OpenInNew" Action="() => OpenFolder(s => s.DirCrashDumps)" />
+
+                    <MudText Typo="Typo.overline" Class="mud-text-secondary mt-4 d-block">@L["development-running-game-category"]</MudText>
+                    <ClientDiagnosticsOption Icon="@Icons.Material.Filled.MonitorHeart" />
+
+                    <MudText Typo="Typo.overline" Class="mud-text-secondary mt-4 d-block">@L["development-tools-category"]</MudText>
+                    <DotnetToolsPanel OpenCaptures="() => OpenFolder(s => s.DirDiagnosticCaptures)" />
+                </MudContainer>
+            </MudTabPanel>
+
+            <MudTabPanel Text="@L["development-tab-console"]" Icon="@Icons.Material.Filled.Terminal">
+                <GameConsole OpenLogs="OpenClientLogs" />
+            </MudTabPanel>
+        </MudTabs>
+    }
+</div>

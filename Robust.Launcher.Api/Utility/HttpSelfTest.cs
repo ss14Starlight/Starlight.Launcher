@@ -22,7 +22,7 @@ namespace Robust.Launcher.Api.Utility;
 
 internal static class HttpSelfTest
 {
-    private static int s_httpSelfTestInitiated = 0;
+    private static int s_httpSelfTestInitiated;
 
     private static readonly string[] _selfTestUrls =
     [
@@ -46,7 +46,7 @@ internal static class HttpSelfTest
         {
             RunTests(i, url);
 
-            i += 1;
+            i++;
         }
     }
 
@@ -60,8 +60,6 @@ internal static class HttpSelfTest
         await RunSingleTest("LoggedSockets", TestLoggedSockets);
 
         Log.Information("SELF TEST [{Id}]: Done", id);
-
-        return;
 
         async Task RunSingleTest(string name, Func<int, string, Task> test)
         {
@@ -162,8 +160,8 @@ internal static class HttpSelfTest
         var text = await response.Content.ReadAsStringAsync();
         Log.Information("SELF TEST [{Id}]: Response text: {Text}", id, text);
 
-        if (response.StatusCode is < (HttpStatusCode)200 or > (HttpStatusCode)399)
-            throw new Exception($"Got bad status code in response: {response.StatusCode}");
+        if (response.StatusCode is < HttpStatusCode.OK or > (HttpStatusCode)399)
+            throw new InvalidOperationException($"Got bad status code in response: {response.StatusCode}");
     }
 
     private sealed class LogDataTransferStream(Stream baseStream, Stopwatch stopwatch, Action<string> log) : Stream
@@ -195,6 +193,7 @@ internal static class HttpSelfTest
         public override bool CanSeek => _baseStream.CanSeek;
         public override bool CanWrite => _baseStream.CanWrite;
         public override long Length => _baseStream.Length;
+
         public override long Position
         {
             get => _baseStream.Position;
@@ -220,9 +219,7 @@ internal static class HttpSelfTest
             for (var chunkOffset = 0; chunkOffset < data.Length; chunkOffset += ChunkSize)
             {
                 var remainingSize = Math.Min(ChunkSize, data.Length - chunkOffset);
-                var subData = data.Slice(chunkOffset, remainingSize);
-
-                foreach (var b in subData)
+                foreach (var b in data.Slice(chunkOffset, remainingSize))
                     _ = sb.Append($"{b:X2} ");
 
                 _log($"{chunkOffset:X16} {sb}");

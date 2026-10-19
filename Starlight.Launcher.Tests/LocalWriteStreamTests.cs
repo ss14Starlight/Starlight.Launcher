@@ -32,7 +32,7 @@ public sealed class LocalWriteStreamTests : IDisposable
         var e = await Assert.ThrowsAsync<LocalWriteException>(
             () => sink.WriteAsync(new byte[] { 1 }, TestContext.Current.CancellationToken).AsTask());
         Assert.NotNull(e.InnerException);
-        Assert.Throws<LocalWriteException>(sink.Reset);
+        _ = Assert.Throws<LocalWriteException>(sink.Reset);
     }
 
     [Fact]
@@ -41,7 +41,7 @@ public sealed class LocalWriteStreamTests : IDisposable
         await using var file = new FileStream(_path, FileMode.Create, FileAccess.ReadWrite);
         var sink = new LocalWriteStream(file);
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+        _ = await Assert.ThrowsAnyAsync<OperationCanceledException>(
             () => sink.WriteAsync(new byte[] { 1 }, new CancellationToken(true)).AsTask());
     }
 }

@@ -28,29 +28,31 @@ public sealed partial class BugReportDialog
     private bool _sending;
     private string? _error;
 
-    private bool LauncherAvailable => _targets?.Launcher == true;
-    private bool GameAvailable => _targets?.Projects.Length > 0;
+    private bool _launcherAvailable => _targets?.Launcher == true;
+    private bool _gameAvailable => _targets?.Projects.Length > 0;
 
-    private bool TargetAvailable => _target switch
+    private bool _targetAvailable => _target switch
     {
-        BugReportTarget.Launcher => LauncherAvailable,
-        BugReportTarget.Game => GameAvailable && _project is not null,
+        BugReportTarget.Launcher => _launcherAvailable,
+        BugReportTarget.Game => _gameAvailable && _project is not null,
         _ => false,
     };
 
-    private bool TitleTooShort => _title.Trim().Length is > 0 and < BugReportLimits.MinTitleLength;
-    private bool DescriptionTooShort => _description.Trim().Length is > 0 and < BugReportLimits.MinDescriptionLength;
+    private bool _titleTooShort => _title.Trim().Length is > 0 and < BugReportLimits.MinTitleLength;
+    private bool _descriptionTooShort => _description.Trim().Length is > 0 and < BugReportLimits.MinDescriptionLength;
 
-    private bool CanSend =>
-        _linked && !_sending && TargetAvailable
-        && _title.Trim().Length is >= BugReportLimits.MinTitleLength and <= BugReportLimits.MaxTitleLength
-        && _description.Trim().Length is >= BugReportLimits.MinDescriptionLength and <= BugReportLimits.MaxDescriptionLength;
+    private bool _canSend
+        => _linked
+            && !_sending
+            && _targetAvailable
+            && _title.Trim().Length is >= BugReportLimits.MinTitleLength and <= BugReportLimits.MaxTitleLength
+            && _description.Trim().Length is >= BugReportLimits.MinDescriptionLength and <= BugReportLimits.MaxDescriptionLength;
 
     protected override async Task OnInitializedAsync()
     {
         _server = ServerAddress;
         _linked = _bridge.GetActiveAccount() is { } account
-                  && (account.LoginInfo.DiscordToken ?? account.LoginInfo.SteamToken) is not null;
+            && (account.LoginInfo.DiscordToken ?? account.LoginInfo.SteamToken) is not null;
 
         try
         {
@@ -67,12 +69,12 @@ public sealed partial class BugReportDialog
             return;
         }
 
-        if (GameAvailable)
+        if (_gameAvailable)
             _project = _targets.Projects.FirstOrDefault(p => p == DefaultProject) ?? _targets.Projects[0];
 
-        _target = LauncherAvailable || !GameAvailable ? BugReportTarget.Launcher : BugReportTarget.Game;
+        _target = _launcherAvailable || !_gameAvailable ? BugReportTarget.Launcher : BugReportTarget.Game;
 
-        if (!LauncherAvailable && !GameAvailable)
+        if (!_launcherAvailable && !_gameAvailable)
             _error = L["bug-report-dialog-no-targets"];
     }
 
@@ -84,12 +86,11 @@ public sealed partial class BugReportDialog
 
     private async Task Send()
     {
-        if (!CanSend)
+        if (!_canSend)
             return;
 
         _sending = true;
         _error = null;
-        StateHasChanged();
 
         BugReportResult result;
         try
@@ -124,7 +125,6 @@ public sealed partial class BugReportDialog
             BugReportStatus.Invalid => L["bug-report-dialog-error-invalid"],
             _ => L["bug-report-dialog-error-unavailable"],
         };
-        StateHasChanged();
     }
 
     private void Cancel() => _mudDialog.Cancel();

@@ -19,42 +19,42 @@ public partial class LinkAccountView : LocalizedComponentBase
     [Inject] private AuthApi _authApi { get; set; } = default!;
     [Inject] private ISnackbar _snackbar { get; set; } = default!;
 
-    private bool Busy;
-    private string Password = "";
-    private string TfaCode = "";
-    private bool TfaRequired;
+    private bool _busy;
+    private string _password = "";
+    private string _tfaCode = "";
+    private bool _tfaRequired;
 
-    private string? Error;
+    private string? _error;
 
     private async Task OnLinkKey(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter" && !Busy)
+        if (e.Key == "Enter" && !_busy)
             await DoLinkAccount();
     }
 
     private async Task DoLinkAccount()
     {
-        Error = null;
+        _error = null;
 
-        if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrEmpty(Password))
+        if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrEmpty(_password))
         {
-            Error = L["auth-menu-enter-info-error"];
+            _error = L["auth-menu-enter-info-error"];
             return;
         }
 
         if ((await _bridge.GetSettingsAsync()).SelectedAuthServer is not { } authServer)
         {
-            Error = L["auth-menu-no-server-error"];
+            _error = L["auth-menu-no-server-error"];
             return;
         }
 
-        Busy = true;
+        _busy = true;
         await InvokeAsync(StateHasChanged);
         try
         {
             var request = new AuthApi.AuthenticateRequest(
-                Username, null, Password,
-                TfaRequired ? TfaCode : null);
+                Username, null, _password,
+                _tfaRequired ? _tfaCode : null);
 
             var result = await _authApi.AuthenticateAsync(request, new UrlFallbackSet(authServer));
 
@@ -62,7 +62,7 @@ public partial class LinkAccountView : LocalizedComponentBase
             {
                 if (await _bridge.LinkSs14AccountAsync(UserId.Value, result.LoginInfo) is { } linkError)
                 {
-                    Error = linkError;
+                    _error = linkError;
                     return;
                 }
 
@@ -75,27 +75,27 @@ public partial class LinkAccountView : LocalizedComponentBase
             switch (result.Code)
             {
                 case AuthApi.AuthenticateDenyResponseCode.InvalidCredentials:
-                    Error = L["auth-menu-incorrect-info-error"];
+                    _error = L["auth-menu-incorrect-info-error"];
                     break;
                 case AuthApi.AuthenticateDenyResponseCode.TfaRequired:
-                    TfaRequired = true;
-                    Error = L["auth-menu-tfa-required-error"];
+                    _tfaRequired = true;
+                    _error = L["auth-menu-tfa-required-error"];
                     break;
                 case AuthApi.AuthenticateDenyResponseCode.TfaInvalid:
-                    TfaRequired = true;
-                    Error = L["auth-menu-tfa-invalid-error"];
+                    _tfaRequired = true;
+                    _error = L["auth-menu-tfa-invalid-error"];
                     break;
                 case AuthApi.AuthenticateDenyResponseCode.AccountLocked:
-                    Error = L["auth-menu-account-blocked-error"];
+                    _error = L["auth-menu-account-blocked-error"];
                     break;
                 default:
-                    Error = string.Join("\n", result.Errors);
+                    _error = string.Join("\n", result.Errors);
                     break;
             }
         }
         finally
         {
-            Busy = false;
+            _busy = false;
             await InvokeAsync(StateHasChanged);
         }
     }

@@ -4,7 +4,7 @@ namespace Starlight.Launcher.Tests;
 
 public sealed partial class LocalizationUsageTests
 {
-    private static readonly HashSet<string> s_allowedLiterals =
+    private static readonly HashSet<string> _allowedLiterals =
     [
         "Starlight",
         "STARLIGHT",
@@ -12,21 +12,33 @@ public sealed partial class LocalizationUsageTests
         "Discord",
         "Steam",
         "key=value",
+        // Tool and file format names on the Development page.
+        "Tracy",
+        "RenderDoc",
+        "dotnet-trace",
+        "dotnet-counters",
+        "dotnet-gcdump",
+        "dotnet-stack",
+        "dotnet-monitor",
+        "NetTrace",
+        "Speedscope",
+        "Chromium",
     ];
 
-    private static readonly HashSet<string> s_skippedFiles = ["Components/App.razor"];
+    private static readonly HashSet<string> _skippedFiles = ["Components/App.razor"];
 
-    private static readonly string s_webUiDir = Path.Combine(FindRepositoryRoot(), "Starlight.Launcher.WebUI");
+    private static readonly string _webUiDir = Path.Combine(FindRepositoryRoot(), "Starlight.Launcher.WebUI");
 
     public static TheoryData<string> RazorFiles()
     {
         var data = new TheoryData<string>();
         foreach (var file in EnumerateSources("*.razor"))
         {
-            var relative = Path.GetRelativePath(s_webUiDir, file).Replace('\\', '/');
-            if (!s_skippedFiles.Contains(relative))
+            var relative = Path.GetRelativePath(_webUiDir, file).Replace('\\', '/');
+            if (!_skippedFiles.Contains(relative))
                 data.Add(relative);
         }
+
         return data;
     }
 
@@ -34,7 +46,7 @@ public sealed partial class LocalizationUsageTests
     [MemberData(nameof(RazorFiles))]
     public void MarkupHasNoHardcodedText(string file)
     {
-        var markup = StripNonMarkup(File.ReadAllText(Path.Combine(s_webUiDir, file)));
+        var markup = StripNonMarkup(File.ReadAllText(Path.Combine(_webUiDir, file)));
         var found = new List<string>();
 
         foreach (Match m in TextNodeRegex().Matches(markup))
@@ -42,6 +54,7 @@ public sealed partial class LocalizationUsageTests
             var text = m.Groups[1].Value.Trim();
             if (text.StartsWith('@') || CodeCharsRegex().IsMatch(text))
                 continue;
+
             if (IsTranslatable(text))
                 found.Add($"text: \"{text}\"");
         }
@@ -69,7 +82,7 @@ public sealed partial class LocalizationUsageTests
             {
                 var key = m.Groups[1].Value;
                 if (!defaults.ContainsKey(key))
-                    missing.Add($"{Path.GetRelativePath(s_webUiDir, file)}: {key}");
+                    _ = missing.Add($"{Path.GetRelativePath(_webUiDir, file)}: {key}");
             }
         }
 
@@ -79,8 +92,8 @@ public sealed partial class LocalizationUsageTests
 
     private static bool IsTranslatable(string text)
         => LetterRegex().IsMatch(text)
-           && !s_allowedLiterals.Contains(text)
-           && !text.Contains("://", StringComparison.Ordinal);
+            && !_allowedLiterals.Contains(text)
+            && !text.Contains("://", StringComparison.Ordinal);
 
     private static string StripNonMarkup(string source)
     {
@@ -93,9 +106,9 @@ public sealed partial class LocalizationUsageTests
     }
 
     private static IEnumerable<string> EnumerateSources(string pattern)
-        => Directory.EnumerateFiles(s_webUiDir, pattern, SearchOption.AllDirectories)
+        => Directory.EnumerateFiles(_webUiDir, pattern, SearchOption.AllDirectories)
             .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}")
-                        && !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}"))
+                && !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}"))
             .Order();
 
     private static string FindRepositoryRoot()
@@ -105,6 +118,7 @@ public sealed partial class LocalizationUsageTests
             if (File.Exists(Path.Combine(dir.FullName, "Starlight.Launcher.slnx")))
                 return dir.FullName;
         }
+
         throw new DirectoryNotFoundException("Could not locate Starlight.Launcher.slnx above the test output directory.");
     }
 

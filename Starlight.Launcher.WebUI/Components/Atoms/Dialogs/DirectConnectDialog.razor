@@ -5,14 +5,14 @@
 
 <MudDialog>
     <DialogContent>
-        <MudTextField @bind-Value="Address"
+        <MudTextField @bind-Value="_address"
                       Label="@L["direct-connect-dialog-address"]"
                       Placeholder="ss14://localhost"
                       Variant="Variant.Outlined"
                       Immediate="true"
                       AutoFocus="true"
                       OnKeyDown="HandleKeyDown" />
-        <MudCheckBox @bind-Value="AddToFavorites"
+        <MudCheckBox @bind-Value="_addToFavorites"
                      Label="@L["direct-connect-dialog-add-to-favorites"]"
                      Class="mt-2" />
     </DialogContent>
@@ -20,7 +20,7 @@
         <MudButton OnClick="Cancel">@L["general-cancel"]</MudButton>
         <MudButton Variant="Variant.Filled"
                    Class="cta-btn-primary"
-                   Disabled="@(string.IsNullOrWhiteSpace(Address))"
+                   Disabled="@(string.IsNullOrWhiteSpace(_address))"
                    OnClick="Submit">@L["direct-connect-dialog-connect"]</MudButton>
     </DialogActions>
 </MudDialog>

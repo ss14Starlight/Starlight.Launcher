@@ -3,7 +3,6 @@ using Starlight.Launcher.WebUI.Models.Data;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 
 namespace Starlight.Launcher.Services.EngineManager;
@@ -63,7 +62,8 @@ public sealed partial class EngineManagerDynamic
         foreach (var cdn in cdns)
         {
             var cache = GetOrCreateCache(cdn);
-            if (cache.Versions != null && cache.ValidUntil > _manifestStopwatch.Elapsed
+            if (cache.Versions != null
+                && cache.ValidUntil > _manifestStopwatch.Elapsed
                 && FindVersionInfoInCached(cdn, cache, version, followRedirects) is { } found)
             {
                 return found;
@@ -149,9 +149,11 @@ public sealed partial class EngineManagerDynamic
             {
                 if (cache.ETag != null)
                     request.Headers.IfNoneMatch.Add(cache.ETag);
+
                 if (cache.LastModified is { } lastModified)
                     request.Headers.IfModifiedSince = lastModified;
             }
+
             return request;
         }, cancel);
 
@@ -199,6 +201,7 @@ public sealed partial class EngineManagerDynamic
         var key = string.Join('|', cdn.BaseUrl.Urls);
         if (!_manifestCaches.TryGetValue(key, out var cache))
             _manifestCaches[key] = cache = new CdnManifestCache();
+
         return cache;
     }
 

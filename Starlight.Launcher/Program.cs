@@ -3,7 +3,9 @@ using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Logging;
 using Serilog;
+#if DEBUG
 using Starlight.Launcher.Helpers;
+#endif
 using Starlight.Launcher.Services.DeepLink;
 using Starlight.Launcher.Services.Logging;
 
@@ -52,8 +54,10 @@ internal static class Program
             }
 
             var logger = new LoggerConfiguration()
-                .WriteTo.Console()
-                .WriteTo.File(Path.Combine(AppPaths.AppDataDirectory, "launcher-logs", "log-.log"), restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug, rollingInterval: RollingInterval.Day)
+                .WriteTo
+                .Console()
+                .WriteTo
+                .File(Path.Combine(AppPaths.AppDataDirectory, "launcher-logs", "log-.log"), restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug, rollingInterval: RollingInterval.Day)
                 .CreateLogger();
             Log.Logger = logger;
             GlobalExceptionHandlers.Install();
@@ -115,8 +119,8 @@ internal static class Program
 
     // NSec checks the exact libsodium version, so a foreign libsodium found via PATH
     // (e.g. one shipped with PHP) breaks it. Force our bundled copy for every assembly that P/Invokes it.
-    private static void PinBundledLibsodium() =>
-        PinBundledNativeLibrary("libsodium", "NSec.Cryptography", "SpaceWizards.Sodium.Interop");
+    private static void PinBundledLibsodium()
+        => PinBundledNativeLibrary("libsodium", "NSec.Cryptography", "SpaceWizards.Sodium.Interop");
 
     private static void PinBundledSkia()
     {
@@ -126,9 +130,8 @@ internal static class Program
 
     private static void PinBundledNativeLibrary(string libName, params string[] assemblies)
     {
-        var extension = OperatingSystem.IsWindows() ? ".dll"
-            : OperatingSystem.IsMacOS() ? ".dylib"
-            : ".so";
+        var extension = GetNativeLibraryExtension();
+
         var fileName = libName + extension;
 
         var baseDir = AppContext.BaseDirectory;
@@ -143,8 +146,8 @@ internal static class Program
         if (path == null || !NativeLibrary.TryLoad(path, out var handle))
             return;
 
-        nint resolver(string name, Assembly _1, DllImportSearchPath? _2) =>
-            name == libName || name == libName + ".dll" || name == libName + ".so" || name == libName + ".dylib"
+        nint Resolver(string name, Assembly _1, DllImportSearchPath? _2)
+            => name == libName || name == libName + ".dll" || name == libName + ".so" || name == libName + ".dylib"
                 ? handle
                 : IntPtr.Zero;
 
@@ -152,7 +155,7 @@ internal static class Program
         {
             try
             {
-                NativeLibrary.SetDllImportResolver(Assembly.Load(asmName), resolver);
+                NativeLibrary.SetDllImportResolver(Assembly.Load(asmName), Resolver);
             }
             catch (Exception e) when (e is FileNotFoundException or InvalidOperationException)
             {
@@ -180,15 +183,38 @@ internal static class Program
     private static extern int setenv(string name, string value, int overwrite);
 #pragma warning restore SYSLIB1054, CA2101
 
+    private static string GetOsName()
+    {
+        if (OperatingSystem.IsWindows())
+            return "win";
+
+        if (OperatingSystem.IsMacOS())
+            return "osx";
+
+        return "linux";
+    }
+
+    private static string GetNativeLibraryExtension()
+    {
+        if (OperatingSystem.IsWindows())
+            return ".dll";
+
+        if (OperatingSystem.IsMacOS())
+            return ".dylib";
+
+        return ".so";
+    }
+
     private static string GetPortableRid()
     {
-        var os = OperatingSystem.IsWindows() ? "win" : OperatingSystem.IsMacOS() ? "osx" : "linux";
+        var os = GetOsName();
+
         var arch = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
         return $"{os}-{arch}";
     }
 
-    public static AppBuilder BuildAvaloniaApp() =>
-        AppBuilder.Configure<App>()
+    public static AppBuilder BuildAvaloniaApp()
+        => AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .WithInterFont()
             .LogToTrace(LogEventLevel.Debug, LogArea.Control, LogArea.Visual);

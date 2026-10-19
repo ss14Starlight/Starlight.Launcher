@@ -3,11 +3,10 @@ using Microsoft.AspNetCore.Components;
 namespace Starlight.Launcher.WebUI.Localization;
 
 /// <summary>
-/// Base for components that localize text. Use cL[id]c in markup; the component
-///
-/// re-renders automatically when localization reloads.
+/// <para>Base for components that localize text. Use cL[id]c in markup; the component</para>
+/// <para>re-renders automatically when localization reloads.</para>
 /// </summary>
-public abstract class LocalizedComponentBase :  ComponentBase, IDisposable
+public abstract class LocalizedComponentBase : ComponentBase, IDisposable
 {
     [Inject] protected ILocalizationManager L { get; set; } = default!;
 
@@ -15,5 +14,9 @@ public abstract class LocalizedComponentBase :  ComponentBase, IDisposable
 
     private void OnLocalizationChanged() => InvokeAsync(StateHasChanged);
 
-    public virtual void Dispose() => L.Changed -= OnLocalizationChanged;
+    public virtual void Dispose()
+    {
+        L.Changed -= OnLocalizationChanged;
+        GC.SuppressFinalize(this);
+    }
 }

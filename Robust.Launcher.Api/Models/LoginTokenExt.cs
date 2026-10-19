@@ -64,9 +64,6 @@ public static class LoginTokenExt
 
         var share = lifetime / 5;
 
-        if (share > max)
-            return max;
-
-        return share < MinRefreshBuffer ? MinRefreshBuffer : share;
+        return TimeSpan.FromTicks(Math.Clamp(share.Ticks, MinRefreshBuffer.Ticks, max.Ticks));
     }
 }

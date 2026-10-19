@@ -1,15 +1,12 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
 		<TargetFramework>net11.0</TargetFramework>
 		<RootNamespace>Starlight.Launcher</RootNamespace>
 		<ImplicitUsings>enable</ImplicitUsings>
-		<Nullable>enable</Nullable>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<ApplicationIcon>Resources\AppIcon\icon.ico</ApplicationIcon>
-		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<ApplicationManifest>app.manifest</ApplicationManifest>
 	</PropertyGroup>
 
@@ -26,7 +23,6 @@
 
 
 	<PropertyGroup>
-		<AvaloniaVersion>12.1.0</AvaloniaVersion> <!-- bump to whatever's latest on nuget.org -->
 		<AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
 	</PropertyGroup>
 
@@ -50,39 +46,40 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Microsoft.Diagnostics.NETCore.Client" />
+		<!-- Only the EventPipe parser is used; build assets would copy ~10 MB of Windows ETW natives. -->
+		<PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" ExcludeAssets="build;buildTransitive" />
 		<Reference Include="Avalonia.Controls.WebView">
 			<HintPath>packages\Avalonia.Controls.WebView.dll</HintPath>
 		</Reference>
 		<Reference Include="Avalonia.Controls.WebView.Core">
 			<HintPath>packages\Avalonia.Controls.WebView.Core.dll</HintPath>
 		</Reference>
-		<PackageReference Include="Avalonia" Version="12.1.0-starlight" />
-		<PackageReference Include="Avalonia.Desktop" Version="12.1.0-starlight" />
-		<PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.0-starlight" />
-		<PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.0-starlight" />
+		<PackageReference Include="Avalonia" />
+		<PackageReference Include="Avalonia.Desktop" />
+		<PackageReference Include="Avalonia.Themes.Fluent" />
+		<PackageReference Include="Avalonia.Fonts.Inter" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<!-- Kept, all cross-platform managed libraries -->
-		<PackageReference Include="DiscordRichPresence" Version="1.6.2.72" />
-		<PackageReference Include="Linguini.Bundle" Version="0.11.0" />
-		<PackageReference Include="SharpZstd.Interop" Version="1.5.6" />
-		<PackageReference Include="Serilog" Version="4.3.1" />
-		<PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
-		<PackageReference Include="Serilog.Formatting.Compact" Version="3.0.0" />
-		<PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
-		<PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
-		<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+		<PackageReference Include="DiscordRichPresence" />
+		<PackageReference Include="Linguini.Bundle" />
+		<PackageReference Include="Serilog.Extensions.Hosting" />
+		<PackageReference Include="Serilog.Formatting.Compact" />
+		<PackageReference Include="Serilog.Sinks.Console" />
+		<PackageReference Include="Serilog.Sinks.Debug" />
+		<PackageReference Include="Serilog.Sinks.File" />
 
 		<!-- restored only for blazor.web.js, which the in-process Blazor host serves at _framework/.
 		     Must match the ASP.NET runtime we ship: the JS half of components like Virtualize changes between
 		     previews, and a mismatch silently breaks them (e.g. the server list rendering no items). -->
-		<PackageReference Include="Microsoft.AspNetCore.App.Internal.Assets" Version="$(BundledNETCoreAppPackageVersion)" ExcludeAssets="all" PrivateAssets="all" GeneratePathProperty="true" />
-		<PackageReference Include="MudBlazor" Version="9.7.0" GeneratePathProperty="true" />
-		<PackageReference Include="MudBlazor.Markdown" Version="9.0.0" GeneratePathProperty="true" />
+		<PackageReference Include="Microsoft.AspNetCore.App.Internal.Assets" ExcludeAssets="all" PrivateAssets="all" GeneratePathProperty="true" />
+		<PackageReference Include="MudBlazor" GeneratePathProperty="true" />
+		<PackageReference Include="MudBlazor.Markdown" GeneratePathProperty="true" />
 
 		<!-- Windows-only API (DPAPI)-->
-		<PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.8" />
+		<PackageReference Include="System.Security.Cryptography.ProtectedData" />
 	</ItemGroup>
 
  

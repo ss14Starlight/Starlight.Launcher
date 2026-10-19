@@ -98,7 +98,7 @@
                                               ValueChanged="@(v => UpdateUrl(index, urlIndex, v))"
                                               Immediate="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                                               Placeholder="https://example.com/"
-                                              Validation="@(new Func<string, string?>(ValidateUrl))"
+                                              Validation="@(new Func<string, string?>(Starlight.Launcher.WebUI.Models.Helpers.UrlValidation.HttpsOnly))"
                                               Class="flex-grow-1" />
                                 <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small"
                                                Disabled="@(cdn.Urls.Count <= 1)"

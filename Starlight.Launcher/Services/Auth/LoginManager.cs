@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using Robust.Launcher.Api.Api;
 using Robust.Launcher.Api.Models;
@@ -7,14 +8,13 @@ using Serilog;
 using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.WebUI.Models.Auth;
 using Starlight.Launcher.WebUI.Models.Helpers;
-using System.Collections.ObjectModel;
 
 namespace Starlight.Launcher.Services.Auth;
 
 /// <summary>
 ///     Owns the set of logged-in accounts and keeps their tokens alive.
 /// </summary>
-public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
+public sealed class LoginManager : ObservableObject, IAsyncDisposable
 {
     private readonly AuthApi _authApi;
     private readonly StarlightAuthApi _starlightAuthApi;
@@ -43,6 +43,7 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
     private readonly Lock _loginsLock = new();
 
     private readonly ObservableCollection<LoggedInAccount> _loginsView = [];
+
     public ReadOnlyObservableCollection<LoggedInAccount> Logins { get; }
 
     public event Action? LoginsChanged;
@@ -228,12 +229,13 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
                     await _refreshTask;
             }
             catch (OperationCanceledException) { }
+
             _cts.Dispose();
             _cts = null;
         }
     }
 
-    #endregion
+    #endregion Lifetime
 
     #region Refreshing
 
@@ -278,19 +280,20 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
         if (data.LastCheckUtc is not { } last)
             return true;
 
-        // Expired accounts need the user, not us. Re-check occasionally in case the
-        // server un-revoked the session, but do not hammer it.
-        return data.Status == AccountLoginStatus.Expired
-            ? DateTime.UtcNow - last >= _revalidateInterval
-            : data.Status == AccountLoginStatus.Unreachable
-            ? DateTime.UtcNow - last >= _retryAfterUnreachable
-            : NeedsRenewal(data.LoginInfo) || DateTime.UtcNow - last >= _revalidateInterval;
+        return data.Status switch
+        {
+            // Expired accounts need the user, not us. Re-check occasionally in case the
+            // server un-revoked the session, but do not hammer it.
+            AccountLoginStatus.Expired => DateTime.UtcNow - last >= _revalidateInterval,
+            AccountLoginStatus.Unreachable => DateTime.UtcNow - last >= _retryAfterUnreachable,
+            _ => NeedsRenewal(data.LoginInfo) || DateTime.UtcNow - last >= _revalidateInterval,
+        };
     }
 
     private static bool NeedsRenewal(LoginInfo info)
         => (info.Token is { } robust && robust.ShouldRefresh(LoginTokenExt.RefreshBuffer))
-        || (info.DiscordToken is { } discord && discord.ShouldRefresh(StarlightRenewalBuffer(discord)))
-        || (info.SteamToken is { } steam && steam.ShouldRefresh(StarlightRenewalBuffer(steam)));
+            || (info.DiscordToken is { } discord && discord.ShouldRefresh(StarlightRenewalBuffer(discord)))
+            || (info.SteamToken is { } steam && steam.ShouldRefresh(StarlightRenewalBuffer(steam)));
 
     private static TimeSpan StarlightRenewalBuffer(LoginToken token)
         => token.RenewalBuffer(LoginTokenExt.ShortRefreshBuffer);
@@ -367,7 +370,7 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
         return AccountLoginStatus.Expired;
     }
 
-    #endregion
+    #endregion Refreshing
 
     #region SS14 auth server tokens
 
@@ -424,7 +427,9 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
             return (CredentialState.Invalid, false);
 
         // Not near expiry. Ping only when we have no opinion yet or it is time to re-check.
-        if (data.RobustState == CredentialState.Valid && !force && data.LastCheckUtc is { } last
+        if (data.RobustState == CredentialState.Valid
+            && !force
+            && data.LastCheckUtc is { } last
             && DateTime.UtcNow - last < _revalidateInterval)
         {
             return (CredentialState.Valid, false);
@@ -444,7 +449,7 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
         }
     }
 
-    #endregion
+    #endregion SS14 auth server tokens
 
     #region Starlight (Discord / Steam) tokens
 
@@ -506,7 +511,9 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
         }
 
         var lastState = steam ? data.SteamState : data.DiscordState;
-        if (lastState == CredentialState.Valid && !force && data.LastCheckUtc is { } last
+        if (lastState == CredentialState.Valid
+            && !force
+            && data.LastCheckUtc is { } last
             && DateTime.UtcNow - last < _revalidateInterval)
         {
             return (CredentialState.Valid, false);
@@ -575,7 +582,7 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
         }
     }
 
-    #endregion
+    #endregion Starlight (Discord / Steam) tokens
 
     #region Public operations
 
@@ -683,14 +690,22 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
 
         var fresh = data.LoginInfo;
         data.SetCredentialStates(
-            info.Token != null ? CredentialState.Valid : fresh.Token != null ? data.RobustState : CredentialState.None,
-            info.DiscordToken != null ? CredentialState.Valid : fresh.DiscordToken != null ? data.DiscordState : CredentialState.None,
-            info.SteamToken != null ? CredentialState.Valid : fresh.SteamToken != null ? data.SteamState : CredentialState.None);
+            GetCredentialState(info.Token, fresh.Token, data.RobustState),
+            GetCredentialState(info.DiscordToken, fresh.DiscordToken, data.DiscordState),
+            GetCredentialState(info.SteamToken, fresh.SteamToken, data.SteamState));
         data.SetStatus(AccountLoginStatus.Available);
         data.MarkChecked();
         data.RaiseUsernameChanged();
 
         LoginsChanged?.Invoke();
+    }
+
+    private static CredentialState GetCredentialState(LoginToken? token, LoginToken? freshToken, CredentialState state)
+    {
+        if (token != null)
+            return CredentialState.Valid;
+
+        return freshToken != null ? state : CredentialState.None;
     }
 
     /// <summary>
@@ -730,6 +745,7 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
         {
             merged = _logins.GetValueOrDefault(authLogin.UserId);
         }
+
         _ = await EnsureFreshAsync(merged, cancel);
 
         return null;
@@ -812,7 +828,7 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
         LoginsChanged?.Invoke();
     }
 
-    #endregion
+    #endregion Public operations
 
     #region Persistence
 
@@ -911,7 +927,7 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
             OnPropertyChanged(nameof(ActiveAccount));
     }
 
-    #endregion
+    #endregion Persistence
 
     #region Usernames
 
@@ -959,7 +975,7 @@ public sealed partial class LoginManager : ObservableObject, IAsyncDisposable
 
     private static string FallbackUsername(Guid userId) => $"Player{userId:N}"[..10];
 
-    #endregion
+    #endregion Usernames
 
     private void AddToView(IReadOnlyList<ActiveLoginData> added)
     {

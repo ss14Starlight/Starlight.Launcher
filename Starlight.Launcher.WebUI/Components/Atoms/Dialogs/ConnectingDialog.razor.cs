@@ -19,7 +19,7 @@ public sealed partial class ConnectingDialog : LocalizedComponentBase, IDisposab
 
     [Parameter] public IFileResult? ContentBundle { get; set; }
 
-    [Parameter] public string? Title { get; set; } = null;
+    [Parameter] public string? Title { get; set; }
 
     private readonly CancellationTokenSource _cts = new();
     private Timer? _pollTimer;
@@ -35,19 +35,20 @@ public sealed partial class ConnectingDialog : LocalizedComponentBase, IDisposab
         ? Icons.Material.Filled.Inventory2
         : Icons.Material.Filled.Dns;
 
-    private double _percent =>
-        _bridge.GetUpdateProgress() is { total: > 0 } p ? (double)p.downloaded / p.total * 100.0 : 0;
+    private double _percent
+        => _bridge.GetUpdateProgress() is { total: > 0 } p ? (double)p.downloaded / p.total * 100.0 : 0;
 
     private string _percentCss => _percent.ToString("0.##", CultureInfo.InvariantCulture);
 
-    private bool _hasDeterminateProgress =>
-        _bridge.GetConnectionStatus() == ConnectionStatus.Updating && _bridge.GetUpdateProgress() is { total: > 0 };
+    private bool _hasDeterminateProgress
+        => _bridge.GetConnectionStatus() == ConnectionStatus.Updating && _bridge.GetUpdateProgress() is { total: > 0 };
 
-    private bool _isByteProgress =>
-        _bridge.GetConnectionStatus() == ConnectionStatus.Updating && _bridge.GetUpdateStatus() is
-            UpdateStatus.DownloadingEngineVersion
-            or UpdateStatus.DownloadingEngineModules
-            or UpdateStatus.DownloadingClientUpdate;
+    private bool _isByteProgress
+        => _bridge.GetConnectionStatus() == ConnectionStatus.Updating
+            && _bridge.GetUpdateStatus() is
+                UpdateStatus.DownloadingEngineVersion
+                or UpdateStatus.DownloadingEngineModules
+                or UpdateStatus.DownloadingClientUpdate;
 
     private string? _eta
     {
@@ -107,7 +108,7 @@ public sealed partial class ConnectingDialog : LocalizedComponentBase, IDisposab
 
     protected override void OnInitialized()
     {
-        _bridge.ConnectionPropertyChanged += OnConnectorChanged;
+        _bridge.Connection.PropertyChanged += OnConnectorChanged;
 
         _pollTimer = new Timer(_ =>
         {
@@ -161,8 +162,8 @@ public sealed partial class ConnectingDialog : LocalizedComponentBase, IDisposab
         }
     }
 
-    private void OnConnectorChanged(object? sender, PropertyChangedEventArgs e) =>
-        InvokeAsync(() =>
+    private void OnConnectorChanged(object? sender, PropertyChangedEventArgs e)
+        => InvokeAsync(() =>
         {
             if (_bridge.GetConnectionStatus() == ConnectionStatus.ClientRunning)
                 _mudDialog.Close();
@@ -190,6 +191,7 @@ public sealed partial class ConnectingDialog : LocalizedComponentBase, IDisposab
             v /= 1024;
             i++;
         }
+
         return $"{v:0.#} {units[i]}";
     }
 
@@ -197,13 +199,14 @@ public sealed partial class ConnectingDialog : LocalizedComponentBase, IDisposab
     {
         base.Dispose();
 
-        _bridge.ConnectionPropertyChanged -= OnConnectorChanged;
+        _bridge.Connection.PropertyChanged -= OnConnectorChanged;
         _pollTimer?.Dispose();
 
         if (_bridge.GetConnectionStatus() != ConnectionStatus.ClientRunning)
         {
             if (!_cts.IsCancellationRequested)
                 _cts.Cancel();
+
             _cts.Dispose();
         }
     }

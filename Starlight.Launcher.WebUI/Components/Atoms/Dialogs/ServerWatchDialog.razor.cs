@@ -8,7 +8,7 @@ namespace Starlight.Launcher.WebUI.Components.Atoms.Dialogs;
 
 public partial class ServerWatchDialog : LocalizedComponentBase
 {
-    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [CascadingParameter] private IMudDialogInstance _mudDialog { get; set; } = null!;
     [Inject] private IBridge _bridge { get; set; } = default!;
 
     [Parameter, EditorRequired] public string Address { get; set; } = "";
@@ -17,7 +17,7 @@ public partial class ServerWatchDialog : LocalizedComponentBase
 
     [Parameter] public int SoftMaxPlayers { get; set; }
 
-    private ServerWatch? Existing { get; set; }
+    private ServerWatch? _existing { get; set; }
 
     private bool _onLobby;
     private bool _onNewRound;
@@ -30,8 +30,8 @@ public partial class ServerWatchDialog : LocalizedComponentBase
     {
         base.OnInitialized();
 
-        Existing = _bridge.GetServerWatch(Address);
-        if (Existing is { } w)
+        _existing = _bridge.GetServerWatch(Address);
+        if (_existing is { } w)
         {
             _onLobby = w.OnLobby;
             _onNewRound = w.OnNewRound;
@@ -51,21 +51,21 @@ public partial class ServerWatchDialog : LocalizedComponentBase
         _bridge.SetServerWatch(new ServerWatch(Address)
         {
             Name = ServerName,
-            HubAddress = HubAddress ?? Existing?.HubAddress,
+            HubAddress = HubAddress ?? _existing?.HubAddress,
             OnLobby = _onLobby,
             OnNewRound = _onNewRound,
             OnSlotFree = _onSlotFree,
             PlayersAtLeast = _playersEnabled ? Math.Max(1, _playersThreshold) : null,
             AutoConnect = _autoConnect,
         });
-        MudDialog.Close(DialogResult.Ok(true));
+        _mudDialog.Close(DialogResult.Ok(true));
     }
 
     private void Clear()
     {
         _bridge.SetServerWatch(new ServerWatch(Address));
-        MudDialog.Close(DialogResult.Ok(false));
+        _mudDialog.Close(DialogResult.Ok(false));
     }
 
-    private void Cancel() => MudDialog.Cancel();
+    private void Cancel() => _mudDialog.Cancel();
 }

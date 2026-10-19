@@ -26,5 +26,5 @@ public sealed record RobustCdnConfig
     /// Determines if this CDN is important for launcher futures like discord oauth and other features.
     /// If true, the launcher will show a warning when you trying to move priority away from this CDN, disable or remove it.
     /// </summary>
-    public bool Important { get; init; } = false;
+    public bool Important { get; init; }
 }

@@ -36,17 +36,25 @@ public sealed partial class WebViewSuspender : IDisposable
         _activity = activity;
 
         _suspendTimer = new DispatcherTimer { Interval = _suspendDelay };
-        _suspendTimer.Tick += (_, _) => { _suspendTimer.Stop(); ApplySuspend(); };
+        _suspendTimer.Tick += (_, _) =>
+        {
+            _suspendTimer.Stop();
+            ApplySuspend();
+        };
 
         _trimTimer = new DispatcherTimer { Interval = _trimDelay };
-        _trimTimer.Tick += (_, _) => { _trimTimer.Stop(); TrimMemory(); };
+        _trimTimer.Tick += (_, _) =>
+        {
+            _trimTimer.Stop();
+            TrimMemory();
+        };
 
         _window.PropertyChanged += OnWindowPropertyChanged;
         Update();
     }
 
-    private bool _shouldBeActive =>
-        _window.IsVisible && _window.WindowState != WindowState.Minimized;
+    private bool _shouldBeActive
+        => _window.IsVisible && _window.WindowState != WindowState.Minimized;
 
     private void OnWindowPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
@@ -68,6 +76,7 @@ public sealed partial class WebViewSuspender : IDisposable
 
             if (_webView.IsSuspended)
                 Log.Information("Resuming WebView");
+
             _webView.Resume();
             _activity.SetActive(true);
             return;
@@ -77,6 +86,7 @@ public sealed partial class WebViewSuspender : IDisposable
 
         if (!_suspendTimer.IsEnabled && !_webView.IsSuspended)
             _suspendTimer.Start();
+
         if (!_trimTimer.IsEnabled && !_trimmed)
             _trimTimer.Start();
     }

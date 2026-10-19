@@ -1,0 +1,48 @@
+.game-console {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.game-console-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--mud-palette-lines-default, rgba(255, 255, 255, 0.12));
+}
+
+::deep .game-console-filter {
+    max-width: 280px;
+}
+
+.game-console-log {
+    height: calc(100vh - 300px);
+    min-height: 240px;
+    overflow-y: auto;
+    padding: 8px 12px;
+    background: #0d0f12;
+    color: #d7dbe0;
+    font-family: "Cascadia Code", "Consolas", ui-monospace, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.log-line {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.log-line-error {
+    color: #ff6b6b;
+}
+
+.log-empty {
+    color: #7a8189;
+    font-style: italic;
+}
+
+.log-time {
+    color: #7a8189;
+    margin-right: 6px;
+}

@@ -1,4 +1,3 @@
-using System.Net.Http.Json;
 using System.Text.Json;
 using Robust.Launcher.Api.Utility;
 using Serilog;
@@ -11,7 +10,7 @@ public sealed partial class LocalServerManager
 {
     public async Task<LocalServerManifest?> FetchManifestAsync(string manifestUrl, CancellationToken cancel = default)
         => !Uri.TryCreate(manifestUrl, UriKind.Absolute, out var uri)
-        || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
         ? throw new ArgumentException("Manifest URL must be an absolute http(s) URL.", nameof(manifestUrl))
         : await _http.GetFromJsonAsync<LocalServerManifest>(uri, JsonWebOptions, cancel);
 

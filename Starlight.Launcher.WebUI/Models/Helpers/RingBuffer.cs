@@ -21,16 +21,7 @@ public sealed class RingBuffer<T> : IReadOnlyList<T>
 
     public int Count { get; private set; }
 
-    public T this[int index]
-    {
-        get
-        {
-            if ((uint)index >= (uint)Count)
-                throw new ArgumentOutOfRangeException(nameof(index));
-
-            return _items[(_head + index) % _items.Length];
-        }
-    }
+    public T this[int index] => (uint)index >= (uint)Count ? throw new ArgumentOutOfRangeException(nameof(index)) : _items[(_head + index) % _items.Length];
 
     public void Add(T item)
     {

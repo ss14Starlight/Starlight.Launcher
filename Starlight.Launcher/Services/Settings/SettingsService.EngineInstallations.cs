@@ -1,4 +1,4 @@
-﻿using Robust.Launcher.Api.Models.Data;
+using Robust.Launcher.Api.Models.Data;
 
 namespace Starlight.Launcher.Services.Settings;
 
@@ -9,7 +9,7 @@ public sealed partial class SettingsService
         _enginesLock.Wait();
         try
         {
-            return new Dictionary<string, InstalledEngineVersion>(_engineInstallations);
+            return [with(_engineInstallations)];
         }
         finally
         {
@@ -73,7 +73,7 @@ public sealed partial class SettingsService
         await _enginesLock.WaitAsync();
         try
         {
-            return new Dictionary<string, InstalledEngineVersion>(_engineInstallations);
+            return [with(_engineInstallations)];
         }
         finally
         {

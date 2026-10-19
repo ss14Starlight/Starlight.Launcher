@@ -7,8 +7,8 @@ public sealed class RingBufferTests
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
-    public void NonPositiveCapacity_Throws(int capacity) =>
-        Assert.Throws<ArgumentOutOfRangeException>(() => new RingBuffer<int>(capacity));
+    public void NonPositiveCapacity_Throws(int capacity)
+        => Assert.Throws<ArgumentOutOfRangeException>(() => new RingBuffer<int>(capacity));
 
     [Fact]
     public void BelowCapacity_KeepsInsertionOrder()
@@ -61,7 +61,7 @@ public sealed class RingBufferTests
         var buffer = new RingBuffer<int>(3);
         buffer.AddRange([1, 2]);
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => _ = buffer[index]);
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() => _ = buffer[index]);
     }
 
     [Fact]
@@ -73,7 +73,7 @@ public sealed class RingBufferTests
         buffer.Clear();
 
         Assert.Empty(buffer);
-        Assert.Throws<ArgumentOutOfRangeException>(() => _ = buffer[0]);
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() => _ = buffer[0]);
 
         buffer.AddRange([7, 8]);
         Assert.Equal([7, 8], buffer);

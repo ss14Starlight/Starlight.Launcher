@@ -1,4 +1,3 @@
-
 using Avalonia.Threading;
 using Starlight.Launcher.WebUI.Bridge;
 

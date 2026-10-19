@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using MudBlazor;
 using Starlight.Launcher.WebUI.Bridge;
@@ -16,24 +17,27 @@ namespace Starlight.Launcher.WebUI.Components.Pages;
 public partial class LocalServer : LocalizedComponentBase, IDisposable
 {
     private const int MaxConsoleLines = 5000;
-    private static readonly TimeSpan ConsoleFlushInterval = TimeSpan.FromMilliseconds(100);
+
+    private static readonly TimeSpan _consoleFlushInterval = TimeSpan.FromMilliseconds(100);
 
     [Inject] private IBridge _bridge { get; set; } = default!;
     [Inject] private IDialogService _dialog { get; set; } = default!;
     [Inject] private NavigationManager _navigation { get; set; } = default!;
     [Inject] private ISnackbar _snackbar { get; set; } = default!;
     [Inject] private IJSRuntime _jS { get; set; } = default!;
+    [Inject] private ILogger<LocalServer> _logger { get; set; } = default!;
 
     private List<LocalServerSourceConfig> _sources = [];
     private int _selectedIndex = -1;
-    private LocalServerSourceConfig? SelectedSource =>
-        _selectedIndex >= 0 && _selectedIndex < _sources.Count ? _sources[_selectedIndex] : null;
+
+    private LocalServerSourceConfig? _selectedSource
+        => _selectedIndex >= 0 && _selectedIndex < _sources.Count ? _sources[_selectedIndex] : null;
 
     private LocalServerLatestBuildResult? _latestBuild;
     private bool _refreshing;
     private bool _clearing;
 
-    private readonly Dictionary<string, string> _knownCVarValues = new();
+    private readonly Dictionary<string, string> _knownCVarValues = [];
     private List<ServerCVarValue> _customCVars = [];
 
     private LocalServerState _state = new(LocalServerPhase.Idle);
@@ -71,8 +75,14 @@ public partial class LocalServer : LocalizedComponentBase, IDisposable
         if (_autoScrollPending)
         {
             _autoScrollPending = false;
-            await _jS.InvokeVoidAsync("eval",
-                "var el = document.getElementById('local-server-console-log'); if (el) el.scrollTop = el.scrollHeight;");
+            try
+            {
+                await _jS.InvokeVoidAsync("eval", "var el = document.getElementById('local-server-console-log'); if (el) el.scrollTop = el.scrollHeight;");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Can't invoke JS to adjust console scroll!");
+            }
         }
 
         if (!firstRender || _policyChecked)
@@ -120,6 +130,7 @@ public partial class LocalServer : LocalizedComponentBase, IDisposable
         _sources = settings.LocalServerSources;
         if (_selectedIndex < 0 && _sources.Count > 0)
             _selectedIndex = _sources.FindIndex(s => s.Enabled);
+
         LoadCVarState();
         return _sources;
     }
@@ -144,15 +155,15 @@ public partial class LocalServer : LocalizedComponentBase, IDisposable
         return Task.CompletedTask;
     }
 
-    private static IEnumerable<IGrouping<string, ServerCVarDefinition>> GroupedKnownCVars =>
-        ServerCVarCatalog.KnownCVars.GroupBy(d => d.Group);
+    private static IEnumerable<IGrouping<string, ServerCVarDefinition>> s_groupedKnownCVars
+        => ServerCVarCatalog.KnownCVars.GroupBy(d => d.Group);
 
     private void LoadCVarState()
     {
         _knownCVarValues.Clear();
         _customCVars = [];
 
-        if (SelectedSource is not { } source)
+        if (_selectedSource is not { } source)
             return;
 
         var overridesByKey = source.CVarOverrides.ToDictionary(v => v.Key);
@@ -164,8 +175,8 @@ public partial class LocalServer : LocalizedComponentBase, IDisposable
         _customCVars = [.. source.CVarOverrides.Where(v => !knownKeys.Contains(v.Key))];
     }
 
-    private string GetKnownValue(ServerCVarDefinition def) =>
-        _knownCVarValues.TryGetValue(def.Key, out var v) ? v : def.DefaultValue;
+    private string GetKnownValue(ServerCVarDefinition def)
+        => _knownCVarValues.TryGetValue(def.Key, out var v) ? v : def.DefaultValue;
 
     private void SetKnownValue(string key, string value) => _knownCVarValues[key] = value;
 
@@ -191,7 +202,7 @@ public partial class LocalServer : LocalizedComponentBase, IDisposable
 
     private async Task SaveServerConfig()
     {
-        if (SelectedSource is not { } source)
+        if (_selectedSource is not { } source)
             return;
 
         var overrides = new List<ServerCVarValue>();
@@ -214,7 +225,7 @@ public partial class LocalServer : LocalizedComponentBase, IDisposable
 
     private async Task RefreshLatestBuild()
     {
-        if (SelectedSource is not { } source)
+        if (_selectedSource is not { } source)
             return;
 
         _refreshing = true;
@@ -234,7 +245,7 @@ public partial class LocalServer : LocalizedComponentBase, IDisposable
 
     private async Task StartServer()
     {
-        if (SelectedSource is not { } source)
+        if (_selectedSource is not { } source)
             return;
 
         try
@@ -344,7 +355,7 @@ public partial class LocalServer : LocalizedComponentBase, IDisposable
 
     private async Task FlushOutputAsync()
     {
-        await Task.Delay(ConsoleFlushInterval);
+        await Task.Delay(_consoleFlushInterval);
 
         await InvokeAsync(() =>
         {
@@ -364,11 +375,12 @@ public partial class LocalServer : LocalizedComponentBase, IDisposable
 
             if (_autoScrollEnabled)
                 _autoScrollPending = true;
+
             StateHasChanged();
         });
     }
 
-    private bool CanStart() => SelectedSource is not null
+    private bool CanStart() => _selectedSource is not null
         && _state.Phase is LocalServerPhase.Idle or LocalServerPhase.Stopped or LocalServerPhase.Error;
 
     private bool CanStop() => _state.Phase is LocalServerPhase.FetchingManifest or LocalServerPhase.Downloading
@@ -401,14 +413,12 @@ public partial class LocalServer : LocalizedComponentBase, IDisposable
     };
 
     private string FormatPercent()
-    {
-        if (_state is { TotalBytes: > 0, DownloadedBytes: not null })
-            return $"{(int)(_state.DownloadedBytes.Value * 100 / _state.TotalBytes.Value)}%";
-        return "";
-    }
+        => _state is { TotalBytes: > 0, DownloadedBytes: not null }
+            ? $"{(int)(_state.DownloadedBytes.Value * 100 / _state.TotalBytes.Value)}%"
+            : "";
 
-    private static string ShortHash(string? hash) =>
-        string.IsNullOrEmpty(hash) ? "" : hash.Length > 10 ? hash[..10] : hash;
+    private static string ShortHash(string? hash)
+        => string.IsNullOrEmpty(hash) ? "" : hash[..Math.Min(hash.Length, 10)];
 
     private static string FormatSize(long? bytes)
     {
@@ -433,5 +443,6 @@ public partial class LocalServer : LocalizedComponentBase, IDisposable
         _bridge.LocalServerStateChanged -= OnStateChanged;
         _bridge.LocalServerOutput -= OnOutput;
         base.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

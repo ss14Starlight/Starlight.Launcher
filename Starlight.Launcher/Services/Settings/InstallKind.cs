@@ -31,6 +31,7 @@ public static class InstallKindDetector
     {
         if (OperatingSystem.IsWindows())
             return InstallKind.WindowsInstaller;
+
         if (OperatingSystem.IsMacOS())
             return InstallKind.MacBundle;
 

@@ -5,13 +5,14 @@ namespace Starlight.Launcher.Services.Logging;
 
 internal static class GlobalExceptionHandlers
 {
-    private static bool _installed;
+    private static bool s_installed;
 
     public static void Install()
     {
-        if (_installed)
+        if (s_installed)
             return;
-        _installed = true;
+
+        s_installed = true;
 
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
         {
@@ -31,11 +32,11 @@ internal static class GlobalExceptionHandlers
         };
     }
 
-    public static void InstallDispatcher() =>
-        Dispatcher.UIThread.UnhandledException += (_, e) =>
+    public static void InstallDispatcher()
+        => Dispatcher.UIThread.UnhandledException += (_, e) =>
         {
-            if (e.Exception is OperationCanceledException &&
-                e.Exception.StackTrace?.Contains("Avalonia.FreeDesktop.DBusTrayIconImpl.WatchAsync") == true)
+            if (e.Exception is OperationCanceledException
+                && e.Exception.StackTrace?.Contains("Avalonia.FreeDesktop.DBusTrayIconImpl.WatchAsync") == true)
             {
                 e.Handled = true;
                 return;

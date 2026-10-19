@@ -20,8 +20,8 @@ public static class PresenceStates
 
     public static readonly IEqualityComparer<List<PresenceStateOption>> ListComparer = new OrderedListComparer();
 
-    public static List<PresenceStateOption> CreateDefault() =>
-        DefaultOrder.Select(s => new PresenceStateOption(s)).ToList();
+    public static List<PresenceStateOption> CreateDefault()
+        => [.. DefaultOrder.Select(s => new PresenceStateOption(s))];
 
     public static List<PresenceStateOption> Normalize(IEnumerable<PresenceStateOption>? saved)
     {
@@ -50,7 +50,7 @@ public static class PresenceStates
         }
 
         var idle = result.FirstOrDefault(o => o.State == PresenceState.Idle)
-                   ?? new PresenceStateOption(PresenceState.Idle);
+            ?? new PresenceStateOption(PresenceState.Idle);
 
         _ = result.RemoveAll(o => o.State == PresenceState.Idle);
         result.Add(idle);

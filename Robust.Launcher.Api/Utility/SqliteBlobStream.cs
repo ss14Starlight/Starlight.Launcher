@@ -45,6 +45,8 @@ public sealed class SqliteBlobStream(sqlite3_blob blob, bool canWrite, bool owns
 
         if (_ownsBlob)
             _blob.Dispose();
+
+        base.Dispose(disposing);
     }
 
     public void Reopen(long newRodId)

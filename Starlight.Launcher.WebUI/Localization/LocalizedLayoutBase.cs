@@ -13,5 +13,9 @@ public abstract class LocalizedLayoutBase : LayoutComponentBase, IDisposable
 
     private void OnLocalizationChanged() => InvokeAsync(StateHasChanged);
 
-    public virtual void Dispose() => L.Changed -= OnLocalizationChanged;
+    public virtual void Dispose()
+    {
+        L.Changed -= OnLocalizationChanged;
+        GC.SuppressFinalize(this);
+    }
 }

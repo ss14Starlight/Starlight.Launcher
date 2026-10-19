@@ -140,9 +140,14 @@ public sealed partial class ClientLogManager(SettingsService settings)
         var sb = new StringBuilder();
 
         _ = sb.Append("\n\n\n")
-              .Append(line).Append('\n')
-              .Append("=== NEW LAUNCH  ").Append(DateTimeOffset.Now.ToString("yyyy-MM-dd HH:mm:ss zzz")).Append('\n')
-              .Append("=== stream: ").Append(streamName).Append('\n');
+            .Append(line)
+            .Append('\n')
+            .Append("=== NEW LAUNCH  ")
+            .Append(DateTimeOffset.Now.ToString("yyyy-MM-dd HH:mm:ss zzz"))
+            .Append('\n')
+            .Append("=== stream: ")
+            .Append(streamName)
+            .Append('\n');
 
         if (context.ProcessId is { } pid)
             _ = sb.Append("=== pid: ").Append(pid).Append('\n');

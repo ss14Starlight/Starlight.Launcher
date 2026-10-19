@@ -31,10 +31,7 @@ public static class TransientDownloadError
         }
 
         var kind = ClassifyChain(e);
-        if (kind == DownloadErrorKind.Transient && !networkAvailable)
-            return DownloadErrorKind.Offline;
-
-        return kind;
+        return kind == DownloadErrorKind.Transient && !networkAvailable ? DownloadErrorKind.Offline : kind;
     }
 
     private static DownloadErrorKind ClassifyChain(Exception e)
@@ -68,15 +65,19 @@ public static class TransientDownloadError
         return DownloadErrorKind.Fatal;
     }
 
-    private static bool IsOfflineSocketError(SocketError error) =>
-        error is SocketError.HostNotFound
-            or SocketError.TryAgain
-            or SocketError.NoData
-            or SocketError.NetworkDown
-            or SocketError.NetworkUnreachable;
+    private static bool IsOfflineSocketError(SocketError error)
+        => error
+        is SocketError.HostNotFound
+        or SocketError.TryAgain
+        or SocketError.NoData
+        or SocketError.NetworkDown
+        or SocketError.NetworkUnreachable;
 
-    private static bool IsTransientStatus(HttpStatusCode status) =>
-        status is HttpStatusCode.RequestTimeout or HttpStatusCode.TooManyRequests || (int)status >= 500;
+    private static bool IsTransientStatus(HttpStatusCode status)
+        => status
+        is HttpStatusCode.RequestTimeout
+        or HttpStatusCode.TooManyRequests
+            || (int)status >= 500;
 
     private static bool IsNetworkAvailable()
     {

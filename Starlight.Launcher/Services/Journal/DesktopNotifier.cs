@@ -43,6 +43,7 @@ public static class DesktopNotifier
             var start = new ProcessStartInfo("powershell.exe");
             foreach (var arg in new[] { "-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-Command", WindowsScript })
                 start.ArgumentList.Add(arg);
+
             start.Environment["SL_TOAST_TITLE"] = title;
             start.Environment["SL_TOAST_BODY"] = message;
             start.Environment["SL_TOAST_APP"] = WindowsAppId;

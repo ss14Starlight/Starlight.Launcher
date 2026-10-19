@@ -1,4 +1,4 @@
-﻿@page "/auth"
+@page "/auth"
 @using Starlight.Launcher.WebUI.Components.Atoms.Auth
 @using Starlight.Launcher.WebUI.Localization;
 
@@ -7,7 +7,7 @@
 <div class="auth-bg">
     @if (_mode == Mode.AccountList && _bridge.GetLoginEntries().Count > 0)
     {
-        var viewed = ViewedAccount;
+        var viewed = _viewedAccount;
 
         <div class="accounts-layout">
             <div class="auth-panel accounts-sidebar">

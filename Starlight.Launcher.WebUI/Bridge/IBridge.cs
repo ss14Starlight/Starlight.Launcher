@@ -17,6 +17,8 @@ public partial interface IBridge
     void ToggleMaximizeWindow();
     void CloseWindow();
     void BeginWindowDrag();
+
     bool IsWindowMaximized { get; }
+
     event Action? WindowStateChanged;
 }

@@ -5,5 +5,5 @@ namespace Robust.Launcher.Api.Models.ServerStatus;
 /// </summary>
 public interface IServerSource
 {
-    public void UpdateInfoFor(ServerStatusData statusData);
+    void UpdateInfoFor(ServerStatusData statusData);
 }

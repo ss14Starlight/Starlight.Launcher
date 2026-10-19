@@ -11,9 +11,10 @@ using Robust.LoaderApi;
 
 namespace Robust.Loader;
 
-internal class Program
+internal sealed class Program
 {
     private readonly string[] _engineArgs;
+
     private const string RobustAssemblyName = "Robust.Client";
 
     private readonly ZipFileApi _fileApi;
@@ -38,7 +39,8 @@ internal class Program
     private IntPtr LoadContextOnResolvingUnmanaged(Assembly assembly, string unmanaged)
     {
         var ourDir = Path.GetDirectoryName(typeof(Program).Assembly.Location)!;
-        var os = OperatingSystem.IsWindows() ? "win" : OperatingSystem.IsMacOS() ? "osx" : "linux";
+        var os = GetOsName();
+
         var arch = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
         string[] dirs =
         [
@@ -47,7 +49,8 @@ internal class Program
             Path.Combine(ourDir, "runtimes", $"{os}-{arch}", "native"),
         ];
 
-        var ext = OperatingSystem.IsWindows() ? ".dll" : OperatingSystem.IsMacOS() ? ".dylib" : ".so";
+        var ext = GetNativeLibraryExtension();
+
         string[] names = Path.HasExtension(unmanaged) ? [unmanaged] : [unmanaged, unmanaged + ext, "lib" + unmanaged + ext];
 
         foreach (var dir in dirs)
@@ -116,6 +119,7 @@ internal class Program
             contentApi?.Dispose();
             overlayApi?.Dispose();
         }
+
         return true;
     }
 
@@ -207,31 +211,37 @@ internal class Program
         }
 
         var program = new Program(robustPath, args[3..]);
-        if (!program.Run())
-        {
-            return 3;
-        }
+        return program.Run() ? 0 : 3;
+    }
 
-        /*Console.WriteLine("lsasm dump:");
-        foreach (var asmLoadContext in AssemblyLoadContext.All)
-        {
-            Console.WriteLine("{0}:", asmLoadContext.Name);
-            foreach (var asm in asmLoadContext.Assemblies)
-            {
-                Console.WriteLine("  {0}", asm.GetName().Name);
-            }
-        }*/
+    private static string GetOsName()
+    {
+        if (OperatingSystem.IsWindows())
+            return "win";
 
-        return 0;
+        if (OperatingSystem.IsMacOS())
+            return "osx";
+
+        return "linux";
+    }
+
+    private static string GetNativeLibraryExtension()
+    {
+        if (OperatingSystem.IsWindows())
+            return ".dll";
+
+        if (OperatingSystem.IsMacOS())
+            return ".dylib";
+
+        return ".so";
     }
 
     private static void PinBundledLibsodium()
     {
-        var fileName = OperatingSystem.IsWindows() ? "libsodium.dll"
-            : OperatingSystem.IsMacOS() ? "libsodium.dylib"
-            : "libsodium.so";
+        var fileName = "libsodium" + GetNativeLibraryExtension();
 
-        var os = OperatingSystem.IsWindows() ? "win" : OperatingSystem.IsMacOS() ? "osx" : "linux";
+        var os = GetOsName();
+
         var arch = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
 
         var baseDir = AppContext.BaseDirectory;

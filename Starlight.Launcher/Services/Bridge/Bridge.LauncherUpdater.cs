@@ -13,7 +13,7 @@ public sealed partial class Bridge : IBridge
         remove => _launcherUpdater.DownloadProgress -= value;
     }
 
-    public async Task<UpdateInfo> IsUpdateAvailable() => await _launcherUpdater.IsUpdateAvailable();
+    public Task<UpdateInfo> IsUpdateAvailable() => _launcherUpdater.IsUpdateAvailable();
 
     public async Task<string> DownloadAsset(ReleaseAsset asset, CancellationToken ct = default) => await _launcherUpdater.DownloadAsset(asset, ct);
 

@@ -1,4 +1,3 @@
-using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using DiscordRPC;
 using Microsoft.Extensions.Logging;
@@ -57,12 +56,18 @@ public sealed class DiscordRichPresence : IPresenceController, IDisposable
 
     public PresenceState? ResolvedState
     {
-        get { lock (_gate) return _current?.State; }
+        get
+        {
+            lock (_gate) return _current?.State;
+        }
     }
 
     public bool IsActive
     {
-        get { lock (_gate) return _client is not null; }
+        get
+        {
+            lock (_gate) return _client is not null;
+        }
     }
 
     public DiscordRichPresence(SettingsService settingsService, HttpClient http, ILogger<DiscordRichPresence> logger)
@@ -220,11 +225,11 @@ public sealed class DiscordRichPresence : IPresenceController, IDisposable
         }
     }
 
-    public ServerSession BeginServerSession(Uri statusAddress, string? fallbackName = null) =>
-        new(this, _http, _logger, statusAddress, fallbackName);
+    public ServerSession BeginServerSession(Uri statusAddress, string? fallbackName = null)
+        => new(this, _http, _logger, statusAddress, fallbackName);
 
-    public ServerSession BeginLocalSession(string displayName) =>
-        new(this, _http, _logger, statusAddress: null, displayName);
+    public ServerSession BeginLocalSession(string displayName)
+        => new(this, _http, _logger, statusAddress: null, displayName);
 
     private void Resolve()
     {
@@ -384,7 +389,8 @@ public sealed class DiscordRichPresence : IPresenceController, IDisposable
         PresenceState.LaunchingGame => "Launching game",
         PresenceState.InGame => (ctx is { Players: > 0, MaxPlayers: > 0 }
             ? $"In Game - {ctx.Players}/{ctx.MaxPlayers}"
-            : "Playing Space Station 14") + (string.IsNullOrWhiteSpace(ctx.Map) ? "" : $" · {ctx.Map}"),
+            : "Playing Space Station 14")
+            + (string.IsNullOrWhiteSpace(ctx.Map) ? "" : $" · {ctx.Map}"),
         PresenceState.Reconnecting => "Reconnecting",
         _ => "Space Station 14"
     };
@@ -419,13 +425,15 @@ public sealed class DiscordRichPresence : IPresenceController, IDisposable
 
     private static string? Truncate(string? value)
         => string.IsNullOrEmpty(value)
-        ? null
-        : value.Length <= MaxFieldLength
-        ? value
-        : string.Concat(value.AsSpan(0, MaxFieldLength - 1), "...");
+            ? null
+            : value.Length switch
+            {
+                <= MaxFieldLength => value,
+                _ => $"{value.AsSpan(0, MaxFieldLength - 1)}...",
+            };
 
-    private void OnPresenceSettingsChanged((bool Hidden, string ApplicationId) settings) =>
-        ApplySettings(settings.Hidden, settings.ApplicationId);
+    private void OnPresenceSettingsChanged((bool Hidden, string ApplicationId) settings)
+        => ApplySettings(settings.Hidden, settings.ApplicationId);
 
     private void OnButtonsSettingsChanged(bool showButtons)
     {
@@ -715,18 +723,11 @@ public sealed class DiscordRichPresence : IPresenceController, IDisposable
                 {
                     return;
                 }
-#if DEBUG
                 catch (Exception ex)
                 {
                     _logger.LogDebug(ex, "Can't get /status for presence");
                 }
-#elif RELEASE
-                catch
-                {
-                }
-#endif
-            }
-            while (await SafeWaitAsync(timer, cancel));
+            } while (await SafeWaitAsync(timer, cancel));
         }
 
         private static async Task<bool> SafeWaitAsync(PeriodicTimer timer, CancellationToken cancel)

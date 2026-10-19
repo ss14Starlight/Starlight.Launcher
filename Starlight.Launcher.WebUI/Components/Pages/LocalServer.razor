@@ -39,7 +39,7 @@
                     </MudSelect>
 
                     <MudButton StartIcon="@Icons.Material.Filled.Refresh" Variant="Variant.Outlined"
-                               Disabled="@(SelectedSource is null || _refreshing)" OnClick="RefreshLatestBuild">
+                               Disabled="@(_selectedSource is null || _refreshing)" OnClick="RefreshLatestBuild">
                         @L["local-server-refresh-button"]
                     </MudButton>
 
@@ -107,7 +107,7 @@
 
             <MudText Typo="Typo.h6" Class="mt-6 mb-2" Style="position: relative;">@L["local-server-config-title"]</MudText>
             <MudPaper Class="sl-option-card pa-4 mb-4" Outlined="true" Elevation="0">
-                @if (SelectedSource is null)
+                @if (_selectedSource is null)
                 {
                     <MudText Typo="Typo.body2" Class="mud-text-secondary">@L["local-server-config-no-source"]</MudText>
                 }
@@ -115,7 +115,7 @@
                 {
                     <MudText Typo="Typo.overline" Class="mud-text-secondary">@L["local-server-config-basic-title"]</MudText>
                     <MudExpansionPanels MultiExpansion="true" Class="local-server-cvar-groups" Elevation="0" Gutters="false">
-                        @foreach (var group in GroupedKnownCVars)
+                        @foreach (var group in s_groupedKnownCVars)
                         {
                             <MudExpansionPanel @key="group.Key" Text="@group.Key" Expanded="false">
                                 @foreach (var def in group)

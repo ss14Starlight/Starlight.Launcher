@@ -11,9 +11,10 @@ namespace Starlight.Launcher.Services.Replays;
 public sealed class ReplaysService(HttpClient http, StarlightAuthApi starlight, SettingsService settings)
 {
     private const int KeepDownloaded = 10;
+
     private static readonly TimeSpan _listTimeout = TimeSpan.FromSeconds(15);
 
-    private string CacheDir => Path.Combine(settings.GetSettings().DirLauncherData, "replays");
+    private string _cacheDir => Path.Combine(settings.GetSettings().DirLauncherData, "replays");
 
     public async Task<ReplaysResult> GetAsync(CancellationToken cancel = default)
     {
@@ -53,7 +54,7 @@ public sealed class ReplaysService(HttpClient http, StarlightAuthApi starlight, 
             File.Delete(path);
         }
 
-        _ = Directory.CreateDirectory(CacheDir);
+        _ = Directory.CreateDirectory(_cacheDir);
         var temp = path + ".part";
 
         using (var response = await http.GetAsync(new Uri(starlight.ApiUrl, replay.DownloadPath.TrimStart('/')), HttpCompletionOption.ResponseHeadersRead, cancel))
@@ -112,14 +113,15 @@ public sealed class ReplaysService(HttpClient http, StarlightAuthApi starlight, 
         var name = Path.GetFileName(replay.FileName);
         if (string.IsNullOrWhiteSpace(name) || name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
             name = $"replay-{replay.Round}.zip";
-        return Path.Combine(CacheDir, name);
+
+        return Path.Combine(_cacheDir, name);
     }
 
     private void Prune()
     {
         try
         {
-            var stale = new DirectoryInfo(CacheDir)
+            var stale = new DirectoryInfo(_cacheDir)
                 .EnumerateFiles("*.zip")
                 .OrderByDescending(f => f.LastWriteTimeUtc)
                 .Skip(KeepDownloaded);
@@ -127,7 +129,7 @@ public sealed class ReplaysService(HttpClient http, StarlightAuthApi starlight, 
             foreach (var file in stale)
                 file.Delete();
 
-            foreach (var part in Directory.EnumerateFiles(CacheDir, "*.part"))
+            foreach (var part in Directory.EnumerateFiles(_cacheDir, "*.part"))
             {
                 if (DateTime.UtcNow - File.GetLastWriteTimeUtc(part) > TimeSpan.FromDays(1))
                     File.Delete(part);

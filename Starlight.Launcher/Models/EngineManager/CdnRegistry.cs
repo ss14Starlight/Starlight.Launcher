@@ -20,6 +20,7 @@ public sealed class CdnRegistry : ICdnRegistry, IDisposable
     private readonly IDisposable _subscription;
 
     public ImmutableArray<RobustCdn> Cdns { get; private set; } = [];
+
     public event Action? Changed;
 
     public CdnRegistry(SettingsService settings)
@@ -74,7 +75,7 @@ public sealed class CdnRegistry : ICdnRegistry, IDisposable
 
         var valid = cfg.Urls
             .Where(u => Uri.TryCreate(u, UriKind.Absolute, out var uri)
-                        && uri.Scheme == Uri.UriSchemeHttps)
+                && uri.Scheme == Uri.UriSchemeHttps)
             .ToArray();
 
         if (valid.Length == 0)
@@ -114,6 +115,7 @@ public sealed class CdnRegistry : ICdnRegistry, IDisposable
             var hash = new HashCode();
             foreach (var c in obj ?? [])
                 hash.Add(c);
+
             return hash.ToHashCode();
         }
     }

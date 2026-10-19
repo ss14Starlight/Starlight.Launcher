@@ -19,11 +19,11 @@
                         CheckMark="true"
                         FixedContent="true"
                         Disabled="@(_targets is null || _sending)">
-            <MudToggleItem Value="BugReportTarget.Launcher" Disabled="@(!LauncherAvailable)" Text="@L["bug-report-dialog-target-launcher"]" />
-            <MudToggleItem Value="BugReportTarget.Game" Disabled="@(!GameAvailable)" Text="@L["bug-report-dialog-target-game"]" />
+            <MudToggleItem Value="BugReportTarget.Launcher" Disabled="@(!_launcherAvailable)" Text="@L["bug-report-dialog-target-launcher"]" />
+            <MudToggleItem Value="BugReportTarget.Game" Disabled="@(!_gameAvailable)" Text="@L["bug-report-dialog-target-game"]" />
         </MudToggleGroup>
         </div>
-        @if (_targets is not null && !LauncherAvailable)
+        @if (_targets is not null && !_launcherAvailable)
         {
             <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mb-2">@L["bug-report-dialog-launcher-disabled"]</MudText>
         }
@@ -34,7 +34,7 @@
                        @bind-Value="_project"
                        Label="@L["bug-report-dialog-project"]"
                        Variant="Variant.Outlined"
-                       Disabled="@(!GameAvailable || _sending)"
+                       Disabled="@(!_gameAvailable || _sending)"
                        Class="mt-2 mb-3">
                 @foreach (var project in _targets?.Projects ?? [])
                 {
@@ -49,7 +49,7 @@
                       Variant="Variant.Outlined"
                       Immediate="true"
                       Counter="BugReportLimits.MaxTitleLength"
-                      Error="TitleTooShort"
+                      Error="_titleTooShort"
                       ErrorText="@L.GetString("bug-report-dialog-too-short", ("min", BugReportLimits.MinTitleLength))"
                       MaxLength="BugReportLimits.MaxTitleLength"
                       Disabled="_sending"
@@ -64,7 +64,7 @@
                       Immediate="true"
                       Lines="6"
                       Counter="BugReportLimits.MaxDescriptionLength"
-                      Error="DescriptionTooShort"
+                      Error="_descriptionTooShort"
                       ErrorText="@L.GetString("bug-report-dialog-too-short", ("min", BugReportLimits.MinDescriptionLength))"
                       MaxLength="BugReportLimits.MaxDescriptionLength"
                       Disabled="_sending"
@@ -95,7 +95,7 @@
         <MudButton OnClick="Cancel" Disabled="_sending">@L["bug-report-dialog-cancel"]</MudButton>
         <MudButton Variant="Variant.Filled"
                    Class="cta-btn-primary"
-                   Disabled="@(!CanSend)"
+                   Disabled="@(!_canSend)"
                    StartIcon="@(_sending ? null : Icons.Material.Filled.Send)"
                    OnClick="Send">
             @if (_sending)

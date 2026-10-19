@@ -28,7 +28,7 @@ public sealed class ContentManager(SettingsService settings)
         var sw = Stopwatch.StartNew();
         var success = Migrator.Migrate(con, "Starlight.Launcher.Services.ContentManagement.Migrations");
         if (!success)
-            throw new Exception("Migrations failed!");
+            throw new InvalidOperationException("Migrations failed!");
 
         Log.Debug("Did content DB migrations in {MigrationTime}", sw.Elapsed);
     }
@@ -110,7 +110,7 @@ public sealed class ContentManager(SettingsService settings)
         return con;
     }
 
-    private string GetContentDbConnectionString() =>
+    private string GetContentDbConnectionString()
         // Disable pooling: interactions with the content DB are relatively infrequent
         // This means that ALL connections get closed in most cases (between committing download and starting client)
         // Which in turn means that the WAL file gets truncated.
@@ -120,7 +120,7 @@ public sealed class ContentManager(SettingsService settings)
         //
         // (also it means that hitting the "clear server content" button in settings IMMEDIATELY truncates the DB file
         // instead of waiting for the launcher to exit, at least if the client isn't running so it can checkpoint)
-        $"Data Source={_settings.GetSettings().PathContentDb};Mode=ReadWriteCreate;Pooling=False;Foreign Keys=True";
+        => $"Data Source={_settings.GetSettings().PathContentDb};Mode=ReadWriteCreate;Pooling=False;Foreign Keys=True";
 
     /// <summary>
     /// Get a list of content version IDs that are in use by running clients.
@@ -129,8 +129,17 @@ public sealed class ContentManager(SettingsService settings)
     /// This method may make modifications to the DB to remove orphaned <c>RunningClient</c> entries.
     /// </remarks>
     public static List<long> GetRunningClientVersions(SqliteConnection con)
+        => [.. GetRunningClients(con).Select(c => c.Version)];
+
+    /// <summary>
+    /// Running clients, as registered by the loader, with the content version each one uses.
+    /// </summary>
+    /// <remarks>
+    /// This method may make modifications to the DB to remove orphaned <c>RunningClient</c> entries.
+    /// </remarks>
+    public static List<(int Pid, long Version)> GetRunningClients(SqliteConnection con)
     {
-        var running = new List<long>();
+        var running = new List<(int Pid, long Version)>();
         var toRemove = new List<int>();
 
         var dbRunning = con.Query<(int, string, long)>("SELECT ProcessId, MainModule, UsedVersion FROM RunningClient");
@@ -138,7 +147,7 @@ public sealed class ContentManager(SettingsService settings)
         foreach (var (pid, mainModule, usedVersion) in dbRunning)
         {
             if (IsProcessStillRunning(pid, mainModule))
-                running.Add(usedVersion);
+                running.Add((pid, usedVersion));
             else
                 toRemove.Add(pid);
         }

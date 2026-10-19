@@ -14,6 +14,7 @@ public sealed class ServerListFilters
     public ServerSortMode SortBy { get; set; } = ServerSortMode.Players;
 
     public event Action? Changed;
+
     public void NotifyChanged() => Changed?.Invoke();
 }
 

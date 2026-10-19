@@ -6,18 +6,21 @@ using Microsoft.CodeAnalysis.Formatting;
 
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
+namespace Starlight.Launcher.Analyzer;
+
 internal static class InjectStyle
 {
     public static bool IsCanonical(PropertyDeclarationSyntax p)
     {
         var onlyPrivateOrInternal =
             (p.Modifiers.Any(SyntaxKind.PrivateKeyword) || p.Modifiers.Any(SyntaxKind.ProtectedKeyword))
-            && !p.Modifiers.Any(SyntaxKind.PublicKeyword) && !p.Modifiers.Any(SyntaxKind.InternalKeyword);
+                && !p.Modifiers.Any(SyntaxKind.PublicKeyword)
+                && !p.Modifiers.Any(SyntaxKind.InternalKeyword);
 
         var defaultBang =
-            p.Initializer?.Value is PostfixUnaryExpressionSyntax s &&
-            s.IsKind(SyntaxKind.SuppressNullableWarningExpression) &&
-            s.Operand.IsKind(SyntaxKind.DefaultLiteralExpression);
+            p.Initializer?.Value is PostfixUnaryExpressionSyntax s
+                && s.IsKind(SyntaxKind.SuppressNullableWarningExpression)
+                && s.Operand.IsKind(SyntaxKind.DefaultLiteralExpression);
 
         return onlyPrivateOrInternal && defaultBang;
     }
@@ -26,11 +29,11 @@ internal static class InjectStyle
     {
         var trailing = p.GetTrailingTrivia();
 
-        var kept = p.Modifiers.Where(m =>
-            !m.IsKind(SyntaxKind.PublicKeyword) &&
-            !m.IsKind(SyntaxKind.PrivateKeyword) &&
-            !m.IsKind(SyntaxKind.ProtectedKeyword) &&
-            !m.IsKind(SyntaxKind.InternalKeyword));
+        var kept = p.Modifiers.Where(m
+            => !m.IsKind(SyntaxKind.PublicKeyword)
+                && !m.IsKind(SyntaxKind.PrivateKeyword)
+                && !m.IsKind(SyntaxKind.ProtectedKeyword)
+                && !m.IsKind(SyntaxKind.InternalKeyword));
 
         var modifiers = TokenList(new[] { Token(SyntaxKind.PrivateKeyword) }.Concat(kept));
 
@@ -42,9 +45,7 @@ internal static class InjectStyle
         var result = p;
 
         if (result.AccessorList is { } accessors)
-            result = result.WithAccessorList(
-                accessors.WithCloseBraceToken(
-                    accessors.CloseBraceToken.WithTrailingTrivia(Space)));
+            result = result.WithAccessorList(accessors.WithCloseBraceToken(accessors.CloseBraceToken.WithTrailingTrivia(Space)));
 
         return result
             .WithModifiers(modifiers)

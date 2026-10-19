@@ -18,7 +18,7 @@ public sealed class DpapiKeyProvider(ILogger<DpapiKeyProvider> logger) : ILoginK
     public async Task<byte[]> GetOrCreateKeyAsync(string keyPath)
     {
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            throw new Exception("Windows methods isn't supported on Linux or MAC!");
+            throw new NotSupportedException("Windows methods isn't supported on Linux or MAC!");
 
         _ = Directory.CreateDirectory(Path.GetDirectoryName(keyPath)!);
 
@@ -35,9 +35,8 @@ public sealed class DpapiKeyProvider(ILogger<DpapiKeyProvider> logger) : ILoginK
             }
         }
 
-        var readPath = File.Exists(keyPath) ? keyPath
-                     : File.Exists(_legacyKeyPath) ? _legacyKeyPath
-                     : null;
+        string[] readCandidates = [keyPath, _legacyKeyPath];
+        var readPath = Array.Find(readCandidates, File.Exists);
 
         if (readPath is not null)
         {
@@ -75,7 +74,7 @@ public sealed class DpapiKeyProvider(ILogger<DpapiKeyProvider> logger) : ILoginK
     private async Task<byte[]> CreateAndStoreAsync(string keyPath)
     {
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            throw new Exception("Windows methods isn't supported on Linux or MAC!");
+            throw new NotSupportedException("Windows methods isn't supported on Linux or MAC!");
 
         var newKey = RandomNumberGenerator.GetBytes(32);
         var blob = ProtectedData.Protect(newKey, _entropy, DataProtectionScope.CurrentUser);

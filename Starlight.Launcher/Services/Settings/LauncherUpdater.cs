@@ -9,7 +9,7 @@ using Starlight.Launcher.WebUI.Models.LauncherUpdater;
 
 namespace Starlight.Launcher.Services.Settings;
 
-public partial class LauncherUpdater(SettingsService settings, HttpClient httpClient)
+public class LauncherUpdater(SettingsService settings, HttpClient httpClient)
 {
     private const string UserAgent = "Starlight.Launcher";
 
@@ -29,44 +29,46 @@ public partial class LauncherUpdater(SettingsService settings, HttpClient httpCl
 
     public event Action<(long downloaded, long total)>? DownloadProgress;
 
+    /// <summary>
+    /// Development builds never offer updates. Not a <c>#if</c>, so the release path below is still compiled in Debug.
+    /// </summary>
+#if DEBUG
+    private static bool s_skipUpdateCheck => true;
+#else
+    private static bool s_skipUpdateCheck => false;
+#endif
+
     public async Task<UpdateInfo> IsUpdateAvailable()
     {
         var currentVersion = NormalizeVersion(GetVersion());
+        if (s_skipUpdateCheck)
+            return new UpdateInfo(false, currentVersion, string.Empty, string.Empty, string.Empty, null);
+
         var current = ParseVersion(currentVersion);
 
-#if DEBUG
-        return new UpdateInfo(false, currentVersion, string.Empty, string.Empty, string.Empty, null);
-#endif
+        var releases = await GetReleases() ?? throw new InvalidOperationException("Failed to fetch releases.");
 
-#if RELEASE
-
-        var releases = await GetReleases();
-
-        if (releases is null)
-            throw new InvalidOperationException("Failed to fetch releases.");
-
-        var (Release, Parsed) = releases
+        var (release, parsed) = releases
             .Select(r => (Release: r, Parsed: ParseVersion(NormalizeVersion(r.TagName))))
             .Where(r => r.Parsed is not null)
             .OrderByDescending(r => r.Parsed)
             .FirstOrDefault();
 
-        if (Release is null)
+        if (release is null)
             return new UpdateInfo(false, currentVersion, string.Empty, string.Empty, string.Empty, null);
 
-        var latestVersion = NormalizeVersion(Release.TagName);
-        var isNewer = current is null || Parsed! > current;
+        var latestVersion = NormalizeVersion(release.TagName);
+        var isNewer = current is null || parsed > current;
 
-        var asset = isNewer ? PickAssetForCurrentOs(Release.Assets) : null;
+        var asset = isNewer ? PickAssetForCurrentOs(release.Assets) : null;
 
         return new UpdateInfo(
             isNewer,
             currentVersion,
             latestVersion,
-            Release.HtmlUrl,
-            Release.Body ?? string.Empty,
+            release.HtmlUrl,
+            release.Body ?? string.Empty,
             asset);
-#endif
     }
 
     public bool ShouldShowChangelog()
@@ -94,13 +96,11 @@ public partial class LauncherUpdater(SettingsService settings, HttpClient httpCl
 
         return releases is null
             ? throw new InvalidOperationException("Failed to fetch releases.")
-            : (IReadOnlyList<ChangelogEntry>)[.. releases
-            .Select(r => (r.TagName, r.Body, Parsed: ParseVersion(NormalizeVersion(r.TagName))))
-            .Where(r => r.Parsed is not null)
-            .Where(r => lastSeen is null || r.Parsed! > lastSeen)
-            .Where(r => current is null || r.Parsed! <= current)
-            .OrderByDescending(r => r.Parsed)
-            .Select(r => new ChangelogEntry(NormalizeVersion(r.TagName), r.Body))];
+            : [.. releases
+                .Select(r => (r.TagName, r.Body, Parsed: ParseVersion(NormalizeVersion(r.TagName))))
+                .Where(r => r.Parsed is not null && (lastSeen is null || r.Parsed > lastSeen) && (current is null || r.Parsed <= current))
+                .OrderByDescending(r => r.Parsed)
+                .Select(r => new ChangelogEntry(NormalizeVersion(r.TagName), r.Body))];
     }
 
     private sealed record GhReleaseInfo(string TagName, string HtmlUrl, string? Body, IReadOnlyList<ReleaseAsset> Assets);
@@ -149,7 +149,7 @@ public partial class LauncherUpdater(SettingsService settings, HttpClient httpCl
                     }
                 }
 
-                result.Add(new GhReleaseInfo(tag!, htmlUrl ?? "", body, assets));
+                result.Add(new GhReleaseInfo(tag, htmlUrl ?? "", body, assets));
             }
 
             return result;
@@ -162,11 +162,11 @@ public partial class LauncherUpdater(SettingsService settings, HttpClient httpCl
 
     private static string? ParseSha256Digest(string? digest)
     {
-        const string prefix = "sha256:";
-        if (digest is null || !digest.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        const string Prefix = "sha256:";
+        if (digest?.StartsWith(Prefix, StringComparison.OrdinalIgnoreCase) != true)
             return null;
 
-        var hex = digest[prefix.Length..];
+        var hex = digest[Prefix.Length..];
         return hex.Length == SHA256.HashSizeInBytes * 2 && hex.All(char.IsAsciiHexDigit) ? hex : null;
     }
 
@@ -176,11 +176,11 @@ public partial class LauncherUpdater(SettingsService settings, HttpClient httpCl
 
         return releases is null
             ? throw new InvalidOperationException("Failed to fetch releases.")
-            : (IReadOnlyList<ChangelogEntry>)[.. releases
-            .Select(r => (r.TagName, r.Body, Parsed: ParseVersion(NormalizeVersion(r.TagName))))
-            .Where(r => r.Parsed is not null)
-            .OrderByDescending(r => r.Parsed)
-            .Select(r => new ChangelogEntry(NormalizeVersion(r.TagName), r.Body))];
+            : [.. releases
+                .Select(r => (r.TagName, r.Body, Parsed: ParseVersion(NormalizeVersion(r.TagName))))
+                .Where(r => r.Parsed is not null)
+                .OrderByDescending(r => r.Parsed)
+                .Select(r => new ChangelogEntry(NormalizeVersion(r.TagName), r.Body))];
     }
 
     private static string NormalizeVersion(string? version)
@@ -195,14 +195,13 @@ public partial class LauncherUpdater(SettingsService settings, HttpClient httpCl
         return Version.TryParse(core, out var v) ? v : null;
     }
 
-#if RELEASE
     private static ReleaseAsset? PickAssetForCurrentOs(IReadOnlyList<ReleaseAsset> assets)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             return assets.FirstOrDefault(a =>
-                a.Name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) &&
-                a.Name.Contains("setup", StringComparison.OrdinalIgnoreCase));
+                a.Name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+                    && a.Name.Contains("setup", StringComparison.OrdinalIgnoreCase));
         }
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
@@ -218,21 +217,20 @@ public partial class LauncherUpdater(SettingsService settings, HttpClient httpCl
             };
 
             return assets.FirstOrDefault(a =>
-                a.Name.Contains("linux-x64", StringComparison.OrdinalIgnoreCase) &&
-                a.Name.EndsWith(extension, StringComparison.OrdinalIgnoreCase));
+                a.Name.Contains("linux-x64", StringComparison.OrdinalIgnoreCase)
+                    && a.Name.EndsWith(extension, StringComparison.OrdinalIgnoreCase));
         }
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             var rid = RuntimeInformation.ProcessArchitecture == Architecture.Arm64 ? "osx-arm64" : "osx-x64";
             return assets.FirstOrDefault(a =>
-                a.Name.Contains(rid, StringComparison.OrdinalIgnoreCase) &&
-                a.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase));
+                a.Name.Contains(rid, StringComparison.OrdinalIgnoreCase)
+                    && a.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase));
         }
 
         return null;
     }
-#endif
 
     /// <summary>
     /// Downloads the asset to the launcher data folder, checks it against the SHA-256 digest
@@ -294,8 +292,10 @@ public partial class LauncherUpdater(SettingsService settings, HttpClient httpCl
 
         var actual = Convert.ToHexString(sha.GetHashAndReset());
         if (!string.Equals(actual, asset.Sha256, StringComparison.OrdinalIgnoreCase))
+        {
             throw new InvalidDataException(
                 $"Checksum mismatch for {asset.Name}: expected {asset.Sha256}, got {actual}. The download may be corrupted or tampered with.");
+        }
     }
 
     private static void TryDelete(string path)
@@ -375,8 +375,8 @@ public partial class LauncherUpdater(SettingsService settings, HttpClient httpCl
         Environment.Exit(0);
     }
 
-    public static string GetMacAppBundleRoot(string baseDirectory) =>
-        Path.GetFullPath(Path.Combine(baseDirectory, "..", ".."));
+    public static string GetMacAppBundleRoot(string baseDirectory)
+        => Path.GetFullPath(Path.Combine(baseDirectory, "..", ".."));
 
     private static void RunLinuxUpdate(string downloadedPath, string installDir)
     {
@@ -396,8 +396,8 @@ public partial class LauncherUpdater(SettingsService settings, HttpClient httpCl
                 return;
             case InstallKind.Rpm:
                 RunSystemPackageUpdate(downloadedPath,
-                    $"if command -v dnf >/dev/null; then dnf install -y {Quote(downloadedPath)}; " +
-                    $"else zypper --non-interactive install --allow-unsigned-rpm {Quote(downloadedPath)}; fi");
+                    $"if command -v dnf >/dev/null; then dnf install -y {Quote(downloadedPath)}; "
+                        + $"else zypper --non-interactive install --allow-unsigned-rpm {Quote(downloadedPath)}; fi");
                 return;
             default:
                 RunTarballUpdate(downloadedPath, installDir);
@@ -408,8 +408,8 @@ public partial class LauncherUpdater(SettingsService settings, HttpClient httpCl
     private const string FlatpakUpdateApplied = "UPDATE-APPLIED";
     private const string FlatpakUpdateNotApplied = "UPDATE-NOT-APPLIED";
 
-    private static string FlatpakUpdateLogPath =>
-        Path.Combine(
+    private static string s_flatpakUpdateLogPath
+        => Path.Combine(
             Environment.GetEnvironmentVariable("XDG_CACHE_HOME")
                 ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cache"),
             "flatpak-update.log");
@@ -419,7 +419,7 @@ public partial class LauncherUpdater(SettingsService settings, HttpClient httpCl
         var appId = Environment.GetEnvironmentVariable("FLATPAK_ID")
             ?? throw new InvalidOperationException("FLATPAK_ID is not set.");
 
-        var logPath = FlatpakUpdateLogPath;
+        var logPath = s_flatpakUpdateLogPath;
         _ = Directory.CreateDirectory(Path.GetDirectoryName(logPath)!);
 
         var hostScript = $"""
@@ -464,7 +464,8 @@ public partial class LauncherUpdater(SettingsService settings, HttpClient httpCl
             FileName = "flatpak-spawn",
             ArgumentList = { "--host", "sh", "-c", hostScript },
             UseShellExecute = false,
-        }) ?? throw new InvalidOperationException("Failed to start flatpak-spawn.");
+        })
+            ?? throw new InvalidOperationException("Failed to start flatpak-spawn.");
 
         Thread.Sleep(500);
         Environment.Exit(0);
@@ -478,7 +479,7 @@ public partial class LauncherUpdater(SettingsService settings, HttpClient httpCl
         if (InstallKindDetector.Current != InstallKind.Flatpak)
             return null;
 
-        var logPath = FlatpakUpdateLogPath;
+        var logPath = s_flatpakUpdateLogPath;
         try
         {
             if (!File.Exists(logPath))
@@ -561,7 +562,7 @@ public partial class LauncherUpdater(SettingsService settings, HttpClient httpCl
             TarFile.ExtractToDirectory(gzip, stagingDir, overwriteFiles: true);
 
         var pid = Environment.ProcessId;
-        var exePath = Environment.ProcessPath!;
+        var exePath = Environment.ProcessPath;
 
         var script = $"""
             #!/bin/sh

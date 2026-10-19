@@ -1,4 +1,4 @@
-﻿@using Starlight.Launcher.WebUI.Components.Atoms.Dialogs
+@using Starlight.Launcher.WebUI.Components.Atoms.Dialogs
 @using Starlight.Launcher.WebUI.Models.Data
 @using Starlight.Launcher.WebUI.Localization;
 
@@ -9,7 +9,7 @@
 <MudSnackbarProvider />
 <ConnectingDialogHost />
 
-<div id="app-bg" class="@BackgroundClass"></div>
+<div id="app-bg" class="@_backgroundClass"></div>
 
 <MudLayout>
     <MudAppBar Elevation="1" Class="app-titlebar">
@@ -42,7 +42,7 @@
             <MudSpacer />
         }
 
-        @if (_shouldShowAppBar)
+        @if (s_shouldShowAppBar)
         {
             <div class="window-controls" data-no-drag>
                 <MudIconButton Icon="@Icons.Material.Filled.Minimize"

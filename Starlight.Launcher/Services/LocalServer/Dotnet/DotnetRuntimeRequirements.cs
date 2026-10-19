@@ -17,23 +17,16 @@ public enum RollForwardPolicy
 public sealed record FrameworkRequirement(string Name, RuntimeVersion Version, RollForwardPolicy RollForward)
 {
     public bool IsSatisfiedBy(RuntimeVersion candidate)
-    {
-        if (RollForward == RollForwardPolicy.Disable)
-            return candidate == Version;
-
-        if (candidate.IsPrerelease && !Version.IsPrerelease)
-            return false;
-
-        if (candidate < Version)
-            return false;
-
-        return RollForward switch
-        {
-            RollForwardPolicy.LatestPatch => candidate.Major == Version.Major && candidate.Minor == Version.Minor,
-            RollForwardPolicy.Minor or RollForwardPolicy.LatestMinor => candidate.Major == Version.Major,
-            _ => true
-        };
-    }
+        => RollForward == RollForwardPolicy.Disable
+        ? candidate == Version
+        : (!candidate.IsPrerelease || Version.IsPrerelease)
+            && candidate >= Version
+            && RollForward switch
+            {
+                RollForwardPolicy.LatestPatch => candidate.Major == Version.Major && candidate.Minor == Version.Minor,
+                RollForwardPolicy.Minor or RollForwardPolicy.LatestMinor => candidate.Major == Version.Major,
+                _ => true
+            };
 }
 
 public sealed record DotnetRuntimeRequirements(IReadOnlyList<FrameworkRequirement> Frameworks)
@@ -49,8 +42,8 @@ public sealed record DotnetRuntimeRequirements(IReadOnlyList<FrameworkRequiremen
 
     public string DisplayVersion => $"{NetCore.Version.Major}.{NetCore.Version.Minor}";
 
-    public bool IsSatisfiedBy(IReadOnlyDictionary<string, List<RuntimeVersion>> installed) =>
-        Frameworks.All(f => installed.TryGetValue(f.Name, out var versions) && versions.Any(f.IsSatisfiedBy));
+    public bool IsSatisfiedBy(IReadOnlyDictionary<string, List<RuntimeVersion>> installed)
+        => Frameworks.All(f => installed.TryGetValue(f.Name, out var versions) && versions.Any(f.IsSatisfiedBy));
 
     public static DotnetRuntimeRequirements? TryLoad(string installDir)
     {
@@ -88,6 +81,7 @@ public sealed record DotnetRuntimeRequirements(IReadOnlyList<FrameworkRequiremen
         var references = new List<JsonNode>();
         if (options["framework"] is JsonObject single)
             references.Add(single);
+
         if (options["frameworks"] is JsonArray many)
             references.AddRange(many.OfType<JsonObject>());
 
@@ -116,20 +110,21 @@ public sealed record DotnetRuntimeRequirements(IReadOnlyList<FrameworkRequiremen
 
     private static RollForwardPolicy? ReadPolicy(JsonNode node)
     {
-        if (node["rollForward"] is JsonValue value && value.TryGetValue<string>(out var text)
+        if (node["rollForward"] is JsonValue value
+            && value.TryGetValue<string>(out var text)
             && Enum.TryParse<RollForwardPolicy>(text, ignoreCase: true, out var policy))
-            return policy;
-
-        if (node["rollForwardOnNoCandidateFx"] is JsonValue legacy && legacy.TryGetValue<int>(out var level))
         {
-            return level switch
-            {
-                0 => RollForwardPolicy.LatestPatch,
-                2 => RollForwardPolicy.Major,
-                _ => RollForwardPolicy.Minor
-            };
+            return policy;
         }
 
-        return null;
+        if (node["rollForwardOnNoCandidateFx"] is not JsonValue legacy || !legacy.TryGetValue<int>(out var level))
+            return null;
+
+        return level switch
+        {
+            0 => RollForwardPolicy.LatestPatch,
+            2 => RollForwardPolicy.Major,
+            _ => RollForwardPolicy.Minor
+        };
     }
 }

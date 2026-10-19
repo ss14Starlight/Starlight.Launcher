@@ -35,7 +35,7 @@ public partial class NullLinkProfileView : LocalizedComponentBase
     private CancellationTokenSource? _cts;
     private readonly HashSet<string> _expanded = [];
 
-    private string Initial => string.IsNullOrEmpty(Account.Username) ? "?" : char.ToUpperInvariant(Account.Username[0]).ToString();
+    private string _initial => string.IsNullOrEmpty(Account.Username) ? "?" : char.ToUpperInvariant(Account.Username[0]).ToString();
 
     protected override async Task OnParametersSetAsync()
     {
@@ -71,6 +71,7 @@ public partial class NullLinkProfileView : LocalizedComponentBase
         // Keep showing the previous data of the same account while refreshing.
         if (_result?.Profile?.UserId != account.UserId)
             _result = null;
+
         _loading = true;
         StateHasChanged();
 
@@ -105,7 +106,7 @@ public partial class NullLinkProfileView : LocalizedComponentBase
     private void ToggleExpanded(string serverId)
     {
         if (!_expanded.Remove(serverId))
-            _expanded.Add(serverId);
+            _ = _expanded.Add(serverId);
     }
 
     public override void Dispose()
@@ -113,6 +114,7 @@ public partial class NullLinkProfileView : LocalizedComponentBase
         base.Dispose();
         _cts?.Cancel();
         _cts?.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     private static string TokenFingerprint(LoggedInAccount account)
@@ -128,7 +130,7 @@ public partial class NullLinkProfileView : LocalizedComponentBase
 
     private static (string Name, double Minutes)? TopRole(NullLinkProfile profile)
     {
-        var top = profile.Servers
+        var (tracker, minutes) = profile.Servers
             .SelectMany(x => x.Trackers)
             .Where(x => !x.Tracker.StartsWith("Admin", StringComparison.Ordinal))
             .GroupBy(x => x.Tracker)
@@ -136,7 +138,7 @@ public partial class NullLinkProfileView : LocalizedComponentBase
             .OrderByDescending(x => x.Minutes)
             .FirstOrDefault();
 
-        return top.Tracker is null ? null : (PrettifyTracker(top.Tracker), top.Minutes);
+        return tracker is null ? null : (PrettifyTracker(tracker), minutes);
     }
 
     private static string ServerTitle(NullLinkServerPlayTime server)
@@ -157,8 +159,9 @@ public partial class NullLinkProfileView : LocalizedComponentBase
         return text.Length == 0 ? id : char.ToUpperInvariant(text[0]) + text[1..];
     }
 
-    private static readonly Regex _colorTagRegex = new(@"\[color=[^\]]{1,32}\](.*?)\[/color\]",
-        RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled);
+    [GeneratedRegex(@"\[color=[^\]]{1,32}\](.*?)\[/color\]", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.Singleline, "en-US")]
+    private static partial Regex _colorTagRegex { get; }
 
-    private static readonly Regex _camelBoundaryRegex = new(@"(?<=[a-z0-9])(?=[A-Z])", RegexOptions.Compiled);
+    [GeneratedRegex(@"(?<=[a-z0-9])(?=[A-Z])", RegexOptions.Compiled)]
+    private static partial Regex _camelBoundaryRegex { get; }
 }

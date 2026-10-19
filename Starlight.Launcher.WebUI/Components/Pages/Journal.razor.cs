@@ -94,6 +94,7 @@ public partial class Journal : LocalizedComponentBase, IDisposable
             if (overlap > TimeSpan.Zero)
                 total += overlap;
         }
+
         return total;
     }
 
@@ -111,7 +112,7 @@ public partial class Journal : LocalizedComponentBase, IDisposable
         var topMap = sessions
             .SelectMany(s => s.Rounds)
             .Where(r => r.Map is not null)
-            .GroupBy(r => r.Map!)
+            .GroupBy(r => r.Map)
             .Select(g => (Name: g.Key, Count: g.Count()))
             .OrderByDescending(x => x.Count)
             .Cast<(string Name, int Count)?>()
@@ -135,7 +136,7 @@ public partial class Journal : LocalizedComponentBase, IDisposable
             favoriteHour);
     }
 
-    private List<PlaySession> FilteredSessions
+    private List<PlaySession> _filteredSessions
     {
         get
         {
@@ -146,15 +147,15 @@ public partial class Journal : LocalizedComponentBase, IDisposable
             var id = q.TrimStart('#');
             return [.. _sessions.Where(s =>
                 (s.ServerName?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false)
-                || s.Address.Contains(q, StringComparison.OrdinalIgnoreCase)
-                || s.Rounds.Any(r =>
-                    (r.RoundId?.ToString(CultureInfo.InvariantCulture) == id)
-                    || (r.Map?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false)
-                    || (r.Preset?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false)))];
+                    || s.Address.Contains(q, StringComparison.OrdinalIgnoreCase)
+                    || s.Rounds.Any(r =>
+                        (r.RoundId?.ToString(CultureInfo.InvariantCulture) == id)
+                            || (r.Map?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false)
+                            || (r.Preset?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false)))];
         }
     }
 
-    private List<ReplayEntry> FilteredReplays
+    private List<ReplayEntry> _filteredReplays
     {
         get
         {
@@ -168,8 +169,8 @@ public partial class Journal : LocalizedComponentBase, IDisposable
             var id = q.TrimStart('#');
             return [.. _replays.Where(r =>
                 r.Round.ToString(CultureInfo.InvariantCulture) == id
-                || (r.Server?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false)
-                || r.Date.ToString("d").Contains(q, StringComparison.OrdinalIgnoreCase))];
+                    || (r.Server?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false)
+                    || r.Date.ToString("d").Contains(q, StringComparison.OrdinalIgnoreCase))];
         }
     }
 

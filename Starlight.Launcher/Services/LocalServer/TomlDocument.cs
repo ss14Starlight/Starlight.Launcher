@@ -58,8 +58,8 @@ internal sealed class TomlDocument
         _rawValues[group][key] = rawLiteral;
     }
 
-    public void Set(string group, string name, ServerCVarType type, string value) =>
-        SetRaw(group, name, EncodeLiteral(type, value));
+    public void Set(string group, string name, ServerCVarType type, string value)
+        => SetRaw(group, name, EncodeLiteral(type, value));
 
     public string Serialize()
     {
@@ -73,6 +73,7 @@ internal sealed class TomlDocument
             _ = sb.Append('[').Append(group).Append(']').Append('\n');
             foreach (var key in _keyOrder[group])
                 _ = sb.Append(key).Append(" = ").Append(_rawValues[group][key]).Append('\n');
+
             _ = sb.Append('\n');
         }
 

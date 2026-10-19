@@ -59,6 +59,7 @@ internal sealed class ClientLogStream(ClientLogTarget target) : Stream
     public override bool CanSeek => false;
     public override bool CanWrite => true;
     public override long Length => throw new NotSupportedException();
+
     public override long Position
     {
         get => throw new NotSupportedException();
@@ -109,8 +110,8 @@ public sealed class ClientLogSession : IAsyncDisposable
 
     public async ValueTask WriteExitAsync(int? exitCode, IEnumerable<string>? crashDumps = null)
     {
-        var text = $"\n--- CLIENT EXITED (code: {exitCode?.ToString() ?? "unknown"}) " +
-                   $"at {DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss zzz} ---\n";
+        var text = $"\n--- CLIENT EXITED (code: {exitCode?.ToString() ?? "unknown"}) "
+            + $"at {DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss zzz} ---\n";
 
         foreach (var dump in crashDumps ?? [])
             text += $"--- CRASH DUMP: {dump} ---\n";

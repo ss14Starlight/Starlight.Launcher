@@ -8,11 +8,7 @@ namespace Starlight.Launcher.Services.Bridge;
 
 public sealed partial class Bridge : IBridge
 {
-    public event PropertyChangedEventHandler? ConnectionPropertyChanged
-    {
-        add => _connector.PropertyChanged += value;
-        remove => _connector.PropertyChanged -= value;
-    }
+    public INotifyPropertyChanged Connection => _connector;
 
     public ConnectionStatus GetConnectionStatus() => _connector.Status;
 

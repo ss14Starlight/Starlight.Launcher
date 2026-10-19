@@ -77,6 +77,7 @@ public sealed class JsonFileStore<T> where T : class, new()
             {
                 if (!_dirty)
                     return;
+
                 json = JsonSerializer.Serialize(_value, _jsonOptions);
                 _dirty = false;
             }
@@ -121,6 +122,7 @@ public sealed class JsonFileStore<T> where T : class, new()
         {
             var backup = path + $".corrupt-{DateTime.UtcNow:yyyyMMddHHmmss}.bak";
             try { File.Move(path, backup, true); } catch { /* best effort */ }
+
             Log.Error(e, "Failed to parse {Path}; backed up to {Backup}", path, backup);
             return (new T(), false);
         }

@@ -1,0 +1,84 @@
+<Project>
+	<!--
+		Central Package Management: every NuGet version lives here and only here.
+		Projects reference packages without a Version attribute.
+	-->
+	<PropertyGroup>
+		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+		<AvaloniaVersion>12.1.0-starlight</AvaloniaVersion>
+		<RoslynatorVersion>5.0.1</RoslynatorVersion>
+	</PropertyGroup>
+
+	<!-- Analyzers applied to every project in the solution. -->
+	<ItemGroup>
+		<GlobalPackageReference Include="Roslynator.Analyzers" Version="$(RoslynatorVersion)" />
+		<GlobalPackageReference Include="Roslynator.Formatting.Analyzers" Version="$(RoslynatorVersion)" />
+	</ItemGroup>
+
+	<!-- UI -->
+	<ItemGroup>
+		<PackageVersion Include="Avalonia" Version="$(AvaloniaVersion)" />
+		<PackageVersion Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
+		<PackageVersion Include="Avalonia.Fonts.Inter" Version="$(AvaloniaVersion)" />
+		<PackageVersion Include="Avalonia.Themes.Fluent" Version="$(AvaloniaVersion)" />
+		<PackageVersion Include="CommunityToolkit.Mvvm" Version="[8.2.2]" />
+		<PackageVersion Include="MudBlazor" Version="9.7.0" />
+		<PackageVersion Include="MudBlazor.Markdown" Version="9.0.0" />
+		<!-- Must match the ASP.NET runtime we ship, see Starlight.Launcher.csproj. -->
+		<PackageVersion Include="Microsoft.AspNetCore.App.Internal.Assets" Version="$(BundledNETCoreAppPackageVersion)" />
+	</ItemGroup>
+
+	<!-- Logging -->
+	<ItemGroup>
+		<PackageVersion Include="Microsoft.Extensions.Logging" Version="11.0.0-preview.3.26207.106" />
+		<PackageVersion Include="Serilog" Version="4.3.1" />
+		<PackageVersion Include="Serilog.Extensions.Hosting" Version="10.0.0" />
+		<PackageVersion Include="Serilog.Formatting.Compact" Version="3.0.0" />
+		<PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
+		<PackageVersion Include="Serilog.Sinks.Debug" Version="3.0.0" />
+		<PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
+	</ItemGroup>
+
+	<!-- Data, crypto, compression -->
+	<ItemGroup>
+		<PackageVersion Include="Dapper" Version="2.1.79" />
+		<PackageVersion Include="Microsoft.Data.Sqlite.Core" Version="10.0.8" />
+		<PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
+		<PackageVersion Include="SQLitePCLRaw.provider.sqlite3" Version="3.0.3" />
+		<PackageVersion Include="NSec.Cryptography" Version="24.9.0-preview.2" />
+		<PackageVersion Include="SpaceWizards.Sodium" Version="0.3.0" />
+		<PackageVersion Include="SharpZstd.Interop" Version="1.5.6" />
+		<PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="10.0.8" />
+		<PackageVersion Include="YamlDotNet" Version="17.1.0" />
+	</ItemGroup>
+
+	<!-- Platform, natives, diagnostics -->
+	<ItemGroup>
+		<PackageVersion Include="DiscordRichPresence" Version="1.6.2.72" />
+		<PackageVersion Include="Linguini.Bundle" Version="0.11.0" />
+		<PackageVersion Include="Microsoft.Diagnostics.NETCore.Client" Version="0.2.661903" />
+		<PackageVersion Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="3.2.8" />
+		<PackageVersion Include="Microsoft.NET.ILLink.Tasks" Version="10.0.8" />
+		<PackageVersion Include="Mono.Posix.NETStandard" Version="1.0.0" />
+		<PackageVersion Include="Robust.Natives" Version="0.2.5" />
+		<PackageVersion Include="Robust.Natives.Zstd" Version="0.1.1-zstd1.5.7" />
+		<PackageVersion Include="System.Net.Http.WinHttpHandler" Version="10.0.8" />
+		<PackageVersion Include="TerraFX.Interop.Windows" Version="10.0.26100.6" />
+		<PackageVersion Include="Tracy-CSharp" Version="0.13.1" />
+	</ItemGroup>
+
+	<!-- Roslyn (analyzer project) -->
+	<ItemGroup>
+		<PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.3.0" />
+		<PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="5.3.0" />
+		<PackageVersion Include="Roslynator.CodeAnalysis.Analyzers" Version="$(RoslynatorVersion)" />
+	</ItemGroup>
+
+	<!-- Tests -->
+	<ItemGroup>
+		<PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="11.0.0-rc.2.26504.105" />
+		<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+		<PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+		<PackageVersion Include="xunit.v3" Version="3.2.2" />
+	</ItemGroup>
+</Project>

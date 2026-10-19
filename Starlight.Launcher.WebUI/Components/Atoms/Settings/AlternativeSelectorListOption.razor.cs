@@ -5,7 +5,6 @@ namespace Starlight.Launcher.WebUI.Components.Atoms.Settings;
 
 public partial class AlternativeSelectorListOption : LocalizedComponentBase
 {
-
     [Parameter] public List<string> Values { get; set; } = [];
     [Parameter] public EventCallback<List<string>> ValuesChanged { get; set; }
 
@@ -99,24 +98,9 @@ public partial class AlternativeSelectorListOption : LocalizedComponentBase
             await ValuesChanged.InvokeAsync(Values);
             await SelectedValueChanged.InvokeAsync(SelectedValue);
         }
-        else
+        else if (SelfValueControlAction is not null)
         {
-            if (SelfValueControlAction is not null)
-                await SelfValueControlAction(Values, SelectedValue);
+            await SelfValueControlAction(Values, SelectedValue);
         }
-    }
-
-    private static string? ValidateUrl(string value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return "URL is required";
-
-        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri))
-            return "Invalid URL";
-
-        if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
-            return "Only HTTP/HTTPS allowed";
-
-        return null;
     }
 }

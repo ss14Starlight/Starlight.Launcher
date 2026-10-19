@@ -18,19 +18,19 @@ internal sealed class LocalWriteStream(FileStream file) : Stream
     public void Reset() => Guard(() =>
     {
         file.SetLength(0);
-        file.Seek(0, SeekOrigin.Begin);
+        _ = file.Seek(0, SeekOrigin.Begin);
     });
 
     public override void Write(byte[] buffer, int offset, int count) => Guard(() => file.Write(buffer, offset, count));
 
-    public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancel)
-        => WriteAsync(buffer.AsMemory(offset, count), cancel).AsTask();
+    public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        => WriteAsync(buffer.AsMemory(offset, count), cancellationToken).AsTask();
 
-    public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancel = default)
+    public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
     {
         try
         {
-            await file.WriteAsync(buffer, cancel);
+            await file.WriteAsync(buffer, cancellationToken);
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {
@@ -40,11 +40,11 @@ internal sealed class LocalWriteStream(FileStream file) : Stream
 
     public override void Flush() => Guard(file.Flush);
 
-    public override async Task FlushAsync(CancellationToken cancel)
+    public override async Task FlushAsync(CancellationToken cancellationToken)
     {
         try
         {
-            await file.FlushAsync(cancel);
+            await file.FlushAsync(cancellationToken);
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {
