@@ -964,6 +964,12 @@ public class Connector(Updater updater, IEngineManager engineManager, HttpClient
             foreach (var dump in dumps)
                 _console.AddLine($"Crash dump: {dump}", isError: true);
 
+            if (dumps.Count == 0 && exitCode is not (null or 0) && _settings.GetSettings() is { DeveloperMode: true, CrashDumpsEnabled: true })
+            {
+                Log.Warning("Client exited with code {ExitCode} but no crash dump was written", exitCode);
+                _console.AddLine("No crash dump was written. If the client crashed, the [createdump] lines above say why.", isError: true);
+            }
+
             await session.DisposeAsync();
         }
     }

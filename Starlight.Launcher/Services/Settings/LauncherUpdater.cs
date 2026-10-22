@@ -569,7 +569,7 @@ public class LauncherUpdater(SettingsService settings, HttpClient httpClient)
             while kill -0 {pid} 2>/dev/null; do sleep 0.2; done
             rm -rf "{installDir}"
             mv "{stagingDir}" "{installDir}"
-            chmod +x "{installDir}/Starlight.Launcher"
+            chmod +x "{installDir}/Starlight.Launcher" "{installDir}/loader/Robust.Loader" "{installDir}/loader/createdump"
             exec "{exePath}"
             """;
 

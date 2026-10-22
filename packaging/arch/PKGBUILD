@@ -21,7 +21,7 @@ package() {
 
     install -d "${dest}"
     bsdtar -xf "${srcdir}/Starlight.Launcher-linux-x64-${pkgver}.tar.gz" -C "${dest}"
-    chmod +x "${dest}/Starlight.Launcher" "${dest}/loader/Robust.Loader"
+    chmod 755 "${dest}/Starlight.Launcher" "${dest}/loader/Robust.Loader" "${dest}/loader/createdump"
 
     echo pacman > "${dest}/install-kind"
 

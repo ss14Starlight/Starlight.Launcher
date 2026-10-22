@@ -26,7 +26,7 @@ A modern launcher for Space Station 14 by the Starlight Team.
 %install
 install -d %{buildroot}/opt/starlight-launcher
 tar -xzf %{SOURCE0} -C %{buildroot}/opt/starlight-launcher
-chmod +x %{buildroot}/opt/starlight-launcher/Starlight.Launcher %{buildroot}/opt/starlight-launcher/loader/Robust.Loader
+chmod 755 %{buildroot}/opt/starlight-launcher/Starlight.Launcher %{buildroot}/opt/starlight-launcher/loader/Robust.Loader %{buildroot}/opt/starlight-launcher/loader/createdump
 echo rpm > %{buildroot}/opt/starlight-launcher/install-kind
 
 install -d %{buildroot}%{_bindir}
