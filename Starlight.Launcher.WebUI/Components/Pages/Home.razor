@@ -21,19 +21,27 @@
 
         <MudSpacer />
 
+        <MudTooltip Text="@(_reorderLocked ? L["home-menu-reorder-unlock"] : L["home-menu-reorder-lock"])">
+            <MudIconButton Icon="@(_reorderLocked ? Icons.Material.Filled.Lock : Icons.Material.Filled.LockOpen)"
+                           Variant="Variant.Outlined"
+                           Color="@(_reorderLocked ? Color.Primary : Color.Default)"
+                           OnClick="ToggleReorderLock" />
+        </MudTooltip>
+
         <MudIconButton Icon="@Icons.Material.Filled.Refresh"
                        Variant="Variant.Outlined"
                        OnClick="RefreshServers" />
     </MudStack>
 
-    <div class="server-panel">
-        <MudVirtualize Items="_favoriteServers"
-                       Context="server"
-                       ItemSize="56"
-                       OverscanCount="3">
-            <ServerItem @key="server.Address" Data="server"
-                        IsInFavorites="@(_favoriteServers.Contains(server))"
-                        OnFavorites="async x => await HandleFavorite(x)" OnIgnore="HandleIgnore" />
-        </MudVirtualize>
+    <div class="server-panel" @ref="_panel">
+        @* Not virtualized: reordering needs every item in the DOM. *@
+        @foreach (var server in _favoriteServers)
+        {
+            <div @key="server.Address" data-reorder-key="@server.Address">
+                <ServerItem Data="server" Reorderable="@(!_reorderLocked)"
+                            IsInFavorites="@(_favoriteServers.Contains(server))"
+                            OnFavorites="async x => await HandleFavorite(x)" OnIgnore="HandleIgnore" />
+            </div>
+        }
     </div>
 </div>

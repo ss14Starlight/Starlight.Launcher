@@ -119,6 +119,11 @@ public record AppSettings
     public bool ServerListToolBarTagsBarOpen { get; init; } = true;
 
     /// <summary>
+    /// Locks drag reordering of the favorite servers list, so the layout can't be changed by accident
+    /// </summary>
+    public bool FavoritesReorderLocked { get; init; }
+
+    /// <summary>
     /// Determines should we collapse app to tray on start or not
     /// </summary>
     public bool CollapseInTrayOnStart { get; init; }

@@ -1241,3 +1241,20 @@ h1:focus {
         animation: none !important;
     }
 }
+.reorder-active [data-reorder-key] {
+    position: relative;
+    transition: transform 150ms ease;
+}
+
+.reorder-active [data-reorder-key].reorder-dragging {
+    z-index: 2;
+    transition: none;
+    border-radius: 10px;
+    background: var(--mud-palette-surface);
+    box-shadow: 0 6px 20px rgb(0 0 0 / 0.35);
+}
+
+body.reorder-grabbing,
+body.reorder-grabbing * {
+    cursor: grabbing !important;
+}

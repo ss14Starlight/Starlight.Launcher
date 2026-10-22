@@ -21,6 +21,7 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
     [Parameter] public EventCallback<ServerStatusData> OnFavorites { get; set; }
     [Parameter] public EventCallback<ServerStatusData> OnIgnore { get; set; }
     [Parameter] public bool IsInFavorites { get; set; }
+    [Parameter] public bool Reorderable { get; set; }
 
     private bool _expanded;
     private IPresenceScope? _viewingScope;

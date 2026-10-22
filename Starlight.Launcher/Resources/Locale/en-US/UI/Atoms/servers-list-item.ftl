@@ -5,3 +5,4 @@ servers-list-item-round-in-round = In Round
 servers-list-item-round-lobby = Lobby
 servers-list-item-details-error = Could not load details
 servers-list-item-details-loading = Loading...
+servers-list-item-drag = Drag to reorder

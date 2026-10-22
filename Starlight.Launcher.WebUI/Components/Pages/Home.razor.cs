@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
+using Microsoft.JSInterop;
 using MudBlazor;
 using Robust.Launcher.Api.Models.ServerStatus;
 using Starlight.Launcher.WebUI.Bridge;
@@ -10,19 +12,34 @@ using Starlight.Launcher.WebUI.Models.Settings;
 
 namespace Starlight.Launcher.WebUI.Components.Pages;
 
-public partial class Home : LocalizedComponentBase, IDisposable
+public partial class Home : LocalizedComponentBase, IAsyncDisposable
 {
     [Inject] private IBridge _bridge { get; set; } = default!;
     [Inject] private ServerStatusCache _statusCache { get; set; } = default!;
     [Inject] private IDialogService _dialogService { get; set; } = default!;
+    [Inject] private IJSRuntime _js { get; set; } = default!;
+    [Inject] private ILogger<Home> _logger { get; set; } = default!;
 
     private List<ServerStatusData> _favoriteServers { get; set; } = null!;
 
     private readonly CancellationTokenSource _disposeCts = new();
     private int _rebuildScheduled;
 
+    private ElementReference _panel;
+    private IJSObjectReference? _reorderModule;
+    private DotNetObjectReference<Home>? _selfRef;
+    private TaskCompletionSource? _renderedTcs;
+    private bool _reorderLocked;
+
+    private bool _disposed;
+
     public override void Dispose()
     {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+
         base.Dispose();
         _bridge.FavoritesChanged -= HandleFavorites;
         _bridge.ServersChanged -= OnServersChanged;
@@ -32,10 +49,49 @@ public partial class Home : LocalizedComponentBase, IDisposable
         GC.SuppressFinalize(this);
     }
 
+    public async ValueTask DisposeAsync()
+    {
+        Dispose();
+        _renderedTcs?.TrySetResult();
+
+        if (_reorderModule is not null)
+        {
+            try
+            {
+                await _reorderModule.InvokeVoidAsync("detach", _panel);
+                await _reorderModule.DisposeAsync();
+            }
+            catch (JSDisconnectedException) { }
+        }
+
+        _selfRef?.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        _renderedTcs?.TrySetResult();
+
+        if (!firstRender)
+            return;
+
+        _selfRef = DotNetObjectReference.Create(this);
+        try
+        {
+            _reorderModule = await _js.InvokeAsync<IJSObjectReference>("import", "./js/list-reorder.js");
+            await _reorderModule.InvokeVoidAsync("attach", _panel, _selfRef);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Can't use js interpop to allow server list reordering!");
+        }
+    }
+
     private void RefreshServers() => _statusCache.Refresh([.. _favoriteServers]);
 
     protected override async Task OnInitializedAsync()
     {
+        _reorderLocked = _bridge.GetSettings().FavoritesReorderLocked;
         UpdateFavorites(await _bridge.GetFavoritesAsync());
         _bridge.FavoritesChanged += HandleFavorites;
         _bridge.ServersChanged += OnServersChanged;
@@ -137,6 +193,53 @@ public partial class Home : LocalizedComponentBase, IDisposable
             _ = favorites.Remove(alreadyExist);
             await _bridge.WriteFavoritesAsync(favorites);
         }
+    }
+
+    [JSInvokable]
+    public async Task MoveItem(string address, int toIndex)
+    {
+        var from = _favoriteServers.FindIndex(x => x.Address == address);
+        if (from < 0)
+            return;
+
+        var server = _favoriteServers[from];
+        _favoriteServers.RemoveAt(from);
+        _favoriteServers.Insert(Math.Clamp(toIndex, 0, _favoriteServers.Count), server);
+
+        _renderedTcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        StateHasChanged();
+        await _renderedTcs.Task;
+        _renderedTcs = null;
+
+        await SaveFavoritesOrder();
+    }
+
+    private async Task SaveFavoritesOrder()
+    {
+        var order = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        for (var i = 0; i < _favoriteServers.Count; i++)
+            _ = order.TryAdd(_favoriteServers[i].Address, i);
+
+        var favorites = _bridge.GetFavorites();
+
+        var visible = new Queue<FavoriteServer>(favorites
+            .Where(f => order.ContainsKey(f.Address))
+            .OrderBy(f => order[f.Address]));
+
+        var reordered = favorites
+            .ConvertAll(f => order.ContainsKey(f.Address) ? visible.Dequeue() : f)
+;
+
+        if (reordered.SequenceEqual(favorites))
+            return;
+
+        await _bridge.WriteFavoritesAsync(reordered);
+    }
+
+    private void ToggleReorderLock()
+    {
+        _reorderLocked = !_reorderLocked;
+        _bridge.UpdateSettings(s => s with { FavoritesReorderLocked = _reorderLocked });
     }
 
     private void HandleIgnore(ServerStatusData server)

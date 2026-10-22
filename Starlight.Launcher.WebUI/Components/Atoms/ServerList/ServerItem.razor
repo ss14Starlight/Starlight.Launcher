@@ -5,9 +5,15 @@
 @inherits LocalizedComponentBase
 
 <div class="server-card @(_expanded ? "server-card--expanded" : null)" @onclick="HandleClick" @onblur="HandleBlur" role="button" tabindex="0" aria-expanded="@_expanded">
-    <div class="server-card__row">
+    <div class="server-card__row" data-reorder-handle="@Reorderable">
 
         <div class="server-card__primary">
+            @if (Reorderable)
+            {
+                <span class="server-card__grip" title="@L["servers-list-item-drag"]">
+                    <MudIcon Icon="@Icons.Material.Rounded.DragIndicator" />
+                </span>
+            }
             <span class="server-card__chevron">
                 <MudIcon Icon="@Icons.Material.Rounded.ChevronRight" />
             </span>

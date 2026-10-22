@@ -60,6 +60,27 @@
     gap: 8px;
 }
 
+.server-card__grip {
+    display: inline-flex;
+    align-items: center;
+    margin-left: -10px;
+    margin-right: -6px;
+    color: var(--mud-palette-text-disabled);
+    flex-shrink: 0;
+    font-size: 18px;
+    cursor: grab;
+    opacity: 0.35;
+    transition: opacity 120ms ease, color 120ms ease;
+}
+
+.server-card:hover .server-card__grip {
+    opacity: 1;
+}
+
+.server-card__grip:hover {
+    color: var(--mud-palette-primary);
+}
+
 .server-card__chevron {
     display: inline-flex;
     align-items: center;

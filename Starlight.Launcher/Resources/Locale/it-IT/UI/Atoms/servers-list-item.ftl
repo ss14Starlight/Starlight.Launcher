@@ -5,3 +5,4 @@ servers-list-item-round-in-round = Round in corso
 servers-list-item-round-lobby = Nella lobby
 servers-list-item-details-error = Impossibile caricare i dettagli
 servers-list-item-details-loading = Caricamento...
+servers-list-item-drag = Trascina per riordinare
