@@ -315,7 +315,7 @@ public class App : Application
         _ = services.AddSingleton<ServerMonitor>();
         _ = services.AddSingleton<FriendsService>();
         _ = services.AddSingleton<ReplaysService>();
-        _ = services.AddTransient<Connector>();
+        _ = services.AddSingleton<Connector>();
         _ = services.AddSingleton<UiActivity>();
         _ = services.AddSingleton<UiTicker>();
         _ = services.AddSingleton<LauncherUpdater>();

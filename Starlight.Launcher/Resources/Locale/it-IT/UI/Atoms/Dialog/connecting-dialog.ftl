@@ -28,3 +28,4 @@ connecting-dialog-status-update-error = Aggiornamento non riuscito. Consulta i l
 connecting-dialog-status-not-a-bundle = Questo file non è un content bundle valido.
 connecting-dialog-status-cancelled = Annullato.
 connecting-dialog-status-starting = Avvio...
+connecting-dialog-status-already-running = Il gioco è già in esecuzione o in avvio. Consenti più client nelle impostazioni per avviarne un altro.

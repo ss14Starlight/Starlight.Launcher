@@ -24,6 +24,8 @@ public sealed partial class ConnectingDialog : LocalizedComponentBase, IDisposab
     private readonly CancellationTokenSource _cts = new();
     private Timer? _pollTimer;
 
+    private ILaunchState _launch = default!;
+
     // Speed measurement, derived from the SAME downloaded counter we display.
     private long _lastDownloaded;
     private DateTime _lastSampleUtc;
@@ -41,10 +43,10 @@ public sealed partial class ConnectingDialog : LocalizedComponentBase, IDisposab
     private string _percentCss => _percent.ToString("0.##", CultureInfo.InvariantCulture);
 
     private bool _hasDeterminateProgress
-        => _bridge.GetConnectionStatus() == ConnectionStatus.Updating && _bridge.GetUpdateProgress() is { total: > 0 };
+        => _launch.Status == ConnectionStatus.Updating && _bridge.GetUpdateProgress() is { total: > 0 };
 
     private bool _isByteProgress
-        => _bridge.GetConnectionStatus() == ConnectionStatus.Updating
+        => _launch.Status == ConnectionStatus.Updating
             && _bridge.GetUpdateStatus() is
                 UpdateStatus.DownloadingEngineVersion
                 or UpdateStatus.DownloadingEngineModules
@@ -70,16 +72,17 @@ public sealed partial class ConnectingDialog : LocalizedComponentBase, IDisposab
         }
     }
 
-    private bool _isTerminal => _bridge.GetConnectionStatus() is
+    private bool _isTerminal => _launch.Status is
         ConnectionStatus.ConnectionFailed
         or ConnectionStatus.UpdateError
         or ConnectionStatus.AccessDenied
         or ConnectionStatus.DownloadStalled
         or ConnectionStatus.NotAContentBundle
         or ConnectionStatus.Cancelled
-        or ConnectionStatus.ClientExited;
+        or ConnectionStatus.ClientExited
+        or ConnectionStatus.AlreadyRunning;
 
-    private string _statusText => _bridge.GetConnectionStatus() switch
+    private string _statusText => _launch.Status switch
     {
         ConnectionStatus.Connecting => L["connecting-dialog-status-connecting"],
         ConnectionStatus.Updating => _bridge.GetUpdateStatus() switch
@@ -103,24 +106,23 @@ public sealed partial class ConnectingDialog : LocalizedComponentBase, IDisposab
         ConnectionStatus.DownloadStalled => L["connecting-dialog-download-stalled"],
         ConnectionStatus.NotAContentBundle => L["connecting-dialog-status-not-a-bundle"],
         ConnectionStatus.Cancelled => L["connecting-dialog-status-cancelled"],
+        ConnectionStatus.AlreadyRunning => L["connecting-dialog-status-already-running"],
         _ => L["connecting-dialog-status-starting"]
     };
 
     protected override void OnInitialized()
     {
-        _bridge.Connection.PropertyChanged += OnConnectorChanged;
+        _launch = ContentBundle is { } bundle
+            ? _bridge.LaunchContentBundle(bundle, _cts.Token)
+            : _bridge.Connect(Address, Title, _cts.Token);
+
+        _launch.PropertyChanged += OnConnectorChanged;
 
         _pollTimer = new Timer(_ =>
         {
             SampleSpeed();
             _ = InvokeAsync(StateHasChanged);
         }, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(250));
-
-        // Fire-and-forget: Status drives the UI from here on.
-        if (ContentBundle is { } bundle)
-            _bridge.LaunchContentBundle(bundle, _cts.Token);
-        else
-            _bridge.Connect(Address, Title, _cts.Token);
     }
 
     // Recompute speed from the displayed counter so the two can never disagree.
@@ -165,13 +167,13 @@ public sealed partial class ConnectingDialog : LocalizedComponentBase, IDisposab
     private void OnConnectorChanged(object? sender, PropertyChangedEventArgs e)
         => InvokeAsync(() =>
         {
-            if (_bridge.GetConnectionStatus() == ConnectionStatus.ClientRunning)
+            if (_launch.Status == ConnectionStatus.ClientRunning)
                 _mudDialog.Close();
 
             StateHasChanged();
         });
 
-    private void Decide(PrivacyPolicyAcceptResult result) => _bridge.ConfirmPrivacyPolicy(result);
+    private void Decide(PrivacyPolicyAcceptResult result) => _launch.ConfirmPrivacyPolicy(result);
 
     private void Cancel()
     {
@@ -199,10 +201,10 @@ public sealed partial class ConnectingDialog : LocalizedComponentBase, IDisposab
     {
         base.Dispose();
 
-        _bridge.Connection.PropertyChanged -= OnConnectorChanged;
+        _launch.PropertyChanged -= OnConnectorChanged;
         _pollTimer?.Dispose();
 
-        if (_bridge.GetConnectionStatus() != ConnectionStatus.ClientRunning)
+        if (_launch.Status != ConnectionStatus.ClientRunning)
         {
             if (!_cts.IsCancellationRequested)
                 _cts.Cancel();

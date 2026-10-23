@@ -22,5 +22,10 @@ public enum ConnectionStatus
     /// <summary>
     /// The download stopped receiving data (usually a VPN/proxy or unstable connection).
     /// </summary>
-    DownloadStalled
+    DownloadStalled,
+
+    /// <summary>
+    /// Another client is already launching or running and multiple clients are disabled.
+    /// </summary>
+    AlreadyRunning
 }

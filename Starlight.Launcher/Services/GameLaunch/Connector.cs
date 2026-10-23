@@ -30,7 +30,7 @@ namespace Starlight.Launcher.Services.GameLaunch;
 /// Responsible for actually launching the game.
 /// Either by connecting to a game server, or by launching a local content bundle.
 /// </summary>
-public class Connector(Updater updater, IEngineManager engineManager, HttpClient http, LoginManager login, SettingsService settings, INativeTray tray, DiscordRichPresence presence, ClientLogManager clientLogs, JournalService journal, TracyProfiler tracy, RenderDocInstaller renderDoc, ClientConsole console) : ObservableObject
+public class Connector(Updater updater, IEngineManager engineManager, HttpClient http, LoginManager login, SettingsService settings, INativeTray tray, DiscordRichPresence presence, ClientLogManager clientLogs, JournalService journal, TracyProfiler tracy, RenderDocInstaller renderDoc, ClientConsole console)
 {
     private readonly Updater _updater = updater;
     private readonly LoginManager _loginManager = login;
@@ -44,32 +44,10 @@ public class Connector(Updater updater, IEngineManager engineManager, HttpClient
     private readonly TracyProfiler _tracy = tracy;
     private readonly RenderDocInstaller _renderDoc = renderDoc;
     private readonly ClientConsole _console = console;
-    private (string Address, string? Name)? _launchTarget;
-    private TaskCompletionSource<PrivacyPolicyAcceptResult>? _acceptPrivacyPolicyTcs;
 
     private int _activeLaunches;
 
     public int ActiveLaunches => _activeLaunches;
-
-    public ConnectionStatus Status
-    {
-        get;
-        private set => SetField(ref field, value);
-    } = ConnectionStatus.None;
-
-    public bool ClientExitedBadly
-    {
-        get;
-        private set => SetField(ref field, value);
-    }
-
-    public ServerPrivacyPolicyInfo? PrivacyPolicyInfo { get; private set; }
-
-    public bool PrivacyPolicyDifferentVersion
-    {
-        get;
-        private set => SetField(ref field, value);
-    }
 
     private bool TryBeginLaunch()
     {
@@ -86,80 +64,63 @@ public class Connector(Updater updater, IEngineManager engineManager, HttpClient
 
     private void EndLaunch() => Interlocked.Decrement(ref _activeLaunches);
 
-    public async void Connect(string address, string? displayName, CancellationToken cancel = default)
+    public ILaunchState Connect(string address, string? displayName, CancellationToken cancel = default)
     {
-        if (!TryBeginLaunch())
-        {
-            Log.Information("Ignoring connect: a client is already launching/running");
-            return;
-        }
-
-        try
-        {
-            await ConnectInternalAsync(address, displayName, cancel);
-        }
-        catch (ConnectException e)
-        {
-            Log.Error(e, "Failed to connect: {status}", e.Status);
-            Status = e.Status;
-        }
-        catch (OperationCanceledException e)
-        {
-            Log.Information(e, "Cancelled connect");
-            Status = ConnectionStatus.Cancelled;
-        }
-        catch (Exception e)
-        {
-            Status = GetFailureStatus(e, ConnectionStatus.ConnectionFailed);
-            Log.Error(e, "Unexpected error while connecting: {status}", Status);
-        }
-        finally
-        {
-            Cleanup();
-            EndLaunch();
-        }
+        var launch = new LaunchState();
+        RunLaunch(launch, () => ConnectInternalAsync(launch, address, displayName, cancel), ConnectionStatus.ConnectionFailed);
+        return launch;
     }
 
-    public async void LaunchContentBundle(IFileResult file, CancellationToken cancel = default)
+    public ILaunchState LaunchContentBundle(IFileResult file, CancellationToken cancel = default)
+    {
+        var launch = new LaunchState();
+        RunLaunch(launch, () =>
+        {
+            Log.Information("Launching content bundle: {FileName}", file.FileName);
+            return LaunchContentBundleInternal(launch, file, cancel);
+        }, ConnectionStatus.UpdateError);
+        return launch;
+    }
+
+    private async void RunLaunch(LaunchState launch, Func<Task> run, ConnectionStatus failureStatus)
     {
         if (!TryBeginLaunch())
         {
-            Log.Information("Ignoring connect: a client is already launching/running");
+            Log.Information("Ignoring launch: a client is already launching/running");
+            launch.Status = ConnectionStatus.AlreadyRunning;
             return;
         }
 
-        Log.Information("Launching content bundle: {FileName}", file.FileName);
-
         try
         {
-            await LaunchContentBundleInternal(file, cancel);
+            await run();
         }
         catch (ConnectException e)
         {
             Log.Error(e, "Failed to launch: {status}", e.Status);
-            Status = e.Status;
+            launch.Status = e.Status;
         }
         catch (OperationCanceledException e)
         {
             Log.Information(e, "Cancelled launch");
-            Status = ConnectionStatus.Cancelled;
+            launch.Status = ConnectionStatus.Cancelled;
         }
         catch (Exception e)
         {
-            Status = GetFailureStatus(e, ConnectionStatus.UpdateError);
-            Log.Error(e, "Unexpected error while launching content bundle: {status}", Status);
+            launch.Status = GetFailureStatus(e, failureStatus);
+            Log.Error(e, "Unexpected error while launching: {status}", launch.Status);
         }
         finally
         {
-            Cleanup();
+            launch.Cleanup();
             EndLaunch();
         }
     }
 
-    private async Task ConnectInternalAsync(string address, string? displayName, CancellationToken cancel)
+    private async Task ConnectInternalAsync(LaunchState launch, string address, string? displayName, CancellationToken cancel)
     {
-        Status = ConnectionStatus.Connecting;
-        _launchTarget = (address, displayName);
+        launch.Status = ConnectionStatus.Connecting;
+        launch.Target = (address, displayName);
 
         var (info, parsedAddr, infoAddr) = await GetServerInfoAsync(address, cancel);
 
@@ -167,10 +128,10 @@ public class Connector(Updater updater, IEngineManager engineManager, HttpClient
             UriHelper.GetServerStatusAddress(parsedAddr),
             displayName);
 
-        await HandlePrivacyPolicyAsync(info, cancel);
+        await HandlePrivacyPolicyAsync(launch, info, cancel);
 
         // Run update.
-        Status = ConnectionStatus.Updating;
+        launch.Status = ConnectionStatus.Updating;
         session.SetState(PresenceState.DownloadingContent);
 
         // Must have been set when retrieving build info (inferred to be automatic zipping).
@@ -180,10 +141,10 @@ public class Connector(Updater updater, IEngineManager engineManager, HttpClient
 
         var connectAddress = GetConnectAddress(info, infoAddr);
 
-        await LaunchClientWrap(session, installation, info, info.BuildInformation, connectAddress, parsedAddr, false, cancel);
+        await LaunchClientWrap(launch, session, installation, info, info.BuildInformation, connectAddress, parsedAddr, false, cancel);
     }
 
-    private async Task HandlePrivacyPolicyAsync(ServerInfo info, CancellationToken cancel)
+    private async Task HandlePrivacyPolicyAsync(LaunchState launch, ServerInfo info, CancellationToken cancel)
     {
         if (info.PrivacyPolicy == null)
         {
@@ -210,16 +171,12 @@ public class Connector(Updater updater, IEngineManager engineManager, HttpClient
 
             Log.Debug("User previously accepted privacy policy but version has changed!");
 
-            PrivacyPolicyDifferentVersion = true;
+            launch.PrivacyPolicyDifferentVersion = true;
         }
 
         // Ask user for privacy policy acceptance by waiting here.
         Log.Debug("Prompting user for privacy policy acceptance: {Identifer} version {Version}", identifier, version);
-        PrivacyPolicyInfo = info.PrivacyPolicy;
-        _acceptPrivacyPolicyTcs = new TaskCompletionSource<PrivacyPolicyAcceptResult>();
-
-        Status = ConnectionStatus.AwaitingPrivacyPolicyAcceptance;
-        var result = await _acceptPrivacyPolicyTcs.Task.WaitAsync(cancel);
+        var result = await launch.WaitForPrivacyPolicyAsync(info.PrivacyPolicy, cancel);
 
         if (result == PrivacyPolicyAcceptResult.Accepted)
         {
@@ -236,28 +193,9 @@ public class Connector(Updater updater, IEngineManager engineManager, HttpClient
         throw new OperationCanceledException();
     }
 
-    public void ConfirmPrivacyPolicy(PrivacyPolicyAcceptResult result)
+    private async Task LaunchContentBundleInternal(LaunchState launch, IFileResult file, CancellationToken cancel)
     {
-        if (_acceptPrivacyPolicyTcs == null)
-        {
-            Log.Error("_acceptPrivacyPolicyTcs is null???");
-            return;
-        }
-
-        _ = _acceptPrivacyPolicyTcs.TrySetResult(result);
-    }
-
-    private void Cleanup()
-    {
-        _launchTarget = null;
-        PrivacyPolicyInfo = null;
-        _acceptPrivacyPolicyTcs = null;
-        PrivacyPolicyDifferentVersion = default;
-    }
-
-    private async Task LaunchContentBundleInternal(IFileResult file, CancellationToken cancel)
-    {
-        Status = ConnectionStatus.Updating;
+        launch.Status = ConnectionStatus.Updating;
 
         ContentLaunchInfo installation;
         await using (var zipStream = await file.OpenReadAsync())
@@ -335,10 +273,11 @@ public class Connector(Updater updater, IEngineManager engineManager, HttpClient
 
         // I originally wanted to pass through build info,
         // but then realized I'd need to pipe the entries in the SQLite DB ("AnonymousContentBundle") up and ehhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh.
-        await LaunchClientWrap(null, installation, null, null, null, null, true, cancel);
+        await LaunchClientWrap(launch, null, installation, null, null, null, null, true, cancel);
     }
 
     private async Task LaunchClientWrap(
+        LaunchState launch,
         ServerSession? session,
         ContentLaunchInfo launchInfo,
         ServerInfo? info = null,
@@ -348,7 +287,7 @@ public class Connector(Updater updater, IEngineManager engineManager, HttpClient
         bool contentBundle = false,
         CancellationToken cancel = default)
     {
-        Status = ConnectionStatus.StartingClient;
+        launch.Status = ConnectionStatus.StartingClient;
         session?.SetState(PresenceState.LaunchingGame);
 
         // An update can take a long time, and access tokens are short-lived. Renew now so the game
@@ -368,7 +307,7 @@ public class Connector(Updater updater, IEngineManager engineManager, HttpClient
 
             if (!clientProc.HasExited)
             {
-                Status = ConnectionStatus.ClientRunning;
+                launch.Status = ConnectionStatus.ClientRunning;
 
                 var settings = _settings.GetSettings();
                 if (settings.CollapseInTrayAfterRun)
@@ -376,7 +315,7 @@ public class Connector(Updater updater, IEngineManager engineManager, HttpClient
 
                 session?.SetState(PresenceState.InGame);
 
-                using (BeginJournalSession(contentBundle))
+                using (BeginJournalSession(launch, contentBundle))
                     await waitClient;
 
                 if (settings.UnCollapseFromTrayAfterEnd)
@@ -385,19 +324,19 @@ public class Connector(Updater updater, IEngineManager engineManager, HttpClient
                 return;
             }
 
-            ClientExitedBadly = clientProc.ExitCode != 0;
+            launch.ClientExitedBadly = clientProc.ExitCode != 0;
         }
         else
         {
-            ClientExitedBadly = true;
+            launch.ClientExitedBadly = true;
         }
 
-        Status = ConnectionStatus.ClientExited;
+        launch.Status = ConnectionStatus.ClientExited;
     }
 
-    private IDisposable? BeginJournalSession(bool contentBundle)
+    private IDisposable? BeginJournalSession(LaunchState launch, bool contentBundle)
     {
-        if (contentBundle || _launchTarget is not { } target || !_settings.GetSettings().RecordPlayHistory)
+        if (contentBundle || launch.Target is not { } target || !_settings.GetSettings().RecordPlayHistory)
             return null;
 
         try

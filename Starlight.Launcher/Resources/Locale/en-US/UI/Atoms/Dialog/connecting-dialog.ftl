@@ -28,3 +28,4 @@ connecting-dialog-status-update-error = Update failed. See the logs for details.
 connecting-dialog-status-not-a-bundle = This file isn't a valid content bundle.
 connecting-dialog-status-cancelled = Cancelled.
 connecting-dialog-status-starting = Starting...
+connecting-dialog-status-already-running = The game is already running or launching. Allow multiple clients in the settings to start another one.

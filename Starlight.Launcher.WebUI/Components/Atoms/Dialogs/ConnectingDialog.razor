@@ -15,11 +15,11 @@
     </TitleContent>
     <DialogContent>
         <div class="connect-dialog">
-            @switch (_bridge.GetConnectionStatus())
+            @switch (_launch.Status)
             {
                 case ConnectionStatus.AwaitingPrivacyPolicyAcceptance:
                     <MudText Class="mb-3">@L["connecting-dialog-privacy-required"]</MudText>
-                    @if (_bridge.GetPrivacyPolicyInfo() is { } pp)
+                    @if (_launch.PrivacyPolicyInfo is { } pp)
                     {
                         <MudPaper Class="pa-3 d-flex align-center justify-space-between" Elevation="0" Outlined="true">
                             <div>
@@ -36,7 +36,7 @@
                             }
                         </MudPaper>
                     }
-                    @if (_bridge.GetPrivacyPolicyDifferentVersion())
+                    @if (_launch.PrivacyPolicyDifferentVersion)
                     {
                         <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-3">
                             @L["connecting-dialog-privacy-changed"]
@@ -58,12 +58,13 @@
                     <MudAlert Severity="Severity.Error" Icon="@Icons.Material.Filled.WifiOff">@_statusText</MudAlert>
                     break;
 
-                case ConnectionStatus.ClientExited when _bridge.IsClientExitedBadly():
+                case ConnectionStatus.ClientExited when _launch.ClientExitedBadly:
                     <MudAlert Severity="Severity.Error">@L["connecting-dialog-client-crashed"]</MudAlert>
                     break;
 
                 case ConnectionStatus.Cancelled:
                 case ConnectionStatus.ClientExited:
+                case ConnectionStatus.AlreadyRunning:
                     <MudAlert Severity="Severity.Info" Dense="true">@_statusText</MudAlert>
                     break;
 
@@ -114,7 +115,7 @@
         </div>
     </DialogContent>
     <DialogActions>
-        @if (_bridge.GetConnectionStatus() == ConnectionStatus.AwaitingPrivacyPolicyAcceptance)
+        @if (_launch.Status == ConnectionStatus.AwaitingPrivacyPolicyAcceptance)
         {
             <MudButton OnClick="@(() => Decide(PrivacyPolicyAcceptResult.Denied))">@L["connecting-dialog-privacy-decline"]</MudButton>
             <MudButton Variant="Variant.Filled" Class="cta-btn-primary"

@@ -1,5 +1,3 @@
-using System.ComponentModel;
-using Robust.Launcher.Api.Models;
 using Starlight.Launcher.WebUI.Bridge;
 using Starlight.Launcher.WebUI.Models.Connector;
 using Starlight.Launcher.WebUI.Models.Helpers;
@@ -8,19 +6,7 @@ namespace Starlight.Launcher.Services.Bridge;
 
 public sealed partial class Bridge : IBridge
 {
-    public INotifyPropertyChanged Connection => _connector;
+    public ILaunchState LaunchContentBundle(IFileResult file, CancellationToken cancel = default) => _connector.LaunchContentBundle(file, cancel);
 
-    public ConnectionStatus GetConnectionStatus() => _connector.Status;
-
-    public ServerPrivacyPolicyInfo? GetPrivacyPolicyInfo() => _connector.PrivacyPolicyInfo;
-
-    public bool GetPrivacyPolicyDifferentVersion() => _connector.PrivacyPolicyDifferentVersion;
-
-    public bool IsClientExitedBadly() => _connector.ClientExitedBadly;
-
-    public void LaunchContentBundle(IFileResult file, CancellationToken cancel = default) => _connector.LaunchContentBundle(file, cancel);
-
-    public void Connect(string address, string? displayName, CancellationToken cancel = default) => _connector.Connect(address, displayName, cancel);
-
-    public void ConfirmPrivacyPolicy(PrivacyPolicyAcceptResult result) => _connector.ConfirmPrivacyPolicy(result);
+    public ILaunchState Connect(string address, string? displayName, CancellationToken cancel = default) => _connector.Connect(address, displayName, cancel);
 }

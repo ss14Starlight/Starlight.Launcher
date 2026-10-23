@@ -1,5 +1,3 @@
-using System.ComponentModel;
-using Robust.Launcher.Api.Models;
 using Starlight.Launcher.WebUI.Models.Connector;
 using Starlight.Launcher.WebUI.Models.Helpers;
 
@@ -10,19 +8,7 @@ namespace Starlight.Launcher.WebUI.Bridge;
 /// </summary>
 public partial interface IBridge
 {
-    ConnectionStatus GetConnectionStatus();
+    ILaunchState LaunchContentBundle(IFileResult file, CancellationToken cancel = default);
 
-    ServerPrivacyPolicyInfo? GetPrivacyPolicyInfo();
-
-    bool GetPrivacyPolicyDifferentVersion();
-
-    bool IsClientExitedBadly();
-
-    void LaunchContentBundle(IFileResult file, CancellationToken cancel = default);
-
-    void Connect(string address, string? displayName, CancellationToken cancel = default);
-
-    void ConfirmPrivacyPolicy(PrivacyPolicyAcceptResult result);
-
-    INotifyPropertyChanged Connection { get; }
+    ILaunchState Connect(string address, string? displayName, CancellationToken cancel = default);
 }

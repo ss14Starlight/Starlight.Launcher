@@ -28,3 +28,4 @@ connecting-dialog-status-update-error = Ошибка обновления. По�
 connecting-dialog-status-not-a-bundle = Этот файл не является корректным контент-бандлом.
 connecting-dialog-status-cancelled = Отменено.
 connecting-dialog-status-starting = Запуск...
+connecting-dialog-status-already-running = Игра уже запущена или запускается. Чтобы открыть ещё один клиент, разрешите несколько клиентов в настройках.
