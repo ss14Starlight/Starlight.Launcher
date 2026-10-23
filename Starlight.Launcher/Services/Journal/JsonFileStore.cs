@@ -49,6 +49,7 @@ public sealed class JsonFileStore<T> where T : class, new()
     private void ScheduleSave()
     {
         var cts = new CancellationTokenSource();
+        var token = cts.Token;
         var old = Interlocked.Exchange(ref _saveCts, cts);
         old?.Cancel();
         old?.Dispose();
@@ -57,11 +58,11 @@ public sealed class JsonFileStore<T> where T : class, new()
         {
             try
             {
-                await Task.Delay(_saveDelay, cts.Token);
+                await Task.Delay(_saveDelay, token);
                 await SaveAsync();
             }
             catch (OperationCanceledException) { }
-        });
+        }, token);
     }
 
     private async Task SaveAsync()
