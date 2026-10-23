@@ -95,9 +95,8 @@ public sealed partial class SettingsService : IAsyncDisposable
         string what)
     {
         var cts = new CancellationTokenSource();
-        var old = Interlocked.Exchange(ref ctsField, cts);
-        old?.Cancel();
-        old?.Dispose();
+        var token = cts.Token;
+        CancelPendingSave(ref ctsField, cts);
 
         var delay = _settings.SaveIntervalMs;
 
@@ -105,7 +104,7 @@ public sealed partial class SettingsService : IAsyncDisposable
         {
             try
             {
-                await Task.Delay(delay, cts.Token);
+                await Task.Delay(delay, token);
                 await saveAction();
             }
             catch (OperationCanceledException) { }
@@ -113,7 +112,14 @@ public sealed partial class SettingsService : IAsyncDisposable
             {
                 _logger.LogError(ex, "Auto-save failed for {what}", what);
             }
-        });
+        }, token);
+    }
+
+    private static void CancelPendingSave(ref CancellationTokenSource? ctsField, CancellationTokenSource? replacement = null)
+    {
+        var old = Interlocked.Exchange(ref ctsField, replacement);
+        old?.Cancel();
+        old?.Dispose();
     }
 
     private async Task SaveJsonAsync<T>(string path, SemaphoreSlim slim, Func<T> snapshot)
@@ -283,9 +289,11 @@ public sealed partial class SettingsService : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        Interlocked.Exchange(ref _settingsSaveCts, null)?.Cancel();
-        Interlocked.Exchange(ref _favoritesSaveCts, null)?.Cancel();
-        Interlocked.Exchange(ref _loginsSaveCts, null)?.Cancel();
+        CancelPendingSave(ref _settingsSaveCts);
+        CancelPendingSave(ref _favoritesSaveCts);
+        CancelPendingSave(ref _loginsSaveCts);
+        CancelPendingSave(ref _enginesSaveCts);
+        CancelPendingSave(ref _modulesSaveCts);
 
         await SaveAllAsync();
 

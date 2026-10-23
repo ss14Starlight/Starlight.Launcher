@@ -137,9 +137,7 @@ public sealed partial class SettingsService
     /// </summary>
     public async Task SaveLoginsNowAsync()
     {
-        var pending = Interlocked.Exchange(ref _loginsSaveCts, null);
-        pending?.Cancel();
-        pending?.Dispose();
+        CancelPendingSave(ref _loginsSaveCts);
 
         await SaveLoginsEncryptedAsync();
     }
