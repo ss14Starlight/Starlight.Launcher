@@ -618,9 +618,20 @@ public sealed partial class EngineManagerDynamic : IEngineManager
         var modulesUsed = new HashSet<(string, string)>();
         foreach (var (name, version) in origModulesUsed)
         {
-            if (name == "Robust" && await GetVersionInfo(version) is { } redirect)
+            if (name == "Robust")
             {
-                _ = modulesUsed.Add(("Robust", redirect.Version));
+                FoundVersionInfo? redirect;
+                try
+                {
+                    redirect = await GetVersionInfo(version);
+                }
+                catch (Exception e)
+                {
+                    Log.Warning(e, "Failed to resolve engine version {EngineVersion}, skipping engine cull", version);
+                    return;
+                }
+
+                _ = modulesUsed.Add(("Robust", redirect?.Version ?? version));
             }
             else
             {
@@ -634,9 +645,17 @@ public sealed partial class EngineManagerDynamic : IEngineManager
 
             var path = GetEnginePath(installation.Version);
 
-            _settings.RemoveInstalledEngine(installation.Version);
+            try
+            {
+                await Task.Run(() => File.Delete(path));
+            }
+            catch (Exception e)
+            {
+                Log.Warning(e, "Failed to delete engine {EngineVersion}", installation.Version);
+                continue;
+            }
 
-            await Task.Run(() => File.Delete(path));
+            _settings.RemoveInstalledEngine(installation.Version);
         }
 
         // Cull modules
@@ -646,9 +665,21 @@ public sealed partial class EngineManagerDynamic : IEngineManager
 
             var path = GetEngineModule(module.Name, module.Version);
 
-            _settings.RemoveInstalledModule(module);
+            try
+            {
+                await Task.Run(() =>
+                {
+                    if (Directory.Exists(path))
+                        Directory.Delete(path, true);
+                });
+            }
+            catch (Exception e)
+            {
+                Log.Warning(e, "Failed to delete module {EngineModule}", module);
+                continue;
+            }
 
-            await Task.Run(() => Directory.Delete(path, true));
+            _settings.RemoveInstalledModule(module);
         }
     }
 

@@ -296,7 +296,14 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
         }
 
         Status = UpdateStatus.CullingEngine;
-        await CullEngineVersionsMaybe(con);
+        try
+        {
+            await CullEngineVersionsMaybe(con);
+        }
+        catch (Exception e)
+        {
+            Log.Warning(e, "Failed to cull engine versions");
+        }
 
         Status = UpdateStatus.CommittingDownload;
 
