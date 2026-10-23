@@ -243,6 +243,12 @@ public static class HappyEyeballsHttp
 
         Debug.Assert(allTasks.Count > 0);
 
+        foreach (var task in allTasks)
+        {
+            if (task != successTask)
+                _ = task.ContinueWith(DiscardAttempt, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        }
+
         cancel.ThrowIfCancellationRequested();
         await successCts.CancelAsync().ConfigureAwait(false);
 
@@ -253,14 +259,14 @@ public static class HappyEyeballsHttp
                 allTasks.Where(x => x.IsFaulted).SelectMany(x => x.Exception!.InnerExceptions));
         }
 
-        // I don't know if this is possible but MAKE SURE that we don't get two sockets completing at once.
-        // Just a safety measure.
-        foreach (var task in allTasks)
-        {
-            if (task.IsCompletedSuccessfully && task != successTask)
-                task.Result.Dispose();
-        }
-
         return (successTask.Result, allTasks.IndexOf(successTask));
+
+        static void DiscardAttempt(Task<T> task)
+        {
+            if (task.IsCompletedSuccessfully)
+                task.Result.Dispose();
+            else
+                _ = task.Exception;
+        }
     }
 }
