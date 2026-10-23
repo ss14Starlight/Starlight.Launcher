@@ -886,7 +886,16 @@ public class Connector(Updater updater, IEngineManager engineManager, HttpClient
             }
 
             if (glFailure)
-                ForceCompatMode();
+            {
+                try
+                {
+                    ForceCompatMode();
+                }
+                catch (Exception e)
+                {
+                    Log.Warning(e, "Failed to enable compatibility mode");
+                }
+            }
 
             var dumps = FindCrashDumps(process, exitCode);
 
@@ -916,7 +925,14 @@ public class Connector(Updater updater, IEngineManager engineManager, HttpClient
                 _console.AddLine($"Client was killed by signal {signal} ({SignalName(signal)}). Kernel core dump, if one was kept: coredumpctl info {process.Id}", isError: true);
             }
 
-            await session.DisposeAsync();
+            try
+            {
+                await session.DisposeAsync();
+            }
+            catch (Exception e)
+            {
+                Log.Warning(e, "Failed to close client log session for {pid}", process.Id);
+            }
         }
     }
 
