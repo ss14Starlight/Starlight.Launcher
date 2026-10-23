@@ -108,6 +108,9 @@ public sealed partial class Updater
         while (await sr.ReadLineAsync(cancel) is { } manifestLine)
         {
             var sep = manifestLine.IndexOf(' ');
+            if (sep <= 0)
+                throw new UpdateException("Malformed manifest line!");
+
             var hash = Convert.FromHexString(manifestLine.AsSpan(0, sep));
             var filename = manifestLine.AsMemory(sep + 1);
 
@@ -291,6 +294,9 @@ public sealed partial class Updater
                 var compressedLength = preCompressed
                     ? BinaryPrimitives.ReadInt32LittleEndian(fileHeader.AsSpan(4, 4))
                     : 0;
+
+                if (length < 0 || compressedLength < 0)
+                    throw new UpdateException("Server sent a negative blob length!");
 
                 // Log.Debug("{index:D5}: {blobLength:D8} {dataLength:D8}", idx, length, compressedLength);
 
