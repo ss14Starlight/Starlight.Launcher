@@ -909,7 +909,8 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
 
     private void DownloadProgressCallback(long downloaded, long total)
     {
-        _presence.SetProgress(PresenceState.DownloadingContent, (int)((double)downloaded / total * 100));
+        if (total > 0)
+            _presence.SetProgress(PresenceState.DownloadingContent, (int)((double)downloaded / total * 100));
         Dispatcher.UIThread.Post(() => Progress = (downloaded, total, ProgressUnit.Bytes));
     }
 
