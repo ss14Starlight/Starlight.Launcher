@@ -31,7 +31,7 @@ public sealed partial class Bridge : IBridge
         await _settings.FlushPendingSavesAsync();
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            LauncherUpdater.RunInstallerAndExit(downloadedPath, _settings.GetSettings().DirLauncherInstall);
+            LauncherUpdater.RunInstallerAndExit(downloadedPath, AppContext.BaseDirectory);
         else
             LauncherUpdater.RunInstallerAndExit(downloadedPath, LauncherUpdater.GetMacAppBundleRoot(AppContext.BaseDirectory));
     }

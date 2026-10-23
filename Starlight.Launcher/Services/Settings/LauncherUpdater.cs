@@ -552,46 +552,163 @@ public class LauncherUpdater(SettingsService settings, HttpClient httpClient)
 
     private static string Quote(string value) => "'" + value.Replace("'", "'\\''") + "'";
 
+    private const string LauncherExecutableName = "Starlight.Launcher";
+
+    private const string LauncherFilesManifest = ".launcher-files";
+
     private static void RunTarballUpdate(string archivePath, string installDir)
     {
-        var stagingDir = Path.Combine(Path.GetTempPath(), "starlight-update-" + Guid.NewGuid());
-        _ = Directory.CreateDirectory(stagingDir);
+        installDir = Path.TrimEndingDirectorySeparator(Path.GetFullPath(installDir));
+        if (!File.Exists(Path.Combine(installDir, LauncherExecutableName)))
+            throw new InvalidOperationException($"{installDir} doesn't look like a launcher install. Install the update manually: {archivePath}");
 
-        using (var fileStream = File.OpenRead(archivePath))
-        using (var gzip = new GZipStream(fileStream, CompressionMode.Decompress))
-            TarFile.ExtractToDirectory(gzip, stagingDir, overwriteFiles: true);
+        var id = Guid.NewGuid().ToString("N");
+        var stagingDir = Path.Combine(installDir, $".starlight-update-{id}");
+        var backupDir = Path.Combine(installDir, $".starlight-backup-{id}");
+
+        string packageDir;
+        List<string> entries;
+        try
+        {
+            _ = Directory.CreateDirectory(stagingDir);
+            using (var fileStream = File.OpenRead(archivePath))
+            using (var gzip = new GZipStream(fileStream, CompressionMode.Decompress))
+                TarFile.ExtractToDirectory(gzip, stagingDir, overwriteFiles: true);
+
+            packageDir = FindTarballPackageRoot(stagingDir);
+            var stale = ReadLauncherFilesManifest(installDir);
+
+            File.WriteAllLines(Path.Combine(packageDir, LauncherFilesManifest),
+                Directory.EnumerateFileSystemEntries(packageDir).Select(Path.GetFileName).OfType<string>().Append(LauncherFilesManifest).Distinct());
+
+            var packageEntries = Directory.EnumerateFileSystemEntries(packageDir).Select(Path.GetFileName).OfType<string>().ToList();
+            entries = [.. packageEntries, .. stale.Except(packageEntries, StringComparer.Ordinal)];
+        }
+        catch
+        {
+            TryDeleteDirectory(stagingDir);
+            throw;
+        }
 
         var pid = Environment.ProcessId;
-        var exePath = Environment.ProcessPath;
+        var exePath = Environment.ProcessPath ?? Path.Combine(installDir, LauncherExecutableName);
+        var swaps = string.Join('\n', entries.Select(e => $"[ -n \"$failed\" ] || swap {Quote(e)} || failed=1"));
 
-        var script = $"""
+        // Each old entry is moved into the backup folder before the new one takes its place; on any failure the
+        // moved ones are put back, so the launcher never ends up half-installed or gone.
+        var script = $$"""
             #!/bin/sh
-            while kill -0 {pid} 2>/dev/null; do sleep 0.2; done
-            rm -rf "{installDir}"
-            mv "{stagingDir}" "{installDir}"
-            chmod +x "{installDir}/Starlight.Launcher" "{installDir}/loader/Robust.Loader" "{installDir}/loader/createdump"
-            exec "{exePath}"
+            dir={{Quote(installDir)}}
+            new={{Quote(packageDir)}}
+            staging={{Quote(stagingDir)}}
+            backup={{Quote(backupDir)}}
+            while kill -0 {{pid}} 2>/dev/null; do sleep 0.2; done
+            moved=
+            failed=
+            mkdir "$backup" || failed=1
+            swap() {
+                if [ -e "$dir/$1" ] || [ -L "$dir/$1" ]; then mv "$dir/$1" "$backup/$1" || return 1; fi
+                moved="$moved$1
+            "
+                if [ -e "$new/$1" ] || [ -L "$new/$1" ]; then mv "$new/$1" "$dir/$1" || return 1; fi
+            }
+            {{swaps}}
+            if [ -n "$failed" ]; then
+                printf '%s' "$moved" | while IFS= read -r name; do
+                    [ -n "$name" ] || continue
+                    rm -rf "$dir/$name"
+                    if [ -e "$backup/$name" ] || [ -L "$backup/$name" ]; then mv "$backup/$name" "$dir/$name"; fi
+                done
+                rmdir "$backup" 2>/dev/null
+            else
+                rm -rf "$backup"
+            fi
+            rm -rf "$staging"
+            chmod +x "$dir/{{LauncherExecutableName}}" "$dir/loader/Robust.Loader" "$dir/loader/createdump" 2>/dev/null
+            exec {{Quote(exePath)}}
             """;
 
         RunDetachedShellScript(script);
         Environment.Exit(0);
     }
 
+    private static string FindTarballPackageRoot(string extractedDir)
+    {
+        if (File.Exists(Path.Combine(extractedDir, LauncherExecutableName)))
+            return extractedDir;
+
+        var children = Directory.GetFileSystemEntries(extractedDir);
+        if (children.Length == 1 && File.Exists(Path.Combine(children[0], LauncherExecutableName)))
+            return children[0];
+
+        throw new InvalidOperationException($"The downloaded archive has no {LauncherExecutableName} in it.");
+    }
+
+    private static IEnumerable<string> ReadLauncherFilesManifest(string installDir)
+    {
+        var path = Path.Combine(installDir, LauncherFilesManifest);
+        if (!File.Exists(path))
+            return [];
+
+        return File.ReadAllLines(path)
+            .Where(n => n.Length > 0 && n != "." && n != ".." && !n.Contains('/') && !n.Contains('\0'))
+            .Where(n => File.Exists(Path.Combine(installDir, n)) || Directory.Exists(Path.Combine(installDir, n)))
+            .ToList();
+    }
+
+    private static void TryDeleteDirectory(string path)
+    {
+        try
+        {
+            if (Directory.Exists(path))
+                Directory.Delete(path, recursive: true);
+        }
+        catch (IOException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
+    }
+
     private static void RunMacUpdate(string zipPath, string appBundlePath)
     {
-        var stagingDir = Path.Combine(Path.GetTempPath(), "starlight-update-" + Guid.NewGuid());
-        ZipFile.ExtractToDirectory(zipPath, stagingDir, overwriteFiles: true);
+        appBundlePath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(appBundlePath));
+        if (!appBundlePath.EndsWith(".app", StringComparison.OrdinalIgnoreCase)
+            || !File.Exists(Path.Combine(appBundlePath, "Contents", "MacOS", LauncherExecutableName)))
+            throw new InvalidOperationException($"{appBundlePath} isn't the launcher's app bundle. Install the update manually: {zipPath}");
 
+        // Next to the bundle, so swapping it is a rename within one filesystem.
+        var stagingDir = Path.Combine(Path.GetDirectoryName(appBundlePath)!, $".starlight-update-{Guid.NewGuid():N}");
         var newAppPath = Path.Combine(stagingDir, "Starlight Launcher.app");
+        try
+        {
+            ZipFile.ExtractToDirectory(zipPath, stagingDir, overwriteFiles: true);
+            if (!File.Exists(Path.Combine(newAppPath, "Contents", "MacOS", LauncherExecutableName)))
+                throw new InvalidOperationException("The downloaded archive has no Starlight Launcher.app in it.");
+        }
+        catch
+        {
+            TryDeleteDirectory(stagingDir);
+            throw;
+        }
+
         var pid = Environment.ProcessId;
 
         var script = $"""
             #!/bin/sh
+            app={Quote(appBundlePath)}
+            new={Quote(newAppPath)}
+            staging={Quote(stagingDir)}
+            old="$staging/old.app"
             while kill -0 {pid} 2>/dev/null; do sleep 0.2; done
-            rm -rf "{appBundlePath}"
-            mv "{newAppPath}" "{appBundlePath}"
-            xattr -cr "{appBundlePath}" 2>/dev/null
-            open "{appBundlePath}"
+            if mv "$app" "$old"; then
+                mv "$new" "$app" || mv "$old" "$app"
+            fi
+            # Only once a bundle is back in place: otherwise the old one inside is the last copy.
+            if [ -d "$app" ]; then rm -rf "$staging"; fi
+            xattr -cr "$app" 2>/dev/null
+            open "$app"
             """;
 
         RunDetachedShellScript(script);
