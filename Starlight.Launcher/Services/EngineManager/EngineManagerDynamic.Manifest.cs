@@ -3,6 +3,7 @@ using Starlight.Launcher.WebUI.Models.Data;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Runtime.ExceptionServices;
 using System.Text.Json.Serialization;
 
 namespace Starlight.Launcher.Services.EngineManager;
@@ -75,14 +76,28 @@ public sealed partial class EngineManagerDynamic
         // we stop without ever touching the lower-priority ones.
         // (This also re-requests a still-valid manifest on a total miss, which catches a
         //  freshly-published version within the cache window - same intent as the original code.)
+        Exception? firstError = null;
+        var failedCount = 0;
         foreach (var cdn in cdns)
         {
             var cache = GetOrCreateCache(cdn);
-            await UpdateBuildManifest(cdn, cache, cancel);
+            try
+            {
+                await UpdateBuildManifest(cdn, cache, cancel);
+            }
+            catch (Exception e) when (!cancel.IsCancellationRequested)
+            {
+                Log.Warning(e, "Failed to load engine manifest from CDN {Cdn}", cdn.Name);
+                firstError ??= e;
+                failedCount++;
+            }
 
             if (FindVersionInfoInCached(cdn, cache, version, followRedirects) is { } found)
                 return found;
         }
+
+        if (firstError != null && failedCount == cdns.Length)
+            ExceptionDispatchInfo.Throw(firstError);
 
         return null;
     }
