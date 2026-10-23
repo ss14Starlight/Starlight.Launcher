@@ -201,10 +201,23 @@ public sealed partial class EngineManagerDynamic
 
         if (followRedirects)
         {
-            while (versionInfo.RedirectVersion != null)
+            var visited = new HashSet<string> { version };
+            while (versionInfo.RedirectVersion is { } redirect)
             {
-                version = versionInfo.RedirectVersion;
-                versionInfo = cache.Versions[versionInfo.RedirectVersion];
+                if (!visited.Add(redirect))
+                {
+                    Log.Warning("Redirect cycle in engine manifest of CDN {Cdn} at version {Version}", cdn.Name, redirect);
+                    return null;
+                }
+
+                if (!cache.Versions.TryGetValue(redirect, out var redirectInfo))
+                {
+                    Log.Warning("Engine version {Version} on CDN {Cdn} redirects to missing version {Redirect}", version, cdn.Name, redirect);
+                    return null;
+                }
+
+                version = redirect;
+                versionInfo = redirectInfo;
             }
         }
 
