@@ -270,7 +270,7 @@ public class App : Application
 
         _ = OperatingSystem.IsWindows()
             ? services.AddSingleton<ILoginKeyProvider, DpapiKeyProvider>()
-            : services.AddSingleton<ILoginKeyProvider, FileKeyProvider>();
+            : services.AddSingleton<FileKeyProvider>().AddSingleton<ILoginKeyProvider, SecretStoreKeyProvider>();
 
         _ = services.AddSingleton<INativeTray, AvaloniaTray>();
         _ = services.AddSingleton<IFileDialogService, AvaloniaFileDialogService>();

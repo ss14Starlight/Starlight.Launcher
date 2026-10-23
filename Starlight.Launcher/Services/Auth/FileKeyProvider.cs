@@ -47,17 +47,23 @@ public sealed class FileKeyProvider(ILogger<FileKeyProvider> logger) : ILoginKey
     private async Task<byte[]> CreateAndStoreAsync(string keyPath)
     {
         var newKey = RandomNumberGenerator.GetBytes(32);
+        await StoreAsync(keyPath, newKey);
+
+        _logger.LogWarning("Generated NEW login key at {path} fp={fp}", keyPath, Fp(newKey));
+        return newKey;
+    }
+
+    public static async Task StoreAsync(string keyPath, byte[] key)
+    {
+        _ = Directory.CreateDirectory(Path.GetDirectoryName(keyPath)!);
 
         var tmp = keyPath + ".tmp";
-        await File.WriteAllTextAsync(tmp, Convert.ToBase64String(newKey));
+        await File.WriteAllTextAsync(tmp, Convert.ToBase64String(key));
 
         if (!OperatingSystem.IsWindows())
             File.SetUnixFileMode(tmp, UnixFileMode.UserRead | UnixFileMode.UserWrite);
 
         File.Move(tmp, keyPath, true);
-
-        _logger.LogWarning("Generated NEW login key at {path} fp={fp}", keyPath, Fp(newKey));
-        return newKey;
     }
 
     private void TryDelete(string path)
