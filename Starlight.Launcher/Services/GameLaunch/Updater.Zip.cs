@@ -112,8 +112,9 @@ public sealed partial class Updater
             {
                 cancel.ThrowIfCancellationRequested();
 
-                if (count++ % 100 == 0)
-                    Progress = (count++, zip.Entries.Count, ProgressUnit.None);
+                if (count % 100 == 0)
+                    Progress = (count, zip.Entries.Count, ProgressUnit.None);
+                count++;
 
                 // Ignore directory entries.
                 if (entry.Name?.Length == 0)
