@@ -140,7 +140,7 @@ jobs:
           Icon=starlight-launcher
           Terminal=false
           Categories=Game;
-          MimeType=x-scheme-handler/starlight;
+          MimeType=x-scheme-handler/starlight;x-scheme-handler/ss14;x-scheme-handler/ss14s;
           DESKTOP
 
           cat > "$PKG_ROOT/DEBIAN/control" << CONTROL
@@ -198,7 +198,7 @@ jobs:
           Exec=Starlight.Launcher %u
           Icon=starlight-launcher
           Categories=Game;
-          MimeType=x-scheme-handler/starlight;
+          MimeType=x-scheme-handler/starlight;x-scheme-handler/ss14;x-scheme-handler/ss14s;
           DESKTOP
 
           cat > "$APPDIR/AppRun" << 'APPRUN'
@@ -344,7 +344,7 @@ jobs:
             <array>
               <dict>
                 <key>CFBundleURLName</key><string>com.starlight.launcher.protocol</string>
-                <key>CFBundleURLSchemes</key><array><string>starlight</string></array>
+                <key>CFBundleURLSchemes</key><array><string>starlight</string><string>ss14</string><string>ss14s</string></array>
               </dict>
             </array>
           </dict>

@@ -12,6 +12,9 @@ public sealed class LauncherUriRouterTests
     [InlineData("starlight://auth/unknown?code=x", LauncherActivationKind.Connect)]
     [InlineData("starlight://auth.example.com/steam", LauncherActivationKind.Connect)]
     [InlineData("starlight://play.example.com:1212", LauncherActivationKind.Connect)]
+    [InlineData("ss14://play.example.com:1212", LauncherActivationKind.Connect)]
+    [InlineData("ss14s://play.example.com", LauncherActivationKind.Connect)]
+    [InlineData("ss14://auth/steam", LauncherActivationKind.Connect)] // server literally named "auth"
     public void Classify_RoutesByHostAndProvider(string uri, LauncherActivationKind expected)
         => Assert.Equal(expected, LauncherUriRouter.Classify(new Uri(uri)).Kind);
 

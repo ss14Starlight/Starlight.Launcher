@@ -6,5 +6,5 @@ Exec=starlight-launcher %u
 Icon=io.github.ss14Starlight.Launcher
 Terminal=false
 Categories=Game;
-MimeType=x-scheme-handler/starlight;
+MimeType=x-scheme-handler/starlight;x-scheme-handler/ss14;x-scheme-handler/ss14s;
 StartupWMClass=Starlight.Launcher

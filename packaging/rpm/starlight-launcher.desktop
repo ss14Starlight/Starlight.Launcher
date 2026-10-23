@@ -6,4 +6,4 @@ Exec=/opt/starlight-launcher/Starlight.Launcher %u
 Icon=starlight-launcher
 Terminal=false
 Categories=Game;
-MimeType=x-scheme-handler/starlight;
+MimeType=x-scheme-handler/starlight;x-scheme-handler/ss14;x-scheme-handler/ss14s;

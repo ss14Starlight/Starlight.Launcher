@@ -39,7 +39,8 @@ public static class LauncherUriRouter
 {
     public static LauncherActivationMessage Classify(Uri uri)
     {
-        if (!uri.Host.Equals("auth", StringComparison.OrdinalIgnoreCase))
+        if (!uri.Scheme.Equals(ProtocolRegistration.Scheme, StringComparison.OrdinalIgnoreCase)
+            || !uri.Host.Equals("auth", StringComparison.OrdinalIgnoreCase))
             return LauncherActivationMessage.Connect(uri);
 
         var provider = uri.Segments

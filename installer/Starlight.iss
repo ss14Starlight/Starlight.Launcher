@@ -92,17 +92,31 @@ begin
   end;
 end;
 
-procedure RemoveProtocolRegistration;
+function RemoveSchemeIfOurs(const Scheme, OurExe: String): Boolean;
 var
-  Command, OurExe: String;
+  Command: String;
 begin
-  OurExe := ExpandConstant('{app}\{#ExeName}');
-  if not RegQueryStringValue(HKCU, 'Software\Classes\starlight\shell\open\command', '', Command) then
+  Result := False;
+  if not RegQueryStringValue(HKCU, 'Software\Classes\' + Scheme + '\shell\open\command', '', Command) then
     Exit;
   if Pos(Lowercase(OurExe), Lowercase(Command)) = 0 then
     Exit;
 
-  RegDeleteKeyIncludingSubkeys(HKCU, 'Software\Classes\starlight');
+  RegDeleteKeyIncludingSubkeys(HKCU, 'Software\Classes\' + Scheme);
+  Result := True;
+end;
+
+procedure RemoveProtocolRegistration;
+var
+  OurExe: String;
+begin
+  OurExe := ExpandConstant('{app}\{#ExeName}');
+  // ss14/ss14s may belong to another launcher; only drop the ones pointing at us.
+  RemoveSchemeIfOurs('ss14', OurExe);
+  RemoveSchemeIfOurs('ss14s', OurExe);
+  if not RemoveSchemeIfOurs('starlight', OurExe) then
+    Exit;
+
   RegDeleteKeyIncludingSubkeys(HKCU, 'Software\Classes\Starlight.Launcher.Protocol');
   RegDeleteKeyIncludingSubkeys(HKCU, 'Software\Starlight.Launcher');
   RegDeleteValue(HKCU, 'Software\RegisteredApplications', 'Starlight.Launcher');

@@ -224,7 +224,7 @@ public class App : Application
             if (e is not ProtocolActivatedEventArgs { Kind: ActivationKind.OpenUri, Uri: { } uri })
                 return;
 
-            if (!uri.Scheme.Equals(ProtocolRegistration.Scheme, StringComparison.OrdinalIgnoreCase))
+            if (!ProtocolRegistration.IsHandledScheme(uri.Scheme))
             {
                 Log.Warning("Ignoring activation with foreign URI scheme {Scheme}", uri.Scheme);
                 return;

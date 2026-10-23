@@ -11,6 +11,11 @@ internal static class ProtocolRegistration
     private const string ProgId = "Starlight.Launcher.Protocol";
     private const string AppRegName = "Starlight.Launcher";
 
+    internal static readonly string[] Schemes = [Scheme, "ss14", "ss14s"];
+
+    internal static bool IsHandledScheme(string scheme)
+        => Schemes.Any(s => s.Equals(scheme, StringComparison.OrdinalIgnoreCase));
+
     public static void RegisterWindows()
     {
         if (!OperatingSystem.IsWindows())
@@ -23,11 +28,14 @@ internal static class ProtocolRegistration
                 return;
 
             var command = $"\"{exePath}\" \"%1\"";
-            using (var existingKey = Registry.CurrentUser.OpenSubKey($@"Software\Classes\{Scheme}\shell\open\command"))
+            var schemes = Schemes.Where(scheme =>
             {
-                if (ShouldYieldTo(existingKey?.GetValue("") as string, command))
-                    return;
-            }
+                using var existingKey = Registry.CurrentUser.OpenSubKey($@"Software\Classes\{scheme}\shell\open\command");
+                return !ShouldYieldTo(scheme, existingKey?.GetValue("") as string, command);
+            }).ToArray();
+
+            if (schemes.Length == 0)
+                return;
 
             using (var progIdKey = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{ProgId}"))
             {
@@ -43,7 +51,8 @@ internal static class ProtocolRegistration
                 capsKey.SetValue("ApplicationName", "Starlight Launcher");
                 capsKey.SetValue("ApplicationDescription", "Starlight Launcher");
                 using var urlAssoc = capsKey.CreateSubKey("URLAssociations");
-                urlAssoc.SetValue(Scheme, ProgId);
+                foreach (var scheme in schemes)
+                    urlAssoc.SetValue(scheme, ProgId);
             }
 
             using (var registeredApps = Registry.CurrentUser.CreateSubKey(@"Software\RegisteredApplications"))
@@ -51,17 +60,20 @@ internal static class ProtocolRegistration
                 registeredApps.SetValue(AppRegName, $@"Software\{AppRegName}\Capabilities");
             }
 
-            using var schemeKey = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{Scheme}");
-            schemeKey.SetValue("", $"URL:{Scheme} Protocol");
-            schemeKey.SetValue("URL Protocol", "");
-            using var directIconKey = schemeKey.CreateSubKey("DefaultIcon");
-            directIconKey.SetValue("", $"\"{exePath}\",0");
-            using var directCommandKey = schemeKey.CreateSubKey(@"shell\open\command");
-            directCommandKey.SetValue("", command);
+            foreach (var scheme in schemes)
+            {
+                using var schemeKey = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{scheme}");
+                schemeKey.SetValue("", $"URL:{scheme} Protocol");
+                schemeKey.SetValue("URL Protocol", "");
+                using var directIconKey = schemeKey.CreateSubKey("DefaultIcon");
+                directIconKey.SetValue("", $"\"{exePath}\",0");
+                using var directCommandKey = schemeKey.CreateSubKey(@"shell\open\command");
+                directCommandKey.SetValue("", command);
+            }
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Failed to register {scheme} protocol handler (Windows)", Scheme);
+            Log.Warning(ex, "Failed to register {schemes} protocol handlers (Windows)", Schemes);
         }
     }
 
@@ -94,27 +106,28 @@ internal static class ProtocolRegistration
                     + $"Exec=\"{exePath}\" %u\n"
                     + "Terminal=false\n"
                     + "Categories=Game;\n"
-                    + "MimeType=x-scheme-handler/starlight;\n";
+                    + $"MimeType={string.Concat(Schemes.Select(s => $"x-scheme-handler/{s};"))}\n";
 
             var existing = File.Exists(desktopPath) ? File.ReadAllText(desktopPath) : null;
             if (existing == desktopContent)
                 return;
 
-            if (ShouldYieldTo(existing, desktopContent) || (existing is null && ShouldYieldToSystemDesktopEntry()))
+            if (ShouldYieldTo(Scheme, existing, desktopContent) || (existing is null && ShouldYieldToSystemDesktopEntry()))
                 return;
 
             File.WriteAllText(desktopPath, desktopContent);
 
             RunBestEffort("update-desktop-database", desktopDir);
-            RunBestEffort("xdg-mime", "default starlight-launcher.desktop x-scheme-handler/starlight");
+            foreach (var scheme in Schemes)
+                RunBestEffort("xdg-mime", $"default starlight-launcher.desktop x-scheme-handler/{scheme}");
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Failed to self-register {scheme} protocol handler (Linux)", Scheme);
+            Log.Warning(ex, "Failed to self-register {schemes} protocol handlers (Linux)", Schemes);
         }
     }
 
-    private static bool ShouldYieldTo(string? existing, string ours)
+    private static bool ShouldYieldTo(string scheme, string? existing, string ours)
     {
 #if DEBUG
         if (existing is null || existing == ours || IsForced())
@@ -125,10 +138,11 @@ internal static class ProtocolRegistration
             return false;
 
         Log.Information("Debug build: leaving {scheme}:// registered to {holder}; set {env}=1 to take it over",
-            Scheme, holder, ForceRegisterEnvVar);
+            scheme, holder, ForceRegisterEnvVar);
         return true;
 #else
         // Release builds always take the handler over.
+        _ = scheme;
         _ = existing;
         _ = ours;
         return false;
