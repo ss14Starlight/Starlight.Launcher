@@ -918,11 +918,20 @@ public class Connector(Updater updater, IEngineManager engineManager, HttpClient
                 _console.AddLine("No crash dump was written. If the client crashed, the [createdump] lines above say why.", isError: true);
             }
 
-            if (dumps.Count == 0 && OperatingSystem.IsLinux() && exitCode > 128)
+            if (dumps.Count == 0 && OperatingSystem.IsLinux() && exitCode is > 128 and <= 192)
             {
                 var signal = exitCode.Value - 128;
-                Log.Warning("Client {Pid} was killed by signal {Signal} ({SignalName})", process.Id, signal, SignalName(signal));
-                _console.AddLine($"Client was killed by signal {signal} ({SignalName(signal)}). Kernel core dump, if one was kept: coredumpctl info {process.Id}", isError: true);
+                if (signal is 9 or 15)
+                {
+                    var name = signal == 9 ? "SIGKILL" : "SIGTERM";
+                    Log.Information("Client {Pid} was terminated by {SignalName}", process.Id, name);
+                    _console.AddLine($"Client was terminated by {name}.", isError: false);
+                }
+                else if (CrashSignalName(signal) is { } name)
+                {
+                    Log.Warning("Client {Pid} was killed by signal {Signal} ({SignalName})", process.Id, signal, name);
+                    _console.AddLine($"Client was killed by signal {signal} ({name}). Kernel core dump, if one was kept: coredumpctl info {process.Id}", isError: true);
+                }
             }
 
             try
@@ -936,17 +945,15 @@ public class Connector(Updater updater, IEngineManager engineManager, HttpClient
         }
     }
 
-    private static string SignalName(int signal) => signal switch
+    private static string? CrashSignalName(int signal) => signal switch
     {
         4 => "SIGILL",
         5 => "SIGTRAP",
         6 => "SIGABRT",
         7 => "SIGBUS",
         8 => "SIGFPE",
-        9 => "SIGKILL",
         11 => "SIGSEGV",
-        15 => "SIGTERM",
-        _ => "unknown",
+        _ => null,
     };
 
     private List<string> FindCrashDumps(Process process, int? exitCode)
