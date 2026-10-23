@@ -80,7 +80,10 @@ public sealed partial class SettingsService : IAsyncDisposable
         _enginesPath = Path.Combine(_settings.DirLauncherData, "engines.json");
         _modulesPath = Path.Combine(_settings.DirLauncherData, "modules.json");
         _favorites = LoadJson(_favoritesPath, new List<FavoriteServer>());
-        _engineInstallations = LoadJson(_enginesPath, new List<InstalledEngineVersion>()).ToDictionary(x => x.Version);
+        _engineInstallations = LoadJson(_enginesPath, new List<InstalledEngineVersion>())
+            .Where(x => !string.IsNullOrEmpty(x.Version))
+            .GroupBy(x => x.Version)
+            .ToDictionary(g => g.Key, g => g.Last());
         _engineModules = [.. LoadJson(_modulesPath, new HashSet<InstalledEngineModule>()).Where(m => !string.IsNullOrEmpty(m.Name) && !string.IsNullOrEmpty(m.Version))];
         RebuildFavoritesIndex(); // Rebuild addresses after load.
     }
