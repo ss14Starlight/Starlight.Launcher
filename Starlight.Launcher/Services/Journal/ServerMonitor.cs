@@ -147,7 +147,7 @@ public sealed class ServerMonitor(
                 loc.GetString("notify-autoconnect-title", ("server", server)),
                 loc.GetString("notify-autoconnect-body"),
                 watch.Address));
-            await commands.QueueMessage(new LauncherActivationMessage(LauncherActivationKind.Connect, watch.Address, "auto-connect"));
+            await commands.QueueMessage(new LauncherActivationMessage(LauncherActivationKind.Connect, watch.Address, "auto-connect") { Internal = true });
             return;
         }
 

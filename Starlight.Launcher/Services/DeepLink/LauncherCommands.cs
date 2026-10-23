@@ -4,26 +4,32 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Threading;
 using Microsoft.Extensions.Logging;
 using Robust.Launcher.Api.Models;
+using Robust.Launcher.Api.Utility;
 using Starlight.Launcher.Services.Auth;
 using Starlight.Launcher.Services.GameLaunch;
+using Starlight.Launcher.Services.Journal;
+using Starlight.Launcher.Services.Settings;
 
 namespace Starlight.Launcher.Services.DeepLink;
 
-public class LauncherCommands(ILogger<LauncherCommands> logger, LoginManager loginManager, Connector connector, DiscordAuthService discordAuth, SteamAuthService steamAuth)
+public class LauncherCommands(ILogger<LauncherCommands> logger, LoginManager loginManager, Connector connector, DiscordAuthService discordAuth, SteamAuthService steamAuth, SettingsService settings, JournalService journal)
 {
     private readonly ILogger<LauncherCommands> _logger = logger;
     private readonly LoginManager _loginManager = loginManager;
     private readonly Connector _connector = connector;
     private readonly DiscordAuthService _discordAuth = discordAuth;
     private readonly SteamAuthService _steamAuth = steamAuth;
+    private readonly SettingsService _settings = settings;
+    private readonly JournalService _journal = journal;
     public readonly Channel<LauncherActivationMessage> CommandChannel = Channel.CreateUnbounded<LauncherActivationMessage>();
 
     private static readonly TimeSpan _accountWaitTimeout = TimeSpan.FromSeconds(20);
 
     /// <summary>
     ///   Raised when the launcher receives a connect command from another instance or a deep link.
+    ///   The flag asks the UI to confirm first: any website can open a deep link.
     /// </summary>
-    public event Func<string, Task>? ConnectRequested;
+    public event Func<string, bool, Task>? ConnectRequested;
 
     private void ActivateWindow()
     {
@@ -40,7 +46,7 @@ public class LauncherCommands(ILogger<LauncherCommands> logger, LoginManager log
         });
     }
 
-    private async Task Connect(string address, string? reason)
+    private async Task Connect(string address, string? reason, bool isInternal)
     {
         // Wait for the startup token check rather than spinning on Unsure forever:
         // if the auth server is down that loop never ended and the connect command was lost.
@@ -85,7 +91,28 @@ public class LauncherCommands(ILogger<LauncherCommands> logger, LoginManager log
             return;
         }
 
-        await handler(address);
+        var needsConfirmation = !isInternal && !IsKnownServer(address);
+        if (needsConfirmation)
+            _logger.LogInformation("Connect command targets a server outside favorites and history; asking the user");
+
+        await handler(address, needsConfirmation);
+    }
+
+    private bool IsKnownServer(string address)
+    {
+        if (GetServerKey(address) is not { } key)
+            return false;
+
+        return _settings.GetFavorites().Any(f => GetServerKey(f.Address) == key)
+            || _journal.GetSessions().Any(s => GetServerKey(s.Address) == key);
+    }
+
+    public static string? GetServerKey(string? address)
+    {
+        if (string.IsNullOrWhiteSpace(address) || !UriHelper.TryParseSs14Uri(address.Trim(), out var uri))
+            return null;
+
+        return UriHelper.GetServerApiAddress(uri).GetLeftPart(UriPartial.Path);
     }
 
     public async ValueTask QueueMessage(LauncherActivationMessage message) => await CommandChannel.Writer.WriteAsync(message);
@@ -140,7 +167,7 @@ public class LauncherCommands(ILogger<LauncherCommands> logger, LoginManager log
                 break;
 
             case { Kind: LauncherActivationKind.Connect, Payload: { } address }:
-                await Connect(address, message.Reason);
+                await Connect(address, message.Reason, message.Internal);
                 break;
 
             case { Kind: LauncherActivationKind.DiscordAuth, Payload: { } uriString }:

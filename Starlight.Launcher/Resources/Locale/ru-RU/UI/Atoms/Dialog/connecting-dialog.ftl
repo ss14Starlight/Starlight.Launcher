@@ -29,3 +29,7 @@ connecting-dialog-status-not-a-bundle = Этот файл не является 
 connecting-dialog-status-cancelled = Отменено.
 connecting-dialog-status-starting = Запуск...
 connecting-dialog-status-already-running = Игра уже запущена или запускается. Чтобы открыть ещё один клиент, разрешите несколько клиентов в настройках.
+
+connecting-dialog-confirm-title = Подключиться к серверу?
+connecting-dialog-confirm-unknown = Ссылка запрашивает подключение к { $address }. Этого сервера нет в избранном и в истории игр. Подключайтесь, только если доверяете сайту, открывшему ссылку.
+connecting-dialog-confirm-connect = Подключиться

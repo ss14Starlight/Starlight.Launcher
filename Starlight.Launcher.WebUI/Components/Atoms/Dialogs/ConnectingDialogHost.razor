@@ -1,15 +1,31 @@
 @using Starlight.Launcher.WebUI.Bridge;
+@using Starlight.Launcher.WebUI.Localization;
 
-@implements IDisposable
+@inherits LocalizedComponentBase
 @inject IDialogService DialogService
 @inject IBridge Bridge
 
 @code {
     protected override void OnInitialized()
-        => Bridge.ConnectRequested += OnConnectRequested;
-
-    private Task OnConnectRequested(string address) => InvokeAsync(async () =>
     {
+        base.OnInitialized();
+        Bridge.ConnectRequested += OnConnectRequested;
+    }
+
+    private Task OnConnectRequested(string address, bool needsConfirmation) => InvokeAsync(async () =>
+    {
+        if (needsConfirmation)
+        {
+            var confirmed = await DialogService.ShowMessageBoxAsync(
+                L["connecting-dialog-confirm-title"],
+                L.GetString("connecting-dialog-confirm-unknown", ("address", address)),
+                yesText: L["connecting-dialog-confirm-connect"],
+                cancelText: L["general-cancel"]);
+
+            if (confirmed != true)
+                return;
+        }
+
         var parameters = new DialogParameters<ConnectingDialog>
         {
             { x => x.Address, address },
@@ -26,5 +42,9 @@
         await DialogService.ShowAsync<ConnectingDialog>("Connecting", parameters, options);
     });
 
-    public void Dispose() => Bridge.ConnectRequested -= OnConnectRequested;
+    public override void Dispose()
+    {
+        base.Dispose();
+        Bridge.ConnectRequested -= OnConnectRequested;
+    }
 }

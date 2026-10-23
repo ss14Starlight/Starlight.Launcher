@@ -29,3 +29,7 @@ connecting-dialog-status-not-a-bundle = Questo file non è un content bundle val
 connecting-dialog-status-cancelled = Annullato.
 connecting-dialog-status-starting = Avvio...
 connecting-dialog-status-already-running = Il gioco è già in esecuzione o in avvio. Consenti più client nelle impostazioni per avviarne un altro.
+
+connecting-dialog-confirm-title = Connettersi al server?
+connecting-dialog-confirm-unknown = Un link chiede di connettersi a { $address }. Questo server non è tra i preferiti né nella cronologia di gioco. Connettiti solo se ti fidi del sito che ha aperto il link.
+connecting-dialog-confirm-connect = Connetti

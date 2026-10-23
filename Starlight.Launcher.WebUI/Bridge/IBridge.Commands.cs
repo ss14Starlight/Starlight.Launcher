@@ -2,5 +2,5 @@ namespace Starlight.Launcher.WebUI.Bridge;
 
 public partial interface IBridge
 {
-    event Func<string, Task>? ConnectRequested;
+    event Func<string, bool, Task>? ConnectRequested;
 }

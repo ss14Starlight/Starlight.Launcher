@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Starlight.Launcher.Services.DeepLink;
 
 public enum LauncherActivationKind
@@ -11,6 +13,9 @@ public enum LauncherActivationKind
 
 public sealed record LauncherActivationMessage(LauncherActivationKind Kind, string? Payload = null, string? Reason = null)
 {
+    [JsonIgnore]
+    public bool Internal { get; init; }
+
     public static LauncherActivationMessage Ping() => new(LauncherActivationKind.Ping);
     public static LauncherActivationMessage RedialWait() => new(LauncherActivationKind.RedialWait);
     public static LauncherActivationMessage Connect(Uri uri, string? reason = null) => new(LauncherActivationKind.Connect, uri.ToString(), reason);
