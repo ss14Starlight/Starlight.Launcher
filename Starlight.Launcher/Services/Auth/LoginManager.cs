@@ -746,20 +746,60 @@ public sealed class LoginManager : ObservableObject, IAsyncDisposable
         if (existing is null)
             return "The account to link was not found.";
 
-        foreach (var token in new[] { existing.LoginInfo.DiscordToken, existing.LoginInfo.SteamToken })
+        async Task<string?> LinkOne(LoginToken token)
         {
-            if (token == null || string.IsNullOrWhiteSpace(token.Token))
-                continue;
-
             // a challenge is single-use, so every login gets its own proof
             if (await _starlightAuthApi.ProveSs14Async(authLogin, cancel) is not { } proof)
                 return "Could not verify the SS14 account with the Starlight server.";
 
-            if (await _starlightAuthApi.LinkSs14Async(token.Token, proof, cancel) is { } error)
-                return error;
+            return await _starlightAuthApi.LinkSs14Async(token.Token, proof, cancel);
         }
 
-        LinkAuthToken(oldUserId, authLogin.UserId, authLogin);
+        static bool HasToken(LoginToken? token) => token != null && !string.IsNullOrWhiteSpace(token.Token);
+
+        var old = existing.LoginInfo;
+        string? failure = null;
+        var discordLinked = false;
+        var steamLinked = false;
+
+        if (HasToken(old.DiscordToken))
+        {
+            failure = await LinkOne(old.DiscordToken!);
+            discordLinked = failure == null;
+        }
+
+        if (failure == null && HasToken(old.SteamToken))
+        {
+            failure = await LinkOne(old.SteamToken!);
+            steamLinked = failure == null;
+        }
+
+        if (failure != null && !discordLinked && !steamLinked)
+            return failure;
+
+        var partial = failure != null && authLogin.UserId != oldUserId;
+        LinkAuthToken(oldUserId, authLogin.UserId, authLogin, discordLinked || !partial, steamLinked || !partial, removeOld: !partial);
+
+        if (partial)
+        {
+            await ApplyAsync(existing, info =>
+            {
+                if (discordLinked)
+                {
+                    info.DiscordToken = null;
+                    info.DiscordRefreshToken = null;
+                    info.DiscordSessionId = null;
+                }
+
+                if (steamLinked)
+                {
+                    info.SteamToken = null;
+                    info.SteamRefreshToken = null;
+                    info.SteamSessionId = null;
+                }
+            });
+            LoginsChanged?.Invoke();
+        }
 
         LoggedInAccount? merged;
         lock (_loginsLock)
@@ -769,10 +809,10 @@ public sealed class LoginManager : ObservableObject, IAsyncDisposable
 
         _ = await EnsureFreshAsync(merged, cancel);
 
-        return null;
+        return partial ? $"Only part of the logins were linked: {failure}" : null;
     }
 
-    private void LinkAuthToken(Guid oldUserId, Guid newUserId, LoginInfo authLogin)
+    private void LinkAuthToken(Guid oldUserId, Guid newUserId, LoginInfo authLogin, bool takeDiscord = true, bool takeSteam = true, bool removeOld = true)
     {
         ActiveLoginData? existing;
         lock (_loginsLock)
@@ -794,17 +834,17 @@ public sealed class LoginManager : ObservableObject, IAsyncDisposable
             Username = authLogin.Username,
             Token = authLogin.Token,
             AuthServerUrl = authLogin.AuthServerUrl,
-            DiscordToken = old.DiscordToken,
-            DiscordRefreshToken = old.DiscordRefreshToken,
-            DiscordSessionId = old.DiscordSessionId,
-            SteamToken = old.SteamToken,
-            SteamRefreshToken = old.SteamRefreshToken,
-            SteamSessionId = old.SteamSessionId,
+            DiscordToken = takeDiscord ? old.DiscordToken : null,
+            DiscordRefreshToken = takeDiscord ? old.DiscordRefreshToken : null,
+            DiscordSessionId = takeDiscord ? old.DiscordSessionId : null,
+            SteamToken = takeSteam ? old.SteamToken : null,
+            SteamRefreshToken = takeSteam ? old.SteamRefreshToken : null,
+            SteamSessionId = takeSteam ? old.SteamSessionId : null,
         };
 
         // The user id changes when linking, so the old entry would otherwise linger as a
         // duplicate account the player can never log into.
-        if (newUserId != oldUserId)
+        if (removeOld && newUserId != oldUserId)
             RemoveLogin(oldUserId);
 
         AddFreshLogin(merged);
