@@ -19,10 +19,10 @@ internal sealed class Program
 
     private readonly ZipFileApi _fileApi;
 
-    private Program(string robustPath, string[] engineArgs)
+    private Program(byte[] robustBytes, string[] engineArgs)
     {
         _engineArgs = engineArgs;
-        var zipArchive = new ZipArchive(File.OpenRead(robustPath), ZipArchiveMode.Read);
+        var zipArchive = new ZipArchive(new MemoryStream(robustBytes, writable: false), ZipArchiveMode.Read);
 
         AssemblyLoadContext.Default.Resolving += LoadContextOnResolving;
         AssemblyLoadContext.Default.ResolvingUnmanagedDll += LoadContextOnResolvingUnmanaged;
@@ -210,7 +210,7 @@ internal sealed class Program
             }
         }
 
-        var program = new Program(robustPath, args[3..]);
+        var program = new Program(robustBytes, args[3..]);
         return program.Run() ? 0 : 3;
     }
 
