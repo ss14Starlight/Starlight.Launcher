@@ -970,9 +970,29 @@ public class Connector(Updater updater, IEngineManager engineManager, HttpClient
                 _console.AddLine("No crash dump was written. If the client crashed, the [createdump] lines above say why.", isError: true);
             }
 
+            if (dumps.Count == 0 && OperatingSystem.IsLinux() && exitCode > 128)
+            {
+                var signal = exitCode.Value - 128;
+                Log.Warning("Client {Pid} was killed by signal {Signal} ({SignalName})", process.Id, signal, SignalName(signal));
+                _console.AddLine($"Client was killed by signal {signal} ({SignalName(signal)}). Kernel core dump, if one was kept: coredumpctl info {process.Id}", isError: true);
+            }
+
             await session.DisposeAsync();
         }
     }
+
+    private static string SignalName(int signal) => signal switch
+    {
+        4 => "SIGILL",
+        5 => "SIGTRAP",
+        6 => "SIGABRT",
+        7 => "SIGBUS",
+        8 => "SIGFPE",
+        9 => "SIGKILL",
+        11 => "SIGSEGV",
+        15 => "SIGTERM",
+        _ => "unknown",
+    };
 
     private List<string> FindCrashDumps(Process process, int? exitCode)
     {
