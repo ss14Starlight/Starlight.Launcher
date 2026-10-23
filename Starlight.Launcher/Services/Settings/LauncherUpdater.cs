@@ -4,7 +4,9 @@ using System.IO.Compression;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
+using SpaceWizards.Sodium;
 using Starlight.Launcher.WebUI.Models.LauncherUpdater;
 
 namespace Starlight.Launcher.Services.Settings;
@@ -134,7 +136,7 @@ public class LauncherUpdater(SettingsService settings, HttpClient httpClient)
                 var htmlUrl = el.TryGetProperty("html_url", out var h) ? h.GetString() : null;
                 var body = el.TryGetProperty("body", out var b) ? b.GetString() : null;
 
-                var assets = new List<ReleaseAsset>();
+                var assets = new List<(string Name, string Url, long Size, string? Digest)>();
                 if (el.TryGetProperty("assets", out var assetsEl) && assetsEl.ValueKind == JsonValueKind.Array)
                 {
                     foreach (var a in assetsEl.EnumerateArray())
@@ -145,11 +147,18 @@ public class LauncherUpdater(SettingsService settings, HttpClient httpClient)
                         var digest = a.TryGetProperty("digest", out var d) && d.ValueKind == JsonValueKind.String ? d.GetString() : null;
 
                         if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(url))
-                            assets.Add(new ReleaseAsset(name, url, size, ParseSha256Digest(digest)));
+                            assets.Add((name, url, size, digest));
                     }
                 }
 
-                result.Add(new GhReleaseInfo(tag, htmlUrl ?? "", body, assets));
+                var signatures = assets
+                    .Where(a => a.Name.EndsWith(SignatureExtension, StringComparison.Ordinal))
+                    .GroupBy(a => a.Name[..^SignatureExtension.Length], StringComparer.Ordinal)
+                    .ToDictionary(g => g.Key, g => g.First().Url, StringComparer.Ordinal);
+
+                result.Add(new GhReleaseInfo(tag, htmlUrl ?? "", body, [.. assets
+                    .Where(a => !a.Name.EndsWith(SignatureExtension, StringComparison.Ordinal))
+                    .Select(a => new ReleaseAsset(a.Name, a.Url, a.Size, ParseSha256Digest(a.Digest), signatures.GetValueOrDefault(a.Name)))]));
             }
 
             return result;
@@ -232,8 +241,26 @@ public class LauncherUpdater(SettingsService settings, HttpClient httpClient)
         return null;
     }
 
+    private const string SignatureExtension = ".minisig";
+
+    private const string ReleasePublicKeyResource = "minisign.pub";
+
     /// <summary>
-    /// Downloads the asset to the launcher data folder, checks it against the SHA-256 digest
+    /// The key releases are signed with, embedded from <c>PublishFiles/minisign.pub</c>. The SHA-256 digest comes from the
+    /// same GitHub API as the file itself, so only this signature protects against a tampered release.
+    /// </summary>
+    private static readonly Lazy<MinisignVerifier.PublicKeyInfo?> _releasePublicKey = new(() =>
+    {
+        using var stream = typeof(LauncherUpdater).Assembly.GetManifestResourceStream(ReleasePublicKeyResource);
+        if (stream is null)
+            return null;
+
+        using var reader = new StreamReader(stream);
+        return MinisignVerifier.ParsePublicKey(reader.ReadToEnd());
+    });
+
+    /// <summary>
+    /// Downloads the asset to the launcher data folder, checks its minisign signature and the SHA-256 digest
     /// GitHub reported for it and returns the local path.
     /// </summary>
     public async Task<string> DownloadAsset(ReleaseAsset asset, CancellationToken ct = default)
@@ -241,13 +268,22 @@ public class LauncherUpdater(SettingsService settings, HttpClient httpClient)
         if (asset.Sha256 is null)
             throw new InvalidOperationException($"GitHub did not provide a SHA-256 digest for {asset.Name}, refusing to install it.");
 
+        var publicKey = _releasePublicKey.Value
+            ?? throw new InvalidOperationException("This build has no release signing key, so updates can't be verified. Install the update manually.");
+
+        if (asset.SignatureUrl is null)
+            throw new InvalidOperationException($"The release has no signature for {asset.Name}, refusing to install it.");
+
+        var signature = await DownloadSignature(asset.SignatureUrl, ct);
+
         var dir = GetUpdateFolder();
         _ = Directory.CreateDirectory(dir);
         var path = Path.Combine(dir, Path.GetFileName(asset.Name));
 
         try
         {
-            await DownloadAndVerify(asset, path, ct);
+            var blake2b = await DownloadAndVerify(asset, path, ct);
+            VerifySignature(asset, publicKey, signature, blake2b);
         }
         catch
         {
@@ -265,7 +301,43 @@ public class LauncherUpdater(SettingsService settings, HttpClient httpClient)
         return request;
     }
 
-    private async Task DownloadAndVerify(ReleaseAsset asset, string path, CancellationToken ct)
+    private async Task<string> DownloadSignature(string url, CancellationToken ct)
+    {
+        // A real .minisig is a few hundred bytes.
+        const int MaxSignatureSize = 4096;
+
+        using var request = CreateGetRequest(url);
+        using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+        _ = response.EnsureSuccessStatusCode();
+
+        await using var stream = await response.Content.ReadAsStreamAsync(ct);
+        var buffer = new byte[MaxSignatureSize + 1];
+        var length = 0;
+        int read;
+        while (length < buffer.Length && (read = await stream.ReadAsync(buffer.AsMemory(length), ct)) > 0)
+            length += read;
+
+        return length > MaxSignatureSize
+            ? throw new InvalidDataException("The update signature is too large.")
+            : Encoding.UTF8.GetString(buffer, 0, length);
+    }
+
+    private static void VerifySignature(ReleaseAsset asset, MinisignVerifier.PublicKeyInfo publicKey, string signature, byte[] blake2b)
+    {
+        var comment = MinisignVerifier.ParseTrustedComment(MinisignVerifier.Verify(publicKey, signature, blake2b));
+
+        if (!comment.TryGetValue("file", out var signedName) || !string.Equals(signedName, asset.Name, StringComparison.Ordinal))
+            throw new InvalidDataException($"The signature is for {signedName ?? "another file"}, not {asset.Name}.");
+
+        var signedVersion = (comment.TryGetValue("version", out var v) ? ParseVersion(NormalizeVersion(v)) : null)
+            ?? throw new InvalidDataException("The update signature does not name a version.");
+
+        var current = ParseVersion(NormalizeVersion(GetVersion()));
+        if (current is not null && signedVersion <= current)
+            throw new InvalidDataException($"The signed update is version {signedVersion}, which is not newer than {current}.");
+    }
+
+    private async Task<byte[]> DownloadAndVerify(ReleaseAsset asset, string path, CancellationToken ct)
     {
         using var request = CreateGetRequest(asset.DownloadUrl);
         using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
@@ -276,6 +348,8 @@ public class LauncherUpdater(SettingsService settings, HttpClient httpClient)
         await using var src = await response.Content.ReadAsStreamAsync(ct);
         await using var dst = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
         using var sha = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        CryptoGenericHashBlake2B.State blake2b;
+        _ = CryptoGenericHashBlake2B.Init(ref blake2b, [], MinisignVerifier.HashLength);
 
         var buffer = new byte[81920];
         long downloaded = 0;
@@ -286,6 +360,7 @@ public class LauncherUpdater(SettingsService settings, HttpClient httpClient)
         {
             await dst.WriteAsync(buffer.AsMemory(0, read), ct);
             sha.AppendData(buffer, 0, read);
+            _ = CryptoGenericHashBlake2B.Update(ref blake2b, buffer.AsSpan(0, read));
             downloaded += read;
             DownloadProgress?.Invoke((downloaded, total));
         }
@@ -296,6 +371,10 @@ public class LauncherUpdater(SettingsService settings, HttpClient httpClient)
             throw new InvalidDataException(
                 $"Checksum mismatch for {asset.Name}: expected {asset.Sha256}, got {actual}. The download may be corrupted or tampered with.");
         }
+
+        var hash = new byte[MinisignVerifier.HashLength];
+        _ = CryptoGenericHashBlake2B.Final(ref blake2b, hash);
+        return hash;
     }
 
     private static void TryDelete(string path)

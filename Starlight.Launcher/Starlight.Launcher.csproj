@@ -41,6 +41,15 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<!-- Without it the launcher refuses to self-update; see LauncherUpdater. -->
+		<EmbeddedResource Include="..\PublishFiles\minisign.pub" LogicalName="minisign.pub" Condition="Exists('..\PublishFiles\minisign.pub')" />
+	</ItemGroup>
+
+	<Target Name="RequireReleaseSigningKey" BeforeTargets="Build" Condition="'$(FullRelease)' == 'True' And !Exists('..\PublishFiles\minisign.pub')">
+		<Error Text="PublishFiles/minisign.pub is missing: a release built without it can't verify its own updates." />
+	</Target>
+
+	<ItemGroup>
 		<None Remove="Services\ContentManagement\Migrations\*.sql" />
 		<EmbeddedResource Include="Services\ContentManagement\Migrations\*.sql" />
 	</ItemGroup>

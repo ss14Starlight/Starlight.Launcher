@@ -361,9 +361,27 @@ jobs:
     needs: [windows, linux, arch, rpm, macos]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
+      - name: Sign release assets
+        env:
+          MINISIGN_SECRET_KEY: ${{ secrets.MINISIGN_SECRET_KEY }}
+        run: |
+          set -e
+          if [ -z "$MINISIGN_SECRET_KEY" ]; then echo "MINISIGN_SECRET_KEY is not set"; exit 1; fi
+          sudo apt-get update
+          sudo apt-get install -y minisign
+          version="${GITHUB_REF_NAME#v}"
+          key="$RUNNER_TEMP/minisign.key"
+          (umask 077; printf '%s\n' "$MINISIGN_SECRET_KEY" > "$key")
+          trap 'rm -f "$key"' EXIT
+          find artifacts -type f ! -name '*.minisig' ! -name PKGBUILD -print0 | while IFS= read -r -d '' f; do
+            name="$(basename "$f")"
+            minisign -S -s "$key" -m "$f" -x "$f.minisig" -t "file:$name version:$version" </dev/null
+            minisign -V -p PublishFiles/minisign.pub -m "$f" -x "$f.minisig"
+          done
       - uses: softprops/action-gh-release@v2
         with:
           files: artifacts/**/*
