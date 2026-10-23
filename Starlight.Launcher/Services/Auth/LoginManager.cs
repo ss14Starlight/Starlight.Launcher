@@ -305,7 +305,16 @@ public sealed class LoginManager : ObservableObject, IAsyncDisposable
     {
         // One refresh per session at a time: rotating refresh tokens cannot survive a race.
         await data.Gate.WaitAsync(cancel);
+
+        if (data.Removed)
+        {
+            _ = data.Gate.Release();
+            return data.Status;
+        }
+
         data.SetRefreshing(true);
+
+        var persist = false;
         try
         {
             var info = data.LoginInfo;
@@ -319,11 +328,11 @@ public sealed class LoginManager : ObservableObject, IAsyncDisposable
             }
 
             var robust = await CheckRobustAsync(data, force, cancel);
+            persist |= robust.Persist;
             var discord = await CheckStarlightAsync(data, steam: false, force, cancel);
+            persist |= discord.Persist;
             var steam = await CheckStarlightAsync(data, steam: true, force, cancel);
-
-            if (robust.Persist || discord.Persist || steam.Persist)
-                await PersistAsync(info);
+            persist |= steam.Persist;
 
             var status = Combine(robust.State, discord.State, steam.State);
             data.SetCredentialStates(robust.State, discord.State, steam.State);
@@ -350,6 +359,9 @@ public sealed class LoginManager : ObservableObject, IAsyncDisposable
         }
         finally
         {
+            if (persist)
+                await PersistAsync(data.LoginInfo);
+
             data.SetRefreshing(false);
             _ = data.Gate.Release();
         }
@@ -408,7 +420,7 @@ public sealed class LoginManager : ObservableObject, IAsyncDisposable
                     return (CredentialState.Invalid, false);
                 }
 
-                await ApplyAsync(info, i =>
+                await ApplyAsync(data, i =>
                 {
                     i.Token = renewed;
                     i.AuthServerUrl ??= authServerUrl;
@@ -483,7 +495,7 @@ public sealed class LoginManager : ObservableObject, IAsyncDisposable
             switch (result.Outcome)
             {
                 case TokenCheckOutcome.Valid when result.Tokens is { } tokens:
-                    await ApplyAsync(info, i => SetStarlightTokens(i, steam, tokens));
+                    await ApplyAsync(data, i => SetStarlightTokens(i, steam, tokens));
                     Log.Debug(
                         "Renewed {Provider} token for {Login}, valid for {Left}",
                         provider, info, GetAccessToken(info, steam)!.TimeLeft());
@@ -656,7 +668,7 @@ public sealed class LoginManager : ObservableObject, IAsyncDisposable
         if (existing != null)
         {
             // Merge: a Discord re-login must not wipe a linked SS14 token and vice versa.
-            WithSuppressedSync(() => _settings.UpdateLoginAtomic(existing.LoginInfo, target =>
+            void Merge(LoginInfo target)
             {
                 if (!string.IsNullOrWhiteSpace(info.Username))
                     target.Username = info.Username;
@@ -680,7 +692,16 @@ public sealed class LoginManager : ObservableObject, IAsyncDisposable
                     target.SteamRefreshToken = info.SteamRefreshToken;
                     target.SteamSessionId = info.SteamSessionId;
                 }
-            }));
+            }
+
+            var merged = false;
+            WithSuppressedSync(() => merged = _settings.UpdateLoginAtomic(existing.LoginInfo, Merge));
+
+            if (!merged)
+            {
+                Merge(existing.LoginInfo);
+                Persist(existing.LoginInfo);
+            }
         }
         else
         {
@@ -799,7 +820,8 @@ public sealed class LoginManager : ObservableObject, IAsyncDisposable
 
         lock (_loginsLock)
         {
-            _ = _logins.Remove(userId, out removed);
+            if (_logins.Remove(userId, out removed))
+                removed.MarkRemoved();
 
             if (_activeLoginId == userId)
             {
@@ -835,12 +857,13 @@ public sealed class LoginManager : ObservableObject, IAsyncDisposable
     private void Persist(LoginInfo info)
         => WithSuppressedSync(() => _settings.UpdateLogin(info));
 
-    private async Task ApplyAsync(LoginInfo info, Action<LoginInfo> mutate)
+    private async Task ApplyAsync(ActiveLoginData data, Action<LoginInfo> mutate)
     {
         _ = Interlocked.Increment(ref _suppressSettingsSync);
         try
         {
-            await _settings.UpdateLoginAtomicAsync(info, mutate);
+            if (!await _settings.UpdateLoginAtomicAsync(data.LoginInfo, mutate, () => !data.Removed))
+                Log.Debug("Dropped renewed tokens for removed login {Login}", data.LoginInfo);
         }
         finally
         {
@@ -889,7 +912,10 @@ public sealed class LoginManager : ObservableObject, IAsyncDisposable
             foreach (var id in _logins.Keys.Where(k => !current.ContainsKey(k)).ToList())
             {
                 if (_logins.Remove(id, out var data))
+                {
+                    data.MarkRemoved();
                     toRemove.Add(data);
+                }
 
                 if (_activeLoginId == id)
                 {
@@ -1022,6 +1048,16 @@ public sealed class LoginManager : ObservableObject, IAsyncDisposable
         ///     refresh would replay a spent token and get the whole session revoked.
         /// </summary>
         public SemaphoreSlim Gate { get; } = new(1, 1);
+
+        private volatile bool _removed;
+
+        /// <summary>
+        ///     Set once the account is dropped from the manager. A refresh still in flight checks it
+        ///     so it does not write the account back into the store.
+        /// </summary>
+        public bool Removed => _removed;
+
+        public void MarkRemoved() => _removed = true;
 
         /// <summary>
         ///     When we last got an answer about this account, in UTC. Null means never.

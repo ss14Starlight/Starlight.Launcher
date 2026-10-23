@@ -78,15 +78,18 @@ public sealed partial class SettingsService
     }
 
     /// <summary>
-    ///     Applies a change to a login while holding the lock the save path uses.
+    ///     Applies a change to a login while holding the lock the save path uses. Only touches logins
+    ///     that are still stored, so a login removed mid-refresh is never written back.
+    ///     Returns false without calling <paramref name="mutate"/> if the login is gone or
+    ///     <paramref name="canApply"/> (checked under the lock) refused.
     /// </summary>
-    public void UpdateLoginAtomic(LoginInfo login, Action<LoginInfo> mutate)
+    public bool UpdateLoginAtomic(LoginInfo login, Action<LoginInfo> mutate, Func<bool>? canApply = null)
     {
         _loginsLock.Wait();
         try
         {
-            mutate(login);
-            _logins[login.UserId] = login;
+            if (!TryMutateStoredLogin(login, mutate, canApply))
+                return false;
         }
         finally
         {
@@ -96,16 +99,17 @@ public sealed partial class SettingsService
         LoginsChanged?.Invoke();
 
         ScheduleSaveInternal(ref _loginsSaveCts, SaveLoginsEncryptedAsync, "logins");
+        return true;
     }
 
     /// <inheritdoc cref="UpdateLoginAtomic"/>
-    public async Task UpdateLoginAtomicAsync(LoginInfo login, Action<LoginInfo> mutate)
+    public async Task<bool> UpdateLoginAtomicAsync(LoginInfo login, Action<LoginInfo> mutate, Func<bool>? canApply = null)
     {
         await _loginsLock.WaitAsync();
         try
         {
-            mutate(login);
-            _logins[login.UserId] = login;
+            if (!TryMutateStoredLogin(login, mutate, canApply))
+                return false;
         }
         finally
         {
@@ -113,6 +117,19 @@ public sealed partial class SettingsService
         }
 
         LoginsChanged?.Invoke();
+
+        ScheduleSaveInternal(ref _loginsSaveCts, SaveLoginsEncryptedAsync, "logins");
+        return true;
+    }
+
+    private bool TryMutateStoredLogin(LoginInfo login, Action<LoginInfo> mutate, Func<bool>? canApply)
+    {
+        if (!_logins.ContainsKey(login.UserId) || canApply?.Invoke() == false)
+            return false;
+
+        mutate(login);
+        _logins[login.UserId] = login;
+        return true;
     }
 
     /// <summary>
