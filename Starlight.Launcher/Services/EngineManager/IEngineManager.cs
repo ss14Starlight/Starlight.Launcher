@@ -20,7 +20,14 @@ public interface IEngineManager
     Task<EngineInstallationResult> DownloadEngineIfNecessary(
         string engineVersion,
         DownloadProgressCallback? progress = null,
+        bool interactive = true,
         CancellationToken cancel = default);
+
+    /// <summary>
+    ///     True if this engine version would come from a CDN other than the Starlight one,
+    ///     i.e. installing it would ask the player first.
+    /// </summary>
+    Task<bool> IsEngineFromForeignSourceAsync(string engineVersion, CancellationToken cancel = default);
 
     /// <summary>
     /// Downloads engine module if necessary
@@ -55,6 +62,8 @@ public interface IEngineManager
             : selectedVersion.Key;
     }
 }
+
+public sealed class ForeignEngineSourceException(string message) : Exception(message);
 
 public record struct EngineInstallationResult(string Version, bool Changed);
 

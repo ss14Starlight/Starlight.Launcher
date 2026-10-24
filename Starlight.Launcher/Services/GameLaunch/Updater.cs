@@ -63,7 +63,7 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
 
     private volatile PreloadRun? _preload;
 
-    public Task<ContentLaunchInfo> RunUpdateForLaunchAsync(ServerBuildInformation buildInformation, CancellationToken cancel = default) => GuardUpdateAsync(() => RunUpdate(buildInformation, cancel), cancel);
+    public Task<ContentLaunchInfo> RunUpdateForLaunchAsync(ServerBuildInformation buildInformation, CancellationToken cancel = default) => GuardUpdateAsync(() => RunUpdate(buildInformation, true, cancel), cancel);
 
     public Task<ContentLaunchInfo> InstallContentBundleForLaunchAsync(ZipArchive archive, byte[] zipHash, ContentBundleMetadata metadata, CancellationToken cancel = default) => GuardUpdateAsync(() => InstallContentBundle(archive, zipHash, metadata, cancel), cancel);
 
@@ -77,7 +77,21 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
 
         try
         {
-            _ = await RunUpdate(buildInformation, run.Cts.Token);
+            // A foreign engine needs the player's consent, which a background preload must not ask for.
+            if (!string.IsNullOrEmpty(buildInformation.EngineVersion)
+                && await _engineManager.IsEngineFromForeignSourceAsync(buildInformation.EngineVersion, run.Cts.Token))
+            {
+                Log.Debug("Not preloading {ForkId}/{Version}: engine {EngineVersion} is not on the Starlight CDN",
+                    buildInformation.ForkId, buildInformation.Version, buildInformation.EngineVersion);
+                return true;
+            }
+
+            _ = await RunUpdate(buildInformation, false, run.Cts.Token);
+            return true;
+        }
+        catch (ForeignEngineSourceException e)
+        {
+            Log.Debug(e, "Preload of {ForkId}/{Version} stopped at a foreign engine", buildInformation.ForkId, buildInformation.Version);
             return true;
         }
         finally
@@ -166,6 +180,7 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
 
     private async Task<ContentLaunchInfo> RunUpdate(
         ServerBuildInformation buildInfo,
+        bool interactive,
         CancellationToken cancel)
     {
         Status = UpdateStatus.CheckingClientUpdate;
@@ -186,7 +201,7 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
 
         await Task.Run(() => CullOldContentVersions(con), CancellationToken.None);
 
-        return await InstallEnginesForVersion(con, moduleManifest, versionRowId, cancel);
+        return await InstallEnginesForVersion(con, moduleManifest, versionRowId, interactive, cancel);
     }
 
     private async Task<ContentLaunchInfo> InstallContentBundle(
@@ -308,13 +323,14 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
             return versionId;
         }, CancellationToken.None);
 
-        return await InstallEnginesForVersion(con, moduleManifest, versionId, cancel);
+        return await InstallEnginesForVersion(con, moduleManifest, versionId, true, cancel);
     }
 
     private async Task<ContentLaunchInfo> InstallEnginesForVersion(
         SqliteConnection con,
         Lazy<Task<EngineModuleManifest>> moduleManifest,
         long versionRowId,
+        bool interactive,
         CancellationToken cancel)
     {
         (string, string)[] modules;
@@ -332,7 +348,7 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
                 {
                     // Engine version may change here due to manifest version redirects.
                     var newEngineVersion = await RetryTransientAsync(
-                        () => InstallEngineVersionIfMissing(version, cancel),
+                        () => InstallEngineVersionIfMissing(version, interactive, cancel),
                         null,
                         cancel);
                     modules[index] = (name, newEngineVersion);
@@ -961,10 +977,10 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
 
     private async Task CullEngineVersionsMaybe(SqliteConnection contentConnection) => await _engineManager.DoEngineCullMaybeAsync(contentConnection);
 
-    private async Task<string> InstallEngineVersionIfMissing(string engineVer, CancellationToken cancel)
+    private async Task<string> InstallEngineVersionIfMissing(string engineVer, bool interactive, CancellationToken cancel)
     {
         Status = UpdateStatus.DownloadingEngineVersion;
-        var (changedVersion, _) = await _engineManager.DownloadEngineIfNecessary(engineVer, DownloadProgressCallback, cancel);
+        var (changedVersion, _) = await _engineManager.DownloadEngineIfNecessary(engineVer, DownloadProgressCallback, interactive, cancel);
 
         Progress = null;
         return changedVersion;

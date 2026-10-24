@@ -81,29 +81,48 @@ public sealed partial class EngineManagerDynamic : IEngineManager
             : installedEngine.Signature;
     }
 
-    private async Task ConfirmEngineSourceAsync(FoundVersionInfo found, CancellationToken cancel)
+    private bool IsForeignSource(FoundVersionInfo found, out string cdnName, out string preferredName)
     {
+        cdnName = preferredName = "";
+
         if (found.Cdn.Important)
-            return;
+            return false;
 
         // Checked against the enabled CDNs only: a player who switched the Starlight CDN off chose this.
         if (_cdns.Cdns.FirstOrDefault(c => c.Important) is not { } preferred)
-            return;
+            return false;
 
-        var cdnName = string.IsNullOrWhiteSpace(found.Cdn.Name) ? found.Cdn.BaseUrl.Urls[0] : found.Cdn.Name;
-        var preferredName = string.IsNullOrWhiteSpace(preferred.Name) ? preferred.BaseUrl.Urls[0] : preferred.Name;
+        cdnName = string.IsNullOrWhiteSpace(found.Cdn.Name) ? found.Cdn.BaseUrl.Urls[0] : found.Cdn.Name;
+        preferredName = string.IsNullOrWhiteSpace(preferred.Name) ? preferred.BaseUrl.Urls[0] : preferred.Name;
+        return true;
+    }
+
+    private async Task ConfirmEngineSourceAsync(FoundVersionInfo found, bool interactive, CancellationToken cancel)
+    {
+        if (!IsForeignSource(found, out var cdnName, out var preferredName))
+            return;
 
         Log.Warning(
             "Engine {Version} is not on the {Preferred} CDN, it will come from {Cdn} and may lack Starlight features",
             found.Version, preferredName, cdnName);
 
+        if (!interactive)
+            throw new ForeignEngineSourceException($"Engine {found.Version} comes from {cdnName}, not asking the player outside of a launch");
+
         if (!await _sourceGuard.ConfirmAsync(new ForeignEngineWarning(found.Version, cdnName, preferredName), cancel))
             throw new OperationCanceledException($"Player declined engine {found.Version} from {cdnName}");
+    }
+
+    public async Task<bool> IsEngineFromForeignSourceAsync(string engineVersion, CancellationToken cancel = default)
+    {
+        var found = await GetVersionInfo(engineVersion, cancel: cancel);
+        return found != null && IsForeignSource(found, out _, out _);
     }
 
     public async Task<EngineInstallationResult> DownloadEngineIfNecessary(
         string engineVersion,
         DownloadProgressCallback? progress = null,
+        bool interactive = true,
         CancellationToken cancel = default)
     {
         var settings = _settings.GetSettings();
@@ -120,7 +139,7 @@ public sealed partial class EngineManagerDynamic : IEngineManager
         if (foundVersion.Info.Insecure)
             throw new UpdateException("Specified engine version is insecure!");
 
-        await ConfirmEngineSourceAsync(foundVersion, cancel);
+        await ConfirmEngineSourceAsync(foundVersion, interactive, cancel);
 
         Log.Debug(
             "Requested engine version was {RequestedEngien}, redirected to {FoundVersion}",
