@@ -836,6 +836,7 @@ public class Connector(Updater updater, IEngineManager engineManager, HttpClient
             var readStream = reader.BaseStream;
             var buf = new byte[4096];
             var carry = "";
+            var writerFailed = false;
             while (true)
             {
                 var read = await readStream.ReadAsync(buf);
@@ -846,7 +847,19 @@ public class Connector(Updater updater, IEngineManager engineManager, HttpClient
                     return;
                 }
 
-                await writer.WriteAsync(buf.AsMemory(0, read));
+                if (!writerFailed)
+                {
+                    try
+                    {
+                        await writer.WriteAsync(buf.AsMemory(0, read));
+                    }
+                    catch (Exception e)
+                    {
+                        writerFailed = true;
+                        Log.Warning(e, "Failed to write client log for {pid}, continuing without file logging", process.Id);
+                    }
+                }
+
                 console.Write(buf.AsSpan(0, read));
 
                 if (compatMode || glFailure)
