@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using SpaceWizards.Sodium;
+using Starlight.Launcher.Services.LocalServer.Dotnet;
 using Starlight.Launcher.WebUI.Models.LauncherUpdater;
 
 namespace Starlight.Launcher.Services.Settings;
@@ -195,14 +196,11 @@ public class LauncherUpdater(SettingsService settings, HttpClient httpClient)
     private static string NormalizeVersion(string? version)
         => version?.Trim().TrimStart('v', 'V') ?? string.Empty;
 
-    private static Version? ParseVersion(string? raw)
-    {
-        if (string.IsNullOrWhiteSpace(raw))
-            return null;
-
-        var core = raw.Split('-')[0].Split('+')[0];
-        return Version.TryParse(core, out var v) ? v : null;
-    }
+    /// <summary>
+    /// SemVer, so <c>1.2.0-beta.1 &lt; 1.2.0-beta.2 &lt; 1.2.0</c>: prerelease users get the next beta and the stable release.
+    /// </summary>
+    private static RuntimeVersion? ParseVersion(string? raw)
+        => RuntimeVersion.TryParse(raw, out var v) ? v : null;
 
     private static ReleaseAsset? PickAssetForCurrentOs(IReadOnlyList<ReleaseAsset> assets)
     {
