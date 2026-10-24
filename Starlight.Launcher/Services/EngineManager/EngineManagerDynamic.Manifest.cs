@@ -26,7 +26,8 @@ public sealed partial class EngineManagerDynamic
     /// <param name="followRedirects">Follow redirections in version info.</param>
     /// <param name="cancel">Cancellation token.</param>
     /// <returns>
-    /// Information about the version, or null if it could not be found on any CDN.
+    /// Information about the version, or null if every CDN was reached and none has it.
+    /// Throws if the version wasn't found and at least one CDN failed to respond.
     /// The returned version may differ from what was requested if redirects were followed.
     /// </returns>
     private async ValueTask<FoundVersionInfo?> GetVersionInfo(
@@ -77,7 +78,6 @@ public sealed partial class EngineManagerDynamic
         // (This also re-requests a still-valid manifest on a total miss, which catches a
         //  freshly-published version within the cache window - same intent as the original code.)
         Exception? firstError = null;
-        var failedCount = 0;
         foreach (var cdn in cdns)
         {
             var cache = GetOrCreateCache(cdn);
@@ -89,14 +89,13 @@ public sealed partial class EngineManagerDynamic
             {
                 Log.Warning(e, "Failed to load engine manifest from CDN {Cdn}", cdn.Name);
                 firstError ??= e;
-                failedCount++;
             }
 
             if (FindVersionInfoInCached(cdn, cache, version, followRedirects) is { } found)
                 return found;
         }
 
-        if (firstError != null && failedCount == cdns.Length)
+        if (firstError != null)
             ExceptionDispatchInfo.Throw(firstError);
 
         return null;
