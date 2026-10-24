@@ -69,6 +69,12 @@ public sealed class SecretStoreKeyProvider : ILoginKeyProvider
             return stored;
         }
 
+        if (stored is null && File.Exists(markerPath) && !File.Exists(keyPath))
+        {
+            _logger.LogError("{store} returned no login key but should hold one; leaving logins alone", _store.Name);
+            throw new InvalidOperationException($"{_store.Name} returned no login key although {markerPath} says it holds one");
+        }
+
         if (stored is not null)
             _logger.LogError("Login key in {store} has a bad length; replacing it", _store.Name);
 
