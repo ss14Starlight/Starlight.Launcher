@@ -61,7 +61,9 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
 
     public bool IsUpdating => _updateLock.CurrentCount == 0;
 
-    private volatile PreloadRun? _preload;
+    private volatile YieldingRun? _preload;
+
+    private volatile YieldingRun? _exclusive;
 
     public Task<ContentLaunchInfo> RunUpdateForLaunchAsync(ServerBuildInformation buildInformation, CancellationToken cancel = default) => GuardUpdateAsync(() => RunUpdate(buildInformation, true, cancel), cancel);
 
@@ -72,7 +74,7 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
         if (!_updateLock.Wait(0, cancel))
             return false;
 
-        var run = new PreloadRun(CancellationTokenSource.CreateLinkedTokenSource(cancel));
+        var run = new YieldingRun(CancellationTokenSource.CreateLinkedTokenSource(cancel));
         _preload = run;
 
         try
@@ -107,9 +109,11 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
         }
     }
 
-    public Task CancelPreloadAsync()
+    public Task CancelPreloadAsync() => CancelRunAsync(_preload);
+
+    private static Task CancelRunAsync(YieldingRun? run)
     {
-        if (_preload is not { } run)
+        if (run is null)
             return Task.CompletedTask;
 
         try
@@ -123,26 +127,38 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
         return run.Done.Task;
     }
 
-    public async Task<(bool Ran, T Result)> TryRunExclusiveAsync<T>(Func<Task<T>> func)
+    public async Task<(bool Ran, T Result)> TryRunExclusiveAsync<T>(Func<CancellationToken, Task<T>> func, CancellationToken cancel = default)
     {
         await CancelPreloadAsync();
 
-        if (!_updateLock.Wait(0))
+        if (!_updateLock.Wait(0, cancel))
             return (false, default!);
+
+        var run = new YieldingRun(CancellationTokenSource.CreateLinkedTokenSource(cancel));
+        _exclusive = run;
 
         try
         {
-            return (true, await func());
+            return (true, await func(run.Cts.Token));
         }
         finally
         {
+            _exclusive = null;
             _ = _updateLock.Release();
+            run.Done.SetResult();
+            run.Cts.Dispose();
         }
     }
 
     private async Task<T> GuardUpdateAsync<T>(Func<Task<T>> func, CancellationToken cancel)
     {
         _ = CancelPreloadAsync();
+
+        if (_exclusive is { } maintenance)
+        {
+            Log.Information("Cancelling content maintenance to start the update");
+            _ = CancelRunAsync(maintenance);
+        }
 
         if (!_updateLock.Wait(0, cancel))
         {
@@ -1025,7 +1041,7 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
         public bool MultiWindow;
     }
 
-    private sealed class PreloadRun(CancellationTokenSource cts)
+    private sealed class YieldingRun(CancellationTokenSource cts)
     {
         public readonly CancellationTokenSource Cts = cts;
         public readonly TaskCompletionSource Done = new(TaskCreationOptions.RunContinuationsAsynchronously);

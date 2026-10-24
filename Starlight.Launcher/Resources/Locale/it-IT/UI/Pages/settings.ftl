@@ -284,3 +284,4 @@ settings-menu-verify-content-ok = Nessun problema trovato, file controllati: { $
 settings-menu-verify-content-repaired = Riparato: file danneggiati rimossi: { $corrupt }, versioni dei server da riscaricare: { $versions }, voci superflue rimosse: { $orphans }.
 settings-menu-verify-content-rebuilt = Il database dei contenuti era danneggiato ed è stato ricreato. I contenuti dei server verranno riscaricati al prossimo accesso.
 settings-menu-verify-content-failed = Impossibile verificare i contenuti. Vedi i log del launcher per i dettagli.
+settings-menu-verify-content-cancelled = Verifica dei contenuti annullata.

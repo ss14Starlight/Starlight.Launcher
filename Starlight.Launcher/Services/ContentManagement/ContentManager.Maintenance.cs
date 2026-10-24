@@ -20,19 +20,26 @@ public sealed partial class ContentManager
         => await Task.Run(() =>
             {
                 var con = GetSqliteConnection();
+                var interrupt = cancel.Register(() =>
+                {
+                    if (con.Handle is { } handle)
+                        SQLitePCL.raw.sqlite3_interrupt(handle);
+                });
                 try
                 {
                     if (GetRunningClientVersions(con).Count > 0)
                         return new ContentRepairResult(DataResetResult.ClientRunning);
 
-                    if (!IsIntegrityOk(con))
+                    if (!IsIntegrityOk(con, cancel))
                     {
                         Log.Warning("Content DB failed the integrity check, rebuilding indexes");
                         TryExecute(con, "REINDEX");
+                        cancel.ThrowIfCancellationRequested();
 
-                        if (!IsIntegrityOk(con))
+                        if (!IsIntegrityOk(con, cancel))
                         {
                             Log.Error("Content DB is still damaged after REINDEX, recreating it");
+                            interrupt.Dispose();
                             con.Dispose();
                             RecreateDatabase();
                             return new ContentRepairResult(DataResetResult.Success, DatabaseRebuilt: true);
@@ -41,8 +48,13 @@ public sealed partial class ContentManager
 
                     return RepairContents(con, cancel);
                 }
+                catch (SqliteException e) when (cancel.IsCancellationRequested)
+                {
+                    throw new OperationCanceledException("Content DB check was cancelled", e, cancel);
+                }
                 finally
                 {
+                    interrupt.Dispose();
                     con.Dispose();
                 }
             }, cancel);
@@ -54,9 +66,13 @@ public sealed partial class ContentManager
 
         using (var tx = con.BeginTransaction())
         {
-            foreach (var (table, rowId, _, _) in con.Query<(string, long, string, long)>("PRAGMA foreign_key_check"))
+            foreach (var (table, rowId, parent, _) in con.Query<(string, long, string, long)>("PRAGMA foreign_key_check").ToList())
             {
-                if (table == "ContentManifest")
+                if (table == "ContentManifest" && parent == "ContentVersion")
+                {
+                    orphans += con.Execute("DELETE FROM ContentManifest WHERE Id = @RowId", new { RowId = rowId });
+                }
+                else if (table == "ContentManifest")
                 {
                     if (con.QueryFirstOrDefault<long?>("SELECT VersionId FROM ContentManifest WHERE Id = @RowId", new { RowId = rowId }) is { } version)
                         _ = brokenVersions.Add(version);
@@ -81,7 +97,7 @@ public sealed partial class ContentManager
         {
             cancel.ThrowIfCancellationRequested();
 
-            if (!IsBlobValid(con, id, hash, size, compression))
+            if (!IsBlobValid(con, id, hash, size, compression, cancel))
                 corrupt.Add(id);
         }
 
@@ -126,7 +142,7 @@ public sealed partial class ContentManager
         return result;
     }
 
-    private static bool IsIntegrityOk(SqliteConnection con)
+    private static bool IsIntegrityOk(SqliteConnection con, CancellationToken cancel)
     {
         try
         {
@@ -137,14 +153,14 @@ public sealed partial class ContentManager
             Log.Warning("Content DB integrity check failed: {Problems}", string.Join("; ", rows.Take(20)));
             return false;
         }
-        catch (SqliteException e)
+        catch (SqliteException e) when (!cancel.IsCancellationRequested)
         {
             Log.Warning(e, "Content DB integrity check could not run");
             return false;
         }
     }
 
-    private static bool IsBlobValid(SqliteConnection con, long id, byte[] expectedHash, long expectedSize, ContentCompressionScheme compression)
+    private static bool IsBlobValid(SqliteConnection con, long id, byte[] expectedHash, long expectedSize, ContentCompressionScheme compression, CancellationToken cancel)
     {
         try
         {
@@ -160,6 +176,7 @@ public sealed partial class ContentManager
                 int read;
                 while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
                 {
+                    cancel.ThrowIfCancellationRequested();
                     _ = CryptoGenericHashBlake2B.Update(ref state, buffer.AsSpan(0, read));
                     length += read;
                 }
@@ -179,7 +196,7 @@ public sealed partial class ContentManager
                 id, length, expectedSize, !hash.AsSpan().SequenceEqual(expectedHash));
             return false;
         }
-        catch (Exception e) when (e is not OperationCanceledException)
+        catch (Exception e) when (e is not OperationCanceledException && !cancel.IsCancellationRequested)
         {
             Log.Warning(e, "Content blob {BlobId} could not be read", id);
             return false;

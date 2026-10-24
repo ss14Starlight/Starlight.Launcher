@@ -8,7 +8,7 @@ public partial interface IBridge
 
     Task<DataResetResult> ClearContentAsync();
 
-    Task<ContentRepairResult> VerifyContentAsync();
+    Task<ContentRepairResult> VerifyContentAsync(CancellationToken cancel = default);
 
     Task<StorageUsage> GetStorageUsageAsync();
 }

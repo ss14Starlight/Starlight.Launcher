@@ -73,12 +73,13 @@ public partial class Settings : SettingsPageBase
         "settings-menu-clear-content-success",
         Bridge.ClearContentAsync);
 
-    private async Task OnVerifyContent()
+    private async Task OnVerifyContent(CancellationToken cancel)
     {
-        var result = await Bridge.VerifyContentAsync();
+        var result = await Bridge.VerifyContentAsync(cancel);
 
         var (message, severity) = result switch
         {
+            { Status: DataResetResult.Cancelled } => (L["settings-menu-verify-content-cancelled"], Severity.Info),
             { Status: DataResetResult.Busy } => (L["settings-menu-clear-busy"], Severity.Warning),
             { Status: DataResetResult.ClientRunning } => (L["settings-menu-clear-client-running"], Severity.Warning),
             { Status: not DataResetResult.Success } => (L["settings-menu-verify-content-failed"], Severity.Error),

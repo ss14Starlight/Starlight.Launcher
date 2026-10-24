@@ -59,12 +59,17 @@ public sealed partial class Bridge : IBridge
         }
     }
 
-    public async Task<ContentRepairResult> VerifyContentAsync()
+    public async Task<ContentRepairResult> VerifyContentAsync(CancellationToken cancel = default)
     {
         try
         {
-            var (ran, result) = await _updater.TryRunExclusiveAsync(() => _content.VerifyAndRepair());
+            var (ran, result) = await _updater.TryRunExclusiveAsync(_content.VerifyAndRepair, cancel);
             return ran ? result : new ContentRepairResult(DataResetResult.Busy);
+        }
+        catch (OperationCanceledException)
+        {
+            Log.Information("Content DB check was cancelled");
+            return new ContentRepairResult(DataResetResult.Cancelled);
         }
         catch (Exception e)
         {

@@ -284,3 +284,4 @@ settings-menu-verify-content-ok = No problems found, { $count } files checked.
 settings-menu-verify-content-repaired = Repaired: { $corrupt } broken files removed, { $versions } server versions will be downloaded again, { $orphans } leftover entries cleaned up.
 settings-menu-verify-content-rebuilt = The content database was damaged and has been recreated. Server content will be downloaded again on the next join.
 settings-menu-verify-content-failed = Couldn't verify the content. See the launcher logs for details.
+settings-menu-verify-content-cancelled = Content check cancelled.

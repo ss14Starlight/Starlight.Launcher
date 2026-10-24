@@ -6,4 +6,5 @@ public enum DataResetResult
     Busy,
     ClientRunning,
     Failed,
+    Cancelled,
 }

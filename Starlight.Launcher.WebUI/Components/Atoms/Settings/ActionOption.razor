@@ -13,13 +13,13 @@
                    Color="@(Danger ? Color.Error : Color.Primary)"
                    Class="sl-option-action"
                    StartIcon="@(_running ? null : ButtonIcon)"
-                   Disabled="_running"
+                   Disabled="_running && !CanCancel"
                    OnClick="RunAsync">
             @if (_running)
             {
                 <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="mr-2" Style="width: 16px; height: 16px;" />
             }
-            @ButtonText
+            @(CanCancel ? CancelText ?? ButtonText : ButtonText)
         </MudButton>
     </div>
 </MudPaper>

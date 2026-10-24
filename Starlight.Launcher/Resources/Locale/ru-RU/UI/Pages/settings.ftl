@@ -284,3 +284,4 @@ settings-menu-verify-content-ok = Проблем не найдено, прове
 settings-menu-verify-content-repaired = Исправлено: удалено повреждённых файлов: { $corrupt }, версий серверов к повторной загрузке: { $versions }, удалено лишних записей: { $orphans }.
 settings-menu-verify-content-rebuilt = База контента была повреждена и создана заново. Контент серверов будет скачан заново при следующем подключении.
 settings-menu-verify-content-failed = Не удалось проверить контент. Подробности в логах лаунчера.
+settings-menu-verify-content-cancelled = Проверка контента отменена.

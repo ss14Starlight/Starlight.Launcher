@@ -79,6 +79,40 @@ public sealed class ContentRepairTests : IDisposable
     }
 
     [Fact]
+    public void ManifestOfMissingVersion_IsRemoved()
+    {
+        var blob = AddBlob("data"u8.ToArray());
+        var version = AddVersion("fork");
+        AddFile(version, "a.txt", blob);
+
+        _ = _con.Execute("PRAGMA foreign_keys = OFF");
+        _ = _con.Execute("DELETE FROM ContentVersion WHERE Id = @Version", new { Version = version });
+        _ = _con.Execute("PRAGMA foreign_keys = ON");
+
+        var result = ContentManager.RepairContents(_con, TestContext.Current.CancellationToken);
+
+        Assert.Equal(0, result.RemovedVersions);
+        Assert.Equal(2, result.RemovedOrphans);
+        Assert.Equal(0, Count("ContentManifest"));
+        Assert.Equal(0, Count("Content"));
+        Assert.Empty(_con.Query("PRAGMA foreign_key_check"));
+    }
+
+    [Fact]
+    public void Cancellation_LeavesDatabaseUntouched()
+    {
+        var bad = AddBlob("bad"u8.ToArray(), hashOf: "something else"u8.ToArray());
+        AddFile(AddVersion("fork"), "bad.txt", bad);
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        _ = Assert.ThrowsAny<OperationCanceledException>(() => ContentManager.RepairContents(_con, cts.Token));
+        Assert.Equal(1, Count("ContentVersion"));
+        Assert.Equal(1, Count("Content"));
+    }
+
+    [Fact]
     public void ForkUsage_CountsEachForksBlobsOnce()
     {
         var a = AddBlob(new byte[100]);
