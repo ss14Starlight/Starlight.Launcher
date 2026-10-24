@@ -86,6 +86,7 @@ public class App : Application
 
             Services.GetRequiredService<ServerMonitor>().Start();
             Services.GetRequiredService<FriendsService>().Start();
+            Services.GetRequiredService<ContentPreloader>().Start();
 
             var commands = Services.GetRequiredService<LauncherCommands>();
             var messaging = Services.GetRequiredService<LauncherMessaging>();
@@ -163,6 +164,7 @@ public class App : Application
                     {
                         Services.GetRequiredService<ServerMonitor>().Stop();
                         Services.GetRequiredService<FriendsService>().Stop();
+                        Services.GetRequiredService<ContentPreloader>().Stop();
                         return Services.GetRequiredService<JournalService>().FlushAsync();
                     }, TimeSpan.FromSeconds(5));
 
@@ -315,6 +317,7 @@ public class App : Application
         _ = services.AddSingleton<RenderDocInstaller>();
         _ = services.AddSingleton<ServerMonitor>();
         _ = services.AddSingleton<FriendsService>();
+        _ = services.AddSingleton<ContentPreloader>();
         _ = services.AddSingleton<ReplaysService>();
         _ = services.AddSingleton<Connector>();
         _ = services.AddSingleton<UiActivity>();

@@ -654,7 +654,7 @@ public class Connector(Updater updater, IEngineManager engineManager, HttpClient
         }
     }
 
-    private async Task<(ServerInfo, Uri, Uri)> GetServerInfoAsync(string address, CancellationToken cancel)
+    internal async Task<(ServerInfo, Uri, Uri)> GetServerInfoAsync(string address, CancellationToken cancel)
     {
         if (!UriHelper.TryParseSs14Uri(address, out var parsedAddress))
         {

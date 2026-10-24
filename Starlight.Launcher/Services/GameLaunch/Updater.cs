@@ -61,12 +61,58 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
 
     public bool IsUpdating => _updateLock.CurrentCount == 0;
 
+    private volatile PreloadRun? _preload;
+
     public Task<ContentLaunchInfo> RunUpdateForLaunchAsync(ServerBuildInformation buildInformation, CancellationToken cancel = default) => GuardUpdateAsync(() => RunUpdate(buildInformation, cancel), cancel);
 
     public Task<ContentLaunchInfo> InstallContentBundleForLaunchAsync(ZipArchive archive, byte[] zipHash, ContentBundleMetadata metadata, CancellationToken cancel = default) => GuardUpdateAsync(() => InstallContentBundle(archive, zipHash, metadata, cancel), cancel);
 
+    public async Task<bool> TryPreloadAsync(ServerBuildInformation buildInformation, CancellationToken cancel)
+    {
+        if (!_updateLock.Wait(0, cancel))
+            return false;
+
+        var run = new PreloadRun(CancellationTokenSource.CreateLinkedTokenSource(cancel));
+        _preload = run;
+
+        try
+        {
+            _ = await RunUpdate(buildInformation, run.Cts.Token);
+            return true;
+        }
+        finally
+        {
+            _preload = null;
+            Status = UpdateStatus.Ready;
+            Progress = null;
+            Speed = null;
+            Retry = null;
+            _ = _updateLock.Release();
+            run.Done.SetResult();
+            run.Cts.Dispose();
+        }
+    }
+
+    public Task CancelPreloadAsync()
+    {
+        if (_preload is not { } run)
+            return Task.CompletedTask;
+
+        try
+        {
+            run.Cts.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+
+        return run.Done.Task;
+    }
+
     public async Task<(bool Ran, T Result)> TryRunExclusiveAsync<T>(Func<Task<T>> func)
     {
+        await CancelPreloadAsync();
+
         if (!_updateLock.Wait(0))
             return (false, default!);
 
@@ -82,6 +128,8 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
 
     private async Task<T> GuardUpdateAsync<T>(Func<Task<T>> func, CancellationToken cancel)
     {
+        _ = CancelPreloadAsync();
+
         if (!_updateLock.Wait(0, cancel))
         {
             Log.Information("Another update is in progress, waiting for it to finish");
@@ -959,6 +1007,12 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
     {
         public string[] Modules = [];
         public bool MultiWindow;
+    }
+
+    private sealed class PreloadRun(CancellationTokenSource cts)
+    {
+        public readonly CancellationTokenSource Cts = cts;
+        public readonly TaskCompletionSource Done = new(TaskCreationOptions.RunContinuationsAsynchronously);
     }
 
     private sealed class TransactedDownloadState

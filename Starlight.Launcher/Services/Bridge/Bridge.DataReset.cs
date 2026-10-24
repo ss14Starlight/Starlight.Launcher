@@ -8,9 +8,13 @@ namespace Starlight.Launcher.Services.Bridge;
 public sealed partial class Bridge : IBridge
 {
     public async Task<DataResetResult> ClearEnginesAsync()
-        => _updater.IsUpdating
-        ? DataResetResult.Busy
-        : await Task.Run(() =>
+    {
+        await _updater.CancelPreloadAsync();
+
+        if (_updater.IsUpdating)
+            return DataResetResult.Busy;
+
+        return await Task.Run(() =>
         {
             try
             {
@@ -31,9 +35,12 @@ public sealed partial class Bridge : IBridge
                 return DataResetResult.Failed;
             }
         });
+    }
 
     public async Task<DataResetResult> ClearContentAsync()
     {
+        await _updater.CancelPreloadAsync();
+
         if (_updater.IsUpdating)
             return DataResetResult.Busy;
 

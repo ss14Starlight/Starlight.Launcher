@@ -218,6 +218,12 @@ public record AppSettings
     public int DownloadSpeedLimitKb { get; init; }
 
     /// <summary>
+    /// While the launcher is idle, download the current build of favorite servers in the background,
+    /// so connecting to them doesn't have to wait for content.
+    /// </summary>
+    public bool PreloadFavoriteContent { get; init; } = true;
+
+    /// <summary>
     /// Launch the client with the Tracy profiler enabled (<c>prof.tracy.enabled</c>).
     /// </summary>
     public bool TracyEnabled { get; init; }
