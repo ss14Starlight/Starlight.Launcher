@@ -119,7 +119,7 @@ internal static class Program
 
     // NSec checks the exact libsodium version, so a foreign libsodium found via PATH
     // (e.g. one shipped with PHP) breaks it. Force our bundled copy for every assembly that P/Invokes it.
-    private static void PinBundledLibsodium()
+    internal static void PinBundledLibsodium()
         => PinBundledNativeLibrary("libsodium", "NSec.Cryptography", "SpaceWizards.Sodium.Interop");
 
     private static void PinBundledSkia()
