@@ -65,6 +65,7 @@ public class App : Application
             Services.GetRequiredService<DiscordRichPresence>().Initialize();
 
             var settings = Services.GetRequiredService<SettingsService>();
+            DownloadThrottle.LimitProvider = () => Math.Max(0, settings.GetSettings().DownloadSpeedLimitKb) * 1024L;
             // Off the UI thread and not awaited: decrypting logins (DPAPI / keyring) and the first token
             // refresh must not hold back the window. Both log their own failures.
             _ = Task.Run(settings.InitializeLoginsAsync);

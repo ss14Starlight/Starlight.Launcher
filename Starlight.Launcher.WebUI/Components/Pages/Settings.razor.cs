@@ -27,6 +27,8 @@ public partial class Settings : SettingsPageBase
 
     private bool _developerMode;
 
+    private StorageUsageOption? _storageUsage;
+
     protected override async Task OnInitializedAsync()
     {
         var settings = await Bridge.GetSettingsAsync();
@@ -71,6 +73,35 @@ public partial class Settings : SettingsPageBase
         "settings-menu-clear-content-success",
         Bridge.ClearContentAsync);
 
+    private async Task OnVerifyContent()
+    {
+        var result = await Bridge.VerifyContentAsync();
+
+        var (message, severity) = result switch
+        {
+            { Status: DataResetResult.Busy } => (L["settings-menu-clear-busy"], Severity.Warning),
+            { Status: DataResetResult.ClientRunning } => (L["settings-menu-clear-client-running"], Severity.Warning),
+            { Status: not DataResetResult.Success } => (L["settings-menu-verify-content-failed"], Severity.Error),
+            { DatabaseRebuilt: true } => (L["settings-menu-verify-content-rebuilt"], Severity.Warning),
+            { FoundProblems: true } => (L.GetString("settings-menu-verify-content-repaired",
+                ("corrupt", result.CorruptBlobs),
+                ("versions", result.RemovedVersions),
+                ("orphans", result.RemovedOrphans)), Severity.Warning),
+            _ => (L.GetString("settings-menu-verify-content-ok", ("count", result.CheckedBlobs)), Severity.Success),
+        };
+
+        _ = _snackbar.Add(message, severity);
+
+        if (result.Status == DataResetResult.Success)
+            await RefreshStorageUsage();
+    }
+
+    private async Task RefreshStorageUsage()
+    {
+        if (_storageUsage is not null)
+            await _storageUsage.RefreshAsync();
+    }
+
     private async Task OnCreateDiagnosticsBundle()
     {
         var result = await Bridge.CreateDiagnosticsBundleAsync();
@@ -104,6 +135,7 @@ public partial class Settings : SettingsPageBase
         };
 
         _ = _snackbar.Add(message, severity);
+        await RefreshStorageUsage();
     }
 
     private async Task CheckUpdate()

@@ -1,0 +1,99 @@
+@using Starlight.Launcher.WebUI.Localization
+
+@inherits LocalizedComponentBase
+
+<MudPaper Class="sl-option-card pa-4 mb-2" Outlined="true" Elevation="0">
+    <div class="d-flex align-center mb-2">
+        <div class="sl-option-icon mr-4">
+            <MudIcon Icon="@Icon" Size="Size.Small" />
+        </div>
+        <div class="flex-grow-1">
+            <MudText Typo="Typo.body1">@Title</MudText>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                @Description
+            </MudText>
+        </div>
+        @if (_usage is { } total)
+        {
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Default">
+                @FormatSize(total.TotalBytes)
+            </MudChip>
+        }
+        <MudTooltip Text="@L["settings-storage-refresh"]">
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh"
+                           Size="Size.Small"
+                           Disabled="_loading"
+                           OnClick="RefreshAsync" />
+        </MudTooltip>
+    </div>
+
+    @if (_usage is null)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="my-2" />
+    }
+    else
+    {
+        <MudText Typo="Typo.overline" Class="mud-text-secondary d-block">
+            @L.GetString("settings-storage-content-section", ("size", FormatSize(_usage.ContentDbBytes)))
+        </MudText>
+        @if (_usage.Forks.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">@L["settings-storage-content-empty"]</MudText>
+        }
+        else
+        {
+            var max = Math.Max(1, _usage.Forks.Max(f => f.Bytes));
+            <MudStack Spacing="1" Class="mb-2">
+                @foreach (var fork in _usage.Forks)
+                {
+                    <div class="sl-storage-row">
+                        <div class="d-flex align-center gap-2">
+                            <div class="flex-grow-1 sl-storage-row__info">
+                                <MudText Typo="Typo.body2">@(fork.ForkId ?? L["settings-storage-unknown-fork"])</MudText>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                    @L.GetString("settings-storage-fork-versions", ("count", fork.Versions))@(fork.LastUsed > DateTime.MinValue ? $" · {fork.LastUsed.ToLocalTime():d}" : "")
+                                </MudText>
+                            </div>
+                            <MudText Typo="Typo.body2" Class="sl-storage-row__size">@FormatSize(fork.Bytes)</MudText>
+                        </div>
+                        <div class="sl-storage-row__bar" style="@BarWidth(fork.Bytes, max)"></div>
+                    </div>
+                }
+            </MudStack>
+            @if (_usage.Forks.Count > 1)
+            {
+                <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mb-2">@L["settings-storage-shared-note"]</MudText>
+            }
+        }
+
+        <MudText Typo="Typo.overline" Class="mud-text-secondary d-block">
+            @L.GetString("settings-storage-engines-section", ("size", FormatSize(_usage.EnginesBytes)))
+        </MudText>
+        @if (_usage.Engines.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">@L["settings-storage-engines-empty"]</MudText>
+        }
+        else
+        {
+            var max = Math.Max(1, _usage.Engines.Max(e => e.Bytes));
+            <MudStack Spacing="1">
+                @foreach (var engine in _usage.Engines)
+                {
+                    <div class="sl-storage-row">
+                        <div class="d-flex align-center gap-2">
+                            <MudIcon Icon="@(engine.IsEngine ? Icons.Material.Filled.Memory : Icons.Material.Filled.Extension)"
+                                     Size="Size.Small"
+                                     Class="sl-storage-row__icon" />
+                            <div class="flex-grow-1 sl-storage-row__info">
+                                <MudText Typo="Typo.body2">@(engine.IsEngine ? L["settings-storage-engine"] : engine.Name)</MudText>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">@engine.Version</MudText>
+                            </div>
+                            <MudText Typo="Typo.body2" Class="sl-storage-row__size">@FormatSize(engine.Bytes)</MudText>
+                        </div>
+                        <div class="sl-storage-row__bar" style="@BarWidth(engine.Bytes, max)"></div>
+                    </div>
+                }
+            </MudStack>
+        }
+    }
+</MudPaper>

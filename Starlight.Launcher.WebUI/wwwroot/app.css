@@ -709,6 +709,46 @@ h1:focus {
     white-space: nowrap;
 }
 
+.sl-storage-row {
+    position: relative;
+    padding: 6px 10px 8px;
+    border-radius: 8px;
+    background: var(--mud-palette-action-default-hover);
+    overflow: hidden;
+}
+
+.sl-storage-row__icon {
+    color: var(--mud-palette-text-disabled);
+    flex-shrink: 0;
+}
+
+.sl-storage-row__info {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+    .sl-storage-row__info .mud-typography-body2 {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+.sl-storage-row__size {
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+}
+
+.sl-storage-row__bar {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 3px;
+    border-radius: 0 3px 3px 0;
+    background: oklch(from oklch(var(--c-primary)) l c h / 0.55);
+}
+
 .sl-ignored-server-row {
     padding: 8px 10px;
     border-radius: 8px;

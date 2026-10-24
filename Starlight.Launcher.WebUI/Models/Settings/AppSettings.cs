@@ -213,6 +213,11 @@ public record AppSettings
     public int MaxForkVersionsToKeep { get; init; } = 3;
 
     /// <summary>
+    /// Download speed limit for content, engines and modules in KB/s. Zero means unlimited.
+    /// </summary>
+    public int DownloadSpeedLimitKb { get; init; }
+
+    /// <summary>
     /// Launch the client with the Tracy profiler enabled (<c>prof.tracy.enabled</c>).
     /// </summary>
     public bool TracyEnabled { get; init; }

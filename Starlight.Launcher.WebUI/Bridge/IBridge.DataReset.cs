@@ -7,4 +7,8 @@ public partial interface IBridge
     Task<DataResetResult> ClearEnginesAsync();
 
     Task<DataResetResult> ClearContentAsync();
+
+    Task<ContentRepairResult> VerifyContentAsync();
+
+    Task<StorageUsage> GetStorageUsageAsync();
 }

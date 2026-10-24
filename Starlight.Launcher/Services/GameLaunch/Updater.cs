@@ -65,6 +65,21 @@ public sealed partial class Updater(IEngineManager engineManager, HttpClient htt
 
     public Task<ContentLaunchInfo> InstallContentBundleForLaunchAsync(ZipArchive archive, byte[] zipHash, ContentBundleMetadata metadata, CancellationToken cancel = default) => GuardUpdateAsync(() => InstallContentBundle(archive, zipHash, metadata, cancel), cancel);
 
+    public async Task<(bool Ran, T Result)> TryRunExclusiveAsync<T>(Func<Task<T>> func)
+    {
+        if (!_updateLock.Wait(0))
+            return (false, default!);
+
+        try
+        {
+            return (true, await func());
+        }
+        finally
+        {
+            _ = _updateLock.Release();
+        }
+    }
+
     private async Task<T> GuardUpdateAsync<T>(Func<Task<T>> func, CancellationToken cancel)
     {
         if (!_updateLock.Wait(0, cancel))

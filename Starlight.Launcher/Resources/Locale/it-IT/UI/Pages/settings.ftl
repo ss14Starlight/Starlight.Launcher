@@ -256,3 +256,29 @@ client-diagnostics-threadpool-queue = Coda del thread pool
 client-diagnostics-threadpool-threads = Thread del thread pool
 client-diagnostics-lock-contention = Contese sui lock
 client-diagnostics-exceptions = Eccezioni
+
+# Content
+
+settings-menu-content-category = Contenuti
+settings-menu-downloads-category = Download
+settings-menu-download-speed-limit-option = Limite velocità di download (KB/s)
+settings-menu-download-speed-limit-option-description = Limita la velocità con cui vengono scaricati contenuti dei server, motori e moduli, così il launcher non occupa tutta la connessione. 0 significa nessun limite.
+settings-menu-storage-category = Spazio
+settings-storage-option = Spazio occupato
+settings-storage-option-description = Quanto spazio occupano i contenuti scaricati per ogni fork, ogni versione del motore e ogni modulo.
+settings-storage-refresh = Aggiorna
+settings-storage-content-section = Contenuti dei server · { $size }
+settings-storage-content-empty = Nessun contenuto dei server scaricato.
+settings-storage-unknown-fork = Fork sconosciuto
+settings-storage-fork-versions = Versioni: { $count }
+settings-storage-shared-note = I file condivisi tra più fork vengono contati per ognuno, quindi la somma può superare la dimensione del database.
+settings-storage-engines-section = Motori e moduli · { $size }
+settings-storage-engines-empty = Nessun motore scaricato.
+settings-storage-engine = Motore
+settings-menu-verify-content-option = Verifica e ripara contenuti
+settings-menu-verify-content-option-description = Controlla ogni file scaricato con il suo hash e rimuove quelli danneggiati. Le versioni dei server che li usavano verranno riscaricate al prossimo accesso. Può richiedere qualche minuto.
+settings-menu-verify-content-button = Verifica
+settings-menu-verify-content-ok = Nessun problema trovato, file controllati: { $count }.
+settings-menu-verify-content-repaired = Riparato: file danneggiati rimossi: { $corrupt }, versioni dei server da riscaricare: { $versions }, voci superflue rimosse: { $orphans }.
+settings-menu-verify-content-rebuilt = Il database dei contenuti era danneggiato ed è stato ricreato. I contenuti dei server verranno riscaricati al prossimo accesso.
+settings-menu-verify-content-failed = Impossibile verificare i contenuti. Vedi i log del launcher per i dettagli.

@@ -256,3 +256,29 @@ client-diagnostics-threadpool-queue = Очередь пула потоков
 client-diagnostics-threadpool-threads = Потоки пула
 client-diagnostics-lock-contention = Конкуренция за локи
 client-diagnostics-exceptions = Исключения
+
+# Content
+
+settings-menu-content-category = Контент
+settings-menu-downloads-category = Загрузки
+settings-menu-download-speed-limit-option = Ограничение скорости загрузки (КБ/с)
+settings-menu-download-speed-limit-option-description = Ограничивает скорость скачивания контента серверов, движков и модулей, чтобы лаунчер не занимал весь канал. 0 — без ограничения.
+settings-menu-storage-category = Хранилище
+settings-storage-option = Занятое место
+settings-storage-option-description = Сколько места занимает загруженный контент каждого форка, каждая версия движка и модуль.
+settings-storage-refresh = Обновить
+settings-storage-content-section = Контент серверов · { $size }
+settings-storage-content-empty = Контент серверов ещё не загружен.
+settings-storage-unknown-fork = Неизвестный форк
+settings-storage-fork-versions = Версий: { $count }
+settings-storage-shared-note = Общие для нескольких форков файлы учитываются у каждого из них, поэтому сумма может быть больше размера базы.
+settings-storage-engines-section = Движки и модули · { $size }
+settings-storage-engines-empty = Движки ещё не загружены.
+settings-storage-engine = Движок
+settings-menu-verify-content-option = Проверить и починить контент
+settings-menu-verify-content-option-description = Сверяет каждый загруженный файл с его хешем и удаляет повреждённые. Версии серверов, которые их использовали, будут скачаны заново при следующем подключении. Может занять несколько минут.
+settings-menu-verify-content-button = Проверить
+settings-menu-verify-content-ok = Проблем не найдено, проверено файлов: { $count }.
+settings-menu-verify-content-repaired = Исправлено: удалено повреждённых файлов: { $corrupt }, версий серверов к повторной загрузке: { $versions }, удалено лишних записей: { $orphans }.
+settings-menu-verify-content-rebuilt = База контента была повреждена и создана заново. Контент серверов будет скачан заново при следующем подключении.
+settings-menu-verify-content-failed = Не удалось проверить контент. Подробности в логах лаунчера.

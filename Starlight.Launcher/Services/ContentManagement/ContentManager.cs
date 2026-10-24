@@ -11,7 +11,7 @@ using System.IO.Compression;
 
 namespace Starlight.Launcher.Services.ContentManagement;
 
-public sealed class ContentManager(SettingsService settings)
+public sealed partial class ContentManager(SettingsService settings)
 {
     private readonly SettingsService _settings = settings;
 

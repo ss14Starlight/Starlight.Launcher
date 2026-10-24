@@ -256,3 +256,29 @@ client-diagnostics-threadpool-queue = Thread pool queue
 client-diagnostics-threadpool-threads = Thread pool threads
 client-diagnostics-lock-contention = Lock contentions
 client-diagnostics-exceptions = Exceptions
+
+# Content
+
+settings-menu-content-category = Content
+settings-menu-downloads-category = Downloads
+settings-menu-download-speed-limit-option = Download Speed Limit (KB/s)
+settings-menu-download-speed-limit-option-description = Caps how fast server content, engines and modules are downloaded, so the launcher doesn't take your whole connection. 0 means no limit.
+settings-menu-storage-category = Storage
+settings-storage-option = Disk Usage
+settings-storage-option-description = How much space downloaded content takes for each server fork, and each engine version and module.
+settings-storage-refresh = Refresh
+settings-storage-content-section = Server content · { $size }
+settings-storage-content-empty = No server content downloaded yet.
+settings-storage-unknown-fork = Unknown fork
+settings-storage-fork-versions = Versions: { $count }
+settings-storage-shared-note = Files shared between forks are counted for each of them, so the sum can be larger than the database.
+settings-storage-engines-section = Engines and modules · { $size }
+settings-storage-engines-empty = No engines downloaded yet.
+settings-storage-engine = Engine
+settings-menu-verify-content-option = Verify and Repair Content
+settings-menu-verify-content-option-description = Checks every downloaded file against its hash and removes broken ones. Server versions that used them will be downloaded again on the next join. Can take a few minutes.
+settings-menu-verify-content-button = Verify
+settings-menu-verify-content-ok = No problems found, { $count } files checked.
+settings-menu-verify-content-repaired = Repaired: { $corrupt } broken files removed, { $versions } server versions will be downloaded again, { $orphans } leftover entries cleaned up.
+settings-menu-verify-content-rebuilt = The content database was damaged and has been recreated. Server content will be downloaded again on the next join.
+settings-menu-verify-content-failed = Couldn't verify the content. See the launcher logs for details.
