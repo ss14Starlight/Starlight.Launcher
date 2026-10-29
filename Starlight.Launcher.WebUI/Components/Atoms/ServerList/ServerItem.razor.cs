@@ -24,6 +24,7 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
     [Parameter] public bool Reorderable { get; set; }
 
     private bool _expanded;
+    private bool _inlineInfo;
     private IPresenceScope? _viewingScope;
 
     private List<string>? _displayTags;
@@ -117,6 +118,7 @@ public partial class ServerItem : LocalizedComponentBase, IDisposable
 
     protected override void OnInitialized()
     {
+        _inlineInfo = _bridge.GetSettings().ServerListShowRoundInfoCollapsed;
         Data.Changed += OnDataChanged;
         _ticker.Tick += OnTick;
         _bridge.ServerNotesChanged += OnJournalChanged;

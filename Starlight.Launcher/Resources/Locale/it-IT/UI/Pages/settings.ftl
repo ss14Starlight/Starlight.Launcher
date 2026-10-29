@@ -113,6 +113,8 @@ settings-menu-bottom-tags-bar-option-description = Posiziona la barra dei tag so
 
 settings-menu-tags-bar-open-option = Barra dei tag aperta
 settings-menu-tags-bar-open-option-description = Vuoi che la barra dei tag sia aperta fin da subito?
+settings-menu-round-info-collapsed-option = Info sul round nella riga
+settings-menu-round-info-collapsed-option-description = Mostra mappa, modalità e id del round direttamente nella riga del server, senza espanderla.
 
 # Tray
 

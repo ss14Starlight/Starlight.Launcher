@@ -113,6 +113,8 @@ settings-menu-bottom-tags-bar-option-description = Place tags bar at the bottom 
 
 settings-menu-tags-bar-open-option = Tags Bar Open
 settings-menu-tags-bar-open-option-description = Should we keep tags bar open by default?
+settings-menu-round-info-collapsed-option = Round Info In Row
+settings-menu-round-info-collapsed-option-description = Show the map, game mode and round id in the server row without expanding it.
 
 # Tray
 

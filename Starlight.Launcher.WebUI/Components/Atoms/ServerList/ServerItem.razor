@@ -45,6 +45,18 @@
             </div>
         </div>
 
+        @if (_inlineInfo && _infoChips is { Count: > 0 } inlineChips)
+        {
+            <div class="server-card__inline-info">
+                @foreach (var (icon, text, title) in inlineChips)
+                {
+                    <span class="server-card__info-chip" title="@($"{title}: {text}")">
+                        <MudIcon Icon="@icon" Class="server-card__info-icon" /><span class="server-card__info-text">@text</span>
+                    </span>
+                }
+            </div>
+        }
+
         <div class="server-card__meta">
             @if (_pingMs is { } ping)
             {
@@ -108,7 +120,7 @@
         <div class="server-card__details">
             @if (_infoChips.Count > 0)
             {
-                <div class="server-card__info">
+                <div class="server-card__info @(_inlineInfo ? "server-card__info--mirrored" : null)">
                     @foreach (var (icon, text, title) in _infoChips)
                     {
                         <span class="server-card__info-chip" title="@title">

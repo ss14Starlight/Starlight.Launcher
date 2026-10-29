@@ -113,6 +113,8 @@ settings-menu-bottom-tags-bar-option-description = Если включено, п
 
 settings-menu-tags-bar-open-option = Развернутая панель фильтров
 settings-menu-tags-bar-open-option-description = Если включено, то панель фильтров будет всегда открыта по умолчанию при открытии списка серверов. (Но вы все еще сможете ее свернуть!!!)
+settings-menu-round-info-collapsed-option = Информация о раунде в строке
+settings-menu-round-info-collapsed-option-description = Показывать карту, режим и номер раунда прямо в строке сервера, без разворачивания.
 
 # Tray
 

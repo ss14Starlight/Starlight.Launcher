@@ -319,6 +319,31 @@
 .server-card__info-icon {
     font-size: 14px !important;
     opacity: 0.6;
+    flex-shrink: 0;
+}
+
+.server-card__inline-info {
+    order: 1;
+    flex: 0 1 auto;
+    min-width: 0;
+    display: flex;
+    gap: 6px;
+    overflow: hidden;
+}
+
+    .server-card__inline-info .server-card__info-chip {
+        min-width: 0;
+        max-width: 200px;
+        white-space: nowrap;
+    }
+
+.server-card__info-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.server-card__info--mirrored {
+    display: none;
 }
 
 .server-card__links {
@@ -331,6 +356,14 @@
 @media (max-width: 820px) {
     .server-card__tags {
         display: none;
+    }
+
+    .server-card__inline-info {
+        display: none;
+    }
+
+    .server-card__info--mirrored {
+        display: flex;
     }
 
     .server-card__meta {

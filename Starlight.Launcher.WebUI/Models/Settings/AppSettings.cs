@@ -119,6 +119,11 @@ public record AppSettings
     public bool ServerListToolBarTagsBarOpen { get; init; } = true;
 
     /// <summary>
+    /// Shows the round info chips (map, preset, round id) in the server row itself, so they're visible without expanding it
+    /// </summary>
+    public bool ServerListShowRoundInfoCollapsed { get; init; }
+
+    /// <summary>
     /// Locks drag reordering of the favorite servers list, so the layout can't be changed by accident
     /// </summary>
     public bool FavoritesReorderLocked { get; init; }
