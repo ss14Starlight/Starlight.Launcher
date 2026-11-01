@@ -101,6 +101,8 @@ settings-menu-navigation-bar-option-description = Select the position of the nav
 
 settings-menu-animated-background-option = Animated background
 settings-menu-animated-background-option-description = Drifting stars in the background and camera flights between pages. Turning it off saves CPU while the launcher is open.
+settings-menu-holiday-themes-option = Holiday themes
+settings-menu-holiday-themes-option-description = Switch to a festive theme during holidays. Turning it off keeps your chosen theme all year.
 
 settings-menu-bottom-search-option = Bottom Search
 settings-menu-bottom-search-option-description = Place search bar at the bottom of the toolbar(when tags bar and search bar together).

@@ -100,6 +100,11 @@ public record AppSettings
     public bool AnimatedBackground { get; init; } = true;
 
     /// <summary>
+    /// Replaces the chosen theme with a holiday one while a holiday is active
+    /// </summary>
+    public bool HolidayThemes { get; init; } = true;
+
+    /// <summary>
     /// Determines should we place search bar at the bottom of TOOLBAR or at the top
     /// </summary>
     public bool ServerListToolbarBottomSearch { get; init; }

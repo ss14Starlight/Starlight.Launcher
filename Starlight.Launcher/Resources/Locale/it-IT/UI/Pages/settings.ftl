@@ -101,6 +101,8 @@ settings-menu-navigation-bar-option-description = Seleziona la posizione della b
 
 settings-menu-animated-background-option = Sfondo animato
 settings-menu-animated-background-option-description = Stelle in movimento sullo sfondo e voli della telecamera tra le pagine. Disattivandolo si risparmia CPU mentre il launcher è aperto.
+settings-menu-holiday-themes-option = Temi festivi
+settings-menu-holiday-themes-option-description = Passa a un tema festivo durante le feste. Disattivandolo il tema scelto resta tutto l'anno.
 
 settings-menu-bottom-search-option = Ricerca sotto
 settings-menu-bottom-search-option-description = Posiziona la barra di ricerca al di sotto della barra degli strumenti (quando la barra tag e ricerca sono insieme).

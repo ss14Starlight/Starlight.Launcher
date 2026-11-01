@@ -441,7 +441,7 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
                 _holidayTheme = (today, themes.Count > 0 ? themes[Random.Shared.Next(themes.Count)] : null);
             }
 
-            if (_holidayTheme.Value.Theme is { } holidayTheme)
+            if (settings.HolidayThemes && _holidayTheme.Value.Theme is { } holidayTheme)
                 themeName = holidayTheme;
 
             await _jS.InvokeVoidAsync("appTheme.set", themeName);

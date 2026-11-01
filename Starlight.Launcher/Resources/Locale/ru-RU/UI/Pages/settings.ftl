@@ -101,6 +101,8 @@ settings-menu-navigation-bar-option-description = Выберите положе�
 
 settings-menu-animated-background-option = Анимированный фон
 settings-menu-animated-background-option-description = Движущиеся звёзды на фоне и перелёты камеры между страницами. Выключение снижает нагрузку на процессор, пока лаунчер открыт.
+settings-menu-holiday-themes-option = Праздничные темы
+settings-menu-holiday-themes-option-description = Включать праздничную тему во время праздников. Если выключить, выбранная тема останется круглый год.
 
 settings-menu-bottom-search-option = Строка поиска снизу
 settings-menu-bottom-search-option-description = Если включено, строка с поиском будет находиться в самом низу панели инструментов (когда панель с тегами и панель с поиском вместе).
