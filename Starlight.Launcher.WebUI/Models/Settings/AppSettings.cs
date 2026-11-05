@@ -444,8 +444,8 @@ public record AppSettings
     /// </summary>
     public static List<RobustCdnConfig> DefaultRobustCdns { get; } =
     [
-        new() { Name = "Starlight", Urls = ["https://robust-builds.starlight.network/"], PublicKey = PrimaryCdnPublicKey, Important=true },
-        new() { Name = "PlaySS14",  Urls = ["https://robust-builds.playss14.com/"],      PublicKey = SecondaryCdnPublicKey },
+        new() { Name = "Starlight", Urls = ["https://robust-builds.starlight.network/"],              PublicKey = PrimaryCdnPublicKey, Important=true },
+        new() { Name = "Space Station 14",  Urls = ["https://robust-builds.cdn.spacestation14.com/"], PublicKey = SecondaryCdnPublicKey },
     ];
 
     /// <summary>
