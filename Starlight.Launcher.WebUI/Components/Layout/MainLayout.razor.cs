@@ -250,6 +250,26 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
             });
     }
 
+    private async Task ShowDefaultsChangedIfNeeded()
+    {
+        var changes = _bridge.GetPendingDefaultChanges();
+        if (changes.Count == 0)
+            return;
+
+        var dialog = await _dialogService.ShowAsync<DefaultsChangedDialog>(
+            null,
+            new DialogParameters<DefaultsChangedDialog> { { x => x.Changes, changes } },
+            new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                BackdropClick = false,
+                MaxWidth = MaxWidth.Medium,
+                FullWidth = true
+            });
+
+        _ = await dialog.Result;
+    }
+
     private async Task ShowChangelogIfNeeded()
     {
         if (!_bridge.ShouldShowChangelog())
@@ -495,6 +515,7 @@ public partial class MainLayout : LocalizedLayoutBase, IAsyncDisposable, IBrowse
 
                 await CheckDataFolderAccess();
                 CheckUnreadableSettingsFiles();
+                await ShowDefaultsChangedIfNeeded();
                 await ShowChangelogIfNeeded();
                 await CheckUpdate();
             }

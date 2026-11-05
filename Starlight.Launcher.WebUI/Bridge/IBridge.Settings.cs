@@ -40,6 +40,21 @@ public partial interface IBridge
     Task CacheFilters(ServerListFilters filters);
 
     /// <summary>
+    /// Settings whose default changed in this version while the user had their own value.
+    /// </summary>
+    IReadOnlyList<DefaultSettingChange> GetPendingDefaultChanges();
+
+    /// <summary>
+    /// Replaces the user's values of these settings with the new defaults.
+    /// </summary>
+    void AcceptDefaultChanges(IReadOnlyCollection<string> keys);
+
+    /// <summary>
+    /// Keeps the user's values of these settings, they won't be asked about these defaults again.
+    /// </summary>
+    void KeepCurrentSettings(IReadOnlyCollection<string> keys);
+
+    /// <summary>
     /// Whether the launcher can create and write files in the folder (without admin rights).
     /// </summary>
     Task<bool> IsDirectoryWritableAsync(string path);

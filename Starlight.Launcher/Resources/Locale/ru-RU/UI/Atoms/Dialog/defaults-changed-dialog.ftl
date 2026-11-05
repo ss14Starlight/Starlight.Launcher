@@ -1,0 +1,13 @@
+defaults-changed-title = Разработчик изменил базовые настройки
+defaults-changed-text = В этой версии изменились стандартные значения настроек, которые вы меняли. При принятии добавятся только изменения разработчика, остальные ваши значения сохранятся. Хотите принять обновление? Если игра не запускается или не грузятся серверы, скорее всего, дело в устаревших адресах серверов.
+defaults-changed-show-diff = Посмотреть Diff
+defaults-changed-hide-diff = Скрыть Diff
+defaults-changed-accept = Принять
+defaults-changed-keep = Оставить моё
+defaults-changed-accepted = Принято
+defaults-changed-kept = Оставлено ваше
+defaults-changed-yours = ваше значение
+defaults-changed-new = после принятия
+defaults-changed-later = Позже
+defaults-changed-keep-all = Оставить все мои
+defaults-changed-accept-all = Принять все

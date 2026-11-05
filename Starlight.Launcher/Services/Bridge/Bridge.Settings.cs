@@ -49,5 +49,11 @@ public sealed partial class Bridge : IBridge
 
     public async Task CacheFilters(ServerListFilters filters) => await _settings.CacheFilters(filters);
 
+    public IReadOnlyList<DefaultSettingChange> GetPendingDefaultChanges() => _settings.GetPendingDefaultChanges();
+
+    public void AcceptDefaultChanges(IReadOnlyCollection<string> keys) => _settings.AcceptDefaultChanges(keys);
+
+    public void KeepCurrentSettings(IReadOnlyCollection<string> keys) => _settings.KeepCurrentSettings(keys);
+
     public Task<bool> IsDirectoryWritableAsync(string path) => Task.Run(() => DataDirectoryAccess.CanWrite(path));
 }

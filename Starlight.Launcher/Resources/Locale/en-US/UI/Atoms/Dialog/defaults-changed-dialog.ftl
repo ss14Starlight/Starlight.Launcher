@@ -1,0 +1,13 @@
+defaults-changed-title = The developers changed default settings
+defaults-changed-text = This version changes the defaults of settings you have your own values for. Accepting brings in only what the developers changed, the rest of your values stay. Accept the update? If the game doesn't start or servers don't load, outdated server addresses are the likely cause.
+defaults-changed-show-diff = Show diff
+defaults-changed-hide-diff = Hide diff
+defaults-changed-accept = Accept
+defaults-changed-keep = Keep mine
+defaults-changed-accepted = Accepted
+defaults-changed-kept = Kept yours
+defaults-changed-yours = your value
+defaults-changed-new = after accepting
+defaults-changed-later = Later
+defaults-changed-keep-all = Keep all mine
+defaults-changed-accept-all = Accept all

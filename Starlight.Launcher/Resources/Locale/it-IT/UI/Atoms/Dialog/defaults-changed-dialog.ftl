@@ -1,0 +1,13 @@
+defaults-changed-title = Gli sviluppatori hanno cambiato le impostazioni predefinite
+defaults-changed-text = Questa versione cambia i valori predefiniti di impostazioni che hai modificato. Accettando arrivano solo le modifiche degli sviluppatori, il resto dei tuoi valori resta. Accettare l'aggiornamento? Se il gioco non parte o i server non si caricano, la causa probabile sono indirizzi dei server non più validi.
+defaults-changed-show-diff = Mostra differenze
+defaults-changed-hide-diff = Nascondi differenze
+defaults-changed-accept = Accetta
+defaults-changed-keep = Mantieni il mio
+defaults-changed-accepted = Accettato
+defaults-changed-kept = Mantenuto il tuo
+defaults-changed-yours = il tuo valore
+defaults-changed-new = dopo aver accettato
+defaults-changed-later = Più tardi
+defaults-changed-keep-all = Mantieni tutti i miei
+defaults-changed-accept-all = Accetta tutti

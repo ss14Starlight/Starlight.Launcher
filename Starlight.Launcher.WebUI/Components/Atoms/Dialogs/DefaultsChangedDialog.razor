@@ -1,0 +1,74 @@
+@using Starlight.Launcher.WebUI.Localization
+@inherits LocalizedComponentBase
+
+<MudDialog Class="defaults-dialog">
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+            <div class="sl-dialog-icon">
+                <MudIcon Icon="@Icons.Material.Filled.SettingsBackupRestore" Size="Size.Small" />
+            </div>
+            <MudText Typo="Typo.h6">@L["defaults-changed-title"]</MudText>
+        </MudStack>
+    </TitleContent>
+
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-3">@L["defaults-changed-text"]</MudText>
+
+        <div class="defaults-scroll">
+            @foreach (var item in _items)
+            {
+                var change = item.Change;
+
+                <div @key="change.Key" class="@($"defaults-item defaults-item--{item.State.ToString().ToLowerInvariant()}")">
+                    <div class="defaults-item-header">
+                        <div class="defaults-item-title">
+                            <MudText Typo="Typo.subtitle2">@Label(change.Key)</MudText>
+                            <span class="defaults-item-key">@change.Key</span>
+                        </div>
+
+                        <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Difference" OnClick="() => item.DiffOpen = !item.DiffOpen">
+                            @(item.DiffOpen ? L["defaults-changed-hide-diff"] : L["defaults-changed-show-diff"])
+                        </MudButton>
+
+                        @switch (item.State)
+                        {
+                            case ItemState.Pending:
+                                <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => Keep(item)">
+                                    @L["defaults-changed-keep"]
+                                </MudButton>
+                                <MudButton Size="Size.Small" Variant="Variant.Filled" Class="cta-btn-primary" OnClick="() => Accept(item)">
+                                    @L["defaults-changed-accept"]
+                                </MudButton>
+                                break;
+                            case ItemState.Accepted:
+                                <span class="defaults-item-state defaults-item-state--accepted">@L["defaults-changed-accepted"]</span>
+                                break;
+                            case ItemState.Kept:
+                                <span class="defaults-item-state">@L["defaults-changed-kept"]</span>
+                                break;
+                        }
+                    </div>
+
+                    @if (item.DiffOpen)
+                    {
+                        <div class="defaults-diff-legend">
+                            <span class="defaults-diff-legend--removed">@L["defaults-changed-yours"]</span>
+                            <span class="defaults-diff-legend--added">@L["defaults-changed-new"]</span>
+                        </div>
+                        <pre class="defaults-diff">@foreach (var line in item.Diff){<span class="@($"defaults-diff-line defaults-diff-line--{line.Kind.ToString().ToLowerInvariant()}")">@(line.Kind switch { DiffKind.Added => "+ ", DiffKind.Removed => "− ", _ => "  " })@line.Text
+</span>}</pre>
+                    }
+                </div>
+            }
+        </div>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Later" Class="mb-2">@L["defaults-changed-later"]</MudButton>
+        <MudSpacer />
+        <MudButton OnClick="KeepAll" Disabled="!_hasPending" Class="mb-2">@L["defaults-changed-keep-all"]</MudButton>
+        <MudButton Variant="Variant.Filled" OnClick="AcceptAll" Disabled="!_hasPending" Class="cta-btn-primary mr-3 mb-2">
+            @L["defaults-changed-accept-all"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>

@@ -13,6 +13,7 @@ public record AppSettings
     /// <summary>
     /// Base directory for all launcher data. This is currently the one "real" hardcoded path.
     /// </summary>
+    [NotTrackedDefault]
     public string DirLauncherData { get; init; } = GetDefaultDataDirectory();
 
     private static string GetDefaultDataDirectory()
@@ -57,10 +58,12 @@ public record AppSettings
     /// <summary>
     /// List of server names and IPs which will be ignored in servers list.
     /// </summary>
+    [NotTrackedDefault]
     public List<IgnoredServer> IgnoredServers { get; init; } = [];
     /// <summary>
     /// Currently selected language. Should be a key from LocalizationsIndex. Default is "en-US"
     /// </summary>
+    [NotTrackedDefault]
     public string? SelectedLanguage { get; init; }
 
     /// <summary>
@@ -77,6 +80,7 @@ public record AppSettings
     /// Last version for which the changelog popup was shown to the user.
     /// Empty means never shown.
     /// </summary>
+    [NotTrackedDefault]
     public string LastSeenChangelogVersion { get; set; } = "";
 
     #endregion General
@@ -179,6 +183,7 @@ public record AppSettings
 
     #region Cache
 
+    [NotTrackedDefault]
     public ServerListFilters CachedFilters { get; set; } = new ServerListFilters();
 
     #endregion Cache
@@ -338,11 +343,13 @@ public record AppSettings
     /// <summary>
     /// Determines if user accepted policy when entering development tab.
     /// </summary>
+    [NotTrackedDefault]
     public bool DevPolicyAccepted { get; set; }
 
     /// <summary>
     /// Stored developer mode switch. Null for settings from before the switch existed.
     /// </summary>
+    [NotTrackedDefault]
     [JsonPropertyName("DeveloperMode")]
     public bool? DeveloperModeStored { get; init; }
 
@@ -356,6 +363,7 @@ public record AppSettings
     /// <summary>
     ///Privacy policies accepted by the user, the key is the policy identifier.
     /// </summary>
+    [NotTrackedDefault]
     public Dictionary<string, AcceptedPrivacyPolicy> AcceptedPrivacyPolicies { get; init; } = [];
 
     #endregion Privacy policies
@@ -365,6 +373,7 @@ public record AppSettings
     /// <summary>
     /// Currently selected login.
     /// </summary>
+    [NotTrackedDefault]
     public Guid? SelectedLoginId { get; set; }
 
     /// <summary>
@@ -394,6 +403,7 @@ public record AppSettings
     /// <summary>
     /// Where client logs are written. If null, client logs will be written to AppSettings.DirClientLogsDefault.
     /// </summary>
+    [NotTrackedDefault]
     public string? ClientLogDirectory { get; set; }
     /// <summary>
     /// How to split client logs into multiple files. If set to "Single", the logs will be written to client.stdout.log and client.stderr.log. If set to "Date", the logs will be split by date, e.g. client-2024-06-01.stdout.log and client-2024-06-01.stderr.log. If set to "Launch", the logs will be split by launch, e.g. client-launch-1.stdout.log and client-launch-2.stderr.log.
@@ -461,6 +471,7 @@ public record AppSettings
     /// Determines if the user has acknowledged the risks of running unsandboxed local server
     /// builds fetched from a user-supplied manifest URL. Gates the "Local Server" page.
     /// </summary>
+    [NotTrackedDefault]
     public bool LocalServerPolicyAccepted { get; set; }
 
     /// <summary>

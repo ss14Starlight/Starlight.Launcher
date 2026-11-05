@@ -1,0 +1,109 @@
+.defaults-scroll {
+    max-height: 58vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 6px;
+    scrollbar-width: thin;
+    scrollbar-color: oklch(from oklch(var(--c-primary)) l c h / .25) transparent;
+}
+
+.defaults-item {
+    border: 1px solid oklch(from oklch(var(--c-primary)) l c h / .14);
+    border-radius: 14px;
+    background: oklch(from oklch(var(--c-bg)) calc(l + .03) c h / .55);
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    transition: border-color 160ms ease, opacity 160ms ease;
+}
+
+.defaults-item--accepted {
+    border-color: oklch(from oklch(var(--c-success)) l c h / .45);
+}
+
+.defaults-item--kept {
+    opacity: .7;
+}
+
+.defaults-item-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.defaults-item-title {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 160px;
+    min-width: 0;
+}
+
+.defaults-item-key {
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: .72rem;
+    color: var(--mud-palette-text-secondary);
+}
+
+.defaults-item-state {
+    font-size: .78rem;
+    padding: 2px 10px;
+    border-radius: 999px;
+    border: 1px solid oklch(from oklch(var(--c-primary)) l c h / .2);
+    color: var(--mud-palette-text-secondary);
+}
+
+.defaults-item-state--accepted {
+    color: oklch(var(--c-success));
+    border-color: oklch(from oklch(var(--c-success)) l c h / .45);
+}
+
+.defaults-diff-legend {
+    display: flex;
+    gap: 16px;
+    margin: 10px 0 4px;
+    font-size: .75rem;
+}
+
+.defaults-diff-legend--removed {
+    color: oklch(var(--c-error));
+}
+
+.defaults-diff-legend--added {
+    color: oklch(var(--c-success));
+}
+
+.defaults-diff-legend--removed::before {
+    content: "\2212  ";
+}
+
+.defaults-diff-legend--added::before {
+    content: "+ ";
+}
+
+.defaults-diff {
+    margin: 0;
+    padding: 8px 0;
+    border-radius: 10px;
+    overflow-x: auto;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: .76rem;
+    line-height: 1.5;
+    background: oklch(from oklch(var(--c-bg)) calc(l - .02) c h / .8);
+    border: 1px solid oklch(from oklch(var(--c-primary)) l c h / .12);
+}
+
+.defaults-diff-line {
+    display: block;
+    padding: 0 12px;
+    white-space: pre;
+}
+
+.defaults-diff-line--removed {
+    color: oklch(var(--c-error));
+    background: oklch(from oklch(var(--c-error)) l c h / .12);
+}
+
+.defaults-diff-line--added {
+    color: oklch(var(--c-success));
+    background: oklch(from oklch(var(--c-success)) l c h / .12);
+}
