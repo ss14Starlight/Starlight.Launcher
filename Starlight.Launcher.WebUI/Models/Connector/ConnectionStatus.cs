@@ -15,6 +15,11 @@ public enum ConnectionStatus
     NotAContentBundle,
 
     /// <summary>
+    /// The content bundle zip is damaged and automatic recovery failed.
+    /// </summary>
+    CorruptArchive,
+
+    /// <summary>
     /// The launcher couldn't write to the data folder (e.g. it requires admin rights).
     /// </summary>
     AccessDenied,

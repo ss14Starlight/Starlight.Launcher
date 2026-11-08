@@ -26,6 +26,7 @@ connecting-dialog-status-client-running = Il gioco è in esecuzione.
 connecting-dialog-status-connection-failed = Impossibile raggiungere il server.
 connecting-dialog-status-update-error = Aggiornamento non riuscito. Consulta i log per i dettagli.
 connecting-dialog-status-not-a-bundle = Questo file non è un content bundle valido.
+connecting-dialog-status-corrupt-archive = L'archivio è danneggiato e non è stato possibile recuperarlo. Scaricalo di nuovo.
 connecting-dialog-status-cancelled = Annullato.
 connecting-dialog-status-starting = Avvio...
 connecting-dialog-status-already-running = Il gioco è già in esecuzione o in avvio. Consenti più client nelle impostazioni per avviarne un altro.

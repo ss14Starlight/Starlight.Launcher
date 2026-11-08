@@ -9,6 +9,7 @@ using Robust.Launcher.Api.Models;
 using Robust.Launcher.Api.Models.Data;
 using Robust.Launcher.Api.Utility;
 using Serilog;
+using Starlight.Launcher.Models.Helpers;
 using Starlight.Launcher.Models.Logging;
 using Starlight.Launcher.Services.Auth;
 using Starlight.Launcher.Services.Diagnostics;
@@ -16,6 +17,7 @@ using Starlight.Launcher.Services.Discord;
 using Starlight.Launcher.Services.EngineManager;
 using Starlight.Launcher.Services.Journal;
 using Starlight.Launcher.Services.Logging;
+using Starlight.Launcher.Services.Replays;
 using Starlight.Launcher.Services.Settings;
 using Starlight.Launcher.Services.Tray;
 using Starlight.Launcher.WebUI.Models.Connector;
@@ -197,6 +199,8 @@ public class Connector(Updater updater, IEngineManager engineManager, HttpClient
     {
         launch.Status = ConnectionStatus.Updating;
 
+        file = await EnsureReadableArchiveAsync(file, cancel);
+
         ContentLaunchInfo installation;
         await using (var zipStream = await file.OpenReadAsync())
         {
@@ -214,9 +218,19 @@ public class Connector(Updater updater, IEngineManager engineManager, HttpClient
             }
 
             ContentBundleMetadata? metadata;
-            await using (var metadataStream = metadataJson.Open())
+            try
             {
+                await using var metadataStream = metadataJson.Open();
                 metadata = JsonSerializer.Deserialize<ContentBundleMetadata>(metadataStream);
+            }
+            catch (InvalidDataException e)
+            {
+                throw new ConnectException(ConnectionStatus.CorruptArchive, e);
+            }
+            catch (JsonException e)
+            {
+                Log.Error(e, "rt_content_bundle.json is not valid JSON");
+                throw new ConnectException(ConnectionStatus.NotAContentBundle, e);
             }
 
             if (metadata == null)
@@ -274,6 +288,78 @@ public class Connector(Updater updater, IEngineManager engineManager, HttpClient
         // I originally wanted to pass through build info,
         // but then realized I'd need to pipe the entries in the SQLite DB ("AnonymousContentBundle") up and ehhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh.
         await LaunchClientWrap(launch, null, installation, null, null, null, null, true, cancel);
+    }
+
+    /// <summary>
+    ///     Returns <paramref name="file"/> if it opens as a zip, otherwise a repaired copy of it.
+    ///     Replays of rounds whose recording was cut off lack the zip's central directory.
+    /// </summary>
+    private async Task<IFileResult> EnsureReadableArchiveAsync(IFileResult file, CancellationToken cancel)
+    {
+        try
+        {
+            await using var stream = await file.OpenReadAsync();
+            using var _ = new ZipArchive(stream, ZipArchiveMode.Read);
+            return file;
+        }
+        catch (InvalidDataException e)
+        {
+            Log.Warning(e, "Content bundle {FileName} is a damaged zip archive, trying to recover it", file.FileName);
+        }
+
+        if (string.IsNullOrEmpty(file.FullPath) || !File.Exists(file.FullPath))
+            throw new ConnectException(ConnectionStatus.CorruptArchive);
+
+        var repairedDir = Path.Combine(_settings.GetSettings().DirLauncherData, "replays", "repaired");
+        var repairedPath = Path.Combine(repairedDir, Path.GetFileName(file.FullPath));
+
+        // Opening a copy that is itself broken, nothing left to try.
+        if (string.Equals(Path.GetFullPath(file.FullPath), Path.GetFullPath(repairedPath), StringComparison.OrdinalIgnoreCase))
+            throw new ConnectException(ConnectionStatus.CorruptArchive);
+
+        int recovered;
+        try
+        {
+            recovered = await Task.Run(() =>
+            {
+                ClearRepairedCopies(repairedDir);
+                return ZipRepair.TryRepair(file.FullPath, repairedPath);
+            }, cancel);
+        }
+        catch (Exception e) when (e is IOException or InvalidDataException && !DataDirectoryAccess.IsAccessDenied(e))
+        {
+            Log.Error(e, "Failed to recover content bundle {FileName}", file.FileName);
+            throw new ConnectException(ConnectionStatus.CorruptArchive, e);
+        }
+
+        if (recovered == 0)
+        {
+            Log.Error("No zip entries could be recovered from {FileName}", file.FileName);
+            throw new ConnectException(ConnectionStatus.CorruptArchive);
+        }
+
+        Log.Information("Recovered {Count} entries of {FileName} into {Path}", recovered, file.FileName, repairedPath);
+        return new FileResult(repairedPath);
+    }
+
+    // Only the copy for the current launch is kept, the replays can be large.
+    private static void ClearRepairedCopies(string directory)
+    {
+        if (!Directory.Exists(directory))
+            return;
+
+        foreach (var path in Directory.EnumerateFiles(directory))
+        {
+            try
+            {
+                File.Delete(path);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                // Still in use by a running client.
+                Log.Debug(e, "Can't delete old repaired copy {Path}", path);
+            }
+        }
     }
 
     private async Task LaunchClientWrap(
@@ -647,6 +733,11 @@ public class Connector(Updater updater, IEngineManager engineManager, HttpClient
         try
         {
             return await _updater.InstallContentBundleForLaunchAsync(archive, zipHash, metadata, cancel);
+        }
+        catch (InvalidDataException e) when (e.Source == "System.IO.Compression")
+        {
+            // An entry's data is damaged (bad deflate stream or CRC), the central directory alone can't fix that.
+            throw new ConnectException(ConnectionStatus.CorruptArchive, e);
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {

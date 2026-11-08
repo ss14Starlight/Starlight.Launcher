@@ -84,13 +84,28 @@ public sealed class ReplaysService(HttpClient http, StarlightAuthApi starlight, 
             }
         }
 
-        if (!IsValidZip(temp))
+        if (IsValidZip(temp))
         {
-            File.Delete(temp);
-            throw new InvalidDataException("Downloaded replay is not a valid zip archive");
+            File.Move(temp, path, true);
+        }
+        else
+        {
+            // The server keeps replays of rounds whose recording was cut off, those lack the zip's tail.
+            Log.Warning("Downloaded replay {Path} is not a valid zip, trying to recover it", path);
+            try
+            {
+                if (ZipRepair.TryRepair(temp, path) == 0 || !IsValidZip(path))
+                {
+                    File.Delete(path);
+                    throw new InvalidDataException("Downloaded replay is not a valid zip archive");
+                }
+            }
+            finally
+            {
+                File.Delete(temp);
+            }
         }
 
-        File.Move(temp, path, true);
         Prune();
         return new FileResult(path);
     }

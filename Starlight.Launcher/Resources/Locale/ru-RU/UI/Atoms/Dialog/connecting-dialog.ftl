@@ -26,6 +26,7 @@ connecting-dialog-status-client-running = Игра запущена.
 connecting-dialog-status-connection-failed = Не удалось связаться с сервером.
 connecting-dialog-status-update-error = Ошибка обновления. Подробности в логах.
 connecting-dialog-status-not-a-bundle = Этот файл не является корректным контент-бандлом.
+connecting-dialog-status-corrupt-archive = Архив повреждён, и восстановить его не удалось. Скачайте его заново.
 connecting-dialog-status-cancelled = Отменено.
 connecting-dialog-status-starting = Запуск...
 connecting-dialog-status-already-running = Игра уже запущена или запускается. Чтобы открыть ещё один клиент, разрешите несколько клиентов в настройках.

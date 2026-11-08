@@ -78,6 +78,7 @@ public sealed partial class ConnectingDialog : LocalizedComponentBase, IDisposab
         or ConnectionStatus.AccessDenied
         or ConnectionStatus.DownloadStalled
         or ConnectionStatus.NotAContentBundle
+        or ConnectionStatus.CorruptArchive
         or ConnectionStatus.Cancelled
         or ConnectionStatus.ClientExited
         or ConnectionStatus.AlreadyRunning;
@@ -105,6 +106,7 @@ public sealed partial class ConnectingDialog : LocalizedComponentBase, IDisposab
         ConnectionStatus.AccessDenied => L.GetString("connecting-dialog-access-denied", ("path", _bridge.GetSettings().DirLauncherData)),
         ConnectionStatus.DownloadStalled => L["connecting-dialog-download-stalled"],
         ConnectionStatus.NotAContentBundle => L["connecting-dialog-status-not-a-bundle"],
+        ConnectionStatus.CorruptArchive => L["connecting-dialog-status-corrupt-archive"],
         ConnectionStatus.Cancelled => L["connecting-dialog-status-cancelled"],
         ConnectionStatus.AlreadyRunning => L["connecting-dialog-status-already-running"],
         _ => L["connecting-dialog-status-starting"]

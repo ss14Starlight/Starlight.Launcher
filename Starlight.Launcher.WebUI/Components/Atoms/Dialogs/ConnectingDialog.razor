@@ -47,6 +47,7 @@
                 case ConnectionStatus.ConnectionFailed:
                 case ConnectionStatus.UpdateError:
                 case ConnectionStatus.NotAContentBundle:
+                case ConnectionStatus.CorruptArchive:
                     <MudAlert Severity="Severity.Error">@_statusText</MudAlert>
                     break;
 
