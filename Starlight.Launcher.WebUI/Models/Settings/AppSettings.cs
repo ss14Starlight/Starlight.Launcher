@@ -109,6 +109,11 @@ public record AppSettings
     public bool HolidayThemes { get; init; } = true;
 
     /// <summary>
+    /// Hides 18+ servers in the NullLink hub.
+    /// </summary>
+    public bool HubHideAdult { get; init; } = true;
+
+    /// <summary>
     /// Determines should we place search bar at the bottom of TOOLBAR or at the top
     /// </summary>
     public bool ServerListToolbarBottomSearch { get; init; }

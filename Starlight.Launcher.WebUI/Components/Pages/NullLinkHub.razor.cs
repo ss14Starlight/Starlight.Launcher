@@ -29,9 +29,22 @@ public sealed partial class NullLinkHub : LocalizedComponentBase, IAsyncDisposab
     private IReadOnlySet<string> _favoriteAddresses =
         new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+    private bool _hideAdult = true;
+
+    private IEnumerable<ServerListItem> VisibleServers
+        => _servers is null ? [] : _hideAdult ? _servers.Where(s => !s.IsAdultOnly) : _servers;
+
+    private void ToggleHideAdult()
+    {
+        _hideAdult = !_hideAdult;
+        var hide = _hideAdult;
+        _bridge.UpdateSettings(s => s with { HubHideAdult = hide });
+    }
+
     protected override async Task OnInitializedAsync()
     {
         _cts = new CancellationTokenSource();
+        _hideAdult = _bridge.GetSettings().HubHideAdult;
         await LoadAsync(_cts.Token);
         _ = PollLoopAsync(_cts.Token);
 

@@ -20,12 +20,12 @@
                         <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-2" Wrap="Wrap.Wrap">
                             <MudChip T="string" Size="Size.Small" Variant="Variant.Text"
                                      Icon="@Icons.Material.Filled.Storage" Class="hub-meta-chip">
-                                @_servers.Count server(s)
+                                @VisibleServers.Count() server(s)
                             </MudChip>
 
                             <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Success"
                                      Icon="@Icons.Material.Filled.Circle" Class="hub-meta-chip">
-                                @_servers.Count(s => s.Status is ServerStatus.Lobby or ServerStatus.Round or ServerStatus.RoundEnding) online
+                                @VisibleServers.Count(s => s.Status is ServerStatus.Lobby or ServerStatus.Round or ServerStatus.RoundEnding) online
                             </MudChip>
 
                             <MudChip T="string" Size="Size.Small" Variant="Variant.Text"
@@ -37,6 +37,15 @@
                 </div>
             </MudStack>
 
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudButton Variant="@(_hideAdult ? Variant.Filled : Variant.Outlined)"
+                       Color="Color.Error"
+                       StartIcon="@(_hideAdult ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                       aria-pressed="@_hideAdult"
+                       OnClick="ToggleHideAdult">
+                @L["hub-menu-hide-adult"]
+            </MudButton>
+
             <MudTooltip Text="@L["hub-menu-refresh"]">
                 <MudIconButton Icon="@Icons.Material.Filled.Refresh"
                                 Color="Color.Primary"
@@ -45,6 +54,7 @@
                                 OnClick="RefreshAsync"
                                 Class="@(_isRefreshing ? "hub-refresh spin" : "hub-refresh")" />
             </MudTooltip>
+            </MudStack>
 
         </MudStack>
     </MudPaper>
@@ -66,7 +76,7 @@
                 }
             </MudGrid>
         }
-        else if (_servers.Count == 0)
+        else if (!VisibleServers.Any())
         {
             <MudPaper Class="pa-8 d-flex flex-column align-center" Elevation="0">
                 <MudIcon Icon="@Icons.Material.Filled.CloudOff" Size="Size.Large" Class="mud-text-secondary mb-2" />
@@ -76,7 +86,7 @@
         else
         {
             <MudGrid>
-                @foreach (var server in _servers)
+                @foreach (var server in VisibleServers)
                 {
                     <MudItem xs="12" md="6" lg="4">
                         <MudCard Elevation="2" Class="server-card d-flex flex-column" Style="height:100%">
